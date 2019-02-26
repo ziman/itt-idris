@@ -15,11 +15,19 @@ record TCState where
 Backtrace : Type
 Backtrace = List String
 
+Term : Nat -> Type
+Term = TT Q
+
+Ty : Nat -> Type
+Ty = TT Q
+
 data ErrorMessage : Type where
   OtherError : String -> ErrorMessage
   CantConvert : TT Q n -> TT Q n -> ErrorMessage
-  RunawayReduction : TT Q n -> ErrorMessage
+  RunawayReduction : Term n -> ErrorMessage
   QuantityMismatch : (n : String) -> (dq : Q) -> (inferredQ : Q) -> ErrorMessage
+  AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage
+  NotPi : Ty n -> ErrorMessage
 
 record Failure where
   constructor MkF
@@ -79,20 +87,20 @@ throw : ErrorMessage -> TC n a
 throw msg = MkTC $ \env, st
     => Left (MkF (backtrace env) msg)
 
-Term : Nat -> Type
-Term = TT Q
-
-Ty : Nat -> Type
-Ty = TT Q
-
 withDef : Def Q n -> TC (S n) a -> TC n a
-withDef (D n q ty) (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => case f (MkE r (ctx |> D n q ty) bt) st of
+withDef d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
+  MkE r ctx bt => case f (MkE r (ctx |> d) bt) st of
     Left fail => Left fail
     Right (st', q' :: us, x) =>
         if q' .<=. q
            then Right (st', us, x)
            else Left (MkF bt $ QuantityMismatch n q q')
+
+withDef0 : Def Q n -> TC (S n) a -> TC n a
+withDef0 d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
+  MkE r ctx bt => case f (MkE r (ctx |> d) bt) st of
+    Left fail => Left fail
+    Right (st', _q' :: us, x) => Right (st', us, x)  -- don't check the quantity
 
 withQ : Q -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \env, st => f (record { quantity $= (.*. q) } env) st
@@ -112,17 +120,21 @@ rnfTC = nf 8
   where
     nf : Nat -> TT Q n -> TC n (TT Q n)
     nf  Z tm = throw $ RunawayReduction tm
+
     nf (S fuel) (V i) = pure (V i)
+
     nf (S fuel) (Bind b (D n q ty) rhs) = do
       ty' <- nf fuel ty
       let d' = D n q ty'
       Bind b d' <$> withDef d' (nf fuel rhs)
+
     nf (S fuel) (App q f x) = do
       f' <- nf fuel f
       x' <- nf fuel x
       case f' of
         Bind Lam _d rhs => nf fuel $ substVars (substTop x') rhs
         _ => pure $ App q f' x'
+
     nf (S fuel) Star = pure Star
 
 conv : TT Q n -> TT Q n -> TC n ()
@@ -136,8 +148,39 @@ covering
   q' <- rnfTC q
   conv p' q'
 
+infixl 2 =<<
+(=<<) : Monad m => (a -> m b) -> m a -> m b
+(=<<) f x = x >>= f
+
 checkTm : Term n -> TC n (Ty n)
 checkTm (V i) = use i *> lookup i
-checkTm (Bind b d rhs) = ?rhs_2
-checkTm (App x f y) = ?rhs_3
-checkTm Star = ?rhs_4
+checkTm (Bind Lam d@(D n q ty) rhs) = do
+  tyTy <- checkTm ty
+  tyTy ~= Star
+
+  Bind Pi d <$> (withDef d $ checkTm rhs)
+
+checkTm (Bind Pi d@(D n q ty) rhs) = do
+  tyTy <- checkTm ty
+  tyTy ~= Star
+
+  withDef0 d $ do
+    rhsTy <- checkTm rhs
+    rhsTy ~= Star
+
+  pure Star
+
+checkTm tm@(App appQ f x) = do
+  fTy <- rnfTC =<< checkTm f
+  xTy <- checkTm x
+  case fTy of
+    Bind Pi (D piN piQ piTy) piRhs =>
+        if piQ /= appQ
+           then throw $ AppQuantityMismatch fTy tm
+           else do
+             xTy ~= piTy
+             pure $ substVars (substTop x) piRhs
+
+    _ => throw $ NotPi fTy
+
+checkTm Star = pure Star

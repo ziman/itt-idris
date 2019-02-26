@@ -91,6 +91,15 @@ ShowQ Q where
   showCol q = ":" ++ show q
   showApp q = "-" ++ show q ++ "-"
 
+export
+Eq Q where
+  (==) p q = case (p, q) of
+    (I, I) => True
+    (E, E) => True
+    (L, L) => True
+    (R, R) => True
+    _ => False
+
 extend : (Fin n -> Fin m) -> Fin (S n) -> Fin (S m)
 extend f  FZ    = FZ
 extend f (FS x) = FS (f x)
