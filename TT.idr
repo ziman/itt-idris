@@ -1,5 +1,6 @@
 module TT
 
+import OrdSemiring
 import Data.Fin
 
 %default total
@@ -124,3 +125,37 @@ rnf (App q f x) =
     Bind Lam (D n q ty) rhs => rnf $ substVars (substTop $ rnf x) rhs
     f' => App q f' (rnf x)
 rnf  Star = Star
+
+export
+OrdSemiring Q where
+  semi0 = I
+  semi1 = L
+
+  (.+.) p q = case (p, q) of
+    (I, q) => q
+    (q, I) => q
+    (R, q) => R
+    (q, R) => R
+    (E, L) => L
+    (L, E) => L
+    (E, E) => E
+    (L, L) => R  -- important!
+
+  (.*.) p q = case (p, q) of
+    (I, q) => I
+    (q, I) => I
+    (R, q) => q
+    (q, R) => q
+    (E, L) => E
+    (L, E) => E
+    (E, E) => E
+    (L, L) => L
+
+  (.<=.) p q = case (p, q) of
+    (I, _) => True
+    (E, E) => True
+    (E, R) => True
+    (L, L) => True
+    (L, R) => True
+    (R, R) => True
+    _ => False
