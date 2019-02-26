@@ -28,6 +28,7 @@ record Failure where
 
 record Env (n : Nat) where
   constructor MkE
+  quantity : Q
   context : Context Q n
   backtrace : Backtrace
 
@@ -35,10 +36,11 @@ Usage : Nat -> Type
 Usage n = Vect n Q
 
 usage0 : Context Q n -> Vect n Q
-usage0 ctx = ?rhs
+usage0 [] = []
+usage0 (ctx |> _) = semi0 :: usage0 ctx
 
 usage0e : Env n -> Vect n Q
-usage0e (MkE ctx bt) = usage0 ctx
+usage0e (MkE r ctx bt) = usage0 ctx
 
 record TC (n : Nat) (a : Type) where
   constructor MkTC
@@ -85,12 +87,22 @@ Ty = TT Q
 
 withDef : Def Q n -> TC (S n) a -> TC n a
 withDef (D n q ty) (MkTC f) = MkTC $ \env, st => case env of
-  MkE ctx bt => case f (MkE (ctx |> D n q ty) bt) st of
+  MkE r ctx bt => case f (MkE r (ctx |> D n q ty) bt) st of
     Left fail => Left fail
     Right (st', q' :: us, x) =>
         if q' .<=. q
            then Right (st', us, x)
            else Left (MkF bt $ QuantityMismatch n q q')
+
+withQ : Q -> TC n a -> TC n a
+withQ q (MkTC f) = MkTC $ \env, st => f (record { quantity $= (.*. q) } env) st
+
+useEnv : Q -> Fin n -> Context Q n -> Usage n
+useEnv q  FZ    (ctx |> _) = q :: usage0 ctx
+useEnv q (FS x) (ctx |> _) = semi0 :: useEnv q x ctx
+
+use : Fin n -> TC n ()
+use i = MkTC $ \env, st => Right (st, useEnv (quantity env) i (context env), ())
 
 rnfTC : TT Q n -> TC n (TT Q n)
 rnfTC = nf 8
