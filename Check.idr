@@ -10,7 +10,7 @@ import Data.Vect
 %hide Language.Reflection.V
 
 record TCState where
-  constructor MkTS
+  constructor MkTCS
 
 Backtrace : Type
 Backtrace = List String
@@ -184,3 +184,15 @@ checkTm tm@(App appQ f x) = do
     _ => throw $ NotPi fTy
 
 checkTm Star = pure Star
+
+checkClosed : Term Z -> Either Failure (Ty Z)
+checkClosed tm = case checkTm tm of
+  MkTC f => case f (MkE L [] []) MkTCS of
+    Left fail => Left fail
+    Right (MkTCS, [], ty) => Right ty
+
+example1 : TT Q Z
+example1 =
+  Bind Lam (D "a" E Star) $
+  Bind Lam (D "x" L (V FZ)) $
+  V FZ
