@@ -13,6 +13,12 @@ data Binder : Type where
   Lam : Binder
   Pi  : Binder
 
+export
+Eq Binder where
+  (==) Lam Lam = True
+  (==) Pi Pi = True
+  (==) _ _ = False
+
 Pretty ctx Binder where
   pretty _ Lam = "Lam"
   pretty _ Pi  = "Pi"
@@ -32,6 +38,7 @@ mutual
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Star : TT q n
 
+export
 interface ShowQ q where
   showCol : q -> String
   showApp : q -> String
@@ -68,6 +75,7 @@ lookupCtx  FZ    (_   |> d) = weaken d
 lookupCtx (FS k) (ctx |> _) = weaken $ lookupCtx k ctx
 
 mutual
+  export
   prettyTm : ShowQ q => Context q n -> TT q n -> String
   prettyTm ctx (V i) = defName (lookupCtx i ctx)
   prettyTm ctx (Bind Lam d rhs) = "\\" ++ prettyDef ctx d ++ ". " ++ prettyTm (ctx |> d) rhs
@@ -81,12 +89,14 @@ mutual
 public export
 data Q = I | E | L | R
 
+export
 Show Q where
   show I = "I"
   show E = "E"
   show L = "L"
   show R = "R"
 
+export
 ShowQ Q where
   showCol q = ":" ++ show q
   showApp q = "-" ++ show q ++ "-"

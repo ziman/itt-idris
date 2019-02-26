@@ -21,18 +21,29 @@ Term = TT Q
 Ty : Nat -> Type
 Ty = TT Q
 
-data ErrorMessage : Type where
-  OtherError : String -> ErrorMessage
-  CantConvert : TT Q n -> TT Q n -> ErrorMessage
-  RunawayReduction : Term n -> ErrorMessage
-  QuantityMismatch : (n : String) -> (dq : Q) -> (inferredQ : Q) -> ErrorMessage
-  AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage
-  NotPi : Ty n -> ErrorMessage
+data ErrorMessage : Nat -> Type where
+  CantConvert : TT Q n -> TT Q n -> ErrorMessage n
+  OutOfFuel : Term n -> ErrorMessage n
+  QuantityMismatch : (dn : String) -> (dq : Q) -> (inferredQ : Q) -> ErrorMessage n
+  AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage n
+  NotPi : Ty n -> ErrorMessage n
+
+prettyEM : Context Q n -> ErrorMessage n -> String
+prettyEM ctx (CantConvert x y) = "can't convert: " ++ prettyTm ctx x ++ " with " ++ prettyTm ctx y
+prettyEM ctx (OutOfFuel x) = "out of fuel: " ++ prettyTm ctx x
+prettyEM ctx (QuantityMismatch dn dq inferredQ) = "quantity mismatch in " ++ show dn ++ ": " ++ show dq ++ " /= " ++ show inferredQ
+prettyEM ctx (AppQuantityMismatch fTy tm) = "quantity mismatch in application (f : " ++ prettyTm ctx fTy ++ "): " ++ prettyTm ctx tm
+prettyEM ctx (NotPi x) = "not a pi: " ++ prettyTm ctx x
 
 record Failure where
   constructor MkF
   backtrace : Backtrace
-  errorMessage : ErrorMessage
+  n : Nat
+  context : Context Q n
+  errorMessage : ErrorMessage n
+
+Show Failure where
+  show (MkF bt _ ctx msg) = "With backtrace:" ++ unlines (map ("  " ++) bt) ++ prettyEM ctx msg
 
 record Env (n : Nat) where
   constructor MkE
@@ -83,9 +94,9 @@ getEnv = MkTC $ \env, st => Right (st, usage0e env, env)
 getCtx : TC n (Context Q n)
 getCtx = context <$> getEnv
 
-throw : ErrorMessage -> TC n a
+throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
-    => Left (MkF (backtrace env) msg)
+    => Left (MkF (backtrace env) _ (context env) msg)
 
 withDef : Def Q n -> TC (S n) a -> TC n a
 withDef d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
@@ -94,7 +105,7 @@ withDef d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
     Right (st', q' :: us, x) =>
         if q' .<=. q
            then Right (st', us, x)
-           else Left (MkF bt $ QuantityMismatch n q q')
+           else Left (MkF bt _ ctx $ QuantityMismatch n q q')
 
 withDef0 : Def Q n -> TC (S n) a -> TC n a
 withDef0 d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
@@ -115,53 +126,91 @@ use i = MkTC $ \env, st => Right (st, useEnv (quantity env) i (context env), ())
 lookup : Fin n -> TC n (Ty n)
 lookup i = defType . lookupCtx i <$> getCtx
 
-rnfTC : TT Q n -> TC n (TT Q n)
-rnfTC = nf 8
-  where
-    nf : Nat -> TT Q n -> TC n (TT Q n)
-    nf  Z tm = throw $ RunawayReduction tm
+trace : Show tr => tr -> TC n a -> TC n a
+trace t (MkTC f) = MkTC $ \env, st => case env of
+  MkE r ctx bt => f (MkE r ctx (show t :: bt)) st
 
-    nf (S fuel) (V i) = pure (V i)
+traceTm : Show tr => Term n -> tr -> TC n a -> TC n a
+traceTm tm t (MkTC f) = MkTC $ \env, st => case env of
+  MkE r ctx bt =>
+    let msg = "when checking " ++ prettyTm ctx tm ++ ": " ++ show t
+      in f (MkE r ctx (msg :: bt)) st
 
-    nf (S fuel) (Bind b (D n q ty) rhs) = do
-      ty' <- nf fuel ty
-      let d' = D n q ty'
-      Bind b d' <$> withDef d' (nf fuel rhs)
+data Fuel = Dry | More Fuel
 
-    nf (S fuel) (App q f x) = do
-      f' <- nf fuel f
-      x' <- nf fuel x
-      case f' of
-        Bind Lam _d rhs => nf fuel $ substVars (substTop x') rhs
-        _ => pure $ App q f' x'
+mkFuel : Nat -> Fuel
+mkFuel Z = Dry
+mkFuel (S n) = More $ mkFuel n
 
-    nf (S fuel) Star = pure Star
+rnfTC : Fuel -> TT Q n -> TC n (TT Q n)
+rnfTC Dry tm = throw $ OutOfFuel tm
 
-conv : TT Q n -> TT Q n -> TC n ()
-conv p q = throw $ CantConvert p q
+rnfTC (More fuel) (V i) = pure (V i)
+
+rnfTC (More fuel) (Bind b (D n q ty) rhs) = do
+  ty' <- rnfTC fuel ty
+  let d' = D n q ty'
+  Bind b d' <$> withDef d' (rnfTC fuel rhs)
+
+rnfTC (More fuel) (App q f x) = do
+  f' <- rnfTC fuel f
+  x' <- rnfTC fuel x
+  case f' of
+    Bind Lam _d rhs => rnfTC fuel $ substVars (substTop x') rhs
+    _ => pure $ App q f' x'
+
+rnfTC (More fuel) Star = pure Star
+
+rnfTC' : TT Q n -> TC n (TT Q n)
+rnfTC' = rnfTC (mkFuel 8)
 
 infix 3 ~=
-covering
-(~=) : TT Q n -> TT Q n -> TC n ()
-(~=) p q = do
-  p' <- rnfTC p
-  q' <- rnfTC q
-  conv p' q'
+mutual
+  conv : TT Q n -> TT Q n -> TC n ()
+
+  conv (V i) (V j) =
+    if i == j
+        then pure ()
+        else throw $ CantConvert (V i) (V j)
+
+  conv ltm@(Bind b d@(D n q ty) rhs) rtm@(Bind b' d'@(D n' q' ty') rhs') =
+    if (b, q) /= (b', q')
+       then throw $ CantConvert ltm rtm
+       else do
+         ty ~= ty'
+         withDef d $ rhs ~= rhs'
+
+  conv lhs@(App q f x) rhs@(App q' f' x') =
+    if q /= q'
+       then throw $ CantConvert lhs rhs
+       else do
+         f ~= f'
+         x ~= x'
+
+  conv Star Star = pure ()
+
+  conv p q = throw $ CantConvert p q
+
+  (~=) : TT Q n -> TT Q n -> TC n ()
+  (~=) p q = assert_total $ do
+    p' <- rnfTC' p
+    q' <- rnfTC' q
+    conv p' q'
 
 infixl 2 =<<
 (=<<) : Monad m => (a -> m b) -> m a -> m b
 (=<<) f x = x >>= f
 
 checkTm : Term n -> TC n (Ty n)
-checkTm (V i) = use i *> lookup i
-checkTm (Bind Lam d@(D n q ty) rhs) = do
-  tyTy <- checkTm ty
+checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
+checkTm tm@(Bind Lam d@(D n q ty) rhs) = traceTm tm "LAM" $ do
+  tyTy <- withQ E $ checkTm ty
   tyTy ~= Star
 
   Bind Pi d <$> (withDef d $ checkTm rhs)
 
-checkTm (Bind Pi d@(D n q ty) rhs) = do
-  tyTy <- checkTm ty
+checkTm tm@(Bind Pi d@(D n q ty) rhs) = traceTm tm "PI" $ do
+  tyTy <- withQ E $ checkTm ty
   tyTy ~= Star
 
   withDef0 d $ do
@@ -170,8 +219,8 @@ checkTm (Bind Pi d@(D n q ty) rhs) = do
 
   pure Star
 
-checkTm tm@(App appQ f x) = do
-  fTy <- rnfTC =<< checkTm f
+checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
+  fTy <- rnfTC' =<< checkTm f
   xTy <- checkTm x
   case fTy of
     Bind Pi (D piN piQ piTy) piRhs =>
@@ -185,11 +234,10 @@ checkTm tm@(App appQ f x) = do
 
 checkTm Star = pure Star
 
-checkClosed : Term Z -> Either Failure (Ty Z)
-checkClosed tm = case checkTm tm of
-  MkTC f => case f (MkE L [] []) MkTCS of
-    Left fail => Left fail
-    Right (MkTCS, [], ty) => Right ty
+checkClosed : Term Z -> IO ()
+checkClosed tm = case runTC (checkTm tm) (MkE L [] []) MkTCS of
+    Left fail => printLn fail
+    Right (MkTCS, [], ty) => putStrLn $ prettyTm [] tm ++ "\n  : " ++ prettyTm [] ty
 
 example1 : TT Q Z
 example1 =
