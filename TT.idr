@@ -1,8 +1,6 @@
 module TT
 
 import Data.Fin
-import Data.Vect
-import Data.List
 
 %default total
 
@@ -105,12 +103,14 @@ unS : (Fin n -> TT q m) -> Fin (S n) -> TT q (S m)
 unS f  FZ    = V FZ
 unS f (FS x) = mapVars FS $ f x
 
+export
 substVars : (Fin n -> TT q m) -> TT q n -> TT q m
 substVars g (V i) = g i
 substVars g (Bind b (D n q ty) rhs) = Bind b (D n q $ substVars g ty) (substVars (unS g) rhs)
 substVars g (App q f x) = App q (substVars g f) (substVars g x)
 substVars g Star = Star
 
+export
 substTop : TT q n -> Fin (S n) -> TT q n
 substTop tm  FZ    = tm
 substTop tm (FS x) = V x
