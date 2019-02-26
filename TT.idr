@@ -9,6 +9,7 @@ import Data.List
 interface Pretty (ctx : Type) a where
   pretty : ctx -> a -> String
 
+public export
 data Binder : Type where
   Lam : Binder
   Pi  : Binder
@@ -18,12 +19,14 @@ Pretty ctx Binder where
   pretty _ Pi  = "Pi"
 
 mutual
+  public export
   record Def (q : Type) (n : Nat) where
     constructor D
     defName : String
     defQ    : q
     defType : TT q n
 
+  public export
   data TT : Type -> Nat -> Type where
     V : (i : Fin n) -> TT q n
     Bind : (b : Binder) -> (d : Def q n) -> (rhs : TT q (S n)) -> TT q n
@@ -55,6 +58,7 @@ mutual
     weaken (D n q ty) = D n q $ weaken ty
 
 infixl 3 |>
+public export
 data Context : Type -> Nat -> Type where
   Nil : Context q Z
   (|>) : Context q n -> Def q n -> Context q (S n)
@@ -74,6 +78,7 @@ mutual
   prettyDef : ShowQ q => Context q n -> Def q n -> String
   prettyDef ctx (D n q ty) = n ++ " " ++ showCol q ++ " " ++ prettyTm ctx ty  
 
+public export
 data Q = I | E | L | R
 
 Show Q where
@@ -110,7 +115,7 @@ substTop : TT q n -> Fin (S n) -> TT q n
 substTop tm  FZ    = tm
 substTop tm (FS x) = V x
 
-covering
+covering export
 rnf : TT q n -> TT q n
 rnf (V i) = V i
 rnf (Bind b (D n q ty) rhs) = Bind b (D n q (rnf ty)) (rnf rhs)
