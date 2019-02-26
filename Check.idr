@@ -104,6 +104,9 @@ useEnv q (FS x) (ctx |> _) = semi0 :: useEnv q x ctx
 use : Fin n -> TC n ()
 use i = MkTC $ \env, st => Right (st, useEnv (quantity env) i (context env), ())
 
+lookup : Fin n -> TC n (Ty n)
+lookup i = defType . lookupCtx i <$> getCtx
+
 rnfTC : TT Q n -> TC n (TT Q n)
 rnfTC = nf 8
   where
@@ -134,7 +137,7 @@ covering
   conv p' q'
 
 checkTm : Term n -> TC n (Ty n)
-checkTm (V i) = ?rhs_1
+checkTm (V i) = use i *> lookup i
 checkTm (Bind b d rhs) = ?rhs_2
 checkTm (App x f y) = ?rhs_3
 checkTm Star = ?rhs_4

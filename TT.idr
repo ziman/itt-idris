@@ -62,13 +62,14 @@ data Context : Type -> Nat -> Type where
   Nil : Context q Z
   (|>) : Context q n -> Def q n -> Context q (S n)
 
-ixCtx : Fin n -> Context q n -> Def q n
-ixCtx  FZ    (_   |> d) = weaken d
-ixCtx (FS k) (ctx |> _) = weaken $ ixCtx k ctx
+export
+lookupCtx : Fin n -> Context q n -> Def q n
+lookupCtx  FZ    (_   |> d) = weaken d
+lookupCtx (FS k) (ctx |> _) = weaken $ lookupCtx k ctx
 
 mutual
   prettyTm : ShowQ q => Context q n -> TT q n -> String
-  prettyTm ctx (V i) = defName (ixCtx i ctx)
+  prettyTm ctx (V i) = defName (lookupCtx i ctx)
   prettyTm ctx (Bind Lam d rhs) = "\\" ++ prettyDef ctx d ++ ". " ++ prettyTm (ctx |> d) rhs
   prettyTm ctx (Bind Pi  d rhs) = "(" ++ prettyDef ctx d ++ ") -> " ++ prettyTm (ctx |> d) rhs
   prettyTm ctx (App q f x) = prettyTm ctx f ++ showApp q ++ prettyTm ctx x
