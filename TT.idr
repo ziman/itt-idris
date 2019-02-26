@@ -100,22 +100,22 @@ unS : (Fin n -> TT q m) -> Fin (S n) -> TT q (S m)
 unS f  FZ    = V FZ
 unS f (FS x) = mapVars FS $ f x
 
-subst : (Fin n -> TT q m) -> TT q n -> TT q m
-subst g (V i) = g i
-subst g (Bind b (D n q ty) rhs) = Bind b (D n q $ subst g ty) (subst (unS g) rhs)
-subst g (App q f x) = App q (subst g f) (subst g x)
-subst g Star = Star
+substVars : (Fin n -> TT q m) -> TT q n -> TT q m
+substVars g (V i) = g i
+substVars g (Bind b (D n q ty) rhs) = Bind b (D n q $ substVars g ty) (substVars (unS g) rhs)
+substVars g (App q f x) = App q (substVars g f) (substVars g x)
+substVars g Star = Star
 
 substTop : TT q n -> Fin (S n) -> TT q n
 substTop tm  FZ    = tm
 substTop tm (FS x) = V x
 
-partial
+covering
 rnf : TT q n -> TT q n
 rnf (V i) = V i
 rnf (Bind b (D n q ty) rhs) = Bind b (D n q (rnf ty)) (rnf rhs)
 rnf (App q f x) =
   case rnf f of
-    Bind Lam (D n q ty) rhs => rnf $ subst (substTop $ rnf x) rhs
+    Bind Lam (D n q ty) rhs => rnf $ substVars (substTop $ rnf x) rhs
     f' => App q f' (rnf x)
 rnf  Star = Star
