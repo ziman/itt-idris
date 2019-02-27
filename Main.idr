@@ -4,6 +4,7 @@ import Check
 import Infer
 import Utils
 import Evar
+import Solve
 
 import Data.Fin
 import Data.Vect
