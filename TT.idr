@@ -56,23 +56,22 @@ mutual
   Weaken (Def q) where
     weaken (D n q ty) = D n q $ weaken ty
 
-infixl 3 |>
 public export
 data Context : Type -> Nat -> Type where
   Nil : Context q Z
-  (|>) : Context q n -> Def q n -> Context q (S n)
+  (::) : Def q n -> Context q n -> Context q (S n)
 
 export
 lookupCtx : Fin n -> Context q n -> Def q n
-lookupCtx  FZ    (_   |> d) = weaken d
-lookupCtx (FS k) (ctx |> _) = weaken $ lookupCtx k ctx
+lookupCtx  FZ    (d ::  _ ) = weaken d
+lookupCtx (FS k) (_ :: ctx) = weaken $ lookupCtx k ctx
 
 mutual
   export
   showTm : ShowQ q => Context q n -> TT q n -> String
   showTm ctx (V i) = defName (lookupCtx i ctx)
-  showTm ctx (Bind Lam d rhs) = "\\" ++ showDef ctx d ++ ". " ++ showTm (ctx |> d) rhs
-  showTm ctx (Bind Pi  d rhs) = "(" ++ showDef ctx d ++ ") -> " ++ showTm (ctx |> d) rhs
+  showTm ctx (Bind Lam d rhs) = "\\" ++ showDef ctx d ++ ". " ++ showTm (d :: ctx) rhs
+  showTm ctx (Bind Pi  d rhs) = "(" ++ showDef ctx d ++ ") -> " ++ showTm (d :: ctx) rhs
   showTm ctx (App q f x) = showTm ctx f ++ showApp q ++ showTm ctx x
   showTm ctx Star = "Type"
 

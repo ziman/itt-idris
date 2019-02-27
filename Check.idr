@@ -56,7 +56,7 @@ Usage n = Vect n Q
 
 usage0 : Context Q n -> Vect n Q
 usage0 [] = []
-usage0 (ctx |> _) = semi0 :: usage0 ctx
+usage0 (_ :: ctx) = semi0 :: usage0 ctx
 
 usage0e : Env n -> Vect n Q
 usage0e (MkE r ctx bt) = usage0 ctx
@@ -100,7 +100,7 @@ throw msg = MkTC $ \env, st
 
 withDef : Def Q n -> TC (S n) a -> TC n a
 withDef d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => case f (MkE r (ctx |> d) bt) st of
+  MkE r ctx bt => case f (MkE r (d :: ctx) bt) st of
     Left fail => Left fail
     Right (st', q' :: us, x) =>
         if q' .<=. q
@@ -109,7 +109,7 @@ withDef d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
 
 withDef0 : Def Q n -> TC (S n) a -> TC n a
 withDef0 d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => case f (MkE r (ctx |> d) bt) st of
+  MkE r ctx bt => case f (MkE r (d :: ctx) bt) st of
     Left fail => Left fail
     Right (st', _q' :: us, x) => Right (st', us, x)  -- don't check the quantity
 
@@ -117,8 +117,8 @@ withQ : Q -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \env, st => f (record { quantity $= (.*. q) } env) st
 
 useEnv : Q -> Fin n -> Context Q n -> Usage n
-useEnv q  FZ    (ctx |> _) = q :: usage0 ctx
-useEnv q (FS x) (ctx |> _) = semi0 :: useEnv q x ctx
+useEnv q  FZ    (_ :: ctx) = q :: usage0 ctx
+useEnv q (FS x) (_ :: ctx) = semi0 :: useEnv q x ctx
 
 use : Fin n -> TC n ()
 use i = MkTC $ \env, st => Right (st, useEnv (quantity env) i (context env), ())
