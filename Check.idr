@@ -164,12 +164,18 @@ rnfTC (More fuel) Star = pure Star
 rnfTC' : TT Q n -> TC n (TT Q n)
 rnfTC' = rnfTC (mkFuel 8)
 
+finEq : Fin n -> Fin n -> Bool
+finEq FZ FZ = True
+finEq FZ (FS _) = False
+finEq (FS _) FZ = False
+finEq (FS x) (FS y) = finEq x y
+
 infix 3 ~=
 mutual
   conv : TT Q n -> TT Q n -> TC n ()
 
   conv (V i) (V j) =
-    if i == j
+    if finEq i j
         then pure ()
         else throw $ CantConvert (V i) (V j)
 
@@ -244,3 +250,7 @@ example1 =
   Bind Lam (D "a" I Star) $
   Bind Lam (D "x" L (V FZ)) $
   V FZ
+
+namespace Main
+  main : IO ()
+  main = checkClosed example1
