@@ -164,7 +164,9 @@ mutual
        then throw $ CantConvert lhs rhs
        else do
          f ~= f'
-         x ~= x'
+         case q of
+            I => pure ()
+            _ => x ~= x'
 
   conv Star Star = pure ()
 
