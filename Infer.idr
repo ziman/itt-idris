@@ -141,6 +141,9 @@ use : Fin n -> TC n ()
 use i = MkTC $ \env, st
     => Right (st, [CLeq (guards env) (defQ $ lookupCtx i $ context env)], ())
 
+eqEvar : Evar -> Evar -> TC n ()
+eqEvar p q = MkTC $ \env, st => Right (st, [CEq p q], ())
+
 lookup : Fin n -> TC n (Ty n)
 lookup i = defType . lookupCtx i <$> getCtx
 
@@ -152,3 +155,39 @@ traceTm : Show tr => Term n -> tr -> TC n a -> TC n a
 traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
   => let msg = show t ++ ": " ++ showTm ctx tm
       in f (MkE gs ctx (msg :: bt)) st
+
+infix 3 ~=
+(~=) : Term n -> Term n -> TC n ()
+(~=) p q = ?tmEq
+
+covering
+inferTm : Term n -> TC n (Ty n)
+inferTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
+inferTm tm@(Bind Lam d@(D n q ty) rhs) = traceTm tm "LAM" $ do
+  tyTy <- inferTm ty
+  tyTy ~= Star
+
+  Bind Pi d <$> (withDef d $ inferTm rhs)
+
+inferTm tm@(Bind Pi d@(D n q ty) rhs) = traceTm tm "PI" $ do
+  tyTy <- inferTm ty
+  tyTy ~= Star
+
+  withDef d $ do
+    rhsTy <- inferTm rhs
+    rhsTy ~= Star
+
+  pure Star
+
+inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
+  fTy <- rnf <$> inferTm f
+  xTy <- inferTm x
+  case fTy of
+    Bind Pi d@(D piN piQ piTy) piRhs => do
+      xTy ~= piTy
+      eqEvar appQ piQ
+      pure $ substVars (substTop x) piRhs
+
+    _ => throw $ NotPi fTy
+
+inferTm Star = pure Star
