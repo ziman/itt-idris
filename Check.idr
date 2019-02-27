@@ -9,18 +9,23 @@ import Data.Vect
 %default total
 %hide Language.Reflection.V
 
+public export
 record TCState where
   constructor MkTCS
 
+public export
 Backtrace : Type
 Backtrace = List String
 
+public export
 Term : Nat -> Type
 Term = TT Q
 
+public export
 Ty : Nat -> Type
 Ty = TT Q
 
+public export
 data ErrorMessage : Nat -> Type where
   CantConvert : TT Q n -> TT Q n -> ErrorMessage n
   QuantityMismatch : (dn : String) -> (dq : Q) -> (inferredQ : Q) -> ErrorMessage n
@@ -37,6 +42,7 @@ showEM ctx (AppQuantityMismatch fTy tm)
 showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
 
+public export
 record Failure where
   constructor MkF
   backtrace : Backtrace
@@ -44,15 +50,18 @@ record Failure where
   context : Context Q n
   errorMessage : ErrorMessage n
 
+export
 Show Failure where
   show (MkF bt _ ctx msg) = "With backtrace:\n" ++ unlines (map ("  " ++) bt) ++ showEM ctx msg
 
+public export
 record Env (n : Nat) where
   constructor MkE
   quantity : Q
   context : Context Q n
   backtrace : Backtrace
 
+public export
 Usage : Nat -> Type
 Usage n = Vect n Q
 
@@ -63,6 +72,7 @@ usage0 (_ :: ctx) = semi0 :: usage0 ctx
 usage0e : Env n -> Vect n Q
 usage0e (MkE r ctx bt) = usage0 ctx
 
+public export
 record TC (n : Nat) (a : Type) where
   constructor MkTC
   runTC : Env n -> TCState -> Either Failure (TCState, Usage n, a)
@@ -182,7 +192,7 @@ infixl 2 =<<
 (=<<) : Monad m => (a -> m b) -> m a -> m b
 (=<<) f x = x >>= f
 
-covering
+covering export
 checkTm : Term n -> TC n (Ty n)
 checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
 checkTm tm@(Bind Lam d@(D n q ty) rhs) = traceTm tm "LAM" $ do
@@ -215,20 +225,3 @@ checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
     _ => throw $ NotPi fTy
 
 checkTm Star = pure Star
-
-covering
-checkClosed : Term Z -> IO ()
-checkClosed tm = case runTC (checkTm tm) (MkE L [] []) MkTCS of
-    Left fail => printLn fail
-    Right (MkTCS, [], ty) => putStrLn $ show tm ++ "\n  : " ++ show ty
-
-example1 : TT Q Z
-example1 =
-  Bind Lam (D "a" I Star) $
-  Bind Lam (D "x" L (V FZ)) $
-  V FZ
-
-namespace Main
-  covering
-  main : IO ()
-  main = checkClosed example1

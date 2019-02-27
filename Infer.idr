@@ -6,9 +6,11 @@ import OrdSemiring
 import Data.Fin
 import Data.SortedSet as Set
 
+public export
 Set : Type -> Type
 Set = SortedSet
 
+public export
 data ENum = EN Int
 
 Eq ENum where
@@ -20,6 +22,7 @@ Ord ENum where
 Show ENum where
   show (EN x) = show x
 
+public export
 data Evar = QQ Q | EV ENum
 
 Show Evar where
@@ -44,26 +47,33 @@ Ord Evar where
   compare (QQ q) (QQ q') = compare q q'
   compare (EV i) (EV i') = compare i i'
 
+public export
 data Constr : Type where
   CEq : (v, w : Evar) -> Constr
   CLeq : (gs : Set Evar) -> (v : Evar) -> Constr
   CConv : (ctx : Context Evar n) -> (x, y : TT Evar n) -> Constr
 
+public export
 Constrs : Type
 Constrs = List Constr
 
+public export
 Term : Nat -> Type
 Term = TT Evar
 
+public export
 Ty : Nat -> Type
 Ty = TT Evar
 
+public export
 record TCState where
   constructor MkTCS
 
+public export
 Backtrace : Type
 Backtrace = List String
 
+public export
 data ErrorMessage : Nat -> Type where
   CantConvert : TT Evar n -> TT Evar n -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
@@ -74,6 +84,7 @@ showEM ctx (CantConvert x y)
 showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
 
+public export
 record Failure where
   constructor MkF
   backtrace : Backtrace
@@ -85,12 +96,14 @@ Show Failure where
   show (MkF bt _ ctx msg)
     = "With backtrace:\n" ++ unlines (map ("  " ++) bt) ++ showEM ctx msg
 
+public export
 record Env (n : Nat) where
   constructor MkE
   guards : Set Evar
   context : Context Evar n
   backtrace : Backtrace
 
+public export
 record TC (n : Nat) (a : Type) where
   constructor MkTC
   runTC : Env n -> TCState -> Either Failure (TCState, Constrs, a)
@@ -158,9 +171,10 @@ traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
 
 infix 3 ~=
 (~=) : Term n -> Term n -> TC n ()
-(~=) p q = ?tmEq
+(~=) p q = MkTC $ \(MkE gs ctx bt), st
+  => Right (st, [CConv ctx p q], ())
 
-covering
+covering export
 inferTm : Term n -> TC n (Ty n)
 inferTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
 inferTm tm@(Bind Lam d@(D n q ty) rhs) = traceTm tm "LAM" $ do
