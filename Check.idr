@@ -28,12 +28,12 @@ data ErrorMessage : Nat -> Type where
   AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
 
-prettyEM : Context Q n -> ErrorMessage n -> String
-prettyEM ctx (CantConvert x y) = "can't convert: " ++ prettyTm ctx x ++ " with " ++ prettyTm ctx y
-prettyEM ctx (OutOfFuel x) = "out of fuel: " ++ prettyTm ctx x
-prettyEM ctx (QuantityMismatch dn dq inferredQ) = "quantity mismatch in " ++ show dn ++ ": declared " ++ show dq ++ " /= inferred " ++ show inferredQ
-prettyEM ctx (AppQuantityMismatch fTy tm) = "quantity mismatch in application (f : " ++ prettyTm ctx fTy ++ "): " ++ prettyTm ctx tm
-prettyEM ctx (NotPi x) = "not a pi: " ++ prettyTm ctx x
+showEM : Context Q n -> ErrorMessage n -> String
+showEM ctx (CantConvert x y) = "can't convert: " ++ showTm ctx x ++ " with " ++ showTm ctx y
+showEM ctx (OutOfFuel x) = "out of fuel: " ++ showTm ctx x
+showEM ctx (QuantityMismatch dn dq inferredQ) = "quantity mismatch in " ++ show dn ++ ": declared " ++ show dq ++ " /= inferred " ++ show inferredQ
+showEM ctx (AppQuantityMismatch fTy tm) = "quantity mismatch in application (f : " ++ showTm ctx fTy ++ "): " ++ showTm ctx tm
+showEM ctx (NotPi x) = "not a pi: " ++ showTm ctx x
 
 record Failure where
   constructor MkF
@@ -43,7 +43,7 @@ record Failure where
   errorMessage : ErrorMessage n
 
 Show Failure where
-  show (MkF bt _ ctx msg) = "With backtrace:\n" ++ unlines (map ("  " ++) bt) ++ prettyEM ctx msg
+  show (MkF bt _ ctx msg) = "With backtrace:\n" ++ unlines (map ("  " ++) bt) ++ showEM ctx msg
 
 record Env (n : Nat) where
   constructor MkE
@@ -133,7 +133,7 @@ trace t (MkTC f) = MkTC $ \env, st => case env of
 traceTm : Show tr => Term n -> tr -> TC n a -> TC n a
 traceTm tm t (MkTC f) = MkTC $ \env, st => case env of
   MkE r ctx bt =>
-    let msg = show t ++ ": " ++ prettyTm ctx tm
+    let msg = show t ++ ": " ++ showTm ctx tm
       in f (MkE r ctx (msg :: bt)) st
 
 finEq : Fin n -> Fin n -> Bool

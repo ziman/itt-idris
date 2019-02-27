@@ -69,19 +69,19 @@ lookupCtx (FS k) (ctx |> _) = weaken $ lookupCtx k ctx
 
 mutual
   export
-  prettyTm : ShowQ q => Context q n -> TT q n -> String
-  prettyTm ctx (V i) = defName (lookupCtx i ctx)
-  prettyTm ctx (Bind Lam d rhs) = "\\" ++ prettyDef ctx d ++ ". " ++ prettyTm (ctx |> d) rhs
-  prettyTm ctx (Bind Pi  d rhs) = "(" ++ prettyDef ctx d ++ ") -> " ++ prettyTm (ctx |> d) rhs
-  prettyTm ctx (App q f x) = prettyTm ctx f ++ showApp q ++ prettyTm ctx x
-  prettyTm ctx Star = "Type"
+  showTm : ShowQ q => Context q n -> TT q n -> String
+  showTm ctx (V i) = defName (lookupCtx i ctx)
+  showTm ctx (Bind Lam d rhs) = "\\" ++ showDef ctx d ++ ". " ++ showTm (ctx |> d) rhs
+  showTm ctx (Bind Pi  d rhs) = "(" ++ showDef ctx d ++ ") -> " ++ showTm (ctx |> d) rhs
+  showTm ctx (App q f x) = showTm ctx f ++ showApp q ++ showTm ctx x
+  showTm ctx Star = "Type"
 
-  prettyDef : ShowQ q => Context q n -> Def q n -> String
-  prettyDef ctx (D n q ty) = n ++ " " ++ showCol q ++ " " ++ prettyTm ctx ty  
+  showDef : ShowQ q => Context q n -> Def q n -> String
+  showDef ctx (D n q ty) = n ++ " " ++ showCol q ++ " " ++ showTm ctx ty  
 
 export
 ShowQ q => Show (TT q Z) where
-  show = prettyTm []
+  show = showTm []
 
 public export
 data Q = I | E | L | R
