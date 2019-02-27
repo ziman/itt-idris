@@ -98,6 +98,14 @@ ShowQ Q where
   showApp q = "-" ++ show q ++ "-"
 
 export
+ShowQ (Maybe Q) where
+  showCol Nothing = ":"
+  showCol (Just q) = showCol q
+
+  showApp Nothing = " "
+  showApp (Just q) = showApp q
+
+export
 Eq Q where
   (==) p q = case (p, q) of
     (I, I) => True

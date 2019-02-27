@@ -1,6 +1,7 @@
 module Check
 
 import TT
+import Utils
 import OrdSemiring
 
 import Data.Fin
@@ -147,12 +148,6 @@ traceTm tm t (MkTC f) = MkTC $ \env, st => case env of
   MkE r ctx bt =>
     let msg = show t ++ ": " ++ showTm ctx tm
       in f (MkE r ctx (msg :: bt)) st
-
-finEq : Fin n -> Fin n -> Bool
-finEq FZ FZ = True
-finEq FZ (FS _) = False
-finEq (FS _) FZ = False
-finEq (FS x) (FS y) = finEq x y
 
 infix 3 ~=
 mutual

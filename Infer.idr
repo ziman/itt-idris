@@ -1,8 +1,8 @@
 module Infer
 
-import TT
-import Evar
-import OrdSemiring
+import public TT
+import public Evar
+import public OrdSemiring
 
 import Data.Fin
 import Data.SortedSet as Set
@@ -16,6 +16,12 @@ data Constr : Type where
   CEq : (v, w : Evar) -> Constr
   CLeq : (gs : Set Evar) -> (v : Evar) -> Constr
   CConv : (ctx : Context Evar n) -> (x, y : TT Evar n) -> Constr
+
+export
+Show Constr where
+  show (CEq v w) = show v ++ " ~ " ++ show w
+  show (CLeq gs v) = show (Set.toList gs) ++ " -> " ++ show v
+  show (CConv ctx x y) = showTm ctx x ++ " ~ " ++ showTm ctx y
 
 public export
 Constrs : Type
@@ -56,6 +62,7 @@ record Failure where
   context : Context Evar n
   errorMessage : ErrorMessage n
 
+export
 Show Failure where
   show (MkF bt _ ctx msg)
     = "With backtrace:\n" ++ unlines (map ("  " ++) bt) ++ showEM ctx msg
