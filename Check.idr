@@ -136,34 +136,6 @@ traceTm tm t (MkTC f) = MkTC $ \env, st => case env of
     let msg = show t ++ ": " ++ prettyTm ctx tm
       in f (MkE r ctx (msg :: bt)) st
 
-data Fuel = Dry | More Fuel
-
-mkFuel : Nat -> Fuel
-mkFuel Z = Dry
-mkFuel (S n) = More $ mkFuel n
-
-rnfTC : Fuel -> TT Q n -> TC n (TT Q n)
-rnfTC Dry tm = throw $ OutOfFuel tm
-
-rnfTC (More fuel) (V i) = pure (V i)
-
-rnfTC (More fuel) (Bind b (D n q ty) rhs) = do
-  ty' <- rnfTC fuel ty
-  let d' = D n q ty'
-  Bind b d' <$> withDef d' (rnfTC fuel rhs)
-
-rnfTC (More fuel) (App q f x) = do
-  f' <- rnfTC fuel f
-  x' <- rnfTC fuel x
-  case f' of
-    Bind Lam _d rhs => rnfTC fuel $ substVars (substTop x') rhs
-    _ => pure $ App q f' x'
-
-rnfTC (More fuel) Star = pure Star
-
-rnfTC' : TT Q n -> TC n (TT Q n)
-rnfTC' = rnfTC (mkFuel 8)
-
 finEq : Fin n -> Fin n -> Bool
 finEq FZ FZ = True
 finEq FZ (FS _) = False
@@ -172,6 +144,7 @@ finEq (FS x) (FS y) = finEq x y
 
 infix 3 ~=
 mutual
+  covering
   conv : TT Q n -> TT Q n -> TC n ()
 
   conv (V i) (V j) =
@@ -197,16 +170,15 @@ mutual
 
   conv p q = throw $ CantConvert p q
 
+  covering
   (~=) : TT Q n -> TT Q n -> TC n ()
-  (~=) p q = assert_total $ do
-    p' <- rnfTC' p
-    q' <- rnfTC' q
-    conv p' q'
+  (~=) p q = conv (rnf p) (rnf q)
 
 infixl 2 =<<
 (=<<) : Monad m => (a -> m b) -> m a -> m b
 (=<<) f x = x >>= f
 
+covering
 checkTm : Term n -> TC n (Ty n)
 checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
 checkTm tm@(Bind Lam d@(D n q ty) rhs) = traceTm tm "LAM" $ do
@@ -226,7 +198,7 @@ checkTm tm@(Bind Pi d@(D n q ty) rhs) = traceTm tm "PI" $ do
   pure Star
 
 checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
-  fTy <- rnfTC' =<< checkTm f
+  fTy <- rnf <$> checkTm f
   xTy <- checkTm x
   case fTy of
     Bind Pi (D piN piQ piTy) piRhs =>
@@ -240,6 +212,7 @@ checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
 
 checkTm Star = pure Star
 
+covering
 checkClosed : Term Z -> IO ()
 checkClosed tm = case runTC (checkTm tm) (MkE L [] []) MkTCS of
     Left fail => printLn fail
@@ -252,5 +225,6 @@ example1 =
   V FZ
 
 namespace Main
+  covering
   main : IO ()
   main = checkClosed example1
