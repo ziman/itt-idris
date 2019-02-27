@@ -106,6 +106,19 @@ Eq Q where
     (R, R) => True
     _ => False
 
+export
+Ord Q where
+  compare I I = EQ
+  compare I _ = LT
+  compare E I = GT
+  compare E E = EQ
+  compare E _ = LT
+  compare L R = LT
+  compare L L = EQ
+  compare L _ = GT
+  compare R R = EQ
+  compare R _ = GT
+
 extend : (Fin n -> Fin m) -> Fin (S n) -> Fin (S m)
 extend f  FZ    = FZ
 extend f (FS x) = FS (f x)

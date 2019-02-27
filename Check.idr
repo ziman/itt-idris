@@ -23,17 +23,19 @@ Ty = TT Q
 
 data ErrorMessage : Nat -> Type where
   CantConvert : TT Q n -> TT Q n -> ErrorMessage n
-  OutOfFuel : Term n -> ErrorMessage n
   QuantityMismatch : (dn : String) -> (dq : Q) -> (inferredQ : Q) -> ErrorMessage n
   AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
 
 showEM : Context Q n -> ErrorMessage n -> String
-showEM ctx (CantConvert x y) = "can't convert: " ++ showTm ctx x ++ " with " ++ showTm ctx y
-showEM ctx (OutOfFuel x) = "out of fuel: " ++ showTm ctx x
-showEM ctx (QuantityMismatch dn dq inferredQ) = "quantity mismatch in " ++ show dn ++ ": declared " ++ show dq ++ " /= inferred " ++ show inferredQ
-showEM ctx (AppQuantityMismatch fTy tm) = "quantity mismatch in application (f : " ++ showTm ctx fTy ++ "): " ++ showTm ctx tm
-showEM ctx (NotPi x) = "not a pi: " ++ showTm ctx x
+showEM ctx (CantConvert x y)
+    = "can't convert: " ++ showTm ctx x ++ " with " ++ showTm ctx y
+showEM ctx (QuantityMismatch dn dq inferredQ)
+    = "quantity mismatch in " ++ show dn ++ ": declared " ++ show dq ++ " /= inferred " ++ show inferredQ
+showEM ctx (AppQuantityMismatch fTy tm)
+    = "quantity mismatch in application of (_ : " ++ showTm ctx fTy ++ "): " ++ showTm ctx tm
+showEM ctx (NotPi x)
+    = "not a pi: " ++ showTm ctx x
 
 record Failure where
   constructor MkF
