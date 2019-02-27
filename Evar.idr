@@ -1,7 +1,10 @@
 module Evar
 
-import TT
+import Lens
+import public TT
 import Control.Monad.State
+
+%default total
 
 export
 data ENum = EN Int
@@ -47,9 +50,13 @@ Ord Evar where
   compare (QQ q) (QQ q') = compare q q'
   compare (EV i) (EV i') = compare i i'
 
-evTm : TT (Maybe Q) n -> State Int (TT Evar n)
-evTm tm = ?rhs
-
 export
 evarify : TT (Maybe Q) n -> TT Evar n
-evarify tm = evalState (evTm tm) 0
+evarify tm = evalState (ttQ f tm) 0
+  where
+    f : Maybe Q -> State Int Evar
+    f (Just q) = pure $ QQ q
+    f Nothing = do
+      i <- get
+      put (i+1)
+      pure $ EV (EN i)

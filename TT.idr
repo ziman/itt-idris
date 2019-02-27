@@ -1,7 +1,7 @@
 module TT
 
-import OrdSemiring
-import Data.Fin
+import public OrdSemiring
+import public Data.Fin
 
 %default total
 
