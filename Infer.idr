@@ -1,6 +1,7 @@
 module Infer
 
 import TT
+import Evar
 import OrdSemiring
 
 import Data.Fin
@@ -9,43 +10,6 @@ import Data.SortedSet as Set
 public export
 Set : Type -> Type
 Set = SortedSet
-
-public export
-data ENum = EN Int
-
-Eq ENum where
-  (==) (EN x) (EN y) = x == y
-
-Ord ENum where
-  compare (EN x) (EN y) = compare x y
-
-Show ENum where
-  show (EN x) = show x
-
-public export
-data Evar = QQ Q | EV ENum
-
-Show Evar where
-  show (QQ q) = show q
-  show (EV i) = show i
-
-ShowQ Evar where
-  showCol (QQ q) = ":" ++ show q
-  showCol (EV i) = ":" ++ show i
-
-  showApp (QQ q) = " -" ++ show q ++ "- "
-  showApp (EV i) = " -" ++ show i ++ "- "
-
-Eq Evar where
-  (==) (QQ q) (QQ q') = q == q'
-  (==) (EV i) (EV i') = i == i'
-  (==) _ _ = False
-
-Ord Evar where
-  compare (QQ _) (EV _) = LT
-  compare (EV _) (QQ _) = GT
-  compare (QQ q) (QQ q') = compare q q'
-  compare (EV i) (EV i') = compare i i'
 
 public export
 data Constr : Type where
