@@ -104,6 +104,13 @@ insertEq (QQ q) (EV i) eg = insertEvarEqQ i q eg
 insertEq (EV i) (QQ q) eg = insertEvarEqQ i q eg
 insertEq (EV i) (EV j) eg = insertEvarEqEvar i j eg
 
+getEqGraph : List Constr -> Either ErrMsg EqGraph
+getEqGraph = foldlM f (EG Map.empty Map.empty)
+  where
+    f : EqGraph -> Constr -> Either ErrMsg EqGraph
+    f eg (CEq v w) = insertEq v w eg
+    f eg _ = Right eg
+
 {-
 getUsages : List Constr -> Map Evar (List (Set Evar))
 getUsages [] = Map.empty
