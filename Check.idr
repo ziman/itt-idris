@@ -31,7 +31,7 @@ data ErrorMessage : Nat -> Type where
 prettyEM : Context Q n -> ErrorMessage n -> String
 prettyEM ctx (CantConvert x y) = "can't convert: " ++ prettyTm ctx x ++ " with " ++ prettyTm ctx y
 prettyEM ctx (OutOfFuel x) = "out of fuel: " ++ prettyTm ctx x
-prettyEM ctx (QuantityMismatch dn dq inferredQ) = "quantity mismatch in " ++ show dn ++ ": " ++ show dq ++ " /= " ++ show inferredQ
+prettyEM ctx (QuantityMismatch dn dq inferredQ) = "quantity mismatch in " ++ show dn ++ ": declared " ++ show dq ++ " /= inferred " ++ show inferredQ
 prettyEM ctx (AppQuantityMismatch fTy tm) = "quantity mismatch in application (f : " ++ prettyTm ctx fTy ++ "): " ++ prettyTm ctx tm
 prettyEM ctx (NotPi x) = "not a pi: " ++ prettyTm ctx x
 
@@ -43,7 +43,7 @@ record Failure where
   errorMessage : ErrorMessage n
 
 Show Failure where
-  show (MkF bt _ ctx msg) = "With backtrace:" ++ unlines (map ("  " ++) bt) ++ prettyEM ctx msg
+  show (MkF bt _ ctx msg) = "With backtrace:\n" ++ unlines (map ("  " ++) bt) ++ prettyEM ctx msg
 
 record Env (n : Nat) where
   constructor MkE
@@ -133,7 +133,7 @@ trace t (MkTC f) = MkTC $ \env, st => case env of
 traceTm : Show tr => Term n -> tr -> TC n a -> TC n a
 traceTm tm t (MkTC f) = MkTC $ \env, st => case env of
   MkE r ctx bt =>
-    let msg = "when checking " ++ prettyTm ctx tm ++ ": " ++ show t
+    let msg = show t ++ ": " ++ prettyTm ctx tm
       in f (MkE r ctx (msg :: bt)) st
 
 data Fuel = Dry | More Fuel
@@ -241,6 +241,6 @@ checkClosed tm = case runTC (checkTm tm) (MkE L [] []) MkTCS of
 
 example1 : TT Q Z
 example1 =
-  Bind Lam (D "a" E Star) $
+  Bind Lam (D "a" I Star) $
   Bind Lam (D "x" L (V FZ)) $
   V FZ
