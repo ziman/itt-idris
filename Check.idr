@@ -216,7 +216,7 @@ covering
 checkClosed : Term Z -> IO ()
 checkClosed tm = case runTC (checkTm tm) (MkE L [] []) MkTCS of
     Left fail => printLn fail
-    Right (MkTCS, [], ty) => putStrLn $ prettyTm [] tm ++ "\n  : " ++ prettyTm [] ty
+    Right (MkTCS, [], ty) => putStrLn $ show tm ++ "\n  : " ++ show ty
 
 example1 : TT Q Z
 example1 =

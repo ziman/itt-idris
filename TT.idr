@@ -5,9 +5,6 @@ import Data.Fin
 
 %default total
 
-interface Pretty (ctx : Type) a where
-  pretty : ctx -> a -> String
-
 public export
 data Binder : Type where
   Lam : Binder
@@ -18,10 +15,6 @@ Eq Binder where
   (==) Lam Lam = True
   (==) Pi Pi = True
   (==) _ _ = False
-
-Pretty ctx Binder where
-  pretty _ Lam = "Lam"
-  pretty _ Pi  = "Pi"
 
 mutual
   public export
@@ -85,6 +78,10 @@ mutual
 
   prettyDef : ShowQ q => Context q n -> Def q n -> String
   prettyDef ctx (D n q ty) = n ++ " " ++ showCol q ++ " " ++ prettyTm ctx ty  
+
+export
+ShowQ q => Show (TT q Z) where
+  show = prettyTm []
 
 public export
 data Q = I | E | L | R
