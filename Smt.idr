@@ -69,6 +69,30 @@ interface SmtValue a where
 interface SmtEnum a where
   smtEnumValues : List a
 
+SmtValue Bool where
+  smtShow True = A "true"
+  smtShow False = A "false"
+
+  smtRead (A "true") = Just True
+  smtRead (A "false") = Just False
+  smtRead _ = Nothing
+
+SmtValue Int where
+  smtShow i = A (show i)
+  smtRead (A s) = Just $ cast s  -- TODO: error checking
+  smtRead _ = Nothing
+
+SmtValue Integer where
+  smtShow i = A (show i)
+  smtRead (A s) = Just $ cast s  -- TODO: error checking
+  smtRead _ = Nothing
+
+SmtEnum Bool where
+  smtEnumValues = [False, True]
+
+Prop : Type
+Prop = Smt Bool
+
 record SmtType (a : Type) where
   constructor MkSmtType
   sexp : SExp
@@ -93,16 +117,37 @@ data SmtTyList : List Type -> Type where
   Nil : SmtTyList []
   (::) : SmtType a -> SmtTyList as -> SmtTyList (a :: as)
 
+private
+binop : (SmtValue a, SmtValue b) => String -> Smt a -> Smt b -> Smt c
+binop op (MkSmt x) (MkSmt y) = MkSmt $ L [A op, x, y]
+
+Pred2 : Type
+Pred2 = {a, b : Type}
+    ->(SmtValue a, SmtValue b)
+    => Smt a -> Smt b -> Smt Bool
+
+infix 2 .==
+(.==) : Pred2
+(.==) = binop "="
+
+infix 2 .<=
+(.<=) : Pred2
+(.<=) = binop "<="
+
+infix 2 .<
+(.<) : Pred2
+(.<) = binop "<"
+
 lit : SmtValue a => a -> Smt a
 lit = MkSmt . smtShow
+
+assert : Smt Bool -> SmtM ()
+assert (MkSmt x) = tellL [A "assert", x]
 
 assertEq : (SmtValue a, SmtValue b)
     => Smt a -> Smt b
     -> SmtM ()
-assertEq (MkSmt x) (MkSmt y) = tellL
-  [ A "assert"
-  , L [A "=", x, y]
-  ]
+assertEq x y = assert $ x .== y
 
 declFun2 : (SmtValue a, SmtValue b, SmtValue c)
     => (n : String)
