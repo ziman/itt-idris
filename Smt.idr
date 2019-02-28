@@ -81,7 +81,7 @@ smtInt : SmtType Int
 smtInt = MkSmtType (A "Int")
 
 declEnum : (SmtValue a, SmtEnum a) => (n : String) -> SmtM (SmtType a)
-declEnum {a} n values = do
+declEnum {a} n = do
   tellL
       [ A "declare-datatypes"
       , L []
@@ -130,61 +130,7 @@ defineEnumFun2 n ta tb tc f = do
   for_ smtEnumValues $ \x =>
     for_ smtEnumValues $ \y =>
       assertEq (g (lit x) (lit y)) (lit $ f x y)
-
-declEnumFun2 : (SmtValue a, SmtValue b, SmtValue c, SmtEnum a, SmtEnum b)
-  => (n : String) -> SmtType a -> SmtType b -> (a -> b -> c)
-  -> SmtM (a -> b -> Smt c)
-declEnumFun2 n xs ys f = do
-  tell
-    [ L
-      [ A "declare-fun"
-      , A n
-      , [
-    ]
-
-{-
-DeclFunTy : List Type -> Type -> Type
-DeclFunTy [] retTy = Smt retTy
-DeclFunTy (argTy :: argTys) retTy = argTy -> DeclFunTy argTys retTy
-
-DeclFunConstrs : List Type -> Type -> Type -> Type
-DeclFunConstrs [] ret rhs = (SmtValue ret => rhs)
-DeclFunConstrs (arg :: args) ret rhs = (SmtValue arg => DeclFunConstrs args ret rhs)
-
-rcat : List a -> List a -> List a
-rcat xs [] = xs
-rcat xs (y :: ys) = rcat (y :: xs) ys
--}
-
-
-{-
-declFunTy : (n : String) -> (args : List Type) -> (ret : Type)
-    -> DeclFunConstrs args ret (SmtM (DeclFunTy args ret))
-declFunTy n args ret = go [] args
-  where
-    go : (argsL : List (Type, SExp)) -> (argsR : List Type)
-      -> let args' = map Basics.fst argsL ++ argsR
-          in DeclFunConstrs argsR ret (SmtM (DeclFunTy args' ret))
-    go argsL [] = replace {P = \as => SmtM (DeclFunTy as ret)} (sym $ appendNilRightNeutral _) ?rhs
-    go argsL (a :: as) = ?rhs_2
--}
-  
-  
-{- zipConstrs args ret $ \args, ret => do
-    tell [L [A "declare-fun", A n, L (map snd args), snd ret]]
-    pure $ fun args ret
-  where
-    zipConstrs : (args : List Type) -> (ret : Type)
-        -> (k :
-            List (Type, SExp)
-            -> (Type, SExp)
-            -> SmtM (DeclFunTy args ret)
-           )
-        -> DeclFunConstrs args ret (SmtM (DeclFunTy args ret))
-    zipConstrs args ret k = ?rhsU
-
-    fun : List (Type, SExp) -> (Type, SExp) -> DeclFunTy args ret
--}
+  pure g
 
 declVar : (n : String) -> (ty : SmtType a) -> SmtM (Smt a)
 declVar n (MkSmtType ty) = do
