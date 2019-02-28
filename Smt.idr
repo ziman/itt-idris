@@ -104,6 +104,9 @@ record SmtFun (args : List Type) (ret : Type) where
 smtInt : SmtType Int
 smtInt = MkSmtType (A "Int")
 
+smtBool : SmtType Bool
+smtBool = MkSmtType (A "Bool")
+
 declEnum : (SmtValue a, SmtEnum a) => (n : String) -> SmtM (SmtType a)
 declEnum {a} n = do
   tellL
