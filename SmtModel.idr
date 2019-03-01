@@ -40,12 +40,35 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
     eNumsC (CLeq gs v) = concat $ map ev (v :: Set.toList gs)
     eNumsC (CConv ctx x y) = neutral
 
+declVars : SmtType Q -> List ENum -> SmtM (SortedMap ENum (Smt Q))
+declVars smtQ [] = pure $ Map.empty
+declVars smtQ (n::ns) = Map.insert n <$> declVar ("ev" ++ show n) smtQ <*> declVars smtQ ns
+
+{-
+modelConstr : SortedMap ENum (Smt Q) -> Constr -> Prop
+modelConstr vs c = case c of
+    (CEq v w) => ev v .== ev w
+    (CLeq gs v) => foldr add (Set.toList gs) 
+    (CConv ctx x y) => ?rhs_3
+  where
+    ev : Evar -> Smt Q
+    ev (QQ q) = lit q
+    ev (EV i) with (Map.lookup i vs)
+      | Just v  = v
+      | Nothing = smtError "cannot-happen"  -- cannot happen
+-}
+
 model : List Constr -> SmtM ()
 model cs = do
-  qty <- the (SmtM (SmtType Q)) $ declEnum "Q"
-  for_ {b = ()} (Set.toList $ eNums cs) $ \(EN i) => do
-    _ <- declVar ("ev" ++ show i) qty
-    pure ()
+  smtQ <- the (SmtM (SmtType Q)) $ declEnum "Q"
+  vs  <- declVars smtQ (Set.toList $ eNums cs)
+
+  add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
+  mul <- defineEnumFun2 "mul" smtQ smtQ smtQ (.*.)
+  leq <- defineEnumFun2 "leq" smtQ smtQ smtBool (.<=.)
+
+  -- group CLeqs by target
+  pure ()
 
 namespace Main
   main : IO ()

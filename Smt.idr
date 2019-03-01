@@ -208,6 +208,10 @@ assertEq : (SmtValue a, SmtValue b)
 assertEq x y = assert $ x .== y
 
 export
+smtError : String -> Smt a
+smtError msg = MkSmt $ L [A "error", A msg]
+
+export
 declFun2 : (SmtValue a, SmtValue b, SmtValue c)
     => (n : String)
     -> SmtType a -> SmtType b -> SmtType c
