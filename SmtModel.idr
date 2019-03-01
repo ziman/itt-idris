@@ -27,43 +27,33 @@ SmtValue Q where
 SmtEnum Q where
   smtEnumValues = [I, E, L, R]
 
-SmtValue Evar where
-  smtShow (EV i) = A $ "ev" ++ show i
-  smtShow (QQ q) = smtShow q
+eNums : List Constr -> SortedSet ENum
+eNums [] = neutral
+eNums (c :: cs) = eNumsC c <+> eNums cs
+  where
+    ev : Evar -> SortedSet ENum
+    ev (QQ _) = neutral
+    ev (EV i) = Set.insert i neutral
 
-  smtRead (A s) =
-    if "ev" `Strings.isPrefixOf` s
-      then assert_total $
-        -- we know the prefix has two chars
-        Just $ EV (EN (cast . strTail . strTail $ s))
-      else QQ <$> smtRead (A s)
-  smtRead _ = Nothing
+    eNumsC : Constr -> SortedSet ENum
+    eNumsC (CEq v w) = ev v <+> ev w
+    eNumsC (CLeq gs v) = concat $ map ev (v :: Set.toList gs)
+    eNumsC (CConv ctx x y) = neutral
 
-interface Model (a : Type) where
-  ModelTy : a -> Type
-  model : (x : a) -> Smt (ModelTy x)
-
-Model Q where
-  ModelTy _ = Q
-  model = lit
-
-Model Evar where
-  ModelTy _ = Evar
-  model = lit
-
-Model Constr where
-  ModelTy _ = Bool
-  model (CEq v w) = model v .== model w
-  model (CLeq gs v) = ?rhs_2
-  model (CConv ctx x y) = ?rhs_3
-
-{-
-modelConstr : SortedMap ENum (Smt Q) -> Constr -> SmtM ()
-modelConstr ens (CEq v w) = assertEq (lit v) (lit w)
-modelConstr ens (CLeq gs v) = ?rhs_2
-modelConstr ens (CConv ctx x y) = ?rhs_3
--}
+model : List Constr -> SmtM ()
+model cs = do
+  qty <- the (SmtM (SmtType Q)) $ declEnum "Q"
+  for_ {b = ()} (Set.toList $ eNums cs) $ \(EN i) => do
+    _ <- declVar ("ev" ++ show i) qty
+    pure ()
 
 namespace Main
   main : IO ()
-  main = putStrLn "hello world"
+  main = case runSmtM $ model cs of
+      Left err => printLn err
+      Right src => putStrLn src
+    where
+      cs =
+            [ CEq (QQ I) (EV $ EN 0)
+            , CLeq (Set.fromList [EV $ EN 0, EV $ EN 1, QQ L]) (EV $ EN 2)
+            ]

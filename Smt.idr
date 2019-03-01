@@ -7,6 +7,19 @@ data SExp : Type where
   A : String -> SExp     -- atom
   L : List SExp -> SExp  -- list
 
+Show SExp where
+  show = show'
+    where
+      mutual
+        show' : SExp -> String
+        show' (A s) = s
+        show' (L xs) = "(" ++ showL xs ++ ")"
+
+        showL : List SExp -> String
+        showL [] = ""
+        showL [x] = show' x
+        showL (x :: xs) = show' x ++ " " ++ showL xs
+
 export
 record Smt (ty : Type) where
   constructor MkSmt
@@ -16,6 +29,10 @@ public export
 data SmtError : Type where
   OtherError : String -> SmtError
 
+export
+Show SmtError where
+  show (OtherError msg) = msg
+
 private
 record SmtState where
   constructor MkSmtState
@@ -23,7 +40,13 @@ record SmtState where
 export
 record SmtM (a : Type) where
   constructor MkSmtM
-  runSmtM : SmtState -> Either SmtError (SmtState, List SExp, a)
+  runSmtM' : SmtState -> Either SmtError (SmtState, List SExp, a)
+
+export
+runSmtM : SmtM () -> Either SmtError String
+runSmtM (MkSmtM f) = case f MkSmtState of
+  Left err => Left err
+  Right (_st, ss, ()) => Right . unlines $ map show ss
 
 export
 Functor SmtM where
@@ -45,7 +68,7 @@ export
 Monad SmtM where
   (>>=) (MkSmtM f) g = MkSmtM $ \st => case f st of
     Left err => Left err
-    Right (st', ss', x') => case runSmtM (g x') st' of
+    Right (st', ss', x') => case runSmtM' (g x') st' of
       Left err => Left err
       Right (st'', ss'', x'') => Right (st'', ss' <+> ss'', x'')
 
