@@ -6,7 +6,7 @@ import Control.Monad.State
 
 %default total
 
-export
+public export
 data ENum = EN Int
 
 export
