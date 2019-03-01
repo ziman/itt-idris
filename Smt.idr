@@ -1,5 +1,7 @@
 module Smt
 
+%default total
+
 public export
 data SExp : Type where
   A : String -> SExp     -- atom
