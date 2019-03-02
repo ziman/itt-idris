@@ -53,13 +53,11 @@ model cs = do
   mul <- defineEnumFun2 "mul" smtQ smtQ smtQ (.*.)
   leq <- defineEnumFun2 "leq" smtQ smtQ smtBool (.<=.)
 
+  let product = foldMap mul (lit semi1) ev
+  let prodSum = foldMap add (lit semi0) (product . Set.toList)
+
   for_ {b = ()} (Map.toList cleqm) $ \(v, gss) =>
-    assert $
-      (foldMap add
-        (lit semi0)
-        (foldMap mul (lit semi1) ev . Set.toList)
-        gss)
-      `leq` ev v
+    assert $ prodSum gss `leq` ev v
 
   for_ {b = ()} ceqs $ \(v, w) =>
     assertEq (ev v) (ev w)
