@@ -43,11 +43,10 @@ evSmt vs (EV i) with (Map.lookup i vs)
   | Just v  = v
   | Nothing = smtError "cannot-happen"  -- cannot happen
 
-model : List Constr -> SmtM (FList (const ENum) Smt Q)
+model : List Constr -> SmtM (FList Smt [(ENum, Q)])
 model cs = do
   smtQ <- the (SmtM (SmtType Q)) $ declEnum "Q"
   ens <- declVars smtQ (Set.toList $ eNums cs)
-  -- ev  <- evSmt <$> declVars smtQ (Set.toList $ eNums cs)
   let ev = evSmt ens
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
@@ -64,6 +63,8 @@ model cs = do
 
   for_ {b = ()} ceqs $ \(v, w) =>
     assertEq (ev v) (ev w)
+
+  pure []
  where
   foldMap : (a -> a -> a) -> a -> (b -> a) -> List b -> a
   foldMap op neutr f [] = neutr

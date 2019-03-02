@@ -328,9 +328,9 @@ declVar n (MkSmtType ty) = do
   pure $ MkSmt (A n)
 
 public export
-data FList : (Type -> Type) -> (Type -> Type) -> List Type -> Type where
-  Nil : FList tag f []
-  (::) : List (tag a, f a) -> FList tag f as -> FList tag f (a :: as)
+data FList : (Type -> Type) -> List (Type, Type) -> Type where
+  Nil : FList f []
+  (::) : List (tag, f a) -> FList f as -> FList f ((tag, a) :: as)
 
 private
 parseSol : List SExp -> Either SmtError (SortedMap String SExp)
@@ -347,19 +347,19 @@ parseSol [A "sat", L (A "model" :: ms)] = Right varMap
 parseSol ss = Left $ StrangeSmtOutput ss
 
 public export
-AllSmtValue : List Type -> Type
+AllSmtValue : List (Type, Type) -> Type
 AllSmtValue [] = ()
-AllSmtValue (a :: as) = (SmtValue a, AllSmtValue as)
+AllSmtValue ((_tag, a) :: as) = (SmtValue a, AllSmtValue as)
 
 private
-decode : AllSmtValue as -> SortedMap String SExp -> FList tag Smt as -> Either SmtError (FList tag Basics.id as)
+decode : AllSmtValue as -> SortedMap String SExp -> FList Smt as -> Either SmtError (FList Basics.id as)
 decode _ varMap [] = Right []
-decode {tag} (sv, svs) varMap (vs :: vss) = do
+decode {as = (tag, a) :: as} (sv, svs) varMap (vs :: vss) = do
     vs' <- traverse (decodeVar sv) vs
     vss' <- decode svs varMap vss
     pure $ vs' :: vss'
   where
-    decodeVar : SmtValue a -> (tag a, Smt a) -> Either SmtError (tag a, a)
+    decodeVar : SmtValue a -> (tag, Smt a) -> Either SmtError (tag, a)
     decodeVar _ (_tag, MkSmt (L xs)) = Left $ NotVariable (L xs)
     decodeVar sv (tag, MkSmt (A v)) =
       case Map.lookup v varMap of
@@ -369,8 +369,8 @@ decode {tag} (sv, svs) varMap (vs :: vss) = do
         Just val => Right (tag, val)
 
 export
-solve : AllSmtValue as => SmtM (FList tag Smt as) -> IO (Either SmtError (FList tag Basics.id as))
-solve @{asv} {as} {tag} model =
+solve : AllSmtValue as => SmtM (FList Smt as) -> IO (Either SmtError (FList Basics.id as))
+solve @{asv} {as} model =
     case runSmtM model' of
       Left err => pure $ Left err
       Right (src, vars) => do
@@ -384,5 +384,5 @@ solve @{asv} {as} {tag} model =
             >>= parseSol
             >>= \varMap => decode asv varMap vars
   where
-    model' : SmtM (FList tag Smt as)
+    model' : SmtM (FList Smt as)
     model' = model <* tell [L [A "check-sat"], L [A "get-model"]]
