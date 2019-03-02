@@ -89,13 +89,12 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
         Left err => pure $ Left err
         Right vals => case newlyReachableEqs vals eqs of
           ([], _) => do
-            putStrLn "    Fixed point reached."
+            putStrLn "    No more equalities, fixed point reached."
             pure $ Right vals
 
           (newEqs, waitingEqs) => do
-            putStrLn $ "    New equalities:"
             putStrLn $ unlines
-              [ "      " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
+              [ "    " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
               | DeferEq gs bt ctx x y <- newEqs
               ]
 
