@@ -15,6 +15,21 @@ data Token
   | Space
   | Comment
   | Colon (Maybe Q)
+  | Keyword String
+
+Eq Token where
+  (==) x y = case (x, y) of
+    (Ident x, Ident y) => x == y
+    (ParL, ParL) => True
+    (ParR, ParR) => True
+    (Lam, Lam) => True
+    (Arrow, Arrow) => True
+    (Dot, Dot) => True
+    (Space, Space) => True
+    (Comment, Comment) => True
+    (Colon mq, Colon mq') => mq == mq'
+    (Keyword x, Keyword y) => x == y
+    _ => False
 
 public export
 data ParseError : Type where
@@ -46,11 +61,23 @@ lex src = case lex tokens src of
     parseColon ":R" = Colon (Just R)
     parseColon _ = Colon Nothing
 
+    kwdOrIdent : String -> Token
+    kwdOrIdent s =
+        if s `elem` keywords
+          then Keyword s
+          else Ident   s
+      where
+        keywords : List String
+        keywords =
+          [ "Type", "where", "data", "case", "of", "with"
+          , "let", "in"
+          ]
+
     tokens : TokenMap Token
     tokens = 
       [ (is '(',       const ParL)
       , (is ')',       const ParR)
-      , (ident,        Ident)
+      , (ident,        kwdOrIdent)
       , (is '\\',      const Lam)
       , (exact "->",   const Arrow)
       , (is '.',       const Dot)
@@ -68,8 +95,61 @@ Ty = TT (Maybe Q)
 Rule : Type -> Type
 Rule = Grammar (TokenData Token) True
 
-term : Vect n String -> Rule (Term n)
-term ns = ?rhs
+token : Token -> Rule ()
+token t = terminal $ \t' =>
+  if t == tok t'
+    then Just ()
+    else Nothing
+
+type : Rule (Term n)
+type = token (Keyword "Type") *> pure Star
+
+lookupName : Eq a => a -> Vect n a -> Maybe (Fin n)
+lookupName x [] = Nothing
+lookupName x (y :: ys) =
+  if x == y
+    then Just FZ
+    else FS <$> lookupName x ys
+
+var : Vect n String -> Rule (Term n)
+var ns = terminal $ \t => case tok t of
+  Ident n => case lookupName n ns of
+    Just i => Just $ V i
+    Nothing => Nothing
+
+ident : Rule String
+ident = terminal $ \t => case tok t of
+  Ident n => Just n
+  _ => Nothing
+
+colon : Rule (Maybe Q)
+colon = terminal $ \t => case tok t of
+  Colon mq => Just mq
+  _ => Nothing
+
+mutual
+  def : Vect n String -> Rule (Def (Maybe Q) n)
+  def ns = D <$> ident <*> colon <*> term ns
+
+  lam : Vect n String -> Rule (Term n)
+  lam ns = do
+    token Lam
+    d <- def ns
+    token Dot
+    rhs <- term (defName d :: ns)
+    pure $ Bind Lam d rhs
+
+  pi : Vect n String -> Rule (Term n)
+  pi ns = do
+    token ParL
+    d <- def ns
+    token ParR
+    token Arrow
+    rhs <- term (defName d :: ns)
+    pure $ Bind Pi d rhs
+
+  term : Vect n String -> Rule (Term n)
+  term ns = var ns <|> lam ns <|> pi ns <|> type
 
 export
 parse : String -> Either ParseError (TT (Maybe Q) Z)
