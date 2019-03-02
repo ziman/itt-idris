@@ -31,6 +31,7 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
       putStrLn $ "deferred equalities:"
       for_ (deferredEqs ceqs) $ \eq => putStrLn $ "  " ++ show eq
 
+{-
       let iter = \i, (MkConstrs cs eqs) => do
         putStrLn $ "## Solving iteration " ++ show i 
         solution <- SmtModel.solve cs
@@ -41,7 +42,12 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
               putStrLn "Fixed point reached."
               pure $ Right vals
 
-            (newEqs, rest) => ?rhs
+            (newEqs, rest) => do
+              putStrLn $ "new equalities:"
+              putStrLn $ unlines
+                [ "  " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
+                | DeferEq gs bt ctx x y <- newEqs
+                ]
 
       eVals <- iter 1 ceqs
       case eVals of
@@ -49,7 +55,7 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
         Right eVals => do
           putStrLn $ "## Final valuation"
           putStrLn $ unlines ["  " ++ show i ++ " -> " ++ show q | (i, q) <- Map.toList eVals]
-
+          -}
   where
     isRelevant : SortedMap ENum Q -> List Evar -> Maybe Bool
     isRelevant vs [] = Just True
@@ -58,7 +64,7 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
     isRelevant vs (EV i :: evs) = case Map.lookup i vs of
       Nothing => Nothing  -- we don't know yet
       Just I  => Just False
-      Just _  => isrelevant vs evs
+      Just _  => isRelevant vs evs
 
     newlyReachableEqs : SortedMap ENum Q -> List DeferredEq -> (List DeferredEq, List DeferredEq)
     newlyReachableEqs vs [] = ([], [])
