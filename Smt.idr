@@ -19,6 +19,9 @@ data SmtError : Type where
   LexError : Int -> Int -> String -> SmtError
   SmtParseError : Int -> Int -> String -> SmtError
   StrangeSmtOutput : List SExp -> SmtError
+  NotVariable : SExp -> SmtError
+  NotInModel : String -> SmtError
+  CouldNotParse : SExp -> SmtError
 
 Show SExp where
   show = show'
@@ -40,6 +43,9 @@ Show SmtError where
   show (LexError row col rest) = "could not lex at " ++ show (row, col) ++ ": " ++ rest
   show (SmtParseError row col msg) = "parse error at " ++ show (row, col) ++ ": " ++ msg
   show (StrangeSmtOutput ss) = "unrecognised SMT solver output: " ++ unlines (map show ss)
+  show (NotVariable ss) = "not a variable: " ++ show ss
+  show (NotInModel v) = "variable not found in model: " ++ show v
+  show (CouldNotParse ss) = "could not parse model value: " ++ show ss
 
 private
 data SToken = ParL | ParR | Atom String | Space
@@ -338,39 +344,44 @@ parseSol [A "sat", L (A "model" :: ms)] = Right varMap
     varMap : SortedMap String SExp
     varMap = foldr (Map.mergeLeft . parseVar) Map.empty ms
 
-    {-
-    varLookup : SmtValue a => Smt a -> Maybe a
-    varLookup (MkSmt (A n)) = case Map.lookup n varMap of
-      Just s  => smtRead s
-      Nothing => Nothing
-    varLookup _ = Nothing
-    -}
-
 parseSol ss = Left $ StrangeSmtOutput ss
 
 public export
 AllSmtValue : List Type -> Type
 AllSmtValue [] = ()
-AllSmtValue [a] = SmtValue a
 AllSmtValue (a :: as) = (SmtValue a, AllSmtValue as)
 
 private
-decode : AllSmtValue as => SortedMap String SExp -> FList Smt as -> Either SmtError (FList id as)
-decode varMap vs = ?rhs
+smtRead' : SmtValue a -> SExp -> Maybe a
+smtRead' _ s = smtRead s
+
+private
+decode : AllSmtValue as -> SortedMap String SExp -> FList Smt as -> Either SmtError (FList Basics.id as)
+decode _ varMap [] = Right []
+decode _ varMap (MkSmt s@(L _) :: _) = Left $ NotVariable s
+decode (sv, svs) varMap (MkSmt (A v) :: vs) = case Map.lookup v varMap of
+  Nothing => Left $ NotInModel v
+  Just s  => case smtRead' sv s of
+    Nothing => Left $ CouldNotParse s
+    Just val => case decode svs varMap vs of
+      Left err => Left err
+      Right vals => Right (val :: vals)
 
 export
-solve : AllSmtValue as => SmtM (FList Smt as) -> IO (Either SmtError (FList id as))
-solve {as} model =
+solve : AllSmtValue as => SmtM (FList Smt as) -> IO (Either SmtError (FList Basics.id as))
+solve @{asv} {as} model =
     case runSmtM model' of
       Left err => pure $ Left err
       Right (src, vars) => do
-        -- WARNING: incredibly bad code follows
+        -- WARNING: this is really horrible
         writeFile "/tmp/model.smt" src
         System.system "z3 -in -smt2 /tmp/model.smt > /tmp/solution.smt"
         Right sol <- readFile "/tmp/solution.smt"
             | Left err => pure (Left (SmtFileError err))
 
-        pure ?rhs -- (parseSExps sol >>= parseSol)
+        pure $ parseSExps sol
+            >>= parseSol
+            >>= \varMap => decode asv varMap vars
   where
     model' : SmtM (FList Smt as)
     model' = model <* tell [L [A "check-sat"], L [A "get-model"]]
