@@ -28,10 +28,14 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
       putStrLn $ "(given constraints:)"
       for_ cs $ \c => putStrLn $ "  " ++ show c
 
-      solution <- SmtModel.solve cs
-      case solution of
-        Left err => putStrLn err
-        Right vals => print vals
+      let iter = \i, cs => do
+        putStrLn $ "## Solving iteration " ++ show i 
+        solution <- SmtModel.solve cs
+        case solution of
+          Left err => putStrLn err
+          Right vals => print vals
+
+      iter 1 cs
 
 example1 : TT Q Z
 example1 =
