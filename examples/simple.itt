@@ -1,5 +1,3 @@
-\(a : Type).
-\(f : (x : a) -> a).
-\(g : (x : a) -> a).
-\(x : a).
-f (g x)
+\a : Type.
+\x : a.
+x

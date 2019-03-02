@@ -141,6 +141,7 @@ mutual
   lam : Vect n String -> Rule (Term n)
   lam ns = do
     token Lam
+    commit
     d <- def ns
     token Dot
     rhs <- term (defName d :: ns)
@@ -152,11 +153,23 @@ mutual
     d <- def ns
     token ParR
     token Arrow
+    commit
     rhs <- term (defName d :: ns)
     pure $ Bind Pi d rhs
 
+  atom : Vect n String -> Rule (Term n)
+  atom ns = var ns <|> do { token ParL; tm <- term ns; token ParR; pure tm }
+
+  -- includes nullary applications (= variables)
+  app : Vect n String -> Rule (Term n)
+  app ns = do
+    head <- atom ns
+    commit
+    args <- many (atom ns)
+    pure $ foldl (App Nothing) head args
+
   term : Vect n String -> Rule (Term n)
-  term ns = var ns <|> lam ns <|> pi ns <|> type
+  term ns = lam ns <|> pi ns <|> type <|> app ns
 
 export
 parse : String -> Either ParseError (TT (Maybe Q) Z)
