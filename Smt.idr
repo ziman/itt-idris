@@ -328,9 +328,9 @@ declVar n (MkSmtType ty) = do
   pure $ MkSmt (A n)
 
 public export
-data FList : (Type -> Type) -> List Type -> Type where
-  Nil : FList f []
-  (::) : f a -> FList f as -> FList f (a :: as)
+data FList : (Type -> Type) -> (Type -> Type) -> List Type -> Type where
+  Nil : FList tag f []
+  (::) : (tag a, f a) -> FList tag f as -> FList tag f (a :: as)
 
 private
 parseSol : List SExp -> Either SmtError (SortedMap String SExp)
@@ -356,20 +356,20 @@ smtRead' : SmtValue a -> SExp -> Maybe a
 smtRead' _ s = smtRead s
 
 private
-decode : AllSmtValue as -> SortedMap String SExp -> FList Smt as -> Either SmtError (FList Basics.id as)
+decode : AllSmtValue as -> SortedMap String SExp -> FList tag Smt as -> Either SmtError (FList tag Basics.id as)
 decode _ varMap [] = Right []
-decode _ varMap (MkSmt s@(L _) :: _) = Left $ NotVariable s
-decode (sv, svs) varMap (MkSmt (A v) :: vs) = case Map.lookup v varMap of
+decode _ varMap ((_tag, MkSmt (L xs)) :: _) = Left $ NotVariable (L xs)
+decode (sv, svs) varMap ((tag, MkSmt (A v)) :: vs) = case Map.lookup v varMap of
   Nothing => Left $ NotInModel v
   Just s  => case smtRead' sv s of
     Nothing => Left $ CouldNotParse s
     Just val => case decode svs varMap vs of
       Left err => Left err
-      Right vals => Right (val :: vals)
+      Right vals => Right ((tag, val) :: vals)
 
 export
-solve : AllSmtValue as => SmtM (FList Smt as) -> IO (Either SmtError (FList Basics.id as))
-solve @{asv} {as} model =
+solve : AllSmtValue as => SmtM (FList tag Smt as) -> IO (Either SmtError (FList tag Basics.id as))
+solve @{asv} {as} {tag} model =
     case runSmtM model' of
       Left err => pure $ Left err
       Right (src, vars) => do
@@ -383,5 +383,5 @@ solve @{asv} {as} model =
             >>= parseSol
             >>= \varMap => decode asv varMap vars
   where
-    model' : SmtM (FList Smt as)
+    model' : SmtM (FList tag Smt as)
     model' = model <* tell [L [A "check-sat"], L [A "get-model"]]
