@@ -121,15 +121,6 @@ withDef d@(D n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt), st
 withQ : Evar -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \(MkE gs ctx bt), st => f (MkE (Set.insert q gs) ctx bt) st
 
-noUsage : TC n a -> TC n a
-noUsage (MkTC f) = MkTC $ \env, st => case f env st of
-    Left fail => Left fail
-    Right (st', cs, x) => Right (st', mapMaybe removeUsage cs, x)
-  where
-    removeUsage : Constr -> Maybe Constr
-    removeUsage (CLeq _ _ _) = Nothing
-    removeUsage c = Just c
-
 use : Fin n -> TC n ()
 use i = MkTC $ \(MkE gs ctx bt), st
     => Right (st, [CLeq bt gs (defQ $ lookupCtx i ctx)], ())
@@ -152,23 +143,23 @@ traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
 infix 3 ~=
 (~=) : Term n -> Term n -> TC n ()
 (~=) p q = MkTC $ \(MkE gs ctx bt), st
-  => Right (st, [CConv gs ctx p q], ())
+  => Right (st, [CConv Set.empty ctx p q], ())
 
 covering export
 inferTm : Term n -> TC n (Ty n)
 inferTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
 inferTm tm@(Bind Lam d@(D n q ty) rhs) = traceTm tm "LAM" $ do
-  tyTy <- noUsage $ inferTm ty
+  tyTy <- withQ (QQ I) $ inferTm ty
   tyTy ~= Star
 
   Bind Pi d <$> (withDef d $ inferTm rhs)
 
 inferTm tm@(Bind Pi d@(D n q ty) rhs) = traceTm tm "PI" $ do
-  tyTy <- noUsage $ inferTm ty
+  tyTy <- withQ (QQ I) $ inferTm ty
   tyTy ~= Star
 
   withDef d $ do
-    rhsTy <- noUsage $ inferTm rhs
+    rhsTy <- withQ (QQ I) $ inferTm rhs
     rhsTy ~= Star
 
   pure Star
