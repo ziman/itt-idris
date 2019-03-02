@@ -22,20 +22,22 @@ covering
 inferClosed : TT (Maybe Q) Z -> IO ()
 inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []) MkTCS of
     Left fail => printLn fail
-    Right (MkTCS, cs, ty) => do
+    Right (MkTCS, ceqs, ty) => do
       putStrLn $ show tm
       putStrLn $ "  : " ++ show ty
-      putStrLn $ "(given constraints:)"
-      for_ cs $ \c => putStrLn $ "  " ++ show c
+      putStrLn $ "given constraints:"
+      for_ (constrs ceqs) $ \c => putStrLn $ "  " ++ show c
+      putStrLn $ "deferred equalities:"
+      for_ (deferredEqs ceqs) $ \eq => putStrLn $ "  " ++ show eq
 
-      let iter = \i, cs => do
+      let iter = \i, (MkConstrs cs eqs) => do
         putStrLn $ "## Solving iteration " ++ show i 
         solution <- SmtModel.solve cs
         case solution of
           Left err => putStrLn err
           Right vals => print vals
 
-      iter 1 cs
+      iter 1 ceqs
 
 example1 : TT Q Z
 example1 =

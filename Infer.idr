@@ -20,17 +20,33 @@ public export
 data Constr : Type where
   CEq : (v, w : Evar) -> Constr
   CLeq : (bt : Backtrace) -> (gs : Set Evar) -> (v : Evar) -> Constr
-  CConv : (gs : Set Evar) -> (bt : Backtrace) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> Constr
+
+public export
+data DeferredEq : Type where
+  DeferEq : (gs : Set Evar) -> (bt : Backtrace) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> DeferredEq
 
 export
 Show Constr where
   show (CEq v w) = show v ++ " ~ " ++ show w
   show (CLeq bt gs v) = show (Set.toList gs) ++ " -> " ++ show v
-  show (CConv gs bt ctx x y) = show (Set.toList gs) ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
+
+export
+Show DeferredEq where
+  show (DeferEq gs bt ctx x y) = show (Set.toList gs) ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
 public export
-Constrs : Type
-Constrs = List Constr
+record Constrs where
+  constructor MkConstrs
+  constrs : List Constr
+  deferredEqs : List DeferredEq
+
+export
+Semigroup Constrs where
+  (<+>) (MkConstrs cs eqs) (MkConstrs cs' eqs') = MkConstrs (cs <+> cs') (eqs <+> eqs')
+
+export
+Monoid Constrs where
+  neutral = MkConstrs [] []
 
 public export
 Term : Nat -> Type
@@ -86,13 +102,13 @@ Functor (TC n) where
     Right (st', cs, x) => Right (st', cs, f x)
 
 Applicative (TC n) where
-  pure x = MkTC $ \env, st => Right (st, [], x)
+  pure x = MkTC $ \env, st => Right (st, neutral, x)
   (<*>) (MkTC f) (MkTC g) = MkTC $ \env, st =>
     case f env st of
         Left fail => Left fail
         Right (st', cs', f') => case g env st' of
             Left fail => Left fail
-            Right (st'', cs'', x'') => Right (st'', cs' ++ cs'', f' x'')
+            Right (st'', cs'', x'') => Right (st'', cs' <+> cs'', f' x'')
 
 Monad (TC n) where
   (>>=) (MkTC f) g = MkTC $ \env, st =>
@@ -101,10 +117,10 @@ Monad (TC n) where
         Right (st', cs, x) => case g x of
             MkTC h => case h env st' of
                 Left fail => Left fail
-                Right (st'', cs'', x'') => Right (st'', cs ++ cs'', x'')
+                Right (st'', cs'', x'') => Right (st'', cs <+> cs'', x'')
 
 getEnv : TC n (Env n)
-getEnv = MkTC $ \env, st => Right (st, [], env)
+getEnv = MkTC $ \env, st => Right (st, neutral, env)
 
 getCtx : TC n (Context Evar n)
 getCtx = context <$> getEnv
@@ -117,17 +133,18 @@ withDef : Def Evar n -> TC (S n) a -> TC n a
 withDef d@(D n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt), st
   => case f (MkE gs (d :: ctx) bt) st of
     Left fail => Left fail
-    Right (st', cs, x) => Right (st', CLeq bt (Set.fromList [QQ I]) q :: cs, x)
+    Right (st', MkConstrs cs eqs, x)
+        => Right (st', MkConstrs (CLeq bt (Set.fromList [QQ I]) q :: cs) eqs, x)
 
 withQ : Evar -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \(MkE gs ctx bt), st => f (MkE (Set.insert q gs) ctx bt) st
 
 use : Fin n -> TC n ()
 use i = MkTC $ \(MkE gs ctx bt), st
-    => Right (st, [CLeq bt gs (defQ $ lookupCtx i ctx)], ())
+    => Right (st, MkConstrs [CLeq bt gs (defQ $ lookupCtx i ctx)] [], ())
 
 eqEvar : Evar -> Evar -> TC n ()
-eqEvar p q = MkTC $ \env, st => Right (st, [CEq p q], ())
+eqEvar p q = MkTC $ \env, st => Right (st, MkConstrs [CEq p q] [], ())
 
 lookup : Fin n -> TC n (Ty n)
 lookup i = defType . lookupCtx i <$> getCtx
@@ -143,7 +160,7 @@ traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
 
 deferConv : Evar -> Term n -> Term n -> TC n ()
 deferConv q x y = MkTC $ \(MkE gs ctx bt), st
-  => Right (st, [CConv (Set.fromList [q]) bt ctx x y], ())
+  => Right (st, MkConstrs [] [DeferEq (Set.fromList [q]) bt ctx x y], ())
 
 mutual
   infix 3 ~=
