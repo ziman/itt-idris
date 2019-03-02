@@ -346,27 +346,35 @@ parseSol [A "sat", L (A "model" :: ms)] = Right varMap
 
 parseSol ss = Left $ StrangeSmtOutput ss
 
+-- this is a bit ugly but the singleton case has to be special
+-- because Idris can't handle (constraint, ())
 public export
 AllSmtValue : List (Type, Type) -> Type
 AllSmtValue [] = ()
+AllSmtValue [(_tag, a)] = SmtValue a
 AllSmtValue ((_tag, a) :: as) = (SmtValue a, AllSmtValue as)
+
+private
+decodeVar : SortedMap String SExp -> SmtValue a -> (tag, Smt a) -> Either SmtError (tag, a)
+decodeVar varMap _ (_tag, MkSmt (L xs)) = Left $ NotVariable (L xs)
+decodeVar varMap sv (tag, MkSmt (A v)) =
+  case Map.lookup v varMap of
+  Nothing => Left $ NotInModel v
+  Just s  => case smtRead @{sv} s of
+    Nothing => Left $ CouldNotParse s
+    Just val => Right (tag, val)
+
 
 private
 decode : AllSmtValue as -> SortedMap String SExp -> FList Smt as -> Either SmtError (FList Basics.id as)
 decode _ varMap [] = Right []
-decode {as = (tag, a) :: as} (sv, svs) varMap (vs :: vss) = do
-    vs' <- traverse (decodeVar sv) vs
-    vss' <- decode svs varMap vss
+decode {as = [(tag, a)]} sv varMap [vs] = do
+    vs' <- traverse (decodeVar varMap sv) vs
+    pure [vs']
+decode {as = (tag, a) :: _ :: as} (sv, svs) varMap (vs :: vsX :: vss) = do
+    vs' <- traverse (decodeVar varMap sv) vs
+    vss' <- decode svs varMap (vsX :: vss)
     pure $ vs' :: vss'
-  where
-    decodeVar : SmtValue a -> (tag, Smt a) -> Either SmtError (tag, a)
-    decodeVar _ (_tag, MkSmt (L xs)) = Left $ NotVariable (L xs)
-    decodeVar sv (tag, MkSmt (A v)) =
-      case Map.lookup v varMap of
-      Nothing => Left $ NotInModel v
-      Just s  => case smtRead @{sv} s of
-        Nothing => Left $ CouldNotParse s
-        Just val => Right (tag, val)
 
 export
 solve : AllSmtValue as => SmtM (FList Smt as) -> IO (Either SmtError (FList Basics.id as))

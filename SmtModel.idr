@@ -64,7 +64,7 @@ model cs = do
   for_ {b = ()} ceqs $ \(v, w) =>
     assertEq (ev v) (ev w)
 
-  pure []
+  pure [Map.toList ens]
  where
   foldMap : (a -> a -> a) -> a -> (b -> a) -> List b -> a
   foldMap op neutr f [] = neutr
@@ -86,12 +86,11 @@ model cs = do
 
 namespace Main
   main : IO ()
-  main = case runSmtM $ model cs of
-      Left err => printLn err
-      Right src => do
-        putStrLn src
-        writeFile "model.smt" src
-        pure ()
+  main = do
+      sol <- Smt.solve $ model cs
+      case sol of
+        Left err     => printLn err
+        Right [vars] => printLn vars
     where
       cs =
             [ CEq (QQ I) (EV $ EN 0)
