@@ -384,7 +384,7 @@ solve @{asv} {as} model =
       Right (src, vars) => do
         -- WARNING: this is really horrible
         writeFile "/tmp/model.smt" src
-        System.system "z3 -in -smt2 /tmp/model.smt > /tmp/solution.smt"
+        System.system "z3 -in -smt2 < /tmp/model.smt > /tmp/solution.smt"
         Right sol <- readFile "/tmp/solution.smt"
             | Left err => pure (Left (SmtFileError err))
 
