@@ -3,27 +3,22 @@ module Smt
 import System
 import Text.Lexer
 import Text.Parser
+import Data.SortedMap as Map
 
 %default total
-
-public export
-data SmtError : Type where
-  Unsatisfiable : SmtError
-  SmtFileError : FileError -> SmtError
-  OtherError : String -> SmtError
-  LexError : Int -> Int -> String -> SmtError
-
-export
-Show SmtError where
-  show (OtherError msg) = msg
-  show (SmtFileError err) = show err
-  show Unsatisfiable = "unsatisfiable"
-  show (LexError row col rest) = "could not lex at " ++ show (row, col) ++ ": " ++ rest
 
 public export
 data SExp : Type where
   A : String -> SExp     -- atom
   L : List SExp -> SExp  -- list
+
+public export
+data SmtError : Type where
+  Unsatisfiable : SmtError
+  SmtFileError : FileError -> SmtError
+  LexError : Int -> Int -> String -> SmtError
+  SmtParseError : Int -> Int -> String -> SmtError
+  StrangeSmtOutput : List SExp -> SmtError
 
 Show SExp where
   show = show'
@@ -37,6 +32,14 @@ Show SExp where
         showL [] = ""
         showL [x] = show' x
         showL (x :: xs) = show' x ++ " " ++ showL xs
+
+export
+Show SmtError where
+  show (SmtFileError err) = show err
+  show Unsatisfiable = "unsatisfiable"
+  show (LexError row col rest) = "could not lex at " ++ show (row, col) ++ ": " ++ rest
+  show (SmtParseError row col msg) = "parse error at " ++ show (row, col) ++ ": " ++ msg
+  show (StrangeSmtOutput ss) = "unrecognised SMT solver output: " ++ unlines (map show ss)
 
 private
 data SToken = ParL | ParR | Atom String | Space
@@ -62,6 +65,42 @@ lexSExp src = case lex tokens src of
       , (atom,   Atom)
       , (pred isSpace, const Space)
       ]
+
+private
+parseSExps : String -> Either SmtError (List SExp)
+parseSExps src = case lexSExp src of
+    Left err => Left err
+    Right ts => case parse (many sexp) ts of
+      Left (Error msg []) => Left $ SmtParseError 0 0 msg
+      Left (Error msg (t :: _)) => Left $ SmtParseError (line t) (col t) msg
+      Right (sx, _) => Right sx
+  where
+    Rule : Type -> Type
+    Rule = Grammar (TokenData SToken) True
+
+    atom : Rule SExp
+    atom = terminal $ \t => case tok t of
+      Atom s => Just $ A s
+      _ => Nothing
+
+    parL : Rule ()
+    parL = terminal $ \t => case tok t of
+      ParL => Just ()
+      _ => Nothing
+
+    parR : Rule ()
+    parR = terminal $ \t => case tok t of
+      ParR => Just ()
+      _ => Nothing
+
+    sexp : Rule SExp
+    sexp = assert_total (atom <|> do
+      parL
+      commit
+      xs <- many sexp
+      parR
+      pure $ L xs
+     )
 
 export
 record Smt (ty : Type) where
@@ -287,8 +326,24 @@ Solution : Type
 Solution = ({a : Type} -> SmtValue a => Smt a -> Maybe a)
 
 private
-parseSolution : String -> Either SmtError Solution
-parseSolution src = ?rhs
+parseSol : List SExp -> Either SmtError Solution
+parseSol (A "unsat" :: _) = Left Unsatisfiable
+parseSol [A "sat", L (A "model" :: ms)] = Right varLookup
+  where
+    parseVar : SExp -> SortedMap String SExp
+    parseVar (L [A "define-fun", A n, L [], _ty, val]) = Map.fromList [(n, val)]
+    parseVar _ = Map.empty
+
+    varMap : SortedMap String SExp
+    varMap = foldr (Map.mergeLeft . parseVar) Map.empty ms
+
+    varLookup : SmtValue a => Smt a -> Maybe a
+    varLookup (MkSmt (A n)) = case Map.lookup n varMap of
+      Just s  => smtRead s
+      Nothing => Nothing
+    varLookup _ = Nothing
+
+parseSol ss = Left $ StrangeSmtOutput ss
 
 export
 solve : SmtM () -> IO (Either SmtError Solution)
@@ -301,7 +356,7 @@ solve model =
         System.system "z3 -in -smt2 /tmp/model.smt > /tmp/solution.smt"
         Right sol <- readFile "/tmp/solution.smt"
             | Left err => pure (Left (SmtFileError err))
-        pure $ parseSolution sol
+        pure (parseSExps sol >>= parseSol)
   where
     model' : SmtM ()
     model' = model *> tell [L [A "check-sat"], L [A "get-model"]]
