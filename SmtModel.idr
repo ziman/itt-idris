@@ -31,7 +31,7 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
     eNumsC : Constr -> SortedSet ENum
     eNumsC (CEq v w) = ev v <+> ev w
     eNumsC (CLeq _bt gs v) = concat $ map ev (v :: Set.toList gs)
-    eNumsC (CConv gs ctx x y) = neutral
+    eNumsC (CConv gs bt ctx x y) = neutral
 
 declVars : SmtType Q -> List ENum -> SmtM (SortedMap ENum (Smt Q))
 declVars smtQ [] = pure $ Map.empty

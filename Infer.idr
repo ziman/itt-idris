@@ -1,5 +1,6 @@
 module Infer
 
+import Utils
 import public TT
 import public Evar
 import public OrdSemiring
@@ -19,13 +20,13 @@ public export
 data Constr : Type where
   CEq : (v, w : Evar) -> Constr
   CLeq : (bt : Backtrace) -> (gs : Set Evar) -> (v : Evar) -> Constr
-  CConv : (gs : Set Evar) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> Constr
+  CConv : (gs : Set Evar) -> (bt : Backtrace) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> Constr
 
 export
 Show Constr where
   show (CEq v w) = show v ++ " ~ " ++ show w
   show (CLeq bt gs v) = show (Set.toList gs) ++ " -> " ++ show v
-  show (CConv gs ctx x y) = show (Set.toList gs) ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
+  show (CConv gs bt ctx x y) = show (Set.toList gs) ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
 public export
 Constrs : Type
@@ -140,10 +141,34 @@ traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
   => let msg = show t ++ ": " ++ showTm ctx tm
       in f (MkE gs ctx (msg :: bt)) st
 
-infix 3 ~=
-(~=) : Term n -> Term n -> TC n ()
-(~=) p q = MkTC $ \(MkE gs ctx bt), st
-  => Right (st, [CConv Set.empty ctx p q], ())
+deferConv : Evar -> Term n -> Term n -> TC n ()
+deferConv q x y = MkTC $ \(MkE gs ctx bt), st
+  => Right (st, [CConv (Set.fromList [q]) bt ctx x y], ())
+
+mutual
+  infix 3 ~=
+  covering export
+  (~=) : Term n -> Term n -> TC n ()
+  (~=) p q = conv (rnf p) (rnf q)
+
+  conv : Term n -> Term n -> TC n ()
+  conv (V i) (V j) with (finEq i j)
+    | True  = pure ()
+    | False = throw $ CantConvert (V i) (V j)
+  conv l@(Bind b d@(D n q ty) rhs) r@(Bind b' d'@(D n' q' ty') rhs') =
+    if (b /= b') || (q /= q')
+      then throw $ CantConvert l r
+      else do
+        ty ~= ty'
+        withDef d $ rhs ~= rhs'
+  conv l@(App q f x) r@(App q' f' x') =
+    if q /= q'
+      then throw $ CantConvert l r
+      else do
+        f ~= f'
+        deferConv q x x'
+  conv Star Star = pure ()
+  conv l r = throw $ CantConvert l r
 
 covering export
 inferTm : Term n -> TC n (Ty n)
