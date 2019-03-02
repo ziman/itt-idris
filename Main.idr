@@ -93,7 +93,7 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
 covering
 main : IO ()
 main = getArgs >>= \args => case args of
-  [fname] => do
+  [_exe, fname] => do
     Right src <- readFile fname
       | Left err => printLn err
 

@@ -5,6 +5,8 @@ import Text.Lexer
 import Text.Parser
 import Data.Vect
 
+%default total
+
 data Token
   = Ident String
   | ParL
@@ -120,6 +122,7 @@ var ns = terminal $ \t => case tok t of
   Ident n => case lookupName n ns of
     Just i => Just $ V i
     Nothing => Nothing
+  _ => Nothing
 
 ident : Rule String
 ident = terminal $ \t => case tok t of
