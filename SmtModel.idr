@@ -9,13 +9,6 @@ import Data.SortedSet as Set
 
 %default total
 
-{-
-data Constr : Type where
-  CEq : (v, w : Evar) -> Constr
-  CLeq : (gs : Set Evar) -> (v : Evar) -> Constr
-  CConv : (ctx : Context Evar n) -> (x, y : TT Evar n) -> Constr
--}
-
 SmtValue Q where
   smtShow = A . show
   smtRead (A "I") = Just I
@@ -44,20 +37,6 @@ declVars : SmtType Q -> List ENum -> SmtM (SortedMap ENum (Smt Q))
 declVars smtQ [] = pure $ Map.empty
 declVars smtQ (n::ns) = Map.insert n <$> declVar ("ev" ++ show n) smtQ <*> declVars smtQ ns
 
-{-
-modelConstr : SortedMap ENum (Smt Q) -> Constr -> Prop
-modelConstr vs c = case c of
-    (CEq v w) => ev v .== ev w
-    (CLeq gs v) => foldr add (Set.toList gs) 
-    (CConv ctx x y) => ?rhs_3
-  where
-    ev : Evar -> Smt Q
-    ev (QQ q) = lit q
-    ev (EV i) with (Map.lookup i vs)
-      | Just v  = v
-      | Nothing = smtError "cannot-happen"  -- cannot happen
--}
-
 evSmt : SortedMap ENum (Smt Q) -> Evar -> Smt Q
 evSmt vs (QQ q) = lit q
 evSmt vs (EV i) with (Map.lookup i vs)
@@ -83,8 +62,6 @@ model cs = do
 
   for_ {b = ()} ceqs $ \(v, w) =>
     assertEq (ev v) (ev w)
-
-  pure ()
  where
   foldMap : (a -> a -> a) -> a -> (b -> a) -> List b -> a
   foldMap op neutr f [] = neutr
