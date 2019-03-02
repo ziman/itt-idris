@@ -15,13 +15,13 @@ public export
 data Constr : Type where
   CEq : (v, w : Evar) -> Constr
   CLeq : (gs : Set Evar) -> (v : Evar) -> Constr
-  CConv : (ctx : Context Evar n) -> (x, y : TT Evar n) -> Constr
+  CConv : (gs : Set Evar) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> Constr
 
 export
 Show Constr where
   show (CEq v w) = show v ++ " ~ " ++ show w
   show (CLeq gs v) = show (Set.toList gs) ++ " -> " ++ show v
-  show (CConv ctx x y) = showTm ctx x ++ " ~ " ++ showTm ctx y
+  show (CConv gs ctx x y) = show (Set.toList gs) ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
 public export
 Constrs : Type
@@ -143,7 +143,7 @@ traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
 infix 3 ~=
 (~=) : Term n -> Term n -> TC n ()
 (~=) p q = MkTC $ \(MkE gs ctx bt), st
-  => Right (st, [CConv ctx p q], ())
+  => Right (st, [CConv gs ctx p q], ())
 
 covering export
 inferTm : Term n -> TC n (Ty n)

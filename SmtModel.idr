@@ -4,7 +4,7 @@ import TT
 import Smt
 import Infer
 
-import Data.SortedMap as Map
+import public Data.SortedMap as Map
 import Data.SortedSet as Set
 
 %default total
@@ -31,7 +31,7 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
     eNumsC : Constr -> SortedSet ENum
     eNumsC (CEq v w) = ev v <+> ev w
     eNumsC (CLeq gs v) = concat $ map ev (v :: Set.toList gs)
-    eNumsC (CConv ctx x y) = neutral
+    eNumsC (CConv gs ctx x y) = neutral
 
 declVars : SmtType Q -> List ENum -> SmtM (SortedMap ENum (Smt Q))
 declVars smtQ [] = pure $ Map.empty
@@ -88,22 +88,10 @@ model cs = do
     CEq x y => [(x, y)]
     _ => []
 
+export
 solve : List Constr -> IO (Either String (SortedMap ENum Q))
 solve cs = do
   sol <- Smt.solve $ model cs
   pure $ case sol of
     Left err => Left $ show err
     Right [vars] => Right $ Map.fromList vars
-
-namespace Main
-  main : IO ()
-  main = do
-      sol <- Smt.solve $ model cs
-      case sol of
-        Left err     => printLn err
-        Right [vars] => printLn vars
-    where
-      cs =
-            [ CEq (QQ I) (EV $ EN 0)
-            , CLeq (Set.fromList [EV $ EN 0, EV $ EN 1, QQ L]) (EV $ EN 2)
-            ]

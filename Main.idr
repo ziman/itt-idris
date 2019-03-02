@@ -4,7 +4,7 @@ import Check
 import Infer
 import Utils
 import Evar
-import Solve
+import SmtModel
 
 import Data.Fin
 import Data.Vect
@@ -28,6 +28,11 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
       putStrLn $ "(given constraints:)"
       for_ cs $ \c => putStrLn $ "  " ++ show c
 
+      solution <- SmtModel.solve cs
+      case solution of
+        Left err => putStrLn err
+        Right vals => print vals
+
 example1 : TT Q Z
 example1 =
   Bind Lam (D "a" I Star) $
@@ -44,3 +49,4 @@ covering
 main : IO ()
 main = do
   checkClosed example1
+  inferClosed example2
