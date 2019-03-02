@@ -33,9 +33,13 @@ Eq Token where
 
 public export
 data ParseError : Type where
-  OtherError : String -> ParseError
   LexError : Int -> Int -> String -> ParseError
   SyntaxError : Int -> Int -> String -> ParseError
+
+export
+Show ParseError where
+  show (LexError r c msg) = "lex error at " ++ show (r, c) ++ ": " ++ msg
+  show (SyntaxError r c msg) = "syntax error at " ++ show (r, c) ++ ": " ++ msg
 
 lex : String -> Either ParseError (List (TokenData Token))
 lex src = case lex tokens src of

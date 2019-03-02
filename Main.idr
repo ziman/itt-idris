@@ -5,6 +5,7 @@ import Infer
 import Utils
 import Evar
 import SmtModel
+import Parser
 
 import Data.Fin
 import Data.Vect
@@ -89,22 +90,15 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
               Right (st', MkConstrs cs' eqs', ()) => do
                 iter (i+1) (MkConstrs (cs <+> cs') (eqs <+> eqs')) st'
 
-example1 : TT Q Z
-example1 =
-  Bind Lam (D "a" I Star) $
-  Bind Lam (D "x" L (V FZ)) $
-  V FZ
-
-example2 : TT (Maybe Q) Z
-example2 =
-  Bind Lam (D "a" Nothing Star) $
-  Bind Lam (D "x" Nothing (V FZ)) $
-  Bind Lam (D "f" Nothing (Bind Pi (D "y" (Just L) (V $ FS FZ)) (V $ FS (FS FZ)))) $
-  Bind Lam (D "g" Nothing (Bind Pi (D "y" (Just L) (V $ FS (FS FZ))) (V $ FS (FS (FS FZ))))) $
-  App Nothing (V FZ) (App Nothing (V $ FS FZ) (V $ FS (FS FZ)))
-
 covering
 main : IO ()
-main = do
-  checkClosed example1
-  inferClosed example2
+main = getArgs >>= \args => case args of
+  [fname] => do
+    Right src <- readFile fname
+      | Left err => printLn err
+
+    case Parser.parse src of
+      Left err => printLn err
+      Right tm => inferClosed tm
+
+  _ => putStrLn "usage: itt <filename.itt>"
