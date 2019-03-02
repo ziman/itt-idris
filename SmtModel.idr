@@ -48,6 +48,7 @@ model cs = do
   smtQ <- the (SmtM (SmtType Q)) $ declEnum "Q"
   ens <- declVars smtQ (Set.toList $ eNums cs)
   let ev = evSmt ens
+  let numberOf = \q => sum [ifte (v .== lit q) 1 0 | (_i, v) <- Map.toList ens]
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
   mul <- defineEnumFun2 "mul" smtQ smtQ smtQ (.*.)
@@ -61,6 +62,11 @@ model cs = do
 
   for_ {b = ()} ceqs $ \(v, w) =>
     assertEq (ev v) (ev w)
+
+  minimise $ numberOf R
+  minimise $ numberOf L
+  minimise $ numberOf E
+  minimise $ numberOf I
 
   pure [Map.toList ens]
  where

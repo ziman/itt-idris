@@ -216,6 +216,29 @@ export
 SmtEnum Bool where
   smtEnumValues = [False, True]
 
+private
+binop : String -> Smt a -> Smt b -> Smt c
+binop op (MkSmt x) (MkSmt y) = MkSmt $ L [A op, x, y]
+
+public export
+Pred2 : Type
+Pred2 = {a, b : Type} -> Smt a -> Smt b -> Smt Bool
+
+export
+(Num a, SmtValue a) => Num (Smt a) where
+  (+) = binop "+"
+  (*) = binop "*"
+  fromInteger x = MkSmt $ smtShow (fromInteger x)
+
+export
+(Num (Smt a), Neg a) => Neg (Smt a) where
+  (-) = binop "-"
+  negate (MkSmt x) = MkSmt $ L [A "-", x]
+
+export
+ifte : Smt Bool -> Smt a -> Smt a -> Smt a
+ifte (MkSmt b) (MkSmt t) (MkSmt e) = MkSmt $ L [A "ite", b, t, e]
+
 public export
 Prop : Type
 Prop = Smt Bool
@@ -247,16 +270,6 @@ declEnum {a} n = do
       , L [L $ A n :: map (smtShow . the a) smtEnumValues]
       ]
   pure $ MkSmtType (A n)
-
-private
-binop : (SmtValue a, SmtValue b) => String -> Smt a -> Smt b -> Smt c
-binop op (MkSmt x) (MkSmt y) = MkSmt $ L [A op, x, y]
-
-public export
-Pred2 : Type
-Pred2 = {a, b : Type}
-    ->(SmtValue a, SmtValue b)
-    => Smt a -> Smt b -> Smt Bool
 
 infix 2 .==
 export
@@ -326,6 +339,14 @@ declVar : (n : String) -> (ty : SmtType a) -> SmtM (Smt a)
 declVar n (MkSmtType ty) = do
   tell [L [A "declare-const", A n, ty]]
   pure $ MkSmt (A n)
+
+export
+maximise : Smt a -> SmtM ()
+maximise (MkSmt s) = tellL [A "maximize", s]
+
+export
+minimise : Smt a -> SmtM ()
+minimise (MkSmt s) = tellL [A "minimize", s]
 
 public export
 data FList : (Type -> Type) -> List (Type, Type) -> Type where
