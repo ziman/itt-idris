@@ -166,7 +166,10 @@ mutual
       then throw $ CantConvert l r
       else do
         f ~= f'
-        deferConv q x x'
+        case q of
+          QQ I => pure ()
+          QQ _ => x ~= x'
+          EV _ => deferConv q x x'
   conv Star Star = pure ()
   conv l r = throw $ CantConvert l r
 
