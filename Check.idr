@@ -191,16 +191,16 @@ covering export
 checkTm : Term n -> TC n (Ty n)
 checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
 checkTm tm@(Bind Lam d@(D n q ty) rhs) = traceTm tm "LAM" $ do
-  tyTy <- withQ E $ checkTm ty
+  tyTy <- withQ I $ checkTm ty
   tyTy ~= Star
 
   Bind Pi d <$> (withDef d $ checkTm rhs)
 
 checkTm tm@(Bind Pi d@(D n q ty) rhs) = traceTm tm "PI" $ do
-  tyTy <- withQ E $ checkTm ty
+  tyTy <- withQ I $ checkTm ty
   tyTy ~= Star
 
-  withDef0 d $ do
+  withQ I $ withDef d $ do
     rhsTy <- checkTm rhs
     rhsTy ~= Star
 

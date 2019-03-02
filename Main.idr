@@ -4,6 +4,7 @@ import Check
 import Infer
 import Utils
 import Evar
+import Lens
 import SmtModel
 import Parser
 
@@ -22,12 +23,13 @@ checkClosed tm = case runTC (checkTm tm) (MkE L [] []) MkTCS of
 
 covering
 inferClosed : TT (Maybe Q) Z -> IO ()
-inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []) MkTCS of
+inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTCS of
     Left fail => do
-      printLn tm
+      printLn tmEvar
       printLn fail
+
     Right (st, ceqs, ty) => do
-      putStrLn $ show tm
+      putStrLn $ show tmEvar
       putStrLn $ "  : " ++ show ty
       putStrLn $ "given constraints:"
       for_ (constrs ceqs) $ \c => putStrLn $ "  " ++ show c
@@ -43,7 +45,18 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
             [ "  " ++ show i ++ " -> " ++ show q
             | (i, q) <- Map.toList eVals
             ]
+
+          case ttQ (substQ eVals) tmEvar of
+            Nothing => putStrLn "did not substitute for all evars"
+            Just tmQ => checkClosed tmQ
   where
+    tmEvar : TT Evar Z
+    tmEvar = evarify tm
+
+    substQ : SortedMap ENum Q -> Evar -> Maybe Q
+    substQ vs (QQ q) = Just q
+    substQ vs (EV i) = Map.lookup i vs
+
     isRelevant : SortedMap ENum Q -> List Evar -> Maybe Bool
     isRelevant vs [] = Just True
     isRelevant vs (QQ I :: evs) = Just False
