@@ -88,6 +88,13 @@ model cs = do
     CEq x y => [(x, y)]
     _ => []
 
+solve : List Constr -> IO (Either String (SortedMap ENum Q))
+solve cs = do
+  sol <- Smt.solve $ model cs
+  pure $ case sol of
+    Left err => Left $ show err
+    Right [vars] => Right $ Map.fromList vars
+
 namespace Main
   main : IO ()
   main = do
