@@ -78,7 +78,7 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
             putStrLn "Fixed point reached."
             pure $ Right vals
 
-          (newEqs, rest) => do
+          (newEqs, waitingEqs) => do
             putStrLn $ "new equalities:"
             putStrLn $ unlines
               [ "  " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
@@ -88,7 +88,11 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
             case Infer.TC.runTC (traverse_ resumeEq newEqs) (MkE Set.empty [] []) st of
               Left fail => pure $ Left (show fail)
               Right (st', MkConstrs cs' eqs', ()) => do
-                iter (i+1) (MkConstrs (cs <+> cs') (eqs <+> eqs')) st'
+                -- we use waitingEqs (eqs from the previous iteration that have not been reached yet)
+                -- and eqs' (eqs from this iteration)
+                -- we drop eqs we have already reached and checked
+                -- otherwise we'd loop forever in checking them again and again
+                iter (i+1) (MkConstrs (cs <+> cs') (waitingEqs <+> eqs')) st'
 
 covering
 main : IO ()
