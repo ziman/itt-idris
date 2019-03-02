@@ -95,7 +95,7 @@ Show Q where
 export
 ShowQ Q where
   showCol q = ":" ++ show q
-  showApp q = "-" ++ show q ++ "-"
+  showApp q = " -" ++ show q ++ "- "
 
 export
 ShowQ (Maybe Q) where

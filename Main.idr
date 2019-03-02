@@ -31,16 +31,17 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
     Right (st, ceqs, ty) => do
       putStrLn $ show tmEvar
       putStrLn $ "  : " ++ show ty
-      putStrLn $ "given constraints:"
+      putStrLn $ "\n###  Constraints ###\n"
       for_ (constrs ceqs) $ \c => putStrLn $ "  " ++ show c
-      putStrLn $ "deferred equalities:"
+      putStrLn $ "\nDeferred equalities:\n"
       for_ (deferredEqs ceqs) $ \eq => putStrLn $ "  " ++ show eq
 
+      putStrLn $ "\n### Constraint solving ###\n"
       eVals <- iter 1 ceqs st
       case eVals of
         Left err => putStrLn err
         Right eVals => do
-          putStrLn $ "## Final valuation"
+          putStrLn $ "\n### Final valuation ###\n"
           putStrLn $ unlines
             [ "  " ++ show i ++ " -> " ++ show q
             | (i, q) <- Map.toList eVals
@@ -82,19 +83,19 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
     covering
     iter : Int -> Constrs -> Infer.TCState -> IO (Either String (SortedMap ENum Q))
     iter i (MkConstrs cs eqs) st = do
-      putStrLn $ "## Solving iteration " ++ show i 
+      putStrLn $ "  -> iteration " ++ show i 
       solution <- SmtModel.solve cs
       case solution of
         Left err => pure $ Left err
         Right vals => case newlyReachableEqs vals eqs of
           ([], _) => do
-            putStrLn "Fixed point reached."
+            putStrLn "    Fixed point reached."
             pure $ Right vals
 
           (newEqs, waitingEqs) => do
-            putStrLn $ "new equalities:"
+            putStrLn $ "    New equalities:"
             putStrLn $ unlines
-              [ "  " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
+              [ "      " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
               | DeferEq gs bt ctx x y <- newEqs
               ]
 
