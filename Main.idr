@@ -8,6 +8,7 @@ import SmtModel
 
 import Data.Fin
 import Data.Vect
+import Data.SortedMap as Map
 import Data.SortedSet as Set
 
 %default total
@@ -34,10 +35,39 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
         putStrLn $ "## Solving iteration " ++ show i 
         solution <- SmtModel.solve cs
         case solution of
-          Left err => putStrLn err
-          Right vals => print vals
+          Left err => Left err
+          Right vals => case newlyReachableEqs vals eqs of
+            ([], _) => do
+              putStrLn "Fixed point reached."
+              pure $ Right vals
 
-      iter 1 ceqs
+            (newEqs, rest) => ?rhs
+
+      eVals <- iter 1 ceqs
+      case eVals of
+        Left err => putStrLn err
+        Right eVals => do
+          putStrLn $ "## Final valuation"
+          putStrLn $ unlines ["  " ++ show i ++ " -> " ++ show q | (i, q) <- Map.toList eVals]
+
+  where
+    isRelevant : SortedMap ENum Q -> List Evar -> Maybe Bool
+    isRelevant vs [] = Just True
+    isRelevant vs (QQ I :: evs) = Just False
+    isRelevant vs (QQ _ :: evs) = isRelevant vs evs
+    isRelevant vs (EV i :: evs) = case Map.lookup i vs of
+      Nothing => Nothing  -- we don't know yet
+      Just I  => Just False
+      Just _  => isrelevant vs evs
+
+    newlyReachableEqs : SortedMap ENum Q -> List DeferredEq -> (List DeferredEq, List DeferredEq)
+    newlyReachableEqs vs [] = ([], [])
+    newlyReachableEqs vs (eq@(DeferEq gs _ _ _ _) :: eqs) =
+      let (reached, unknown) = newlyReachableEqs vs eqs
+        in case isRelevant vs (Set.toList gs) of
+          Nothing => (reached, eq :: unknown)    -- still unknown
+          Just True => (eq :: reached, unknown)  -- newly reached!
+          Just False => (reached, unknown)       -- definitely unreachable, drop it
 
 example1 : TT Q Z
 example1 =
