@@ -43,10 +43,12 @@ evSmt vs (EV i) with (Map.lookup i vs)
   | Just v  = v
   | Nothing = smtError "cannot-happen"  -- cannot happen
 
-model : List Constr -> SmtM ()
+model : List Constr -> SmtM (FList (const ENum) Smt Q)
 model cs = do
   smtQ <- the (SmtM (SmtType Q)) $ declEnum "Q"
-  ev  <- evSmt <$> declVars smtQ (Set.toList $ eNums cs)
+  ens <- declVars smtQ (Set.toList $ eNums cs)
+  -- ev  <- evSmt <$> declVars smtQ (Set.toList $ eNums cs)
+  let ev = evSmt ens
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
   mul <- defineEnumFun2 "mul" smtQ smtQ smtQ (.*.)
