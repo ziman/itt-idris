@@ -12,15 +12,19 @@ Set : Type -> Type
 Set = SortedSet
 
 public export
+Backtrace : Type
+Backtrace = List String
+
+public export
 data Constr : Type where
   CEq : (v, w : Evar) -> Constr
-  CLeq : (gs : Set Evar) -> (v : Evar) -> Constr
+  CLeq : (bt : Backtrace) -> (gs : Set Evar) -> (v : Evar) -> Constr
   CConv : (gs : Set Evar) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> Constr
 
 export
 Show Constr where
   show (CEq v w) = show v ++ " ~ " ++ show w
-  show (CLeq gs v) = show (Set.toList gs) ++ " -> " ++ show v
+  show (CLeq bt gs v) = show (Set.toList gs) ++ " -> " ++ show v
   show (CConv gs ctx x y) = show (Set.toList gs) ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
 public export
@@ -38,10 +42,6 @@ Ty = TT Evar
 public export
 record TCState where
   constructor MkTCS
-
-public export
-Backtrace : Type
-Backtrace = List String
 
 public export
 data ErrorMessage : Nat -> Type where
@@ -116,14 +116,23 @@ withDef : Def Evar n -> TC (S n) a -> TC n a
 withDef d@(D n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt), st
   => case f (MkE gs (d :: ctx) bt) st of
     Left fail => Left fail
-    Right (st', cs, x) => Right (st', CLeq Set.empty q :: cs, x)
+    Right (st', cs, x) => Right (st', CLeq bt (Set.fromList [QQ I]) q :: cs, x)
 
 withQ : Evar -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \(MkE gs ctx bt), st => f (MkE (Set.insert q gs) ctx bt) st
 
+noUsage : TC n a -> TC n a
+noUsage (MkTC f) = MkTC $ \env, st => case f env st of
+    Left fail => Left fail
+    Right (st', cs, x) => Right (st', mapMaybe removeUsage cs, x)
+  where
+    removeUsage : Constr -> Maybe Constr
+    removeUsage (CLeq _ _ _) = Nothing
+    removeUsage c = Just c
+
 use : Fin n -> TC n ()
-use i = MkTC $ \env, st
-    => Right (st, [CLeq (guards env) (defQ $ lookupCtx i $ context env)], ())
+use i = MkTC $ \(MkE gs ctx bt), st
+    => Right (st, [CLeq bt gs (defQ $ lookupCtx i ctx)], ())
 
 eqEvar : Evar -> Evar -> TC n ()
 eqEvar p q = MkTC $ \env, st => Right (st, [CEq p q], ())
@@ -149,17 +158,17 @@ covering export
 inferTm : Term n -> TC n (Ty n)
 inferTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
 inferTm tm@(Bind Lam d@(D n q ty) rhs) = traceTm tm "LAM" $ do
-  tyTy <- inferTm ty
+  tyTy <- noUsage $ inferTm ty
   tyTy ~= Star
 
   Bind Pi d <$> (withDef d $ inferTm rhs)
 
 inferTm tm@(Bind Pi d@(D n q ty) rhs) = traceTm tm "PI" $ do
-  tyTy <- inferTm ty
+  tyTy <- noUsage $ inferTm ty
   tyTy ~= Star
 
   withDef d $ do
-    rhsTy <- inferTm rhs
+    rhsTy <- noUsage $ inferTm rhs
     rhsTy ~= Star
 
   pure Star

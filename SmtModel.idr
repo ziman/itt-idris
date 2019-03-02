@@ -30,7 +30,7 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
 
     eNumsC : Constr -> SortedSet ENum
     eNumsC (CEq v w) = ev v <+> ev w
-    eNumsC (CLeq gs v) = concat $ map ev (v :: Set.toList gs)
+    eNumsC (CLeq _bt gs v) = concat $ map ev (v :: Set.toList gs)
     eNumsC (CConv gs ctx x y) = neutral
 
 declVars : SmtType Q -> List ENum -> SmtM (SortedMap ENum (Smt Q))
@@ -77,7 +77,7 @@ model cs = do
 
   cleqs : List (Evar, Set Evar)
   cleqs = cs >>= \c => case c of
-    CLeq gs v => [(v, gs)]
+    CLeq _bt gs v => [(v, gs)]
     _ => []
 
   cleqm : SortedMap Evar (List (Set Evar))
