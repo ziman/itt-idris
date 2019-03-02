@@ -58,17 +58,44 @@ modelConstr vs c = case c of
       | Nothing = smtError "cannot-happen"  -- cannot happen
 -}
 
+evSmt : SortedMap ENum (Smt Q) -> Evar -> Smt Q
+evSmt vs (QQ q) = lit q
+evSmt vs (EV i) with (Map.lookup i vs)
+  | Just v  = v
+  | Nothing = smtError "cannot-happen"  -- cannot happen
+
 model : List Constr -> SmtM ()
 model cs = do
   smtQ <- the (SmtM (SmtType Q)) $ declEnum "Q"
-  vs  <- declVars smtQ (Set.toList $ eNums cs)
+  ev  <- evSmt <$> declVars smtQ (Set.toList $ eNums cs)
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
   mul <- defineEnumFun2 "mul" smtQ smtQ smtQ (.*.)
   leq <- defineEnumFun2 "leq" smtQ smtQ smtBool (.<=.)
 
-  -- group CLeqs by target
+  for_ {b = ()} (Map.toList cleqm) $ \(v, gss) =>
+    assert $
+      (foldr
+        (\gs => add
+          (foldr (mul . ev) (lit semi1) $ Set.toList gs))
+        (lit semi0)
+        gss)
+      `leq` ev v
+
   pure ()
+ where
+  cleqs : List (Evar, Set Evar)
+  cleqs = cs >>= \c => case c of
+    CLeq gs v => [(v, gs)]
+    _ => []
+
+  cleqm : SortedMap Evar (List (Set Evar))
+  cleqm = foldr (\(v, gs) => Map.mergeWith (++) (Map.insert v [gs] neutral)) neutral cleqs
+
+  ceqs : List (Evar, Evar)
+  ceqs = cs >>= \c => case c of
+    CEq x y => [(x, y)]
+    _ => []
 
 namespace Main
   main : IO ()
