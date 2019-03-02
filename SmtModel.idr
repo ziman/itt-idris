@@ -75,15 +75,22 @@ model cs = do
 
   for_ {b = ()} (Map.toList cleqm) $ \(v, gss) =>
     assert $
-      (foldr
-        (\gs => add
-          (foldr (mul . ev) (lit semi1) $ Set.toList gs))
+      (foldMap add
         (lit semi0)
+        (foldMap mul (lit semi1) ev . Set.toList)
         gss)
       `leq` ev v
 
+  for_ {b = ()} ceqs $ \(v, w) =>
+    assertEq (ev v) (ev w)
+
   pure ()
  where
+  foldMap : (a -> a -> a) -> a -> (b -> a) -> List b -> a
+  foldMap op neutr f [] = neutr
+  foldMap op neutr f [x] = f x
+  foldMap op neutr f (x :: xs) = f x `op` foldMap op neutr f xs
+
   cleqs : List (Evar, Set Evar)
   cleqs = cs >>= \c => case c of
     CLeq gs v => [(v, gs)]
