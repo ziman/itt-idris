@@ -48,7 +48,7 @@ iterate g x = iterate' _ (\n, x => g x) _ x _
 
 mutual
   Weaken (TT q) where
-    weaken (V x) = V $ weaken x
+    weaken (V x) = V $ FS x
     weaken (Bind b d rhs) = Bind b (weaken d) (weaken rhs)
     weaken (App q f x) = App q (weaken f) (weaken x)
     weaken Star = Star

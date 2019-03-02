@@ -193,7 +193,7 @@ mutual
   conv Star Star = pure ()
   conv l r = throw $ CantConvert l r
 
-export
+covering export
 resumeEq : DeferredEq -> TC n ()
 resumeEq (DeferEq gs bt ctx x y) = MkTC $ \_env, st =>
   case x ~= y of
@@ -223,7 +223,7 @@ inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
   xTy <- inferTm x
   case fTy of
     Bind Pi d@(D piN piQ piTy) piRhs => do
-      xTy ~= piTy
+      traceTm fTy "fTy" $ xTy ~= piTy
       eqEvar appQ piQ
       pure $ substVars (substTop x) piRhs
 

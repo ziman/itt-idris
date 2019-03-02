@@ -22,7 +22,9 @@ checkClosed tm = case runTC (checkTm tm) (MkE L [] []) MkTCS of
 covering
 inferClosed : TT (Maybe Q) Z -> IO ()
 inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []) MkTCS of
-    Left fail => printLn fail
+    Left fail => do
+      printLn tm
+      printLn fail
     Right (st, ceqs, ty) => do
       putStrLn $ show tm
       putStrLn $ "  : " ++ show ty
@@ -59,6 +61,7 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
           Just True => (eq :: reached, unknown)  -- newly reached!
           Just False => (reached, unknown)       -- definitely unreachable, drop it
 
+    covering
     reruns : List DeferredEq -> Infer.TC Z ()
     reruns = traverse_ resumeEq
 
@@ -96,7 +99,9 @@ example2 : TT (Maybe Q) Z
 example2 =
   Bind Lam (D "a" Nothing Star) $
   Bind Lam (D "x" Nothing (V FZ)) $
-  V FZ
+  Bind Lam (D "f" Nothing (Bind Pi (D "y" (Just L) (V $ FS FZ)) (V $ FS (FS FZ)))) $
+  Bind Lam (D "g" Nothing (Bind Pi (D "y" (Just L) (V $ FS (FS FZ))) (V $ FS (FS (FS FZ))))) $
+  App Nothing (V FZ) (App Nothing (V $ FS FZ) (V $ FS (FS FZ)))
 
 covering
 main : IO ()
