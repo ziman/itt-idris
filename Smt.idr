@@ -117,10 +117,10 @@ record SmtM (a : Type) where
   runSmtM' : SmtState -> Either SmtError (SmtState, List SExp, a)
 
 export
-runSmtM : SmtM () -> Either SmtError String
+runSmtM : SmtM a -> Either SmtError (String, a)
 runSmtM (MkSmtM f) = case f MkSmtState of
   Left err => Left err
-  Right (_st, ss, ()) => Right . unlines $ map show ss
+  Right (_st, ss, x) => Right (unlines $ map show ss, x)
 
 export
 Functor SmtM where
@@ -322,13 +322,14 @@ declVar n (MkSmtType ty) = do
   pure $ MkSmt (A n)
 
 public export
-Solution : Type
-Solution = ({a : Type} -> SmtValue a => Smt a -> Maybe a)
+data FList : (Type -> Type) -> List Type -> Type where
+  Nil : FList f []
+  (::) : f a -> FList f as -> FList f (a :: as)
 
 private
-parseSol : List SExp -> Either SmtError Solution
+parseSol : List SExp -> Either SmtError (SortedMap String SExp)
 parseSol (A "unsat" :: _) = Left Unsatisfiable
-parseSol [A "sat", L (A "model" :: ms)] = Right varLookup
+parseSol [A "sat", L (A "model" :: ms)] = Right varMap
   where
     parseVar : SExp -> SortedMap String SExp
     parseVar (L [A "define-fun", A n, L [], _ty, val]) = Map.fromList [(n, val)]
@@ -337,26 +338,39 @@ parseSol [A "sat", L (A "model" :: ms)] = Right varLookup
     varMap : SortedMap String SExp
     varMap = foldr (Map.mergeLeft . parseVar) Map.empty ms
 
+    {-
     varLookup : SmtValue a => Smt a -> Maybe a
     varLookup (MkSmt (A n)) = case Map.lookup n varMap of
       Just s  => smtRead s
       Nothing => Nothing
     varLookup _ = Nothing
+    -}
 
 parseSol ss = Left $ StrangeSmtOutput ss
 
+public export
+AllSmtValue : List Type -> Type
+AllSmtValue [] = ()
+AllSmtValue [a] = SmtValue a
+AllSmtValue (a :: as) = (SmtValue a, AllSmtValue as)
+
+private
+decode : AllSmtValue as => SortedMap String SExp -> FList Smt as -> Either SmtError (FList id as)
+decode varMap vs = ?rhs
+
 export
-solve : SmtM () -> IO (Either SmtError Solution)
-solve model =
+solve : AllSmtValue as => SmtM (FList Smt as) -> IO (Either SmtError (FList id as))
+solve {as} model =
     case runSmtM model' of
       Left err => pure $ Left err
-      Right src => do
+      Right (src, vars) => do
         -- WARNING: incredibly bad code follows
         writeFile "/tmp/model.smt" src
         System.system "z3 -in -smt2 /tmp/model.smt > /tmp/solution.smt"
         Right sol <- readFile "/tmp/solution.smt"
             | Left err => pure (Left (SmtFileError err))
-        pure (parseSExps sol >>= parseSol)
+
+        pure ?rhs -- (parseSExps sol >>= parseSol)
   where
-    model' : SmtM ()
-    model' = model *> tell [L [A "check-sat"], L [A "get-model"]]
+    model' : SmtM (FList Smt as)
+    model' = model <* tell [L [A "check-sat"], L [A "get-model"]]
