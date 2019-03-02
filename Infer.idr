@@ -96,11 +96,13 @@ record TC (n : Nat) (a : Type) where
   constructor MkTC
   runTC : Env n -> TCState -> Either Failure (TCState, Constrs, a)
 
+export
 Functor (TC n) where
   map f (MkTC g) = MkTC $ \env, st => case g env st of
     Left fail => Left fail
     Right (st', cs, x) => Right (st', cs, f x)
 
+export
 Applicative (TC n) where
   pure x = MkTC $ \env, st => Right (st, neutral, x)
   (<*>) (MkTC f) (MkTC g) = MkTC $ \env, st =>
@@ -110,6 +112,7 @@ Applicative (TC n) where
             Left fail => Left fail
             Right (st'', cs'', x'') => Right (st'', cs' <+> cs'', f' x'')
 
+export
 Monad (TC n) where
   (>>=) (MkTC f) g = MkTC $ \env, st =>
     case f env st of
@@ -158,8 +161,8 @@ traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
   => let msg = show t ++ ": " ++ showTm ctx tm
       in f (MkE gs ctx (msg :: bt)) st
 
-deferConv : Evar -> Term n -> Term n -> TC n ()
-deferConv q x y = MkTC $ \(MkE gs ctx bt), st
+deferEq : Evar -> Term n -> Term n -> TC n ()
+deferEq q x y = MkTC $ \(MkE gs ctx bt), st
   => Right (st, MkConstrs [] [DeferEq (Set.fromList [q]) bt ctx x y], ())
 
 mutual
@@ -186,9 +189,15 @@ mutual
         case q of
           QQ I => pure ()
           QQ _ => x ~= x'
-          EV _ => deferConv q x x'
+          EV _ => deferEq q x x'
   conv Star Star = pure ()
   conv l r = throw $ CantConvert l r
+
+export
+resumeEq : DeferredEq -> TC n ()
+resumeEq (DeferEq gs bt ctx x y) = MkTC $ \_env, st =>
+  case x ~= y of
+    MkTC f => f (MkE Set.empty ctx bt) st
 
 covering export
 inferTm : Term n -> TC n (Ty n)

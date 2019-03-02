@@ -59,6 +59,10 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
           Just True => (eq :: reached, unknown)  -- newly reached!
           Just False => (reached, unknown)       -- definitely unreachable, drop it
 
+    reruns : List DeferredEq -> Infer.TC Z ()
+    reruns = traverse_ resumeEq
+
+    covering
     iter : Int -> Constrs -> Infer.TCState -> IO (Either String (SortedMap ENum Q))
     iter i (MkConstrs cs eqs) st = do
       putStrLn $ "## Solving iteration " ++ show i 
@@ -76,7 +80,11 @@ inferClosed tm = case Infer.TC.runTC (inferTm $ evarify tm) (MkE Set.empty [] []
               [ "  " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
               | DeferEq gs bt ctx x y <- newEqs
               ]
-            iter (i+1) (MkConstrs cs eqs) st
+
+            case Infer.TC.runTC (traverse_ resumeEq newEqs) (MkE Set.empty [] []) st of
+              Left fail => pure $ Left (show fail)
+              Right (st', MkConstrs cs' eqs', ()) => do
+                iter (i+1) (MkConstrs (cs <+> cs') (eqs <+> eqs')) st'
 
 example1 : TT Q Z
 example1 =
