@@ -181,15 +181,13 @@ mutual
       else do
         ty ~= ty'
         withDef d $ rhs ~= rhs'
-  conv l@(App q f x) r@(App q' f' x') =
-    if q /= q'
-      then throw $ CantConvert l r
-      else do
-        f ~= f'
-        case q of
-          QQ I => pure ()
-          QQ _ => x ~= x'
-          EV _ => deferEq q x x'
+  conv l@(App q f x) r@(App q' f' x') = do
+    eqEvar q q'
+    f ~= f'
+    case q of
+      QQ I => pure ()
+      QQ _ => x ~= x'
+      EV _ => deferEq q x x'
   conv Star Star = pure ()
   conv l r = throw $ CantConvert l r
 
