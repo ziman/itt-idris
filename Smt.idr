@@ -1,6 +1,24 @@
 module Smt
 
+import System
+import Text.Lexer
+import Text.Parser
+
 %default total
+
+public export
+data SmtError : Type where
+  Unsatisfiable : SmtError
+  SmtFileError : FileError -> SmtError
+  OtherError : String -> SmtError
+  LexError : Int -> Int -> String -> SmtError
+
+export
+Show SmtError where
+  show (OtherError msg) = msg
+  show (SmtFileError err) = show err
+  show Unsatisfiable = "unsatisfiable"
+  show (LexError row col rest) = "could not lex at " ++ show (row, col) ++ ": " ++ rest
 
 public export
 data SExp : Type where
@@ -20,18 +38,35 @@ Show SExp where
         showL [x] = show' x
         showL (x :: xs) = show' x ++ " " ++ showL xs
 
+private
+data SToken = ParL | ParR | Atom String | Space
+
+private
+lexSExp : String -> Either SmtError (List (TokenData SToken))
+lexSExp src = case lex tokens src of
+    (ts, (_, _, "")) => Right $ filter notSpace ts
+    (_, (row, col, rest)) => Left $ LexError row col rest
+  where
+    notSpace : TokenData SToken -> Bool
+    notSpace td = case tok td of
+        Space => False
+        _ => True
+
+    atom : Lexer
+    atom = some $ pred (\x => not (isSpace x || x == '(' || x == ')'))
+
+    tokens : TokenMap SToken
+    tokens =
+      [ (is '(', const ParL)
+      , (is ')', const ParR)
+      , (atom,   Atom)
+      , (pred isSpace, const Space)
+      ]
+
 export
 record Smt (ty : Type) where
   constructor MkSmt
   sexp : SExp
-
-public export
-data SmtError : Type where
-  OtherError : String -> SmtError
-
-export
-Show SmtError where
-  show (OtherError msg) = msg
 
 private
 record SmtState where
@@ -209,7 +244,7 @@ assertEq x y = assert $ x .== y
 
 export
 smtError : String -> Smt a
-smtError msg = MkSmt $ L [A "error", A msg]
+smtError msg = MkSmt $ L [A "error", A $ "\"" ++ msg ++ "\""] -- bad hack
 
 export
 declFun2 : (SmtValue a, SmtValue b, SmtValue c)
@@ -246,3 +281,27 @@ declVar : (n : String) -> (ty : SmtType a) -> SmtM (Smt a)
 declVar n (MkSmtType ty) = do
   tell [L [A "declare-const", A n, ty]]
   pure $ MkSmt (A n)
+
+public export
+Solution : Type
+Solution = ({a : Type} -> SmtValue a => Smt a -> Maybe a)
+
+private
+parseSolution : String -> Either SmtError Solution
+parseSolution src = ?rhs
+
+export
+solve : SmtM () -> IO (Either SmtError Solution)
+solve model =
+    case runSmtM model' of
+      Left err => pure $ Left err
+      Right src => do
+        -- WARNING: incredibly bad code follows
+        writeFile "/tmp/model.smt" src
+        System.system "z3 -in -smt2 /tmp/model.smt > /tmp/solution.smt"
+        Right sol <- readFile "/tmp/solution.smt"
+            | Left err => pure (Left (SmtFileError err))
+        pure $ parseSolution sol
+  where
+    model' : SmtM ()
+    model' = model *> tell [L [A "check-sat"], L [A "get-model"]]

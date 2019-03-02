@@ -85,7 +85,10 @@ namespace Main
   main : IO ()
   main = case runSmtM $ model cs of
       Left err => printLn err
-      Right src => putStrLn src
+      Right src => do
+        putStrLn src
+        writeFile "model.smt" src
+        pure ()
     where
       cs =
             [ CEq (QQ I) (EV $ EN 0)
