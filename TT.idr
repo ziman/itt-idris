@@ -96,6 +96,11 @@ Show Q where
   show R = "R"
 
 export
+ShowQ () where
+  showCol () = ":"
+  showApp () = " "
+
+export
 ShowQ Q where
   showCol q = ":" ++ show q
   showApp q = " -" ++ show q ++ "- "

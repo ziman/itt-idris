@@ -7,6 +7,7 @@ import Evar
 import Lens
 import SmtModel
 import Parser
+import Erase
 
 import Data.Fin
 import Data.Vect
@@ -49,7 +50,12 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
 
           case ttQ (substQ eVals) tmEvar of
             Nothing => putStrLn "did not substitute for all evars"
-            Just tmQ => checkClosed tmQ
+            Just tmQ => do
+              checkClosed tmQ
+              let tmErased = erase [] tmQ
+
+              putStrLn "\n### Erased form ###\n"
+              printLn tmErased
   where
     tmEvar : TT Evar Z
     tmEvar = evarify tm

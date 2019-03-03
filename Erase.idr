@@ -3,6 +3,7 @@ module Erase
 import TT
 import Data.List
 
+public export
 eraseN : Context Q n -> Nat
 eraseN [] = Z
 eraseN (D n I ty :: ds) = eraseN ds
@@ -22,6 +23,7 @@ eraseVar (D n q ty :: ds) (FS i) with (eraseVar ds i)
   eraseVar (D n R ty :: ds) (FS i) | ev = FS <$> ev
 
 -- erase for runtime
+export
 erase : (ctx : Context Q n) -> (tm : TT Q n) -> TT () (eraseN ctx)
 erase ctx (V i) with (eraseVar ctx i)
   | Nothing = Erased  -- should be unreachable if erasure's correct
