@@ -1,5 +1,6 @@
 module TT
 
+import Utils
 import public OrdSemiring
 import public Data.Fin
 
@@ -31,6 +32,18 @@ mutual
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Star : TT q n
     Erased : TT q n
+
+export
+Eq q => Eq (TT q n) where
+  (==) (V i) (V j)
+    = finEq i j
+  (==) (Bind b (D n q ty) rhs) (Bind b' (D n' q' ty') rhs')
+    = (b == b') && (q == q') && (ty == ty') && (rhs == rhs')
+  (==) (App q f x) (App q' f' x')
+    = (q == q') && (f == f') && (x == x')
+  (==) Star Star = True
+  (==) Erased Erased = True
+  _ == _ = False
 
 export
 interface ShowQ q where
