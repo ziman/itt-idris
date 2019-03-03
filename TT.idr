@@ -264,5 +264,9 @@ mutual
     pretty (PTT top atm, ctx) Erased = text "_"
 
 export
+ShowQ q => Pretty () (TT q Z) where
+  pretty () = pretty (PTT True False, TT.Nil)
+
+export
 ShowQ q => Show (TT q Z) where
-  show = render " " . pretty (PTT True False, TT.Nil)
+  show = render " " . pretty ()

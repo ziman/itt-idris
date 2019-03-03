@@ -8,6 +8,7 @@ import Lens
 import SmtModel
 import Parser
 import Erase
+import Pretty
 
 import Data.Fin
 import Data.Vect
@@ -59,6 +60,19 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
 
               putStrLn "\n### Normal erased form ###\n"
               printLn $ rnf tmErased
+
+              putStrLn . render " " $ columns " . "
+                [ text "Unerased:"
+                  $$ pretty () tmQ
+                  $$ text ""
+                  $$ text "Unerased, reduced:"
+                  $$ pretty () (rnf tmQ)
+                , text "Erased:"
+                  $$ pretty () tmErased
+                  $$ text ""
+                  $$ text "Erased, reduced:"
+                  $$ pretty () (rnf tmErased)
+                ]
 
               if rnf (erase [] tmQ) == erase [] (rnf tmQ)
                  then putStrLn "\nErasure and reduction commute."
