@@ -56,6 +56,16 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
 
               putStrLn "\n### Erased form ###\n"
               printLn tmErased
+
+              putStrLn "\n### Normal erased form ###\n"
+              printLn $ rnf tmErased
+
+              if rnf (erase [] tmQ) == erase [] (rnf tmQ)
+                 then putStrLn "\nErasure and reduction commute."
+                 else do
+                   putStrLn "\n!!! NON-COMMUTATIVITY !!!"
+                   printLn $ rnf (erase [] tmQ)
+                   printLn $ erase [] (rnf tmQ)
   where
     tmEvar : TT Evar Z
     tmEvar = evarify tm
