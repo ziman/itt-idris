@@ -23,7 +23,7 @@ data Constr : Type where
 
 public export
 data DeferredEq : Type where
-  DeferEq : (gs : Set Evar) -> (bt : Backtrace) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> DeferredEq
+  DeferEq : (g : Evar) -> (bt : Backtrace) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> DeferredEq
 
 export
 Show Constr where
@@ -32,7 +32,7 @@ Show Constr where
 
 export
 Show DeferredEq where
-  show (DeferEq gs bt ctx x y) = show (Set.toList gs) ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
+  show (DeferEq g bt ctx x y) = show g ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
 public export
 record Constrs where
@@ -165,8 +165,8 @@ traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
       in f (MkE gs ctx (msg :: bt)) st
 
 deferEq : Evar -> Term n -> Term n -> TC n ()
-deferEq q x y = MkTC $ \(MkE gs ctx bt), st
-  => Right (st, MkConstrs [] [DeferEq (Set.fromList [q]) bt ctx x y], ())
+deferEq g x y = MkTC $ \(MkE gs ctx bt), st
+  => Right (st, MkConstrs [] [DeferEq g bt ctx x y], ())
 
 mutual
   infix 3 ~=
@@ -196,7 +196,7 @@ mutual
 
 covering export
 resumeEq : DeferredEq -> TC n ()
-resumeEq (DeferEq gs bt ctx x y) = MkTC $ \_env, st =>
+resumeEq (DeferEq g bt ctx x y) = MkTC $ \_env, st =>
   case x ~= y of
     MkTC f => f (MkE Set.empty ctx bt) st
 

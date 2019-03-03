@@ -88,20 +88,19 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
     substQ vs (QQ q) = Just q
     substQ vs (EV i) = Map.lookup i vs
 
-    isRelevant : SortedMap ENum Q -> List Evar -> Maybe Bool
-    isRelevant vs [] = Just True
-    isRelevant vs (QQ I :: evs) = Just False
-    isRelevant vs (QQ _ :: evs) = isRelevant vs evs
-    isRelevant vs (EV i :: evs) = case Map.lookup i vs of
+    isRelevant : SortedMap ENum Q -> Evar -> Maybe Bool
+    isRelevant vs (QQ I) = Just False
+    isRelevant vs (QQ _) = Just True
+    isRelevant vs (EV i) = case Map.lookup i vs of
       Nothing => Nothing  -- we don't know yet
       Just I  => Just False
-      Just _  => isRelevant vs evs
+      Just _  => Just True
 
     newlyReachableEqs : SortedMap ENum Q -> List DeferredEq -> (List DeferredEq, List DeferredEq)
     newlyReachableEqs vs [] = ([], [])
-    newlyReachableEqs vs (eq@(DeferEq gs _ _ _ _) :: eqs) =
+    newlyReachableEqs vs (eq@(DeferEq g _ _ _ _) :: eqs) =
       let (reached, unknown) = newlyReachableEqs vs eqs
-        in case isRelevant vs (Set.toList gs) of
+        in case isRelevant vs g of
           Nothing => (reached, eq :: unknown)    -- still unknown
           Just True => (eq :: reached, unknown)  -- newly reached!
           Just False => (reached, unknown)       -- definitely unreachable, drop it
@@ -125,7 +124,7 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
           (newEqs, waitingEqs) => do
             putStrLn $ unlines
               [ "    " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
-              | DeferEq gs bt ctx x y <- newEqs
+              | DeferEq g bt ctx x y <- newEqs
               ]
 
             case Infer.TC.runTC (traverse_ resumeEq newEqs) (MkE Set.empty [] []) st of
