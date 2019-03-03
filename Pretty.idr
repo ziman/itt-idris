@@ -7,7 +7,8 @@ data Doc : Type where
   Text : String -> Doc
   Vcat : List Doc -> Doc
   Hang : Doc -> Doc -> Doc
-  Indent : String -> Doc -> Doc
+  Indent : Doc -> Doc
+  Columns : String -> List Doc -> Doc
 
 public export
 interface Pretty ctx a where
@@ -42,11 +43,22 @@ infixl 6 <++>
 (<++>) : Doc -> Doc -> Doc
 (<++>) x y = x <+> text " " <+> y
 
-indent : String -> Doc -> Doc
+indent : Doc -> Doc
 indent = Indent
 
 parens : Doc -> Doc
 parens d = text "(" <+> d <+> text ")"
+
+columns : String -> List Doc -> Doc
+columns = Columns
+
+data CN = CL Nat | CR Nat | CE
+
+compareNat : Nat -> Nat -> CN
+compareNat Z Z = CE
+compareNat n Z = CL n
+compareNat Z n = CR n
+compareNat (S m) (S n) = compareNat m n
 
 private
 hang : String -> List String -> List String -> List String
@@ -58,8 +70,43 @@ hang ind (x :: xs) ys = x :: hang ind xs ys
 render : String -> Doc -> String
 render ind = unlines . render' ind
   where
+    extendTo : Nat -> String -> String
+    extendTo w s = case compareNat w (length s) of
+      CL _    => substr 0 w s
+      CE      => s
+      CR diff => s ++ pack (replicate diff ' ')
+
+    box : List String -> List String
+    box ls =
+      let w = foldr (max . length) 0 ls
+        in map (extendTo w) ls
+
+    extendRowsTo : Nat -> List String -> List String
+    extendRowsTo r ls = case compareNat r (length ls) of
+      CL _    => take r ls  -- should never happen
+      CE      => ls
+      CR diff => ls ++ replicate diff ""
+
     render' : String -> Doc -> List String
     render' ind (Text s) = [s]
     render' ind (Vcat ls) = assert_total $ concatMap (render' ind) ls  -- termination checker wat
     render' ind (Hang x y) = hang ind (render' ind x) (render' ind y)
-    render' ind (Indent ind' x) = map (ind'++) $ render' ind x
+    render' ind (Indent x) = map (ind++) $ render' ind x
+    render' ind (Columns sep ds)
+        = assert_total
+        $ map concat
+        $ transpose
+        $ intersperse sepc
+        $ cols
+      where
+        ls : List (List String)
+        ls = map (box . render' ind) ds
+
+        rows : Nat
+        rows = foldr (max . length) 0 ls
+
+        sepc : List String
+        sepc = replicate rows sep
+
+        cols : List (List String)
+        cols = map (extendRowsTo rows) ls

@@ -234,10 +234,10 @@ mutual
     pretty (PTT top atm, ctx) (V i) = text . defName $ lookupCtx i ctx
     pretty (PTT True False,  ctx) (Bind Lam d rhs) =
       text "\\" <+> pretty ctx d <+> text "."
-      $$ indent "  " (pretty (PTT True False, d::ctx) rhs)
+      $$ indent (pretty (PTT True False, d::ctx) rhs)
     pretty (PTT True True,  ctx) (Bind Lam d rhs) = parens $
       text "\\" <+> pretty ctx d <+> text "."
-      $$ indent "  " (pretty (PTT True False, d::ctx) rhs)
+      $$ indent (pretty (PTT True False, d::ctx) rhs)
     pretty (PTT False True, ctx) (Bind Lam d rhs) = parens $
       text "\\" <+> pretty ctx d <+> text "."
       <++> pretty (PTT True False, d::ctx) rhs
@@ -265,4 +265,4 @@ mutual
 
 export
 ShowQ q => Show (TT q Z) where
-  show = render "  " . pretty (PTT True False, TT.Nil)
+  show = render " " . pretty (PTT True False, TT.Nil)
