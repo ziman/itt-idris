@@ -1,6 +1,7 @@
 module TT
 
 import Utils
+import Pretty
 import public OrdSemiring
 import public Data.Fin
 
@@ -93,10 +94,6 @@ mutual
 
   showDef : ShowQ q => Context q n -> Def q n -> String
   showDef ctx (D n q ty) = n ++ " " ++ showCol q ++ " " ++ showTm ctx ty  
-
-export
-ShowQ q => Show (TT q Z) where
-  show = showTm []
 
 public export
 data Q = I | E | L | R
@@ -220,3 +217,52 @@ OrdSemiring Q where
     (L, R) => True
     (R, R) => True
     _ => False
+
+public export
+record PrettyTT where
+  constructor PTT
+  isTopLevelLam : Bool
+  atomRequired : Bool
+
+mutual
+  export
+  ShowQ q => Pretty (Context q n) (Def q n) where
+    pretty ctx (D n dq ty) = text n <++> text (showCol dq) <++> pretty (PTT False False, ctx) ty
+
+  export
+  ShowQ q => Pretty (PrettyTT, Context q n) (TT q n) where
+    pretty (PTT top atm, ctx) (V i) = text . defName $ lookupCtx i ctx
+    pretty (PTT True False,  ctx) (Bind Lam d rhs) =
+      text "\\" <+> pretty ctx d <+> text "."
+      $$ indent "  " (pretty (PTT True False, d::ctx) rhs)
+    pretty (PTT True True,  ctx) (Bind Lam d rhs) = parens $
+      text "\\" <+> pretty ctx d <+> text "."
+      $$ indent "  " (pretty (PTT True False, d::ctx) rhs)
+    pretty (PTT False True, ctx) (Bind Lam d rhs) = parens $
+      text "\\" <+> pretty ctx d <+> text "."
+      <++> pretty (PTT True False, d::ctx) rhs
+    pretty (PTT False False, ctx) (Bind Lam d rhs) =
+      text "\\" <+> pretty ctx d <+> text "."
+      <++> pretty (PTT True False, d::ctx) rhs
+    pretty (PTT top True, ctx) (Bind Pi d rhs) = parens $
+      parens (pretty ctx d)
+      <++> text "->" <++> pretty (PTT False False, d::ctx) rhs
+    pretty (PTT top False, ctx) (Bind Pi d rhs) =
+      parens (pretty ctx d)
+      <++> text "->" <++> pretty (PTT False False, d::ctx) rhs
+    pretty (PTT top True, ctx) (App q' f x) = parens
+      ( pretty (PTT False False, ctx) f 
+      <+> text (showApp q')
+      <+> pretty (PTT False True, ctx) x
+      )
+    pretty (PTT top False, ctx) (App q' f x) =
+      ( pretty (PTT False False, ctx) f 
+      <+> text (showApp q')
+      <+> pretty (PTT False True, ctx) x
+      )
+    pretty (PTT top atm, ctx) Star = text "Type"
+    pretty (PTT top atm, ctx) Erased = text "_"
+
+export
+ShowQ q => Show (TT q Z) where
+  show = render "  " . pretty (PTT True False, TT.Nil)
