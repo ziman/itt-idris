@@ -221,51 +221,47 @@ OrdSemiring Q where
 public export
 record PrettyTT where
   constructor PTT
-  isTopLevelLam : Bool
-  atomRequired : Bool
+  multiLineLam : Bool
+
+  -- should be an ADT but I'm too lazy to define the Ord instance manually
+  -- 0 = no parens needed
+  -- 1 = parenthesise all non-atoms except applications
+  -- 2 = parenthesise all non-atoms
+  nestingLevel : Int
+
+parensFrom : Int -> Int -> Doc -> Doc
+parensFrom required actual =
+  if actual >= required
+    then parens
+    else id
 
 mutual
   export
   ShowQ q => Pretty (Context q n) (Def q n) where
-    pretty ctx (D n dq ty) = text n <++> text (showCol dq) <++> pretty (PTT False False, ctx) ty
+    pretty ctx (D n dq ty) = text n <++> text (showCol dq) <++> pretty (PTT False 0, ctx) ty
 
   export
   ShowQ q => Pretty (PrettyTT, Context q n) (TT q n) where
-    pretty (PTT top atm, ctx) (V i) = text . defName $ lookupCtx i ctx
-    pretty (PTT True False,  ctx) (Bind Lam d rhs) =
+    pretty (PTT top nl, ctx) (V i) = text . defName $ lookupCtx i ctx
+    pretty (PTT True nl,  ctx) (Bind Lam d rhs) = parensFrom 1 nl $
       text "\\" <+> pretty ctx d <+> text "."
-      $$ indent (pretty (PTT True False, d::ctx) rhs)
-    pretty (PTT True True,  ctx) (Bind Lam d rhs) = parens $
+      $$ indent (pretty (PTT True 0, d::ctx) rhs)
+    pretty (PTT False nl, ctx) (Bind Lam d rhs) = parensFrom 1 nl $
       text "\\" <+> pretty ctx d <+> text "."
-      $$ indent (pretty (PTT True False, d::ctx) rhs)
-    pretty (PTT False True, ctx) (Bind Lam d rhs) = parens $
-      text "\\" <+> pretty ctx d <+> text "."
-      <++> pretty (PTT True False, d::ctx) rhs
-    pretty (PTT False False, ctx) (Bind Lam d rhs) =
-      text "\\" <+> pretty ctx d <+> text "."
-      <++> pretty (PTT True False, d::ctx) rhs
-    pretty (PTT top True, ctx) (Bind Pi d rhs) = parens $
+      <++> pretty (PTT True 0, d::ctx) rhs
+    pretty (PTT top nl, ctx) (Bind Pi d rhs) = parensFrom 1 nl $
       parens (pretty ctx d)
-      <++> text "->" <++> pretty (PTT False False, d::ctx) rhs
-    pretty (PTT top False, ctx) (Bind Pi d rhs) =
-      parens (pretty ctx d)
-      <++> text "->" <++> pretty (PTT False False, d::ctx) rhs
-    pretty (PTT top True, ctx) (App q' f x) = parens
-      ( pretty (PTT False False, ctx) f 
+      <++> text "->" <++> pretty (PTT False 0, d::ctx) rhs
+    pretty (PTT top nl, ctx) (App q' f x) = parensFrom 2 nl $
+      pretty (PTT False 1, ctx) f 
       <+> text (showApp q')
-      <+> pretty (PTT False True, ctx) x
-      )
-    pretty (PTT top False, ctx) (App q' f x) =
-      ( pretty (PTT False False, ctx) f 
-      <+> text (showApp q')
-      <+> pretty (PTT False True, ctx) x
-      )
-    pretty (PTT top atm, ctx) Star = text "Type"
-    pretty (PTT top atm, ctx) Erased = text "_"
+      <+> pretty (PTT False 2, ctx) x
+    pretty (PTT top nl, ctx) Star = text "Type"
+    pretty (PTT top nl, ctx) Erased = text "_"
 
 export
 ShowQ q => Pretty () (TT q Z) where
-  pretty () = pretty (PTT True False, TT.Nil)
+  pretty () = pretty (PTT True 0, TT.Nil)
 
 export
 ShowQ q => Show (TT q Z) where

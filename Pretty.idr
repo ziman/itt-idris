@@ -56,8 +56,8 @@ data CN = CL Nat | CR Nat | CE
 
 compareNat : Nat -> Nat -> CN
 compareNat Z Z = CE
-compareNat n Z = CL n
-compareNat Z n = CR n
+compareNat n Z = CR n
+compareNat Z n = CL n
 compareNat (S m) (S n) = compareNat m n
 
 private
@@ -67,46 +67,50 @@ hang ind xs [] = xs
 hang ind [x] (y :: ys) = (x ++ y) :: map (ind++) ys
 hang ind (x :: xs) ys = x :: hang ind xs ys
 
+private
+extendTo : Nat -> String -> String
+extendTo w s = case compareNat w (length s) of
+  CL _    => substr 0 w s
+  CE      => s
+  CR diff => s ++ pack (replicate diff ' ')
+
+private
+box : List String -> List String
+box ls =
+  let w = foldr (max . length) 0 ls
+    in map (extendTo w) ls
+
+private
+extendRowsTo : Nat -> List String -> List String
+extendRowsTo r ls = case compareNat r (length ls) of
+  CL _    => take r ls  -- should never happen
+  CE      => ls
+  CR diff => ls ++ replicate diff ""
+
+private
+render' : String -> Doc -> List String
+render' ind (Text s) = [s]
+render' ind (Vcat ls) = assert_total $ concatMap (render' ind) ls  -- termination checker wat
+render' ind (Hang x y) = hang ind (render' ind x) (render' ind y)
+render' ind (Indent x) = map (ind++) $ render' ind x
+render' ind (Columns sep ds)
+    = assert_total
+    $ map concat
+    $ transpose
+    $ intersperse sepc
+    $ cols
+  where
+    ls : List (List String)
+    ls = map (box . render' ind) ds
+
+    rows : Nat
+    rows = foldr (max . length) 0 ls
+
+    sepc : List String
+    sepc = replicate rows sep
+
+    cols : List (List String)
+    cols = map (extendRowsTo rows) ls
+
 render : String -> Doc -> String
 render ind = unlines . render' ind
-  where
-    extendTo : Nat -> String -> String
-    extendTo w s = case compareNat w (length s) of
-      CL _    => substr 0 w s
-      CE      => s
-      CR diff => s ++ pack (replicate diff ' ')
-
-    box : List String -> List String
-    box ls =
-      let w = foldr (max . length) 0 ls
-        in map (extendTo w) ls
-
-    extendRowsTo : Nat -> List String -> List String
-    extendRowsTo r ls = case compareNat r (length ls) of
-      CL _    => take r ls  -- should never happen
-      CE      => ls
-      CR diff => ls ++ replicate diff ""
-
-    render' : String -> Doc -> List String
-    render' ind (Text s) = [s]
-    render' ind (Vcat ls) = assert_total $ concatMap (render' ind) ls  -- termination checker wat
-    render' ind (Hang x y) = hang ind (render' ind x) (render' ind y)
-    render' ind (Indent x) = map (ind++) $ render' ind x
-    render' ind (Columns sep ds)
-        = assert_total
-        $ map concat
-        $ transpose
-        $ intersperse sepc
-        $ cols
-      where
-        ls : List (List String)
-        ls = map (box . render' ind) ds
-
-        rows : Nat
-        rows = foldr (max . length) 0 ls
-
-        sepc : List String
-        sepc = replicate rows sep
-
-        cols : List (List String)
-        cols = map (extendRowsTo rows) ls

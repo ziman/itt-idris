@@ -61,14 +61,14 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
               putStrLn "\n### Normal erased form ###\n"
               printLn $ rnf tmErased
 
-              putStrLn . render " " $ columns " . "
+              putStrLn . render " " $ columns "  |  "
                 [ text "Unerased:"
                   $$ pretty () tmQ
                   $$ text ""
-                  $$ text "Unerased, reduced:"
-                  $$ pretty () (rnf tmQ)
-                , text "Erased:"
+                  $$ text "Erased:"
                   $$ pretty () tmErased
+                , text "Unerased, reduced:"
+                  $$ pretty () (rnf tmQ)
                   $$ text ""
                   $$ text "Erased, reduced:"
                   $$ pretty () (rnf tmErased)
