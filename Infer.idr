@@ -64,12 +64,15 @@ public export
 data ErrorMessage : Nat -> Type where
   CantConvert : TT Evar n -> TT Evar n -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
+  CantInferErased : ErrorMessage n
 
 showEM : Context Evar n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
     = "can't convert: " ++ showTm ctx x ++ " with " ++ showTm ctx y
 showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
+showEM ctx CantInferErased
+    = "can't infer types for erased terms"
 
 public export
 record Failure where
@@ -228,3 +231,4 @@ inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
     _ => throw $ NotPi fTy
 
 inferTm Star = pure Star
+inferTm Erased = throw CantInferErased

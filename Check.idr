@@ -32,6 +32,7 @@ data ErrorMessage : Nat -> Type where
   QuantityMismatch : (dn : String) -> (dq : Q) -> (inferredQ : Q) -> ErrorMessage n
   AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
+  CantCheckErased : ErrorMessage n
 
 showEM : Context Q n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
@@ -42,6 +43,8 @@ showEM ctx (AppQuantityMismatch fTy tm)
     = "quantity mismatch in application of (_ : " ++ showTm ctx fTy ++ "): " ++ showTm ctx tm
 showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
+showEM ctx CantCheckErased
+    = "can't check erased terms"
 
 public export
 record Failure where
@@ -220,3 +223,4 @@ checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
     _ => throw $ NotPi fTy
 
 checkTm Star = pure Star
+checkTm Erased = throw CantCheckErased

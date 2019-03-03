@@ -30,6 +30,7 @@ mutual
     Bind : (b : Binder) -> (d : Def q n) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Star : TT q n
+    Erased : TT q n
 
 export
 interface ShowQ q where
@@ -52,6 +53,7 @@ mutual
     weaken (Bind b d rhs) = Bind b (weaken d) (weaken rhs)
     weaken (App q f x) = App q (weaken f) (weaken x)
     weaken Star = Star
+    weaken Erased = Erased
 
   Weaken (Def q) where
     weaken (D n q ty) = D n q $ weaken ty
@@ -74,6 +76,7 @@ mutual
   showTm ctx (Bind Pi  d rhs) = "(" ++ showDef ctx d ++ ") -> " ++ showTm (d :: ctx) rhs
   showTm ctx (App q f x) = showTm ctx f ++ showApp q ++ showTm ctx x
   showTm ctx Star = "Type"
+  showTm ctx Erased = "_"
 
   showDef : ShowQ q => Context q n -> Def q n -> String
   showDef ctx (D n q ty) = n ++ " " ++ showCol q ++ " " ++ showTm ctx ty  
@@ -136,6 +139,7 @@ mapVars g (V i) = V (g i)
 mapVars g (Bind b (D n q ty) rhs) = Bind b (D n q $ mapVars g ty) (mapVars (extend g) rhs)
 mapVars g (App q f x) = App q (mapVars g f) (mapVars g x)
 mapVars g Star = Star
+mapVars g Erased = Erased
 
 unS : (Fin n -> TT q m) -> Fin (S n) -> TT q (S m)
 unS f  FZ    = V FZ
@@ -147,6 +151,7 @@ substVars g (V i) = g i
 substVars g (Bind b (D n q ty) rhs) = Bind b (D n q $ substVars g ty) (substVars (unS g) rhs)
 substVars g (App q f x) = App q (substVars g f) (substVars g x)
 substVars g Star = Star
+substVars g Erased = Erased
 
 export
 substTop : TT q n -> Fin (S n) -> TT q n
@@ -161,7 +166,8 @@ rnf (App q f x) =
   case rnf f of
     Bind Lam (D n q ty) rhs => rnf $ substVars (substTop $ rnf x) rhs
     f' => App q f' (rnf x)
-rnf  Star = Star
+rnf Star = Star
+rnf Erased = Erased
 
 export
 OrdSemiring Q where
