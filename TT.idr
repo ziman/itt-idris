@@ -211,7 +211,10 @@ OrdSemiring Q where
     _ => False
 
 public export
-data NestingLevel = NoParens | NoAppParens | UseParens
+data NestingLevel
+  = NoParens
+  | NoAppParens
+  | UseParens
 
 nlToInt : NestingLevel -> Int
 nlToInt NoParens = 0
