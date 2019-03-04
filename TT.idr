@@ -123,27 +123,19 @@ ShowQ (Maybe Q) where
   showApp Nothing = " "
   showApp (Just q) = showApp q
 
+qToInt : Q -> Int
+qToInt I = 0
+qToInt E = 1
+qToInt L = 2
+qToInt R = 3
+
 export
 Eq Q where
-  (==) p q = case (p, q) of
-    (I, I) => True
-    (E, E) => True
-    (L, L) => True
-    (R, R) => True
-    _ => False
+  (==) = eqBy qToInt
 
 export
 Ord Q where
-  compare I I = EQ
-  compare I _ = LT
-  compare E I = GT
-  compare E E = EQ
-  compare E _ = LT
-  compare L R = LT
-  compare L L = EQ
-  compare L _ = GT
-  compare R R = EQ
-  compare R _ = GT
+  compare = compareBy qToInt
 
 extend : (Fin n -> Fin m) -> Fin (S n) -> Fin (S m)
 extend f  FZ    = FZ
@@ -219,17 +211,28 @@ OrdSemiring Q where
     _ => False
 
 public export
+data NestingLevel = NoParens | NoAppParens | UseParens
+
+nlToInt : NestingLevel -> Int
+nlToInt NoParens = 0
+nlToInt NoAppParens = 1
+nlToInt UseParens = 2
+
+export
+Eq NestingLevel where
+  (==) = eqBy nlToInt
+
+export
+Ord NestingLevel where
+  compare = compareBy nlToInt
+
+public export
 record PrettyTT where
   constructor PTT
   multiLineLam : Bool
+  nestingLevel : NestingLevel
 
-  -- should be an ADT but I'm too lazy to define the Ord instance manually
-  -- 0 = no parens needed
-  -- 1 = parenthesise all non-atoms except applications
-  -- 2 = parenthesise all non-atoms
-  nestingLevel : Int
-
-parensFrom : Int -> Int -> Doc -> Doc
+parensFrom : NestingLevel -> NestingLevel -> Doc -> Doc
 parensFrom required actual =
   if actual >= required
     then parens
@@ -238,30 +241,30 @@ parensFrom required actual =
 mutual
   export
   ShowQ q => Pretty (Context q n) (Def q n) where
-    pretty ctx (D n dq ty) = text n <++> text (showCol dq) <++> pretty (PTT False 0, ctx) ty
+    pretty ctx (D n dq ty) = text n <++> text (showCol dq) <++> pretty (PTT False NoParens, ctx) ty
 
   export
   ShowQ q => Pretty (PrettyTT, Context q n) (TT q n) where
     pretty (PTT top nl, ctx) (V i) = text . defName $ lookupCtx i ctx
-    pretty (PTT True nl,  ctx) (Bind Lam d rhs) = parensFrom 1 nl $
+    pretty (PTT True nl,  ctx) (Bind Lam d rhs) = parensFrom NoAppParens nl $
       text "\\" <+> pretty ctx d <+> text "."
-      $$ indent (pretty (PTT True 0, d::ctx) rhs)
-    pretty (PTT False nl, ctx) (Bind Lam d rhs) = parensFrom 1 nl $
+      $$ indent (pretty (PTT True NoParens, d::ctx) rhs)
+    pretty (PTT False nl, ctx) (Bind Lam d rhs) = parensFrom NoAppParens nl $
       text "\\" <+> pretty ctx d <+> text "."
-      <++> pretty (PTT True 0, d::ctx) rhs
-    pretty (PTT top nl, ctx) (Bind Pi d rhs) = parensFrom 1 nl $
+      <++> pretty (PTT True NoParens, d::ctx) rhs
+    pretty (PTT top nl, ctx) (Bind Pi d rhs) = parensFrom NoAppParens nl $
       parens (pretty ctx d)
-      <++> text "->" <++> pretty (PTT False 0, d::ctx) rhs
-    pretty (PTT top nl, ctx) (App q' f x) = parensFrom 2 nl $
-      pretty (PTT False 1, ctx) f 
+      <++> text "->" <++> pretty (PTT False NoParens, d::ctx) rhs
+    pretty (PTT top nl, ctx) (App q' f x) = parensFrom UseParens nl $
+      pretty (PTT False NoAppParens, ctx) f 
       <+> text (showApp q')
-      <+> pretty (PTT False 2, ctx) x
+      <+> pretty (PTT False UseParens, ctx) x
     pretty (PTT top nl, ctx) Star = text "Type"
     pretty (PTT top nl, ctx) Erased = text "_"
 
 export
 ShowQ q => Pretty () (TT q Z) where
-  pretty () = pretty (PTT True 0, TT.Nil)
+  pretty () = pretty (PTT True NoParens, TT.Nil)
 
 export
 ShowQ q => Show (TT q Z) where
