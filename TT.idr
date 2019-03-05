@@ -8,23 +8,37 @@ import public Data.Fin
 %default total
 
 public export
-data Binder : Type where
-  Lam : Binder
-  Pi  : Binder
+data Binder = Lam | Pi | Let
 
 export
 Eq Binder where
   (==) Lam Lam = True
-  (==) Pi Pi = True
+  (==) Pi  Pi  = True
+  (==) Let Let = True
+  (==) _ _ = False
+
+public export
+data Abstractness = Variable | Constructor
+
+export
+Eq Abstractness where
+  (==) Variable Variable = True
+  (==) Constructor Constructor = True
   (==) _ _ = False
 
 mutual
+  public export
+  data Body : Type -> Nat -> Type where
+    Abstract : Abstractness -> Body q n
+    Term : TT q n -> Body q n
+
   public export
   record Def (q : Type) (n : Nat) where
     constructor D
     defName : String
     defQ    : q
     defType : TT q n
+    defBody : Body q (S n)
 
   public export
   data TT : Type -> Nat -> Type where
@@ -34,17 +48,24 @@ mutual
     Star : TT q n
     Erased : TT q n
 
-export
-Eq q => Eq (TT q n) where
-  (==) (V i) (V j)
-    = finEq i j
-  (==) (Bind b (D n q ty) rhs) (Bind b' (D n' q' ty') rhs')
-    = (b == b') && (q == q') && (ty == ty') && (rhs == rhs')
-  (==) (App q f x) (App q' f' x')
-    = (q == q') && (f == f') && (x == x')
-  (==) Star Star = True
-  (==) Erased Erased = True
-  _ == _ = False
+mutual
+  export
+  Eq q => Eq (Body q n) where
+    (==) (Abstract x) (Abstract y) = x == y
+    (==) (Term x) (Term y) = x == y
+    (==) _ _ = False
+
+  export
+  Eq q => Eq (TT q n) where
+    (==) (V i) (V j)
+      = finEq i j
+    (==) (Bind b (D n q ty db) rhs) (Bind b' (D n' q' ty' db') rhs')
+      = (b == b') && (q == q') && (ty == ty') && (db == db') && (rhs == rhs')
+    (==) (App q f x) (App q' f' x')
+      = (q == q') && (f == f') && (x == x')
+    (==) Star Star = True
+    (==) Erased Erased = True
+    _ == _ = False
 
 export
 interface ShowQ q where
@@ -69,8 +90,12 @@ mutual
     weaken Star = Star
     weaken Erased = Erased
 
+  Weaken (Body q) where
+    weaken (Abstract a) = Abstract a
+    weaken (Term tm) = Term $ weaken tm
+
   Weaken (Def q) where
-    weaken (D n q ty) = D n q $ weaken ty
+    weaken (D n q ty db) = D n q (weaken ty) (weaken db)
 
 public export
 data Context : Type -> Nat -> Type where
@@ -88,12 +113,14 @@ mutual
   showTm ctx (V i) = defName (lookupCtx i ctx)
   showTm ctx (Bind Lam d rhs) = "\\" ++ showDef ctx d ++ ". " ++ showTm (d :: ctx) rhs
   showTm ctx (Bind Pi  d rhs) = "(" ++ showDef ctx d ++ ") -> " ++ showTm (d :: ctx) rhs
+  showTm ctx (Bind Let d rhs) = "let " ++ showDef ctx d ++ " in " ++ showTm (d :: ctx) rhs
   showTm ctx (App q f x) = showTm ctx f ++ showApp q ++ showTm ctx x
   showTm ctx Star = "Type"
   showTm ctx Erased = "_"
 
   showDef : ShowQ q => Context q n -> Def q n -> String
-  showDef ctx (D n q ty) = n ++ " " ++ showCol q ++ " " ++ showTm ctx ty  
+  showDef ctx (D n q ty (Abstract _)) = n ++ " " ++ showCol q ++ " " ++ showTm ctx ty  
+  showDef ctx (D n q ty (Term tm)) = n ++ " " ++ showCol q ++ " " ++ showTm ctx ty ++ " = " ++ showTm (D n q ty (Abstract Variable) :: ctx) tm
 
 public export
 data Q = I | E | L | R
@@ -143,7 +170,10 @@ extend f (FS x) = FS (f x)
 
 mapVars : (Fin n -> Fin m) -> TT q n -> TT q m
 mapVars g (V i) = V (g i)
-mapVars g (Bind b (D n q ty) rhs) = Bind b (D n q $ mapVars g ty) (mapVars (extend g) rhs)
+mapVars g (Bind b (D n q ty (Abstract a)) rhs)
+    = Bind b (D n q (mapVars g ty) (Abstract a)) (mapVars (extend g) rhs)
+mapVars g (Bind b (D n q ty (Term tm)) rhs)
+    = Bind b (D n q (mapVars g ty) (Term $ mapVars (extend g) tm)) (mapVars (extend g) rhs)
 mapVars g (App q f x) = App q (mapVars g f) (mapVars g x)
 mapVars g Star = Star
 mapVars g Erased = Erased
@@ -155,26 +185,49 @@ unS f (FS x) = mapVars FS $ f x
 export
 substVars : (Fin n -> TT q m) -> TT q n -> TT q m
 substVars g (V i) = g i
-substVars g (Bind b (D n q ty) rhs) = Bind b (D n q $ substVars g ty) (substVars (unS g) rhs)
+substVars g (Bind b (D n q ty (Abstract a)) rhs)
+    = Bind b (D n q (substVars g ty) (Abstract a)) (substVars (unS g) rhs)
+substVars g (Bind b (D n q ty (Term tm)) rhs)
+    = Bind b (D n q (substVars g ty) (Term $ substVars (unS g) tm)) (substVars (unS g) rhs)
 substVars g (App q f x) = App q (substVars g f) (substVars g x)
 substVars g Star = Star
 substVars g Erased = Erased
+
+mutual
+  export
+  traverseVarsD : Applicative t => (Fin n -> t (TT q m)) -> Def q n -> t (Def q m)
+  traverseVarsD (D n q ty b) = ?rhs
+
+  export
+  traverseVars : Applicative t => (Fin n -> t (TT q m)) -> TT q n -> t (TT q m)
+  traverseVars g (V i) = g i
+  traverseVars g (Bind b d rhs) = Bind b <$> traverseVarsD g d <*> ?rhs
+  traverseVars g (App q f x) = App q <$> traverseVars g f <*> traverseVars g x
+  traverseVars f Star = pure Star
+  traverseVars f Erased = pure Erased
 
 export
 substTop : TT q n -> Fin (S n) -> TT q n
 substTop tm  FZ    = tm
 substTop tm (FS x) = V x
 
+replaceFZ : Fin n -> Fin (S n) -> Fin n
+replaceFZ i  FZ    = i
+replaceFZ _ (FS j) = j
+
 covering export
-rnf : TT q n -> TT q n
-rnf (V i) = V i
-rnf (Bind b (D n q ty) rhs) = Bind b (D n q (rnf ty)) (rnf rhs)
-rnf (App q f x) =
-  case rnf f of
-    Bind Lam (D n q ty) rhs => rnf $ substVars (substTop $ rnf x) rhs
-    f' => App q f' (rnf x)
-rnf Star = Star
-rnf Erased = Erased
+whnf : Context q n -> TT q n -> TT q n
+whnf ctx (V i) with (lookupCtx i ctx)
+  | D n q ty (Abstract _) = V i
+  -- replace recursive references by reference #i
+  | D n q ty (Term body)  = whnf ctx $ mapVars (replaceFZ i) body
+whnf ctx (Bind Let d rhs) = ?whnfx -- TODO Bind Let d $ whnf (d::ctx) rhs
+whnf ctx (Bind b d rhs) = Bind b d rhs
+whnf ctx (App q f x) with (whnf ctx f)
+  | Bind Lam d rhs = whnf ctx $ substVars (substTop $ whnf ctx x) rhs
+  | f' = App q f' x
+whnf ctx Star = Star
+whnf ctx Erased = Erased
 
 export
 OrdSemiring Q where
@@ -244,7 +297,11 @@ parensFrom required actual =
 mutual
   export
   ShowQ q => Pretty (Context q n) (Def q n) where
-    pretty ctx (D n dq ty) = text n <++> text (showCol dq) <++> pretty (PTT False NoParens, ctx) ty
+    pretty ctx (D n dq ty (Abstract _))
+      = text n <++> text (showCol dq) <++> pretty (PTT False NoParens, ctx) ty
+    pretty ctx d@(D n dq ty (Term tm)) =
+      text n <++> text (showCol dq) <++> pretty (PTT False NoParens, ctx) ty
+      <++> text "=" <++> pretty (PTT True NoParens, d :: ctx) tm
 
   export
   ShowQ q => Pretty (PrettyTT, Context q n) (TT q n) where
@@ -258,6 +315,9 @@ mutual
     pretty (PTT top nl, ctx) (Bind Pi d rhs) = parensFrom NoAppParens nl $
       parens (pretty ctx d)
       <++> text "->" <++> pretty (PTT False NoParens, d::ctx) rhs
+    pretty (PTT top nl, ctx) (Bind Let d rhs) = parensFrom NoAppParens nl $
+      text "let" <++> pretty ctx d
+      $$ indent (text "in" <++> pretty (PTT True NoParens, d::ctx) rhs)
     pretty (PTT top nl, ctx) (App q' f x) = parensFrom UseParens nl $
       pretty (PTT False NoAppParens, ctx) f 
       <+> text (showApp q')
