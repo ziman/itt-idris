@@ -73,15 +73,15 @@ interface ShowQ q where
   showCol : q -> String
   showApp : q -> String
 
-interface Weaken (f : Nat -> Type) where
-  weaken : f n -> f (S n)
-
 iterate' : (f : Nat -> Type) -> ((n : Nat) -> f n -> f (S n)) -> (n : Nat) -> f n -> (m : Nat) -> f (m + n)
 iterate' f g n x Z = x
 iterate' f g n x (S m) = g (m + n) (iterate' f g n x m)
 
 iterate : {f : Nat -> Type} -> (g : {n : Nat} -> f n -> f (S n)) -> {m, n : Nat} -> f n -> f (m + n)
 iterate g x = iterate' _ (\n, x => g x) _ x _
+
+interface Weaken (f : Nat -> Type) where
+  weaken : f n -> f (S n)
 
 mutual
   Weaken (TT q) where
@@ -177,59 +177,46 @@ namespace Lens
   ILens : (a -> Type) -> (a -> Type) -> Type
   ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
 
-  nonFZV : Traversal (Fin (S n)) (Fin (S m)) (Fin n) (Fin m)
-  nonFZV g  FZ    = pure FZ
-  nonFZV g (FS i) = FS <$> g i
-
   mutual
-    bodyVars : ILens (Body q) Fin
+    nonFZS : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
+    nonFZS g  FZ    = pure (V FZ)
+    nonFZS g (FS i) = assert_total (runIdentity . ttVars (pure . V . FS) <$> g i)
+
+    bodyVars : Traversal (Body q m) (Body q n) (Fin m) (TT q n)
     bodyVars g (Abstract a) = pure $ Abstract a
     bodyVars g (Term tm) = Term <$> ttVars g tm
 
-    defVars : ILens (Def q) Fin
-    defVars g (D n q ty b) =
-      D n q <$> ttVars g ty <*> bodyVars (nonFZV g) b
+    defVars : Traversal (Def q m) (Def q n) (Fin m) (TT q n)
+    defVars g (D n q ty b) = D n q <$> ttVars g ty <*> bodyVars (nonFZS g) b
 
-    ttVars : ILens (TT q) Fin
-    ttVars g (V i) = V <$> g i
+    ttVars : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
+    ttVars g (V i) = g i
     ttVars g (Bind b d rhs)
-      =  Bind b <$> defVars g d <*> ttVars (nonFZV g) rhs
-    ttVars g (App q f x) = App q <$> ttVars g f <*> ttVars g x
+      = Bind b <$> defVars g d <*> ttVars (nonFZS g) rhs
+    ttVars g (App q f x)
+      = App q <$> ttVars g f <*> ttVars g x
     ttVars g Star = pure Star
     ttVars g Erased = pure Erased
 
-  mapVars : (Fin n -> Fin m) -> TT q n -> TT q m
-  mapVars g = runIdentity . ttVars (pure . g)
+  record Const (a : Type) (b : Type) where
+    constructor MkConst
+    runConst : a
 
-  nonFZS : Traversal (Fin (S n)) (TT q (S m)) (Fin n) (TT q m)
-  nonFZS g  FZ    = pure $ V FZ
-  nonFZS g (FS i) = mapVars FS <$> g i
+  Functor (Const a) where
+    map f (MkConst x) = MkConst x
 
-  mutual
-    {- doesn't termination-check
-    nonFZS : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
-    nonFZS g  FZ    = pure (V FZ)
-    nonFZS g (FS i) = runIdentity . ttSubst (pure . V . FS) <$> g i
-    -}
+  Monoid a => Applicative (Const a) where
+    pure _ = MkConst neutral
+    (<*>) (MkConst x) (MkConst y) = MkConst (x <+> y)
 
-    bodySubst : Traversal (Body q m) (Body q n) (Fin m) (TT q n)
-    bodySubst g (Abstract a) = pure $ Abstract a
-    bodySubst g (Term tm) = Term <$> ttSubst g tm
-
-    defSubst : Traversal (Def q m) (Def q n) (Fin m) (TT q n)
-    defSubst g (D n q ty b) = D n q <$> ttSubst g ty <*> bodySubst (nonFZS g) b
-
-    ttSubst : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
-    ttSubst g (V i) = g i
-    ttSubst g (Bind b d rhs)
-      = Bind b <$> defSubst g d <*> ttSubst (nonFZS g) rhs
-    ttSubst g (App q f x)
-      = App q <$> ttSubst g f <*> ttSubst g x
-    ttSubst g Star = pure Star
-    ttSubst g Erased = pure Erased
+  fold : Monoid a => (Fin n -> a) -> TT q n -> a
+  fold {n} f = runConst . ttVars {n} (MkConst . f)
 
   subst : (Fin n -> TT q m) -> TT q n -> TT q m
-  subst g = runIdentity . ttSubst (pure . g)
+  subst g = runIdentity . ttVars (pure . g)
+
+  rename : (Fin n -> Fin m) -> TT q n -> TT q m
+  rename g = subst (V . g)
 
 export
 substFZ : TT q n -> Fin (S n) -> TT q n
@@ -240,13 +227,34 @@ mapFZ : Fin n -> Fin (S n) -> Fin n
 mapFZ i  FZ    = i
 mapFZ _ (FS j) = j
 
+interface Strengthen (f : Nat -> Type) where
+  strengthen : f (S n) -> Maybe (f n)
+
+Strengthen Fin where
+  strengthen  FZ    = Nothing
+  strengthen (FS i) = Just i
+
+mutual
+  Strengthen (Body q) where
+    strengthen b = ?rhs
+
+  Strengthen (Def q) where
+    strengthen d = ?rhs
+
+  Strengthen (TT q) where
+    strengthen tm = ?rhs
+
 covering export
 whnf : Context q n -> TT q n -> TT q n
 whnf ctx (V i) with (lookupCtx i ctx)
   | D n q ty (Abstract _) = V i
   -- replace recursive references by reference #i
-  | D n q ty (Term body)  = whnf ctx $ mapVars (mapFZ i) body
-whnf ctx (Bind Let d rhs) = ?whnfx -- TODO Bind Let d $ whnf (d::ctx) rhs
+  | D n q ty (Term body)  = whnf ctx $ rename (mapFZ i) body
+whnf ctx (Bind Let d rhs) =
+  let rhs' = whnf ctx rhs
+    in case strengthen rhs' of
+      Just rhs'' => rhs''
+      Nothing    => Bind Let d rhs'
 whnf ctx (Bind b d rhs) = Bind b d rhs
 whnf ctx (App q f x) with (whnf ctx f)
   | Bind Lam d rhs = whnf ctx $ subst (substFZ $ whnf ctx x) rhs

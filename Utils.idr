@@ -16,3 +16,17 @@ eqBy f x y = f x == f y
 export
 compareBy : Ord b => (a -> b) -> a -> a -> Ordering
 compareBy f x y = compare (f x) (f y)
+
+public export
+record Or where
+  constructor MkOr
+  runOr : Bool
+
+public export
+Semigroup Or where
+  (<+>) (MkOr False) (MkOr False) = MkOr False
+  (<+>) _ _ = MkOr True
+
+public export
+Monoid Or where
+  neutral = MkOr False
