@@ -18,15 +18,20 @@ ILens : (a -> Type) -> (a -> Type) -> Type
 ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
 
 mutual
+  export
   bodyQ : Traversal (Body q n) (Body q' n) q q'
   bodyQ g (Abstract a) = pure $ Abstract a
   bodyQ g (Term tm) = Term <$> ttQ g tm
 
   export
+  defQ : Traversal (Def q n) (Def q' n) q q'
+  defQ g (D n q ty b) = D n <$> g q <*> ttQ g ty <*> bodyQ g b
+
+  export
   ttQ : Traversal (TT q n) (TT q' n) q q'
   ttQ g (V i) = pure $ V i
-  ttQ g (Bind b (D n q ty db) rhs)
-    = Bind b <$> (D n <$> g q <*> ttQ g ty <*> bodyQ g db) <*> ttQ g rhs
+  ttQ g (Bind b d rhs)
+    = Bind b <$> defQ g d <*> ttQ g rhs
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
   ttQ g Star = pure Star
   ttQ g Erased = pure Erased
@@ -36,10 +41,12 @@ mutual
   nonFZS g  FZ    = pure (V FZ)
   nonFZS g (FS i) = assert_total (runIdentity . ttVars (pure . V . FS) <$> g i)
 
+  export
   bodyVars : Traversal (Body q m) (Body q n) (Fin m) (TT q n)
   bodyVars g (Abstract a) = pure $ Abstract a
   bodyVars g (Term tm) = Term <$> ttVars g tm
 
+  export
   defVars : Traversal (Def q m) (Def q n) (Fin m) (TT q n)
   defVars g (D n q ty b) = D n q <$> ttVars g ty <*> bodyVars (nonFZS g) b
 
@@ -64,3 +71,7 @@ subst g = runIdentity . ttVars (pure . g)
 export
 rename : (Fin n -> Fin m) -> TT q n -> TT q m
 rename g = subst (V . g)
+
+export
+renameDef : (Fin n -> Fin m) -> Def q n -> Def q m
+renameDef g = runIdentity . defVars (pure . V . g)

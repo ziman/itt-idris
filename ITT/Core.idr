@@ -68,38 +68,3 @@ mutual
     (==) Star Star = True
     (==) Erased Erased = True
     _ == _ = False
-
-iterate' : (f : Nat -> Type) -> ((n : Nat) -> f n -> f (S n)) -> (n : Nat) -> f n -> (m : Nat) -> f (m + n)
-iterate' f g n x Z = x
-iterate' f g n x (S m) = g (m + n) (iterate' f g n x m)
-
-iterate : {f : Nat -> Type} -> (g : {n : Nat} -> f n -> f (S n)) -> {m, n : Nat} -> f n -> f (m + n)
-iterate g x = iterate' _ (\n, x => g x) _ x _
-
-interface Weaken (f : Nat -> Type) where
-  weaken : f n -> f (S n)
-
-mutual
-  Weaken (TT q) where
-    weaken (V x) = V $ FS x
-    weaken (Bind b d rhs) = Bind b (weaken d) (weaken rhs)
-    weaken (App q f x) = App q (weaken f) (weaken x)
-    weaken Star = Star
-    weaken Erased = Erased
-
-  Weaken (Body q) where
-    weaken (Abstract a) = Abstract a
-    weaken (Term tm) = Term $ weaken tm
-
-  Weaken (Def q) where
-    weaken (D n q ty db) = D n q (weaken ty) (weaken db)
-
-public export
-data Context : Type -> Nat -> Type where
-  Nil : Context q Z
-  (::) : Def q n -> Context q n -> Context q (S n)
-
-export
-lookupCtx : Fin n -> Context q n -> Def q n
-lookupCtx  FZ    (d ::  _ ) = weaken d
-lookupCtx (FS k) (_ :: ctx) = weaken $ lookupCtx k ctx

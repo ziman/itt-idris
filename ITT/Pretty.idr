@@ -2,7 +2,10 @@ module ITT.Pretty
 
 import ITT.Quantity
 import public ITT.Core
+import public ITT.Context
 import public Utils.Pretty
+
+%default total
 
 public export
 data NestingLevel
