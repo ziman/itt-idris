@@ -251,7 +251,7 @@ whnf ctx (V i) with (lookupCtx i ctx)
   -- replace recursive references by reference #i
   | D n q ty (Term body)  = whnf ctx $ rename (mapFZ i) body
 whnf ctx (Bind Let d rhs) =
-  let rhs' = whnf ctx rhs
+  let rhs' = whnf (d::ctx) rhs
     in case strengthen rhs' of
       Just rhs'' => rhs''
       Nothing    => Bind Let d rhs'
