@@ -3,7 +3,7 @@ module ITT.Quantity
 import Utils.Misc
 import public Utils.OrdSemiring
 
-export
+public export
 interface ShowQ q where
   showCol : q -> String
   showApp : q -> String

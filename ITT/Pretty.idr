@@ -1,5 +1,6 @@
 module ITT.Pretty
 
+import ITT.Quantity
 import public ITT.Core
 import public Utils.Pretty
 
@@ -67,11 +68,11 @@ mutual
 
 export
 ShowQ q => Pretty (Context q n) (TT q n) where
-  pretty ctx = pretty (PTT False NoAppParens)
+  pretty ctx = pretty (PTT False NoAppParens, ctx)
 
 export
 ShowQ q => Pretty () (TT q Z) where
-  pretty () = pretty (PTT True NoParens, TT.Nil)
+  pretty () = pretty (PTT True NoParens, the (Context _ _) [])
 
 export
 ShowQ q => Show (TT q Z) where
