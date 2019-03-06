@@ -30,3 +30,17 @@ Semigroup Or where
 public export
 Monoid Or where
   neutral = MkOr False
+
+public export
+record Const (a : Type) (b : Type) where
+  constructor MkConst
+  runConst : a
+
+public export
+Functor (Const a) where
+  map f (MkConst x) = MkConst x
+
+public export
+Monoid a => Applicative (Const a) where
+  pure _ = MkConst neutral
+  (<*>) (MkConst x) (MkConst y) = MkConst (x <+> y)

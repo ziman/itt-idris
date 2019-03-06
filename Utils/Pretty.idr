@@ -1,4 +1,4 @@
-module Pretty
+module Utils.Pretty
 
 %access export
 %default total
