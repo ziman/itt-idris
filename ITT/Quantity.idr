@@ -1,5 +1,6 @@
 module ITT.Quantity
 
+import Utils.Misc
 import public Utils.OrdSemiring
 
 export

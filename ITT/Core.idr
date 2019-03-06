@@ -1,6 +1,6 @@
 module ITT.Core
 
-import public Utils
+import public Utils.Misc
 import public Utils.Pretty
 import public Utils.OrdSemiring
 import public ITT.Quantity
@@ -103,18 +103,3 @@ export
 lookupCtx : Fin n -> Context q n -> Def q n
 lookupCtx  FZ    (d ::  _ ) = weaken d
 lookupCtx (FS k) (_ :: ctx) = weaken $ lookupCtx k ctx
-
-mutual
-  export
-  showTm : ShowQ q => Context q n -> TT q n -> String
-  showTm ctx (V i) = defName (lookupCtx i ctx)
-  showTm ctx (Bind Lam d rhs) = "\\" ++ showDef ctx d ++ ". " ++ showTm (d :: ctx) rhs
-  showTm ctx (Bind Pi  d rhs) = "(" ++ showDef ctx d ++ ") -> " ++ showTm (d :: ctx) rhs
-  showTm ctx (Bind Let d rhs) = "let " ++ showDef ctx d ++ " in " ++ showTm (d :: ctx) rhs
-  showTm ctx (App q f x) = showTm ctx f ++ showApp q ++ showTm ctx x
-  showTm ctx Star = "Type"
-  showTm ctx Erased = "_"
-
-  showDef : ShowQ q => Context q n -> Def q n -> String
-  showDef ctx (D n q ty (Abstract _)) = n ++ " " ++ showCol q ++ " " ++ showTm ctx ty  
-  showDef ctx (D n q ty (Term tm)) = n ++ " " ++ showCol q ++ " " ++ showTm ctx ty ++ " = " ++ showTm (D n q ty (Abstract Variable) :: ctx) tm

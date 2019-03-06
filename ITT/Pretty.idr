@@ -66,6 +66,10 @@ mutual
     pretty (PTT top nl, ctx) Erased = text "_"
 
 export
+ShowQ q => Pretty (Context q n) (TT q n) where
+  pretty ctx = pretty (PTT False NoAppParens)
+
+export
 ShowQ q => Pretty () (TT q Z) where
   pretty () = pretty (PTT True NoParens, TT.Nil)
 

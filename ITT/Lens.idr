@@ -1,5 +1,8 @@
 module ITT.Lens
 
+import public ITT.Core
+import Control.Monad.Identity
+
 public export
 Traversal : Type -> Type -> Type -> Type -> Type
 Traversal s t a b = (
@@ -14,14 +17,19 @@ public export
 ILens : (a -> Type) -> (a -> Type) -> Type
 ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
 
-export
-ttQ : Traversal (TT q n) (TT q' n) q q'
-ttQ g (V i) = pure $ V i
-ttQ g (Bind b (D n q ty) rhs)
-  = Bind b <$> (D n <$> g q <*> ttQ g ty) <*> ttQ g rhs
-ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
-ttQ g Star = pure Star
-ttQ g Erased = pure Erased
+mutual
+  bodyQ : Traversal (Body q n) (Body q' n) q q'
+  bodyQ g (Abstract a) = pure $ Abstract a
+  bodyQ g (Term tm) = Term <$> ttQ g tm
+
+  export
+  ttQ : Traversal (TT q n) (TT q' n) q q'
+  ttQ g (V i) = pure $ V i
+  ttQ g (Bind b (D n q ty db) rhs)
+    = Bind b <$> (D n <$> g q <*> ttQ g ty <*> bodyQ g db) <*> ttQ g rhs
+  ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
+  ttQ g Star = pure Star
+  ttQ g Erased = pure Erased
 
 mutual
   nonFZS : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
