@@ -4,6 +4,7 @@ import Utils
 import Pretty
 import public OrdSemiring
 import public Data.Fin
+import Control.Monad.Identity
 
 %default total
 
@@ -164,6 +165,49 @@ export
 Ord Q where
   compare = compareBy qToInt
 
+namespace Lens
+  Traversal : Type -> Type -> Type -> Type -> Type
+  Traversal s t a b = (
+    {f : Type -> Type} -> Applicative f => (a -> f b) -> s -> f t
+  )
+
+  Lens : Type -> Type -> Type
+  Lens t a = Traversal t t a a
+
+  ILens : (a -> Type) -> (a -> Type) -> Type
+  ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
+
+  nonFZV : Applicative t => (Fin n -> t (Fin m)) -> Fin (S n) -> t (Fin (S m))
+  nonFZV g  FZ    = pure FZ
+  nonFZV g (FS i) = FS <$> g i
+
+  mutual
+    bodyVars : ILens (Body q) Fin
+    bodyVars g (Abstract a) = pure $ Abstract a
+    bodyVars g (Term tm) = Term <$> ttVars g tm
+
+    defVars : ILens (Def q) Fin
+    defVars g (D n q ty b) =
+      D n q <$> ttVars g ty <*> bodyVars (nonFZV g) b
+
+    ttVars : ILens (TT q) Fin
+    ttVars g (V i) = V <$> g i
+    ttVars g (Bind b d rhs)
+      =  Bind b <$> defVars g d <*> ttVars (nonFZV g) rhs
+    ttVars g (App q f x) = App q <$> ttVars g f <*> ttVars g x
+    ttVars g Star = pure Star
+    ttVars g Erased = pure Erased
+
+  mutual
+    bodySubst : Traversal (Body q m) (Body q n) (Fin m) (TT q n)
+    bodySubst g b = ?rhs
+
+    defSubst : Traversal (Def q m) (Def q n) (Fin m) (TT q n)
+    defSubst g d = ?rhs
+
+    ttSubst : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
+    ttSubst g d = ?rhs
+
 extend : (Fin n -> Fin m) -> Fin (S n) -> Fin (S m)
 extend f  FZ    = FZ
 extend f (FS x) = FS (f x)
@@ -178,33 +222,25 @@ mapVars g (App q f x) = App q (mapVars g f) (mapVars g x)
 mapVars g Star = Star
 mapVars g Erased = Erased
 
-unS : (Fin n -> TT q m) -> Fin (S n) -> TT q (S m)
-unS f  FZ    = V FZ
-unS f (FS x) = mapVars FS $ f x
-
-export
-substVars : (Fin n -> TT q m) -> TT q n -> TT q m
-substVars g (V i) = g i
-substVars g (Bind b (D n q ty (Abstract a)) rhs)
-    = Bind b (D n q (substVars g ty) (Abstract a)) (substVars (unS g) rhs)
-substVars g (Bind b (D n q ty (Term tm)) rhs)
-    = Bind b (D n q (substVars g ty) (Term $ substVars (unS g) tm)) (substVars (unS g) rhs)
-substVars g (App q f x) = App q (substVars g f) (substVars g x)
-substVars g Star = Star
-substVars g Erased = Erased
+exceptFZ : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
+exceptFZ g  FZ    = pure $ V FZ  -- don't traverse bound var
+exceptFZ g (FS i) = mapVars FS <$> g i
 
 mutual
   export
   traverseVarsD : Applicative t => (Fin n -> t (TT q m)) -> Def q n -> t (Def q m)
-  traverseVarsD (D n q ty b) = ?rhs
+  traverseVarsD g (D n q ty b) = ?rhs
 
   export
   traverseVars : Applicative t => (Fin n -> t (TT q m)) -> TT q n -> t (TT q m)
   traverseVars g (V i) = g i
-  traverseVars g (Bind b d rhs) = Bind b <$> traverseVarsD g d <*> ?rhs
+  traverseVars g (Bind b d rhs) = Bind b <$> traverseVarsD g d <*> traverseVars (exceptFZ g) rhs
   traverseVars g (App q f x) = App q <$> traverseVars g f <*> traverseVars g x
   traverseVars f Star = pure Star
   traverseVars f Erased = pure Erased
+
+substVars : (Fin n -> TT q m) -> TT q n -> TT q m
+substVars g = runIdentity . traverseVars (pure . g)
 
 export
 substTop : TT q n -> Fin (S n) -> TT q n
