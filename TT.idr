@@ -235,14 +235,8 @@ Strengthen Fin where
   strengthen (FS i) = Just i
 
 mutual
-  Strengthen (Body q) where
-    strengthen b = ?rhs
-
-  Strengthen (Def q) where
-    strengthen d = ?rhs
-
   Strengthen (TT q) where
-    strengthen tm = ?rhs
+    strengthen = ttVars (map V . strengthen)
 
 covering export
 whnf : Context q n -> TT q n -> TT q n
