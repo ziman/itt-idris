@@ -177,7 +177,7 @@ namespace Lens
   ILens : (a -> Type) -> (a -> Type) -> Type
   ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
 
-  nonFZV : Applicative t => (Fin n -> t (Fin m)) -> Fin (S n) -> t (Fin (S m))
+  nonFZV : Traversal (Fin (S n)) (Fin (S m)) (Fin n) (Fin m)
   nonFZV g  FZ    = pure FZ
   nonFZV g (FS i) = FS <$> g i
 
@@ -198,69 +198,58 @@ namespace Lens
     ttVars g Star = pure Star
     ttVars g Erased = pure Erased
 
+  mapVars : (Fin n -> Fin m) -> TT q n -> TT q m
+  mapVars g = runIdentity . ttVars (pure . g)
+
+  nonFZS : Traversal (Fin (S n)) (TT q (S m)) (Fin n) (TT q m)
+  nonFZS g  FZ    = pure $ V FZ
+  nonFZS g (FS i) = mapVars FS <$> g i
+
   mutual
+    {- doesn't termination-check
+    nonFZS : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
+    nonFZS g  FZ    = pure (V FZ)
+    nonFZS g (FS i) = runIdentity . ttSubst (pure . V . FS) <$> g i
+    -}
+
     bodySubst : Traversal (Body q m) (Body q n) (Fin m) (TT q n)
-    bodySubst g b = ?rhs
+    bodySubst g (Abstract a) = pure $ Abstract a
+    bodySubst g (Term tm) = Term <$> ttSubst g tm
 
     defSubst : Traversal (Def q m) (Def q n) (Fin m) (TT q n)
-    defSubst g d = ?rhs
+    defSubst g (D n q ty b) = D n q <$> ttSubst g ty <*> bodySubst (nonFZS g) b
 
     ttSubst : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
-    ttSubst g d = ?rhs
+    ttSubst g (V i) = g i
+    ttSubst g (Bind b d rhs)
+      = Bind b <$> defSubst g d <*> ttSubst (nonFZS g) rhs
+    ttSubst g (App q f x)
+      = App q <$> ttSubst g f <*> ttSubst g x
+    ttSubst g Star = pure Star
+    ttSubst g Erased = pure Erased
 
-extend : (Fin n -> Fin m) -> Fin (S n) -> Fin (S m)
-extend f  FZ    = FZ
-extend f (FS x) = FS (f x)
-
-mapVars : (Fin n -> Fin m) -> TT q n -> TT q m
-mapVars g (V i) = V (g i)
-mapVars g (Bind b (D n q ty (Abstract a)) rhs)
-    = Bind b (D n q (mapVars g ty) (Abstract a)) (mapVars (extend g) rhs)
-mapVars g (Bind b (D n q ty (Term tm)) rhs)
-    = Bind b (D n q (mapVars g ty) (Term $ mapVars (extend g) tm)) (mapVars (extend g) rhs)
-mapVars g (App q f x) = App q (mapVars g f) (mapVars g x)
-mapVars g Star = Star
-mapVars g Erased = Erased
-
-exceptFZ : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
-exceptFZ g  FZ    = pure $ V FZ  -- don't traverse bound var
-exceptFZ g (FS i) = mapVars FS <$> g i
-
-mutual
-  export
-  traverseVarsD : Applicative t => (Fin n -> t (TT q m)) -> Def q n -> t (Def q m)
-  traverseVarsD g (D n q ty b) = ?rhs
-
-  export
-  traverseVars : Applicative t => (Fin n -> t (TT q m)) -> TT q n -> t (TT q m)
-  traverseVars g (V i) = g i
-  traverseVars g (Bind b d rhs) = Bind b <$> traverseVarsD g d <*> traverseVars (exceptFZ g) rhs
-  traverseVars g (App q f x) = App q <$> traverseVars g f <*> traverseVars g x
-  traverseVars f Star = pure Star
-  traverseVars f Erased = pure Erased
-
-substVars : (Fin n -> TT q m) -> TT q n -> TT q m
-substVars g = runIdentity . traverseVars (pure . g)
+  subst : (Fin n -> TT q m) -> TT q n -> TT q m
+  subst g = runIdentity . ttSubst (pure . g)
 
 export
-substTop : TT q n -> Fin (S n) -> TT q n
-substTop tm  FZ    = tm
-substTop tm (FS x) = V x
+substFZ : TT q n -> Fin (S n) -> TT q n
+substFZ tm  FZ    = tm
+substFZ tm (FS x) = V x
 
-replaceFZ : Fin n -> Fin (S n) -> Fin n
-replaceFZ i  FZ    = i
-replaceFZ _ (FS j) = j
+mapFZ : Fin n -> Fin (S n) -> Fin n
+mapFZ i  FZ    = i
+mapFZ _ (FS j) = j
 
 covering export
 whnf : Context q n -> TT q n -> TT q n
 whnf ctx (V i) with (lookupCtx i ctx)
   | D n q ty (Abstract _) = V i
   -- replace recursive references by reference #i
-  | D n q ty (Term body)  = whnf ctx $ mapVars (replaceFZ i) body
+  | D n q ty (Term body)  = whnf ctx $ mapVars (mapFZ i) body
 whnf ctx (Bind Let d rhs) = ?whnfx -- TODO Bind Let d $ whnf (d::ctx) rhs
 whnf ctx (Bind b d rhs) = Bind b d rhs
 whnf ctx (App q f x) with (whnf ctx f)
-  | Bind Lam d rhs = whnf ctx $ substVars (substTop $ whnf ctx x) rhs
+  | Bind Lam d rhs = whnf ctx $ subst (substFZ $ whnf ctx x) rhs
   | f' = App q f' x
 whnf ctx Star = Star
 whnf ctx Erased = Erased
