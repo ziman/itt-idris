@@ -81,11 +81,11 @@ mutual
 
 mutual
   export
-  Eq bty => Eq (Def q bty n) where
+  (Eq q, Eq bty) => Eq (Def q bty n) where
     (==) (D n q ty b) (D n' q' ty' b') = (n == n') && (q == q') && (ty == ty') && (b == b')
 
   export
-  Eq (Binder q n) where
+  Eq q => Eq (Binder q n) where
     (==) (Lam d) (Lam d') = (d == d')
     (==) (Pi  d) (Pi  d') = (d == d')
     (==) (Let d) (Let d') = (d == d')
