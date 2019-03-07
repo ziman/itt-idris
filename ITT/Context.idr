@@ -4,9 +4,8 @@ import public ITT.Core
 import ITT.Lens
 
 public export
-data Context : Type -> Nat -> Type where
-  Nil : Context q Z
-  (::) : Def q n -> Context q n -> Context q (S n)
+Context : Type -> Nat -> Type
+Context = Telescope q Z n
 
 export
 lookupCtx : Fin n -> Context q n -> Def q n

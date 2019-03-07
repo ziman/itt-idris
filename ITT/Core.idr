@@ -43,12 +43,44 @@ mutual
     defBody : Body q (S n)
 
   public export
+  data Telescope : Type -> Nat -> Nat -> Type where
+    Nil : Telescope q n n
+    (::) : Def q n -> Telescope q m n -> Telescope q m (S n)
+
+  export
+  (++) : Telescope q m n -> Telescope q k m -> Telescope q k n
+  (++) xs ys = ?rhs
+
+  public export
+  data Alt : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
+    CtorCase : (cn : Fin n)
+        -> (args : Telescope q pn pm)
+        -> CaseTree q n pm
+        -> Alt q n pn
+    DefaultCase : CaseTree q n pn -> Alt q n pn
+
+  public export
+  data CaseTree : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
+    Leaf : TT q (pn + n) -> CaseTree q n pn
+    Case : Fin pn -> List (Alt q n pn) -> CaseTree q n pn
+
+  public export
+  data Scrutinees : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
+    Tree : (retTy : TT q n) -> CaseTree q n pn -> Scrutinees q n pn
+    Scrutinee :
+        (name : String) -> (sq : q) -> (ty : TT q (pn + n))
+        -> (val : TT q n)
+        -> (rest : Scrutinees q n (S pn))
+        -> Scrutinees q n pn
+
+  public export
   data TT : Type -> Nat -> Type where
     V : (i : Fin n) -> TT q n
     Bind : (b : Binder) -> (d : Def q n) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Star : TT q n
     Erased : TT q n
+    Match : Scrutinees q n Z -> TT q n
 
 mutual
   export
