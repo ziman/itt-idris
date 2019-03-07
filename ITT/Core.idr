@@ -10,47 +10,48 @@ import Control.Monad.Identity
 %default total
 
 public export
-data Binder = Lam | Pi | Let
+data Name = N String Int
 
 export
-Eq Binder where
-  (==) Lam Lam = True
-  (==) Pi  Pi  = True
-  (==) Let Let = True
-  (==) _ _ = False
-
-public export
-data Abstractness = Variable | Constructor
+Eq Name where
+  (==) (N x i) (N y j) = (x == y) && (i == j)
 
 export
-Eq Abstractness where
-  (==) Variable Variable = True
-  (==) Constructor Constructor = True
-  (==) _ _ = False
+Ord Name where
+  compare (N x i) (N y j) =
+    case compare x y of
+      EQ => compare i j
+      xy => xy
+
+export
+Show Name where
+  show (N s 0) = s
+  show (N s i) = s ++ show i
 
 mutual
   public export
-  data Body : Type -> Nat -> Type where
-    Abstract : Abstractness -> Body q n
-    Term : TT q n -> Body q n
+  data Binder : Type -> Nat -> Type where
+    Lam : Def q () n -> Binder q n
+    Pi  : Def q () n -> Binder q n
+    Let : Def q (TT q n) n -> Binder q n
 
   public export
-  record Def (q : Type) (n : Nat) where
+  record Def (q : Type) (bty : Type) (n : Nat) where
     constructor D
     defName : String
     defQ    : q
     defType : TT q n
-    defBody : Body q (S n)
+    defBody : bty
 
   public export
   data Telescope : Type -> (base : Nat) -> (size : Nat) -> Type where
     Nil : Telescope q n Z
-    (::) : (d : Def q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
+    (::) : (d : Def q () (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
 
   export
   (++) : Telescope q (m + n) k -> Telescope q n m -> Telescope q n (k + m)
   (++) [] ys = ys
-  (++) (d :: xs) ys = replace {P = Def _} (plusAssociative _ _ _) d :: xs ++ ys
+  (++) (d :: xs) ys = replace {P = Def _ _} (plusAssociative _ _ _) d :: xs ++ ys
 
   public export
   data Alt : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
@@ -68,7 +69,8 @@ mutual
   public export
   data TT : Type -> Nat -> Type where
     V : (i : Fin n) -> TT q n
-    Bind : (b : Binder) -> (d : Def q n) -> (rhs : TT q (S n)) -> TT q n
+    P : Name -> TT q n
+    Bind : (b : Binder q n) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Match : (ss : List (TT q n))
         -> (pvs : Telescope q n pn)
@@ -79,17 +81,22 @@ mutual
 
 mutual
   export
-  Eq q => Eq (Body q n) where
-    (==) (Abstract x) (Abstract y) = x == y
-    (==) (Term x) (Term y) = x == y
+  Eq bty => Eq (Def q bty n) where
+    (==) (D n q ty b) (D n' q' ty' b') = (n == n') && (q == q') && (ty == ty') && (b == b')
+
+  export
+  Eq (Binder q n) where
+    (==) (Lam d) (Lam d') = (d == d')
+    (==) (Pi  d) (Pi  d') = (d == d')
+    (==) (Let d) (Let d') = (d == d')
     (==) _ _ = False
 
   export
   Eq q => Eq (TT q n) where
     (==) (V i) (V j)
       = finEq i j
-    (==) (Bind b (D n q ty db) rhs) (Bind b' (D n' q' ty' db') rhs')
-      = (b == b') && (q == q') && (ty == ty') && (db == db') && (rhs == rhs')
+    (==) (Bind b rhs) (Bind b' rhs')
+      = (b == b') && (rhs == rhs')
     (==) (App q f x) (App q' f' x')
       = (q == q') && (f == f') && (x == x')
     (==) Star Star = True
