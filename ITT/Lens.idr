@@ -30,6 +30,11 @@ mutual
   defQ g (D n q ty b) = D n <$> g q <*> ttQ g ty <*> bodyQ g b
 
   export
+  telescopeQ : Traversal (Telescope q b s) (Telescope q' b s) q q'
+  telescopeQ g [] = pure []
+  telescopeQ g (d :: ds) = (::) <$> defQ g d <*> telescopeQ g ds
+
+  export
   altQ : Traversal (Alt q n pn) (Alt q' n pn) q q'
   altQ g (CtorCase cn args ct) = CtorCase cn <$> telescopeQ g args <*> caseTreeQ g ct
   altQ g (DefaultCase ct) = DefaultCase <$> caseTreeQ g ct
@@ -37,12 +42,7 @@ mutual
   export
   caseTreeQ : Traversal (CaseTree q n pn) (CaseTree q' n pn) q q'
   caseTreeQ g (Leaf tm) = Leaf <$> ttQ g tm
-  caseTreeQ g (Case s alts) = Case s <$> traverse (altQ g) alts
-
-  export
-  scrutsQ : Traversal (Scrutinees q n pn) (Scrutinees q' n pn) q q'
-  scrutsQ g (Tree rty ct) = Tree <$> ttQ g rty <*> caseTreeQ g ct
-  scrutsQ g (Scrutinee n q ty val rest) = Scrutinee n <$> g q <*> ttQ g ty <*> ttQ g val <*> scrutsQ g rest
+  caseTreeQ g (Case s alts) = Case s <$> assert_total (traverse (altQ g) alts)
 
   export
   ttQ : Traversal (TT q n) (TT q' n) q q'
@@ -50,11 +50,16 @@ mutual
   ttQ g (Bind b d rhs)
     = Bind b <$> defQ g d <*> ttQ g rhs
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
-  ttQ g (Match ss) = Match <$> scrutsQ g ss
+  ttQ g (Match ss pvs ct)
+    = Match
+        <$> assert_total (traverse (ttQ g) ss)
+        <*> telescopeQ g pvs
+        <*> caseTreeQ g ct
   ttQ g Star = pure Star
   ttQ g Erased = pure Erased
 
 mutual
+  private
   nonFZS : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
   nonFZS g  FZ    = pure (V FZ)
   nonFZS g (FS i) = assert_total (runIdentity . ttVars (pure . V . FS) <$> g i)
@@ -69,12 +74,36 @@ mutual
   defVars g (D n q ty b) = D n q <$> ttVars g ty <*> bodyVars (nonFZS g) b
 
   export
+  telescopeVars : Traversal (Telescope q m s) (Telescope q n s) (Fin m) (TT q n)
+  telescopeVars g [] = pure []
+  telescopeVars g (d :: ds) = ?rhs --  (::) <$> defVars g d <*> telescopeVars (nonFZS g) ds
+
+  export
+  altVars : Traversal (Alt q m pn) (Alt q n pn) (Fin m) (TT q n)
+  altVars g (DefaultCase ct) = DefaultCase <$> caseTreeVars g ct
+  altVars g (CtorCase cn args ct)
+    = CtorCase
+        <$> ?cn  -- we probably need a separate index/scope for constructors
+        <*> telescopeVars g args
+        <*> caseTreeVars g ct
+
+  export
+  caseTreeVars : Traversal (CaseTree q m pn) (CaseTree q n pn) (Fin m) (TT q n)
+  caseTreeVars g (Leaf tm) = Leaf <$> ttVars g tm
+  caseTreeVars g (Case s alts) = Case s <$> traverse (altVars g) alts
+
+  export
   ttVars : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
   ttVars g (V i) = g i
   ttVars g (Bind b d rhs)
     = Bind b <$> defVars g d <*> ttVars (nonFZS g) rhs
   ttVars g (App q f x)
     = App q <$> ttVars g f <*> ttVars g x
+  ttVars g (Match ss pvs ct)
+    = Match
+        <$> assert_total (traverse (ttVars g) ss)
+        <*> telescopeVars g pvs
+        <*> caseTreeVars g ct
   ttVars g Star = pure Star
   ttVars g Erased = pure Erased
 
