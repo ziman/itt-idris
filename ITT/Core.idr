@@ -79,16 +79,43 @@ mutual
     Star : TT q n
     Erased : TT q n
 
+eqTelescopeLen : (xs : Telescope q b s) -> (ys : Telescope q b s') -> Maybe (s = s')
+eqTelescopeLen [] [] = Just Refl
+eqTelescopeLen (x :: xs) (y :: ys) = cong <$> eqTelescopeLen xs ys
+eqTelescopeLen _ _ = Nothing
+
 mutual
   export
   (Eq q, Eq bty) => Eq (Def q bty n) where
-    (==) (D n q ty b) (D n' q' ty' b') = (n == n') && (q == q') && (ty == ty') && (b == b')
+    (==) (D n q ty b) (D n' q' ty' b') =
+        (n == n') && (q == q') && (ty == ty') && (b == b')
 
   export
   Eq q => Eq (Binder q n) where
-    (==) (Lam d) (Lam d') = (d == d')
-    (==) (Pi  d) (Pi  d') = (d == d')
-    (==) (Let d) (Let d') = (d == d')
+    (==) (Lam d) (Lam d') = assert_total (d == d')  -- termination checker wat?
+    (==) (Pi  d) (Pi  d') = assert_total (d == d')
+    (==) (Let d) (Let d') = assert_total (d == d')
+    (==) _ _ = False
+
+  export
+  Eq q => Eq (Telescope q b s) where
+    (==) [] [] = True
+    (==) (d :: xs) (d' :: xs') = d == d' && xs == xs'
+    (==) _ _ = False
+
+  export
+  Eq q => Eq (Alt q n pn) where
+    (==) (CtorCase cn args ct) (CtorCase cn' args' ct') with (eqTelescopeLen args args')
+      | Just Refl = cn == cn' && args == args' && ct == ct'
+      | Nothing   = False
+    (==) (DefaultCase ct) (DefaultCase ct')
+      = ct == ct'
+    (==) _ _ = False
+
+  export
+  Eq q => Eq (CaseTree q n pn) where
+    (==) (Leaf tm) (Leaf tm') = tm == tm
+    (==) (Case s alts) (Case s' alts') = s == s' && assert_total (alts == alts')
     (==) _ _ = False
 
   export
@@ -99,6 +126,9 @@ mutual
       = (b == b') && (rhs == rhs')
     (==) (App q f x) (App q' f' x')
       = (q == q') && (f == f') && (x == x')
+    (==) (Match ss pvs ct) (Match ss' pvs' ct') with (eqTelescopeLen pvs pvs')
+      | Just Refl = assert_total $ (ss == ss') && (pvs == pvs') && (ct == ct')
+      | Nothing   = False
     (==) Star Star = True
     (==) Erased Erased = True
     _ == _ = False
