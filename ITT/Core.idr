@@ -49,7 +49,8 @@ mutual
 
   export
   (++) : Telescope q m n -> Telescope q k m -> Telescope q k n
-  (++) xs ys = ?rhs
+  (++) [] ys = ys
+  (++) (d :: xs) ys = d :: xs ++ ys
 
   public export
   data Alt : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
