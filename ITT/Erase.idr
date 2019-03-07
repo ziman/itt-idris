@@ -3,6 +3,8 @@ module Erase
 import TT
 import Data.List
 
+%default total
+
 public export
 eraseN : Context Q n -> Nat
 eraseN [] = Z

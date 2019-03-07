@@ -3,6 +3,7 @@ module Utils
 import public Data.Fin
 
 %access export
+%default total
 
 finEq : Fin n -> Fin n -> Bool
 finEq FZ FZ = True

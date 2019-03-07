@@ -3,6 +3,8 @@ module ITT.Quantity
 import Utils.Misc
 import public Utils.OrdSemiring
 
+%default total
+
 public export
 interface ShowQ q where
   showCol : q -> String

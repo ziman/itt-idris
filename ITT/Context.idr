@@ -3,6 +3,8 @@ module ITT.Context
 import public ITT.Core
 import ITT.Lens
 
+%default total
+
 public export
 Context : Type -> Nat -> Type
 Context = Telescope q Z n

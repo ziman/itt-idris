@@ -3,6 +3,8 @@ module ITT.Lens
 import public ITT.Core
 import Control.Monad.Identity
 
+%default total
+
 public export
 Traversal : Type -> Type -> Type -> Type -> Type
 Traversal s t a b = (
@@ -28,11 +30,27 @@ mutual
   defQ g (D n q ty b) = D n <$> g q <*> ttQ g ty <*> bodyQ g b
 
   export
+  altQ : Traversal (Alt q n pn) (Alt q' n pn) q q'
+  altQ g (CtorCase cn args ct) = CtorCase cn <$> telescopeQ g args <*> caseTreeQ g ct
+  altQ g (DefaultCase ct) = DefaultCase <$> caseTreeQ g ct
+
+  export
+  caseTreeQ : Traversal (CaseTree q n pn) (CaseTree q' n pn) q q'
+  caseTreeQ g (Leaf tm) = Leaf <$> ttQ g tm
+  caseTreeQ g (Case s alts) = Case s <$> traverse (altQ g) alts
+
+  export
+  scrutsQ : Traversal (Scrutinees q n pn) (Scrutinees q' n pn) q q'
+  scrutsQ g (Tree rty ct) = Tree <$> ttQ g rty <*> caseTreeQ g ct
+  scrutsQ g (Scrutinee n q ty val rest) = Scrutinee n <$> g q <*> ttQ g ty <*> ttQ g val <*> scrutsQ g rest
+
+  export
   ttQ : Traversal (TT q n) (TT q' n) q q'
   ttQ g (V i) = pure $ V i
   ttQ g (Bind b d rhs)
     = Bind b <$> defQ g d <*> ttQ g rhs
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
+  ttQ g (Match ss) = Match <$> scrutsQ g ss
   ttQ g Star = pure Star
   ttQ g Erased = pure Erased
 

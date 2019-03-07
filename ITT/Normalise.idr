@@ -3,6 +3,8 @@ module ITT.Normalise
 import public ITT.Core
 import ITT.Lens
 
+%default total
+
 export
 substFZ : TT q n -> Fin (S n) -> TT q n
 substFZ tm  FZ    = tm

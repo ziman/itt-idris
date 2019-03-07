@@ -8,6 +8,8 @@ import public OrdSemiring
 import Data.Fin
 import Data.SortedSet as Set
 
+%default total
+
 public export
 Set : Type -> Type
 Set = SortedSet

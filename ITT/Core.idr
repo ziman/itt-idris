@@ -43,45 +43,39 @@ mutual
     defBody : Body q (S n)
 
   public export
-  data Telescope : Type -> Nat -> Nat -> Type where
-    Nil : Telescope q n n
-    (::) : Def q n -> Telescope q m n -> Telescope q m (S n)
+  data Telescope : Type -> (base : Nat) -> (size : Nat) -> Type where
+    Nil : Telescope q n Z
+    (::) : (d : Def q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
 
   export
-  (++) : Telescope q m n -> Telescope q k m -> Telescope q k n
+  (++) : Telescope q (m + n) k -> Telescope q n m -> Telescope q n (k + m)
   (++) [] ys = ys
-  (++) (d :: xs) ys = d :: xs ++ ys
+  (++) (d :: xs) ys = replace {P = Def _} (plusAssociative _ _ _) d :: xs ++ ys
 
   public export
   data Alt : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
     CtorCase : (cn : Fin n)
-        -> (args : Telescope q pn pm)
-        -> CaseTree q n pm
+        -> (args : Telescope q (pn + n) pm)
+        -> (ct : CaseTree q n (pm + pn))
         -> Alt q n pn
-    DefaultCase : CaseTree q n pn -> Alt q n pn
+    DefaultCase : (ct : CaseTree q n pn) -> Alt q n pn
 
   public export
   data CaseTree : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
-    Leaf : TT q (pn + n) -> CaseTree q n pn
-    Case : Fin pn -> List (Alt q n pn) -> CaseTree q n pn
-
-  public export
-  data Scrutinees : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
-    Tree : (retTy : TT q n) -> CaseTree q n pn -> Scrutinees q n pn
-    Scrutinee :
-        (name : String) -> (sq : q) -> (ty : TT q (pn + n))
-        -> (val : TT q n)
-        -> (rest : Scrutinees q n (S pn))
-        -> Scrutinees q n pn
+    Leaf : (rhs : TT q (pn + n)) -> CaseTree q n pn
+    Case : (s : Fin pn) -> (alts : List (Alt q n pn)) -> CaseTree q n pn
 
   public export
   data TT : Type -> Nat -> Type where
     V : (i : Fin n) -> TT q n
     Bind : (b : Binder) -> (d : Def q n) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
+    Match : (ss : List (TT q n))
+        -> (pvs : Telescope q n pn)
+        -> (ct : CaseTree q n pn)
+        -> TT q n
     Star : TT q n
     Erased : TT q n
-    Match : Scrutinees q n Z -> TT q n
 
 mutual
   export
