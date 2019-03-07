@@ -7,7 +7,7 @@ ITT supports the following modalities:
 * **R** (unrestricted) -- present at runtime, unrestricted
 
 ITT can infer all of them by interleaving type checking and constraint solving
-using an external solver (Z3 via [SBV](http://hackage.haskell.org/package/sbv)).
+using an external solver.
 
 ITT supports only variables, lambdas and applications so if you need global definitions,
 you need to bring them into scope using lambdas.
