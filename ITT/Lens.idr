@@ -21,13 +21,8 @@ ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
 
 mutual
   export
-  bodyQ : Traversal (Body q n) (Body q' n) q q'
-  bodyQ g (Abstract a) = pure $ Abstract a
-  bodyQ g (Term tm) = Term <$> ttQ g tm
-
-  export
-  defQ : Traversal (Def q n) (Def q' n) q q'
-  defQ g (D n q ty b) = D n <$> g q <*> ttQ g ty <*> bodyQ g b
+  binderQ : Traversal (Binder q n) (Binder q' n) q q'
+  binderQ g b = ?rhs
 
   export
   telescopeQ : Traversal (Telescope q b s) (Telescope q' b s) q q'
@@ -58,6 +53,7 @@ mutual
   ttQ g Star = pure Star
   ttQ g Erased = pure Erased
 
+{-
 mutual
   private
   nonFZS : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
@@ -122,3 +118,4 @@ rename g = subst (V . g)
 export
 renameDef : (Fin n -> Fin m) -> Def q n -> Def q m
 renameDef g = runIdentity . defVars (pure . V . g)
+-}
