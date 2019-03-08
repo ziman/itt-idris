@@ -100,8 +100,7 @@ mutual
     Pi : (d : Def NoBody q n)
         -> (rhs : TT q (S n))
         -> TT q n
-    Let : (d : Def NoBody q n)
-        -> (val : TT q (S n))  -- recursive
+    Let : (d : Def Body q n)
         -> (rhs : TT q (S n))
         -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
@@ -118,6 +117,12 @@ eqTelescopeLen (x :: xs) (y :: ys) = cong <$> eqTelescopeLen xs ys
 eqTelescopeLen _ _ = Nothing
 
 mutual
+  export
+  Eq q => Eq (Body q n) where
+    (==) (Abstract a) (Abstract a') = a == a'
+    (==) (Term tm) (Term tm') = assert_total $ tm == tm'  -- wat?
+    (==) _ _ = False
+
   export
   (Eq q, {n' : Nat} -> Eq (bty q n')) => Eq (Def bty q n) where
     (==) (D n q ty b) (D n' q' ty' b') =
@@ -148,9 +153,9 @@ mutual
   Eq q => Eq (TT q n) where
     (==) (V i) (V j)
       = finEq i j
-    (==) (Lam d rhs) (Lam  d' rhs') = d == d' && rhs == rhs'
-    (==) (Pi  d rhs) (Pi   d' rhs') = d == d' && rhs == rhs'
-    (==) (Let d val rhs) (Let d' val' rhs') = d == d' && val == val' && rhs == rhs'
+    (==) (Lam d rhs) (Lam d' rhs') = d == d' && rhs == rhs'
+    (==) (Pi  d rhs) (Pi  d' rhs') = d == d' && rhs == rhs'
+    (==) (Let d rhs) (Let d' rhs') = d == d' && rhs == rhs'
     (==) (App q f x) (App q' f' x')
       = (q == q') && (f == f') && (x == x')
     (==) (Match ss pvs ct) (Match ss' pvs' ct') with (eqTelescopeLen pvs pvs')
