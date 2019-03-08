@@ -19,19 +19,29 @@ public export
 ILens : (a -> Type) -> (a -> Type) -> Type
 ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
 
+noBodyQ : (n : Nat) -> Traversal (NoBody q n) (NoBody q' n) q q'
+noBodyQ n g MkNoBody = pure MkNoBody
+
 mutual
   export
-  binderQ : Traversal (Binder q n) (Binder q' n) q q'
-  binderQ g b = ?rhs
+  bodyQ : (n : Nat) -> Traversal (Body q n) (Body q' n) q q'
+  bodyQ n g (Abstract a) = pure $ Abstract a
+  bodyQ n g (Term tm) = Term <$> assert_total (ttQ g tm)
 
   export
-  telescopeQ : Traversal (Telescope q b s) (Telescope q' b s) q q'
-  telescopeQ g [] = pure []
-  telescopeQ g (d :: ds) = (::) <$> defQ g d <*> telescopeQ g ds
+  defQ : (bQ : (n : Nat) -> Traversal (bty q n) (bty q' n) q q')
+    -> Traversal (Def bty q n) (Def bty q' n) q q'
+  defQ bQ g (D n q ty b) = D n <$> g q <*> ttQ g ty <*> bQ _ g b
+
+  export
+  telescopeQ : (bQ : (n : Nat) -> Traversal (bty q n) (bty q' n) q q')
+    -> Traversal (Telescope bty q b s) (Telescope bty q' b s) q q'
+  telescopeQ bQ g [] = pure []
+  telescopeQ bQ g (d :: ds) = (::) <$> defQ bQ g d <*> telescopeQ bQ g ds
 
   export
   altQ : Traversal (Alt q n pn) (Alt q' n pn) q q'
-  altQ g (CtorCase cn args ct) = CtorCase cn <$> telescopeQ g args <*> caseTreeQ g ct
+  altQ g (CtorCase cn args ct) = CtorCase cn <$> telescopeQ noBodyQ g args <*> caseTreeQ g ct
   altQ g (DefaultCase ct) = DefaultCase <$> caseTreeQ g ct
 
   export
@@ -42,13 +52,14 @@ mutual
   export
   ttQ : Traversal (TT q n) (TT q' n) q q'
   ttQ g (V i) = pure $ V i
-  ttQ g (Bind b d rhs)
-    = Bind b <$> defQ g d <*> ttQ g rhs
+  ttQ g (Lam d rhs) = Lam <$> defQ noBodyQ g d <*> ttQ g rhs
+  ttQ g (Pi  d rhs) = Pi  <$> defQ noBodyQ g d <*> ttQ g rhs
+  ttQ g (Let d rhs) = Let <$> defQ bodyQ   g d <*> ttQ g rhs
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
   ttQ g (Match ss pvs ct)
     = Match
         <$> assert_total (traverse (ttQ g) ss)
-        <*> telescopeQ g pvs
+        <*> telescopeQ noBodyQ g pvs
         <*> caseTreeQ g ct
   ttQ g Star = pure Star
   ttQ g Erased = pure Erased
