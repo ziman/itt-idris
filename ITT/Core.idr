@@ -119,14 +119,14 @@ eqTelescopeLen _ _ = Nothing
 
 mutual
   export
-  (Eq q, (Eq (bty q (S n)))) => Eq (Def bty q n) where
+  (Eq q, {n' : Nat} -> Eq (bty q n')) => Eq (Def bty q n) where
     (==) (D n q ty b) (D n' q' ty' b') =
         (n == n') && (q == q') && (ty == ty') && (b == b')
 
   export
-  (Eq q, (n' : Nat) -> Eq (bty q n')) => Eq (Telescope bty q b s) where
+  (Eq q, {n' : Nat} -> Eq (bty q n')) => Eq (Telescope bty q b s) where
     (==) [] [] = True
-    (==) (d :: xs) (d' :: xs') = ?rhsA
+    (==) (d :: xs) (d' :: xs') = d == d' && xs == xs'
     (==) _ _ = False
 
   export
