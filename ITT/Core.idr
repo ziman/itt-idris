@@ -72,9 +72,9 @@ mutual
 
   public export
   data Alt : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
-    CtorCase : (cn : Fin n)
-        -> (args : Telescope q (pn + n) pm)
-        -> (ct : CaseTree q n (pm + pn))
+    CtorCase : (cn : Name)
+        -> (args : Telescope q (pn + n) s)
+        -> (ct : CaseTree q n (s + pn))
         -> Alt q n pn
     DefaultCase : (ct : CaseTree q n pn) -> Alt q n pn
 
