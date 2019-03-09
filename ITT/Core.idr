@@ -5,6 +5,7 @@ import public Utils.Pretty
 import public Utils.OrdSemiring
 import public ITT.Quantity
 import public Data.Fin
+import public Data.Vect
 import Control.Monad.Identity
 
 %default total
@@ -62,7 +63,7 @@ mutual
     Pi  : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
     Let : (b : Binding q n) -> (val : TT q (S n)) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
-    Match : (ss : List (TT q n))
+    Match : (ss : Vect pn (TT q n))
         -> (pvs : Telescope q n pn)
         -> (ct : CaseTree q n pn)
         -> TT q n
