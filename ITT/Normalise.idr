@@ -1,6 +1,7 @@
 module ITT.Normalise
 
 import public ITT.Core
+import public ITT.Context
 import ITT.Lens
 
 %default total
@@ -20,15 +21,11 @@ Strengthen (TT q) where
 covering export
 whnf : Context q n -> TT q n -> TT q n
 whnf ctx (V i) with (lookupCtx i ctx)
-  | D n q ty (Abstract _) = V i
-  -- replace recursive references by reference #i
-  | D n q ty (Term body)  = whnf ctx $ rename (mapFZ i) body
-whnf ctx (Bind Let d rhs) =
-  let rhs' = whnf (d::ctx) rhs
-    in case ttVars (map V . unFS) rhs' of
-      Just rhs'' => rhs''
-      Nothing    => Bind Let d rhs'
-whnf ctx (Bind b d rhs) = Bind b d rhs
+  | D n r ty (Term tm) = whnf ctx $ strengthen tm
+  | _ = V i
+whnf ctx (Lam d rhs) = ?rlam
+whnf ctx (Pi d rhs) = ?rlam
+whnf ctx (Let d val rhs) = ?rlam
 whnf ctx (App q f x) with (whnf ctx f)
   | Bind Lam d rhs = whnf ctx $ subst (substFZ $ whnf ctx x) rhs
   | f' = App q f' x

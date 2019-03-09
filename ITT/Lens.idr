@@ -21,13 +21,13 @@ ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
 
 mutual
   export
-  varDefQ : Traversal (VarDef q n) (VarDef q' n) q q'
-  varDefQ g (VD n q ty) = VD n <$> g q <*> ttQ g ty
+  bindingQ : Traversal (Binding q n) (Binding q' n) q q'
+  bindingQ g (B n q ty) = B n <$> g q <*> ttQ g ty
 
   export
   telescopeQ : Traversal (Telescope q b s) (Telescope q' b s) q q'
   telescopeQ g [] = pure []
-  telescopeQ g (d :: ds) = (::) <$> varDefQ g d <*> telescopeQ g ds
+  telescopeQ g (b :: ds) = (::) <$> bindingQ g b <*> telescopeQ g ds
 
   export
   altQ : Traversal (Alt q n pn) (Alt q' n pn) q q'
@@ -42,9 +42,10 @@ mutual
   export
   ttQ : Traversal (TT q n) (TT q' n) q q'
   ttQ g (V i) = pure $ V i
-  ttQ g (Lam d rhs) = Lam <$> varDefQ g d <*> ttQ g rhs
-  ttQ g (Pi  d rhs) = Pi  <$> varDefQ g d <*> ttQ g rhs
-  ttQ g (Let d val rhs) = Let <$> varDefQ g d <*> ttQ g val <*> ttQ g rhs
+  ttQ g (G n) = pure $ G n
+  ttQ g (Lam b rhs) = Lam <$> bindingQ g b <*> ttQ g rhs
+  ttQ g (Pi  b rhs) = Pi  <$> bindingQ g b <*> ttQ g rhs
+  ttQ g (Let b val rhs) = Let <$> bindingQ g b <*> ttQ g val <*> ttQ g rhs
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
   ttQ g (Match ss pvs ct)
     = Match
@@ -59,15 +60,15 @@ mutual
   -- and those that point beyond it
   splitFin : Telescope q n' s -> Fin (s + n) -> Either (Fin s) (Fin n)
   splitFin [] f = Right f
-  splitFin (d :: ds)  FZ    = Left FZ
-  splitFin (d :: ds) (FS i) with (splitFin ds i)
+  splitFin (b :: ds)  FZ    = Left FZ
+  splitFin (b :: ds) (FS i) with (splitFin ds i)
     | Left  j = Left  (FS j)
     | Right j = Right j
 
   -- push all references to point beyond the telescope
   tackFinR : Telescope q n' s -> Fin n -> Fin (s + n)
   tackFinR []        f = f
-  tackFinR (d :: ds) f = FS $ tackFinR ds f
+  tackFinR (b :: ds) f = FS $ tackFinR ds f
 
   -- repeated weakening, identity at runtime
   tackFinL : Fin s -> Fin (s + n)
@@ -89,16 +90,16 @@ mutual
     | Right j = rename (tackFinR ds) <$> g j  -- this should be modified
 
   export
-  varDefVars : Traversal (VarDef q m) (VarDef q n) (Fin m) (TT q n)
-  varDefVars g (VD n q ty) = VD n q <$> ttVars g ty
+  bindingVars : Traversal (Binding q m) (Binding q n) (Fin m) (TT q n)
+  bindingVars g (B n q ty) = B n q <$> ttVars g ty
 
   telescopeVars' : Applicative t
     => (Fin m -> t (TT q n))
     -> Telescope q m s
     -> (t (Telescope q n s), Fin (s + m) -> t (TT q (s + n)))
   telescopeVars' g [] = (pure [], g)
-  telescopeVars' g (d :: ds) with (telescopeVars' g ds)
-    | (ds', g') = ((::) <$> varDefVars g' d <*> ds', skipFZ g')
+  telescopeVars' g (b :: ds) with (telescopeVars' g ds)
+    | (ds', g') = ((::) <$> bindingVars g' b <*> ds', skipFZ g')
 
   export
   telescopeVars : Traversal (Telescope q m s) (Telescope q n s) (Fin m) (TT q n)
@@ -128,11 +129,12 @@ mutual
   export
   ttVars : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
   ttVars g (V i) = g i
-  ttVars g (Lam d rhs) = Lam <$> varDefVars g d <*> ttVars (skipFZ g) rhs
-  ttVars g (Pi  d rhs) = Pi  <$> varDefVars g d <*> ttVars (skipFZ g) rhs
-  ttVars g (Let d val rhs) =
+  ttVars g (G n) = pure $ G n
+  ttVars g (Lam b rhs) = Lam <$> bindingVars g b <*> ttVars (skipFZ g) rhs
+  ttVars g (Pi  b rhs) = Pi  <$> bindingVars g b <*> ttVars (skipFZ g) rhs
+  ttVars g (Let b val rhs) =
     Let
-      <$> varDefVars g d
+      <$> bindingVars g b
       <*> ttVars (skipFZ g) val
       <*> ttVars (skipFZ g) rhs
   ttVars g (App q f x)

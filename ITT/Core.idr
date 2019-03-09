@@ -30,16 +30,16 @@ Show Name where
 
 mutual
   public export
-  record VarDef (q : Type) (n : Nat) where
-    constructor VD
-    adn : String
-    adq : q
-    ty : TT q n
+  record Binding (q : Type) (n : Nat) where
+    constructor B
+    bn : String
+    bq : q
+    bty : TT q n
 
   public export
   data Telescope : (q : Type) -> (base : Nat) -> (size : Nat) -> Type where
     Nil : Telescope q n Z
-    (::) : (d : VarDef q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
+    (::) : (b : Binding q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
 
   public export
   data Alt : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
@@ -57,10 +57,10 @@ mutual
   public export
   data TT : Type -> Nat -> Type where
     V : (i : Fin n) -> TT q n
-    P : Name -> TT q n
-    Lam : (d : VarDef q n) -> (rhs : TT q (S n)) -> TT q n
-    Pi  : (d : VarDef q n) -> (rhs : TT q (S n)) -> TT q n
-    Let : (d : VarDef q n) -> (val : TT q (S n)) -> (rhs : TT q (S n)) -> TT q n
+    G : Name -> TT q n
+    Lam : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
+    Pi  : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
+    Let : (b : Binding q n) -> (val : TT q (S n)) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Match : (ss : List (TT q n))
         -> (pvs : Telescope q n pn)
@@ -69,6 +69,13 @@ mutual
     Star : TT q n
     Erased : TT q n
 
+{-
+export
+(++) : Telescope q (s + n) s' -> Telescope q n s -> Telescope q n (s' + s)
+(++) [] ys = ys
+(++) (b :: xs) ys = b :: xs ++ ys
+-}
+
 eqTelescopeLen : (xs : Telescope q b s) -> (ys : Telescope q b s') -> Maybe (s = s')
 eqTelescopeLen [] [] = Just Refl
 eqTelescopeLen (x :: xs) (y :: ys) = cong <$> eqTelescopeLen xs ys
@@ -76,14 +83,14 @@ eqTelescopeLen _ _ = Nothing
 
 mutual
   export
-  Eq q => Eq (VarDef q n) where
-    (==) (VD n q ty) (VD n' q' ty') =
+  Eq q => Eq (Binding q n) where
+    (==) (B n q ty) (B n' q' ty') =
         (n == n') && (q == q') && (ty == ty')
 
   export
   Eq q => Eq (Telescope q b s) where
     (==) [] [] = True
-    (==) (d :: xs) (d' :: xs') = d == d' && xs == xs'
+    (==) (b :: xs) (b' :: xs') = b == b' && xs == xs'
     (==) _ _ = False
 
   export
@@ -105,9 +112,10 @@ mutual
   Eq q => Eq (TT q n) where
     (==) (V i) (V j)
       = finEq i j
-    (==) (Lam d rhs) (Lam d' rhs') = d == d' && rhs == rhs'
-    (==) (Pi  d rhs) (Pi  d' rhs') = d == d' && rhs == rhs'
-    (==) (Let d val rhs) (Let d' val' rhs') = d == d' && val == val' && rhs == rhs'
+    (==) (G n) (G n') = n == n'
+    (==) (Lam b rhs) (Lam b' rhs') = b == b' && rhs == rhs'
+    (==) (Pi  b rhs) (Pi  b' rhs') = b == b' && rhs == rhs'
+    (==) (Let b val rhs) (Let b' val' rhs') = b == b' && val == val' && rhs == rhs'
     (==) (App q f x) (App q' f' x')
       = (q == q') && (f == f') && (x == x')
     (==) (Match ss pvs ct) (Match ss' pvs' ct') with (eqTelescopeLen pvs pvs')
