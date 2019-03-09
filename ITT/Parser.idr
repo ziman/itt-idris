@@ -231,15 +231,18 @@ mutual
   alt ns pns =
     (do
         token Pipe
-        token Underscore
-        token DblArrow
-        DefaultCase <$> caseTree ns pns
-    ) <|> (do
-        token Pipe
         cn <- name
+        commit
         t  <- telescope (pns ++ ns) (MkTele Z [] [])
+        token DblArrow
         ct <- caseTree ns (t_names t ++ pns)
         pure $ CtorCase cn (t_tele t) ct
+    ) <|> (do
+        token Pipe
+        token Underscore
+        commit
+        token DblArrow
+        DefaultCase <$> caseTree ns pns
     )
 
   caseTree : Vect n String -> Vect pn String -> Rule (CaseTree (Maybe Q) n pn)
