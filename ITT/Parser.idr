@@ -301,8 +301,8 @@ definition =
     mkDef : Binding (Maybe Q) Z -> Body (Maybe Q) -> Def (Maybe Q)
     mkDef (B n q ty) b = D (N n 0) q ty b
 
-module_ : Grammar (TokenData Token) False (Module (Maybe Q))
-module_ = MkModule <$> many definition
+module_ : Rule (Module (Maybe Q))
+module_ = MkModule <$> some definition
 
 export
 parse : String -> Either ParseError (Module (Maybe Q))
