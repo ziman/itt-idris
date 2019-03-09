@@ -61,10 +61,15 @@ mutual
   -- and those that point beyond it
   splitFin : Telescope q n' s -> Fin (s + n) -> Either (Fin s) (Fin n)
   splitFin [] f = Right f
-  splitFin (b :: ds)  FZ    = Left FZ
-  splitFin (b :: ds) (FS i) with (splitFin ds i)
-    | Left  j = Left  (FS j)
-    | Right j = Right j
+  splitFin (b :: ds) f = subSplit b ds f
+    where
+      -- I had to break pattern matching into two separate functions
+      -- because the pattern compiler kept choosing erased variables for inspection
+      subSplit : Binding q (s + n') -> Telescope q n' s -> Fin (S s + n) -> Either (Fin (S s)) (Fin n)
+      subSplit b ds  FZ    = Left FZ
+      subSplit b ds (FS i) with (splitFin ds i)
+        | Left  j = Left (FS j)
+        | Right j = Right j
 
   -- push all references to point beyond the telescope
   tackFinR : Telescope q n' s -> Fin n -> Fin (s + n)
