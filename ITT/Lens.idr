@@ -3,7 +3,7 @@ module ITT.Lens
 import public ITT.Core
 import Control.Monad.Identity
 
--- %default total
+%default total
 
 public export
 Traversal : Type -> Type -> Type -> Type -> Type
@@ -61,15 +61,38 @@ mutual
   ttQ g Erased = pure Erased
 
 mutual
+  -- split references between those that point into the telescope
+  -- and those that point beyond it
+  splitFin : Telescope q n' s -> Fin (s + n) -> Either (Fin s) (Fin n)
+  splitFin [] f = Right f
+  splitFin (d :: ds)  FZ    = Left FZ
+  splitFin (d :: ds) (FS i) with (splitFin ds i)
+    | Left  j = Left  (FS j)
+    | Right j = Right j
+
+  -- push all references to point beyond the telescope
+  tackFinR : Telescope q n' s -> Fin n -> Fin (s + n)
+  tackFinR []        f = f
+  tackFinR (d :: ds) f = FS $ tackFinR ds f
+
+  -- repeated weakening, identity at runtime
+  tackFinL : Fin s -> Fin (s + n)
+  tackFinL  FZ    = FZ
+  tackFinL (FS i) = FS $ tackFinL i
+
   private
   nonFZS : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
   nonFZS g  FZ    = pure (V FZ)
-  nonFZS g (FS i) = assert_total (runIdentity . ttVars (pure . V . FS) <$> g i)
+  nonFZS g (FS i) = rename FS <$> g i
 
   private
-  nonTel : Applicative t => (Fin n -> t (TT q m)) -> Telescope q n s -> Fin (s + n) -> t (TT q (s + m))
-  nonTel g []        f = ?rhs_1
-  nonTel g (_ :: ds) f = ?rhs_2
+  -- this could be expressed as iterated nonFZS
+  -- but that would traverse the term repeatedly
+  -- so let's just do it in one pass using splitFin and tackFin
+  nonTel : Applicative t => Telescope q n s -> (Fin n -> t (TT q m)) -> Fin (s + n) -> t (TT q (s + m))
+  nonTel ds g i with (splitFin ds i)
+    | Left  j = pure $ V (tackFinL j)  -- this should keep pointing into the telescope
+    | Right j = rename (tackFinR ds) <$> g j  -- this should be modified
 
   export
   bodyVars : Traversal (Body a q m) (Body a q n) (Fin m) (TT q n)
@@ -81,29 +104,38 @@ mutual
   defVars : Traversal (Def a q m) (Def a q n) (Fin m) (TT q n)
   defVars g (D n q ty b) = D n q <$> ttVars g ty <*> bodyVars (nonFZS g) b
 
-  export
-  telescopeVars : Applicative t
+  telescopeVars' : Applicative t
     => (Fin m -> t (TT q n))
     -> Telescope q m s
     -> (t (Telescope q n s), Fin (s + m) -> t (TT q (s + n)))
-  telescopeVars g [] = (pure [], g)
-  telescopeVars g (d :: ds) with (telescopeVars g ds)
+  telescopeVars' g [] = (pure [], g)
+  telescopeVars' g (d :: ds) with (telescopeVars' g ds)
     | (ds', g') = ((::) <$> defVars g' d <*> ds', nonFZS g')
 
   export
-  altVars : Applicative t => (Fin m -> t (TT q n)) -> Alt q m pn -> t (Alt q n pn)
-  altVars g (DefaultCase ct) = DefaultCase <$> caseTreeVars g ct
-  altVars {t} {m} {q} {n} {pn} g (CtorCase {s = s} cn args ct) = ?rhsA
-  {-
-    where
-      args' : t (Telescope q n pn)
-      args' = fst $ telescopeVars {m = pn + m} {n = pn + n} {s = s} ?rhsG args
--}
+  telescopeVars : Traversal (Telescope q m s) (Telescope q n s) (Fin m) (TT q n)
+  telescopeVars g ds = fst $ telescopeVars' g ds
+
+  finAssoc : Fin (s + pn + m) -> Fin (s + (pn + m))
+  finAssoc = replace (sym $ plusAssociative _ _ _)
+
+  ttAssoc : TT q (s + (pn + m)) -> TT q (s + pn + m)
+  ttAssoc = replace (plusAssociative _ _ _)
 
   export
-  caseTreeVars : Traversal (CaseTree q m pn) (CaseTree q n pn) (Fin m) (TT q n)
-  caseTreeVars g (Leaf tm) = ?rhs -- Leaf <$> ttVars g tm  -- patvars enter context here
-  caseTreeVars g (Case s alts) = Case s <$> traverse (altVars g) alts
+  altVars : Traversal (Alt q m pn) (Alt q n pn) (Fin (pn + m)) (TT q (pn + n))
+  altVars g (DefaultCase ct) = DefaultCase <$> caseTreeVars g ct
+  altVars g (CtorCase cn args ct) = CtorCase cn
+    <$> telescopeVars g args
+    <*> caseTreeVars
+          (map ttAssoc . nonTel args g . finAssoc)
+          ct
+
+  export
+  -- this signature can't be expressed as Traversal because then (.) in altVars goes haywire
+  caseTreeVars : Applicative t => (Fin (pn + m) -> t (TT q (pn + n))) -> CaseTree q m pn -> t (CaseTree q n pn)
+  caseTreeVars g (Leaf tm) = Leaf <$> ttVars g tm
+  caseTreeVars g (Case s alts) = Case s <$> assert_total (traverse (altVars g) alts)
 
   export
   ttVars : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
@@ -113,25 +145,25 @@ mutual
   ttVars g (Bind Let d rhs) = Bind Let <$> defVars g d <*> ttVars (nonFZS g) rhs
   ttVars g (App q f x)
     = App q <$> ttVars g f <*> ttVars g x
-  ttVars g (Match ss pvs ct)
-    = Match
+  ttVars g (Match ss pvs ct) with (telescopeVars' g pvs)
+    | (pvs', g') = Match
         <$> assert_total (traverse (ttVars g) ss)
-        <*> fst (telescopeVars g pvs)
-        <*> caseTreeVars g ct
+        <*> pvs'
+        <*> caseTreeVars g' ct
   ttVars g Star = pure Star
   ttVars g Erased = pure Erased
+
+  export
+  subst : (Fin n -> TT q m) -> TT q n -> TT q m
+  subst g = assert_total $ runIdentity . ttVars (pure . g)
+
+  export
+  rename : (Fin n -> Fin m) -> TT q n -> TT q m
+  rename g = subst (V . g)
 
 export
 fold : Monoid a => (Fin n -> a) -> TT q n -> a
 fold {n} f = runConst . ttVars {n} (MkConst . f)
-
-export
-subst : (Fin n -> TT q m) -> TT q n -> TT q m
-subst g = runIdentity . ttVars (pure . g)
-
-export
-rename : (Fin n -> Fin m) -> TT q n -> TT q m
-rename g = subst (V . g)
 
 export
 renameDef : (Fin n -> Fin m) -> Def a q n -> Def a q m
