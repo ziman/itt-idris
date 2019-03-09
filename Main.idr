@@ -140,6 +140,6 @@ main = getArgs >>= \args => case args of
     case Parser.parse src of
       Left err => printLn err
       Right mod => do
-        printLn mod
+        print mod
 
   _ => putStrLn "usage: itt <filename.itt>"
