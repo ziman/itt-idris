@@ -1,6 +1,7 @@
 import ITT.Core
 import ITT.Parser
 import ITT.Pretty
+import ITT.Normalise
 
 import Data.Fin
 import Data.Vect
@@ -141,5 +142,8 @@ main = getArgs >>= \args => case args of
       Left err => printLn err
       Right mod => do
         print mod
+
+        putStrLn "### WHNF of main ###"
+        printLn $ whnf (toGlobals mod) [] (G {q = Maybe Q} $ N "main" 0)
 
   _ => putStrLn "usage: itt <filename.itt>"

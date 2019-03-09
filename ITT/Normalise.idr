@@ -2,7 +2,7 @@ module ITT.Normalise
 
 import public ITT.Core
 import public ITT.Context
-import public ITT.Globals
+import public ITT.Module
 import ITT.Lens
 import Utils.Misc
 
@@ -30,7 +30,7 @@ data MatchResult : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
 match : Globals q -> Vect k (TT q n)
     -> Name -> Telescope q (pn + n) s
     -> TT q n -> MatchResult q n (k + s)
-match {k} glob ss cn [] (G n) with (Globals.lookup n glob)
+match {k} glob ss cn [] (G n) with (Module.lookup n glob)
   | Just (D _ _ _ Constructor) =
       if n == cn
         then Yes (rewrite plusZeroRightNeutral k in ss)
@@ -64,8 +64,8 @@ mutual
   whnf : Globals q -> Context q n -> TT q n -> TT q n
   whnf glob ctx (V i) = V i
   whnf glob ctx (G n) =
-    case Globals.lookup n glob of
-      Just (D n q ty (Term tm)) => rename absurd tm
+    case Module.lookup n glob of
+      Just (D n q ty (Term tm)) => rename absurd $ whnf glob [] tm
       _ => G n
   whnf glob ctx (Lam b rhs) = Lam b rhs
   whnf glob ctx (Pi  b rhs) = Pi b rhs

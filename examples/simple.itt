@@ -28,8 +28,7 @@ postulate d : U (C b)
 
 -- Thanks to the irrelevance of C's argument, we *can* apply `g` to `d`
 -- and it does not matter that `b` may or may not be equal to `True`.
-function main : (foo : Bool) -> Bool = \foo : Bool.
-  (\x : U (C False). g x) d
+function main : Bool = (\x : U (C False). g x) d
 
 -- Also notice that we didn't use any unnecessary annotations above,
 -- neither on binders, nor in applications.
