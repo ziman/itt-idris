@@ -47,10 +47,11 @@ mutual
   ttQ g (Pi  b rhs) = Pi  <$> bindingQ g b <*> ttQ g rhs
   ttQ g (Let b val rhs) = Let <$> bindingQ g b <*> ttQ g val <*> ttQ g rhs
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
-  ttQ g (Match ss pvs ct)
+  ttQ g (Match pvs ss ty ct)
     = Match
-        <$> assert_total (traverse (ttQ g) ss)
-        <*> telescopeQ g pvs
+        <$> telescopeQ g pvs
+        <*> assert_total (traverse (ttQ g) ss)
+        <*> ttQ g ty
         <*> caseTreeQ g ct
   ttQ g Star = pure Star
   ttQ g Erased = pure Erased
@@ -139,10 +140,11 @@ mutual
       <*> ttVars (skipFZ g) rhs
   ttVars g (App q f x)
     = App q <$> ttVars g f <*> ttVars g x
-  ttVars g (Match ss pvs ct) with (telescopeVars' g pvs)
+  ttVars g (Match pvs ss ty ct) with (telescopeVars' g pvs)
     | (pvs', g') = Match
-        <$> assert_total (traverse (ttVars g) ss)
-        <*> pvs'
+        <$> pvs'
+        <*> assert_total (traverse (ttVars g) ss)
+        <*> ttVars g' ty
         <*> caseTreeVars g' ct
   ttVars g Star = pure Star
   ttVars g Erased = pure Erased

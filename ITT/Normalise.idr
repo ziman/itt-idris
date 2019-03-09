@@ -74,7 +74,7 @@ mutual
   whnf glob ctx (App q f x) with (whnf glob ctx f)
     | Lam b rhs = whnf glob ctx $ subst (substFZ $ whnf glob ctx x) rhs
     | f' = App q f' x
-  whnf glob ctx tm@(Match ss pvs ct) =
+  whnf glob ctx tm@(Match pvs ss ty ct) =
     case whnfCT glob ctx ss ct of
       Just result => result
       Nothing     => tm

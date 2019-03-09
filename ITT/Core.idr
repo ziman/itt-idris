@@ -63,24 +63,29 @@ mutual
     Pi  : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
     Let : (b : Binding q n) -> (val : TT q (S n)) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
-    Match : (ss : Vect pn (TT q n))
-        -> (pvs : Telescope q n pn)
+    Match : (pvs : Telescope q n pn)
+        -> (ss : Vect pn (TT q n))
+        -> (ty : TT q (pn + n))
         -> (ct : CaseTree q n pn)
         -> TT q n
     Star : TT q n
     Erased : TT q n
 
-{-
-export
-(++) : Telescope q (s + n) s' -> Telescope q n s -> Telescope q n (s' + s)
-(++) [] ys = ys
-(++) (b :: xs) ys = b :: xs ++ ys
--}
+namespace Telescope
+  eqTelescopeLen : (xs : Telescope q b s) -> (ys : Telescope q b s') -> Maybe (s = s')
+  eqTelescopeLen [] [] = Just Refl
+  eqTelescopeLen (x :: xs) (y :: ys) = cong <$> eqTelescopeLen xs ys
+  eqTelescopeLen _ _ = Nothing
 
-eqTelescopeLen : (xs : Telescope q b s) -> (ys : Telescope q b s') -> Maybe (s = s')
-eqTelescopeLen [] [] = Just Refl
-eqTelescopeLen (x :: xs) (y :: ys) = cong <$> eqTelescopeLen xs ys
-eqTelescopeLen _ _ = Nothing
+  export
+  lookupName : Fin pn -> Telescope q n pn -> String
+  lookupName FZ (B n q ty :: _) = n
+  lookupName (FS i) (_ :: bs) = lookupName i bs
+
+  export
+  (++) : Telescope q (s + n) s' -> Telescope q n s -> Telescope q n (s' + s)
+  (++) [] ys = ys
+  (++) {s} {n} {s' = S s'} (x :: xs) ys = replace (plusAssociative s' s n) x :: xs ++ ys
 
 mutual
   export
@@ -119,8 +124,8 @@ mutual
     (==) (Let b val rhs) (Let b' val' rhs') = b == b' && val == val' && rhs == rhs'
     (==) (App q f x) (App q' f' x')
       = (q == q') && (f == f') && (x == x')
-    (==) (Match ss pvs ct) (Match ss' pvs' ct') with (eqTelescopeLen pvs pvs')
-      | Just Refl = assert_total $ (ss == ss') && (pvs == pvs') && (ct == ct')
+    (==) (Match pvs ss ty ct) (Match pvs' ss' ty' ct') with (eqTelescopeLen pvs pvs')
+      | Just Refl = assert_total $ (ss == ss') && (ty == ty') && (pvs == pvs') && (ct == ct')
       | Nothing   = False
     (==) Star Star = True
     (==) Erased Erased = True
