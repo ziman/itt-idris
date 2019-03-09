@@ -20,6 +20,7 @@ data Token
   | Space
   | Comment
   | Underscore
+  | Pipe
   | Colon (Maybe Q)
   | Keyword String
 
@@ -36,6 +37,7 @@ Eq Token where
     (DblArrow, DblArrow) => True
     (Comma, Comma) => True
     (Comment, Comment) => True
+    (Pipe, Pipe) => True
     (Underscore, Underscore) => True
     (Colon mq, Colon mq') => mq == mq'
     (Keyword x, Keyword y) => x == y
@@ -84,7 +86,7 @@ lex src = case lex tokens src of
         keywords : List String
         keywords =
           [ "Type", "where", "data", "case", "of", "with"
-          , "let", "in", "match"
+          , "let", "in", "match", "end"
           ]
 
     tokens : TokenMap Token
@@ -92,6 +94,7 @@ lex src = case lex tokens src of
       [ (is '(',       const ParL)
       , (is ')',       const ParR)
       , (is '_',       const Underscore)
+      , (is '|',       const Pipe)
       , (ident,        kwdOrIdent)
       , (is '\\',      const Lam)
       , (exact "->",   const Arrow)
@@ -129,17 +132,27 @@ lookupName x (y :: ys) =
     then Just FZ
     else FS <$> lookupName x ys
 
-var : Vect n String -> Rule (Term n)
-var ns = terminal $ \t => case tok t of
-  Ident n => case lookupName n ns of
-    Just i => Just $ V i
-    Nothing => Nothing
-  _ => Nothing
-
 ident : Rule String
 ident = terminal $ \t => case tok t of
   Ident n => Just n
   _ => Nothing
+
+varName : Vect n String -> Rule (Fin n)
+varName ns = terminal $ \t => case tok t of
+  Ident n => lookupName n ns
+  _ => Nothing
+
+var : Vect n String -> Rule (Term n)
+var ns = V <$> varName ns
+
+name : Rule Name
+name = map (\n => N n 0) ident
+
+ref : Vect n String -> Rule (Term n)
+ref ns = (V <$> varName ns) <|> (G <$> name)
+
+parens : Grammar (TokenData Token) c a -> Rule a
+parens p = token ParL *> p <* token ParR
 
 colon : Rule (Maybe Q)
 colon = terminal $ \t => case tok t of
@@ -152,6 +165,12 @@ record Scruts (n : Nat) where
   s_pvs : Telescope (Maybe Q) n s_pn
   s_ss  : Vect s_pn (Term n)
   s_pns : Vect s_pn String
+
+record Tele (npn : Nat) where
+  constructor MkTele
+  t_s : Nat
+  t_tele : Telescope (Maybe Q) npn t_s
+  t_names : Vect t_s String
 
 mutual
   binding : Vect n String -> Rule (Binding (Maybe Q) n)
@@ -188,7 +207,7 @@ mutual
     pure $ Let b val rhs
 
   atom : Vect n String -> Rule (Term n)
-  atom ns = var ns <|> do { token ParL; tm <- term ns; token ParR; pure tm }
+  atom ns = ref ns <|> do { token ParL; tm <- term ns; token ParR; pure tm }
 
   -- includes nullary applications (= variables)
   app : Vect n String -> Rule (Term n)
@@ -198,8 +217,37 @@ mutual
     args <- many (atom ns)
     pure $ foldl (App Nothing) head args
 
+  telescope : Vect n String -> Tele n -> Grammar (TokenData Token) False (Tele n)
+  telescope ns acc =
+    (do
+        b <- parens $ binding (t_names acc ++ ns)
+        telescope ns (MkTele (S $ t_s acc) (b :: t_tele acc) (bn b :: t_names acc))
+    ) <|> pure acc
+
+  alt : Vect n String -> Vect pn String -> Rule (Alt (Maybe Q) n pn)
+  alt ns pns =
+    (do
+        token Pipe
+        token Underscore
+        token DblArrow
+        DefaultCase <$> caseTree ns pns
+    ) <|> (do
+        token Pipe
+        cn <- name
+        t  <- telescope (pns ++ ns) (MkTele Z [] [])
+        ct <- caseTree ns (t_names t ++ pns)
+        pure $ CtorCase cn (t_tele t) ct
+    )
+
   caseTree : Vect n String -> Vect pn String -> Rule (CaseTree (Maybe Q) n pn)
-  caseTree ns pns = ?rhsCT
+  caseTree ns pns =
+    (do
+        token (Keyword "case")
+        s <- varName pns
+        alts <- assert_total $ many $ alt ns pns  -- termination wat?
+        token (Keyword "end")
+        pure $ Case s alts
+    ) <|> (Leaf <$> term (pns ++ ns))
 
   matchScruts : Vect n String -> Scruts n -> Rule (Scruts n)
   matchScruts ns acc@(MkScruts pn pvs ss pns) = do
