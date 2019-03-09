@@ -1,6 +1,6 @@
 module Parser
 
-import TT
+import public ITT.Core
 import Text.Lexer
 import Text.Parser
 import Data.Vect
@@ -13,9 +13,13 @@ data Token
   | ParR
   | Lam
   | Arrow
+  | Equals
+  | DblArrow
+  | Comma
   | Dot
   | Space
   | Comment
+  | Underscore
   | Colon (Maybe Q)
   | Keyword String
 
@@ -28,7 +32,11 @@ Eq Token where
     (Arrow, Arrow) => True
     (Dot, Dot) => True
     (Space, Space) => True
+    (Equals, Equals) => True
+    (DblArrow, DblArrow) => True
+    (Comma, Comma) => True
     (Comment, Comment) => True
+    (Underscore, Underscore) => True
     (Colon mq, Colon mq') => mq == mq'
     (Keyword x, Keyword y) => x == y
     _ => False
@@ -76,17 +84,21 @@ lex src = case lex tokens src of
         keywords : List String
         keywords =
           [ "Type", "where", "data", "case", "of", "with"
-          , "let", "in"
+          , "let", "in", "match"
           ]
 
     tokens : TokenMap Token
     tokens = 
       [ (is '(',       const ParL)
       , (is ')',       const ParR)
+      , (is '_',       const Underscore)
       , (ident,        kwdOrIdent)
       , (is '\\',      const Lam)
       , (exact "->",   const Arrow)
       , (is '.',       const Dot)
+      , (is ',',       const Comma)
+      , (exact "=>",   const DblArrow)
+      , (is '=',       const Equals)
       , (space,        const Space)
       , (colon,        parseColon)
       , (lineComment (exact "--"), const Comment)
@@ -134,28 +146,46 @@ colon = terminal $ \t => case tok t of
   Colon mq => Just mq
   _ => Nothing
 
+record Scruts (n : Nat) where
+  constructor MkScruts
+  s_pn : Nat
+  s_pvs : Telescope (Maybe Q) n s_pn
+  s_ss  : Vect s_pn (Term n)
+  s_pns : Vect s_pn String
+
 mutual
-  def : Vect n String -> Rule (Def (Maybe Q) n)
-  def ns = D <$> ident <*> colon <*> term ns
+  binding : Vect n String -> Rule (Binding (Maybe Q) n)
+  binding ns = B <$> ident <*> colon <*> term ns
 
   lam : Vect n String -> Rule (Term n)
   lam ns = do
     token Lam
     commit
-    d <- def ns
+    b <- binding ns
     token Dot
-    rhs <- term (defName d :: ns)
-    pure $ Bind Lam d rhs
+    rhs <- term (bn b :: ns)
+    pure $ Lam b rhs
 
   pi : Vect n String -> Rule (Term n)
   pi ns = do
     token ParL
-    d <- def ns
+    b <- binding ns
     token ParR
     token Arrow
     commit
-    rhs <- term (defName d :: ns)
-    pure $ Bind Pi d rhs
+    rhs <- term (bn b :: ns)
+    pure $ Pi b rhs
+
+  letE : Vect n String -> Rule (Term n)
+  letE ns = do
+    token (Keyword "let")
+    commit
+    b <- binding ns
+    token Equals
+    val <- term (bn b :: ns)
+    token (Keyword "in")
+    rhs <- term (bn b :: ns)
+    pure $ Let b val rhs
 
   atom : Vect n String -> Rule (Term n)
   atom ns = var ns <|> do { token ParL; tm <- term ns; token ParR; pure tm }
@@ -168,8 +198,33 @@ mutual
     args <- many (atom ns)
     pure $ foldl (App Nothing) head args
 
+  caseTree : Vect n String -> Vect pn String -> Rule (CaseTree (Maybe Q) n pn)
+  caseTree ns pns = ?rhsCT
+
+  matchScruts : Vect n String -> Scruts n -> Rule (Scruts n)
+  matchScruts ns acc@(MkScruts pn pvs ss pns) = do
+    b <- binding (pns ++ ns)
+    token Equals
+    val <- term ns
+    let acc' = MkScruts (S pn) (b :: pvs) (val :: ss) (bn b :: pns)
+    do { token Comma; matchScruts ns acc' } <|> pure acc'
+
+  matchE : Vect n String -> Rule (Term n)
+  matchE ns = do
+    token (Keyword "match")
+    commit
+    s <- matchScruts ns (MkScruts Z [] [] [])
+    ignore colon  -- do we need this?
+    ty <- term (s_pns s ++ ns)
+    token (Keyword "with")
+    ct <- caseTree ns (s_pns s)
+    pure $ Match (s_pvs s) (s_ss s) ty ct
+
   term : Vect n String -> Rule (Term n)
-  term ns = lam ns <|> pi ns <|> type <|> app ns
+  term ns = lam ns <|> pi ns <|> type <|> erased <|> app ns <|> letE ns <|> matchE ns
+
+  erased : Rule (Term n)
+  erased = token Underscore *> pure Erased
 
 export
 parse : String -> Either ParseError (TT (Maybe Q) Z)
