@@ -28,47 +28,18 @@ Show Name where
   show (N s 0) = s
   show (N s i) = s ++ show i
 
-public export
-data Abstractness = Abstract | Concrete
-
-export
-Eq Abstractness where
-  (==) Abstract Abstract = True
-  (==) Concrete Concrete = True
-  (==) _ _ = False
-
-public export
-data Binder : Abstractness -> Type where
-  Lam : Binder Abstract
-  Pi  : Binder Abstract
-  Let : Binder Concrete
-
-export
-eqBinder : {a, a' : Abstractness} -> (b : Binder a) -> (b' : Binder a') -> Maybe (a = a')
-eqBinder Lam Lam = Just Refl
-eqBinder Pi  Pi  = Just Refl
-eqBinder Let Let = Just Refl
-eqBinder _ _ = Nothing
-
 mutual
   public export
-  data Body : (a : Abstractness) -> (q : Type) -> (n : Nat) -> Type where
-    Variable : Body Abstract q n
-    Constructor : Body Concrete q n
-    Term : TT q n -> Body Concrete q n
-
-  public export
-  record Def (a : Abstractness) (q : Type) (n : Nat) where
-    constructor D
-    defName : String
-    defQ    : q
-    defType : TT q n
-    defBody : Body a q (S n)
+  record AbstractDef (q : Type) (n : Nat) where
+    constructor AD
+    adn : String
+    adq : q
+    ty : TT q n
 
   public export
   data Telescope : (q : Type) -> (base : Nat) -> (size : Nat) -> Type where
     Nil : Telescope q n Z
-    (::) : (d : Def Abstract q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
+    (::) : (d : AbstractDef q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
 
   public export
   data Alt : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
@@ -87,7 +58,9 @@ mutual
   data TT : Type -> Nat -> Type where
     V : (i : Fin n) -> TT q n
     P : Name -> TT q n
-    Bind : (b : Binder a) -> (d : Def a q n) -> (rhs : TT q (S n)) -> TT q n
+    Lam : (d : AbstractDef q n) -> (rhs : TT q (S n)) -> TT q n
+    Pi  : (d : AbstractDef q n) -> (rhs : TT q (S n)) -> TT q n
+    Let : (d : AbstractDef q n) -> (val : TT q (S n)) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Match : (ss : List (TT q n))
         -> (pvs : Telescope q n pn)
@@ -103,16 +76,9 @@ eqTelescopeLen _ _ = Nothing
 
 mutual
   export
-  Eq q => Eq (Body a q n) where
-    (==) Variable Variable = True
-    (==) Constructor Constructor = True
-    (==) (Term tm) (Term tm') = tm == tm'
-    (==) _ _ = False
-
-  export
-  Eq q => Eq (Def a q n) where
-    (==) (D n q ty b) (D n' q' ty' b') =
-        (n == n') && (q == q') && (ty == ty') && (b == b')
+  Eq q => Eq (AbstractDef q n) where
+    (==) (AD n q ty) (AD n' q' ty') =
+        (n == n') && (q == q') && (ty == ty')
 
   export
   Eq q => Eq (Telescope q b s) where
@@ -139,9 +105,9 @@ mutual
   Eq q => Eq (TT q n) where
     (==) (V i) (V j)
       = finEq i j
-    (==) (Bind Lam d rhs) (Bind Lam d' rhs') = d == d' && rhs == rhs'
-    (==) (Bind Pi  d rhs) (Bind Pi  d' rhs') = d == d' && rhs == rhs'
-    (==) (Bind Let d rhs) (Bind Let d' rhs') = d == d' && rhs == rhs'
+    (==) (Lam d rhs) (Lam d' rhs') = d == d' && rhs == rhs'
+    (==) (Pi  d rhs) (Pi  d' rhs') = d == d' && rhs == rhs'
+    (==) (Let d val rhs) (Let d' val' rhs') = d == d' && val == val' && rhs == rhs'
     (==) (App q f x) (App q' f' x')
       = (q == q') && (f == f') && (x == x')
     (==) (Match ss pvs ct) (Match ss' pvs' ct') with (eqTelescopeLen pvs pvs')

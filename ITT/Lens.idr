@@ -21,19 +21,13 @@ ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
 
 mutual
   export
-  bodyQ : Traversal (Body a q n) (Body a q' n) q q'
-  bodyQ g Variable = pure Variable
-  bodyQ g Constructor = pure Constructor
-  bodyQ g (Term tm) = Term <$> ttQ g tm
-
-  export
-  defQ : Traversal (Def a q n) (Def a q' n) q q'
-  defQ g (D n q ty b) = D n <$> g q <*> ttQ g ty <*> bodyQ g b
+  adefQ : Traversal (AbstractDef q n) (AbstractDef q' n) q q'
+  adefQ g (AD n q ty) = AD n <$> g q <*> ttQ g ty
 
   export
   telescopeQ : Traversal (Telescope q b s) (Telescope q' b s) q q'
   telescopeQ g [] = pure []
-  telescopeQ g (d :: ds) = (::) <$> defQ g d <*> telescopeQ g ds
+  telescopeQ g (d :: ds) = (::) <$> adefQ g d <*> telescopeQ g ds
 
   export
   altQ : Traversal (Alt q n pn) (Alt q' n pn) q q'
@@ -48,9 +42,9 @@ mutual
   export
   ttQ : Traversal (TT q n) (TT q' n) q q'
   ttQ g (V i) = pure $ V i
-  ttQ g (Bind Lam d rhs) = Bind Lam <$> defQ g d <*> ttQ g rhs
-  ttQ g (Bind Pi  d rhs) = Bind Pi  <$> defQ g d <*> ttQ g rhs
-  ttQ g (Bind Let d rhs) = Bind Let <$> defQ g d <*> ttQ g rhs
+  ttQ g (Lam d rhs) = Lam <$> adefQ g d <*> ttQ g rhs
+  ttQ g (Pi  d rhs) = Pi  <$> adefQ g d <*> ttQ g rhs
+  ttQ g (Let d val rhs) = Let <$> adefQ g d <*> ttQ g val <*> ttQ g rhs
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
   ttQ g (Match ss pvs ct)
     = Match
@@ -80,29 +74,23 @@ mutual
   tackFinL  FZ    = FZ
   tackFinL (FS i) = FS $ tackFinL i
 
-  private
-  nonFZS : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
-  nonFZS g  FZ    = pure (V FZ)
-  nonFZS g (FS i) = rename FS <$> g i
+  export
+  skipFZ : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
+  skipFZ g  FZ    = pure (V FZ)
+  skipFZ g (FS i) = rename FS <$> g i
 
-  private
-  -- this could be expressed as iterated nonFZS
+  export
+  -- this could be expressed as iterated skipFZ
   -- but that would traverse the term repeatedly
   -- so let's just do it in one pass using splitFin and tackFin
-  nonTel : Applicative t => Telescope q n s -> (Fin n -> t (TT q m)) -> Fin (s + n) -> t (TT q (s + m))
-  nonTel ds g i with (splitFin ds i)
+  skipTel : Applicative t => Telescope q n s -> (Fin n -> t (TT q m)) -> Fin (s + n) -> t (TT q (s + m))
+  skipTel ds g i with (splitFin ds i)
     | Left  j = pure $ V (tackFinL j)  -- this should keep pointing into the telescope
     | Right j = rename (tackFinR ds) <$> g j  -- this should be modified
 
   export
-  bodyVars : Traversal (Body a q m) (Body a q n) (Fin m) (TT q n)
-  bodyVars g Variable = pure Variable
-  bodyVars g Constructor = pure Constructor
-  bodyVars g (Term tm) = Term <$> ttVars g tm
-
-  export
-  defVars : Traversal (Def a q m) (Def a q n) (Fin m) (TT q n)
-  defVars g (D n q ty b) = D n q <$> ttVars g ty <*> bodyVars (nonFZS g) b
+  adefVars : Traversal (AbstractDef q m) (AbstractDef q n) (Fin m) (TT q n)
+  adefVars g (AD n q ty) = AD n q <$> ttVars g ty
 
   telescopeVars' : Applicative t
     => (Fin m -> t (TT q n))
@@ -110,7 +98,7 @@ mutual
     -> (t (Telescope q n s), Fin (s + m) -> t (TT q (s + n)))
   telescopeVars' g [] = (pure [], g)
   telescopeVars' g (d :: ds) with (telescopeVars' g ds)
-    | (ds', g') = ((::) <$> defVars g' d <*> ds', nonFZS g')
+    | (ds', g') = ((::) <$> adefVars g' d <*> ds', skipFZ g')
 
   export
   telescopeVars : Traversal (Telescope q m s) (Telescope q n s) (Fin m) (TT q n)
@@ -128,7 +116,7 @@ mutual
   altVars g (CtorCase cn args ct) = CtorCase cn
     <$> telescopeVars g args
     <*> caseTreeVars
-          (map ttAssoc . nonTel args g . finAssoc)
+          (map ttAssoc . skipTel args g . finAssoc)
           ct
 
   export
@@ -140,9 +128,13 @@ mutual
   export
   ttVars : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
   ttVars g (V i) = g i
-  ttVars g (Bind Lam d rhs) = Bind Lam <$> defVars g d <*> ttVars (nonFZS g) rhs
-  ttVars g (Bind Pi  d rhs) = Bind Pi  <$> defVars g d <*> ttVars (nonFZS g) rhs
-  ttVars g (Bind Let d rhs) = Bind Let <$> defVars g d <*> ttVars (nonFZS g) rhs
+  ttVars g (Lam d rhs) = Lam <$> adefVars g d <*> ttVars (skipFZ g) rhs
+  ttVars g (Pi  d rhs) = Pi  <$> adefVars g d <*> ttVars (skipFZ g) rhs
+  ttVars g (Let d val rhs) =
+    Let
+      <$> adefVars g d
+      <*> ttVars (skipFZ g) val
+      <*> ttVars (skipFZ g) rhs
   ttVars g (App q f x)
     = App q <$> ttVars g f <*> ttVars g x
   ttVars g (Match ss pvs ct) with (telescopeVars' g pvs)
@@ -164,7 +156,3 @@ mutual
 export
 fold : Monoid a => (Fin n -> a) -> TT q n -> a
 fold {n} f = runConst . ttVars {n} (MkConst . f)
-
-export
-renameDef : (Fin n -> Fin m) -> Def a q n -> Def a q m
-renameDef g = runIdentity . defVars (pure . V . g)
