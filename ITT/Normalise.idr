@@ -2,7 +2,9 @@ module ITT.Normalise
 
 import public ITT.Core
 import public ITT.Context
+import public ITT.Globals
 import ITT.Lens
+import Utils.Misc
 
 %default total
 
@@ -11,23 +13,20 @@ substFZ : TT q n -> Fin (S n) -> TT q n
 substFZ tm  FZ    = tm
 substFZ tm (FS x) = V x
 
-mapFZ : Fin n -> Fin (S n) -> Fin n
-mapFZ i  FZ    = i
-mapFZ _ (FS j) = j
-
-Strengthen (TT q) where
-  strengthen = ttVars (map V . strengthen)
-
 covering export
-whnf : Context q n -> TT q n -> TT q n
-whnf ctx (V i) with (lookupCtx i ctx)
-  | D n r ty (Term tm) = whnf ctx $ strengthen tm
-  | _ = V i
-whnf ctx (Lam d rhs) = ?rlam
-whnf ctx (Pi d rhs) = ?rlam
-whnf ctx (Let d val rhs) = ?rlam
-whnf ctx (App q f x) with (whnf ctx f)
-  | Bind Lam d rhs = whnf ctx $ subst (substFZ $ whnf ctx x) rhs
+whnf : Globals q -> Context q n -> TT q n -> TT q n
+whnf glob ctx (V i) = V i
+whnf glob ctx (G n) =
+  case Globals.lookup n glob of
+    Just (D n q ty (Term tm)) => rename absurd tm
+    _ => G n
+whnf glob ctx (Lam b rhs) = Lam b rhs
+whnf glob ctx (Pi  b rhs) = Pi b rhs
+whnf glob ctx tm@(Let b val rhs)
+  = whnf glob ctx $ subst (substFZ tm) rhs
+whnf glob ctx (App q f x) with (whnf glob ctx f)
+  | Lam b rhs = whnf glob ctx $ subst (substFZ $ whnf glob ctx x) rhs
   | f' = App q f' x
-whnf ctx Star = Star
-whnf ctx Erased = Erased
+whnf glob ctx (Match ss pvs ct) = ?rhs
+whnf glob ctx Star = Star
+whnf glob ctx Erased = Erased

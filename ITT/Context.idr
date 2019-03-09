@@ -15,6 +15,6 @@ renameB : (Fin n -> Fin m) -> Binding q n -> Binding q m
 renameB f = runIdentity . bindingVars (pure . V . f)
 
 export
-lookupCtx : Fin n -> Context q n -> Binding q n
-lookupCtx  FZ    (b ::  _ ) = replace (plusZeroRightNeutral _) $ renameB FS b
-lookupCtx (FS k) (_ :: ctx) = renameB FS $ lookupCtx k ctx
+lookup : Fin n -> Context q n -> Binding q n
+lookup  FZ    (b ::  _ ) = replace (plusZeroRightNeutral _) $ renameB FS b
+lookup (FS k) (_ :: ctx) = renameB FS $ lookup k ctx
