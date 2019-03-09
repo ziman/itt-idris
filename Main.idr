@@ -1,14 +1,6 @@
-import TT
-import OrdSemiring
-import Check
-import Infer
-import Utils
-import Evar
-import Lens
-import SmtModel
-import Parser
-import Erase
-import Pretty
+import ITT.Core
+import ITT.Parser
+import ITT.Pretty
 
 import Data.Fin
 import Data.Vect
@@ -17,6 +9,7 @@ import Data.SortedSet as Set
 
 %default total
 
+{-
 covering
 checkClosed : TT Q Z -> IO ()
 checkClosed tm = case runTC (checkTm tm) (MkE L [] []) MkTCS of
@@ -135,6 +128,7 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
                 -- we drop eqs we have already reached and checked
                 -- otherwise we'd loop forever in checking them again and again
                 iter (i+1) (MkConstrs (cs <+> cs') (waitingEqs <+> eqs')) st'
+-}
 
 covering
 main : IO ()
@@ -145,6 +139,7 @@ main = getArgs >>= \args => case args of
 
     case Parser.parse src of
       Left err => printLn err
-      Right tm => inferClosed tm
+      Right tm => do
+        printLn tm
 
   _ => putStrLn "usage: itt <filename.itt>"
