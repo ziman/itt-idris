@@ -35,7 +35,7 @@ ShowQ q => Pretty () (Def q) where
     <++> text ":"
     <++> pretty (PTT False NoParens, Context.Nil) ty
     <++> text "="
-    <++> pretty (PTT True NoParens, Context.Nil) tm
+    $$ indent (pretty (PTT True NoParens, Context.Nil) tm)
   pretty () (D n q ty Constructor) =
     text "constructor"
     <++> text (show n)
