@@ -1,6 +1,8 @@
 module Parser
 
 import public ITT.Core
+import public ITT.Module
+
 import Text.Lexer
 import Text.Parser
 import Data.Vect
@@ -87,6 +89,7 @@ lex src = case lex tokens src of
         keywords =
           [ "Type", "where", "data", "case", "of", "with"
           , "let", "in", "match", "end"
+          , "function", "constructor", "postulate"
           ]
 
     tokens : TokenMap Token
@@ -274,11 +277,38 @@ mutual
   erased : Rule (Term n)
   erased = token Underscore *> pure Erased
 
+definition : Rule (Def (Maybe Q))
+definition =
+  (do
+    token (Keyword "function")
+    commit
+    b <- binding []
+    token Equals
+    tm <- term []
+    pure $ mkDef b (Term tm)
+  ) <|> (do
+    token (Keyword "constructor")
+    commit
+    b <- binding []
+    pure $ mkDef b Constructor    
+  ) <|> (do
+    token (Keyword "postulate")
+    commit
+    b <- binding []
+    pure $ mkDef b Abstract
+  )
+  where
+    mkDef : Binding (Maybe Q) Z -> Body (Maybe Q) -> Def (Maybe Q)
+    mkDef (B n q ty) b = D (N n 0) q ty b
+
+module_ : Grammar (TokenData Token) False (Module (Maybe Q))
+module_ = MkModule <$> many definition
+
 export
-parse : String -> Either ParseError (TT (Maybe Q) Z)
+parse : String -> Either ParseError (Module (Maybe Q))
 parse src = case lex src of
   Left err => Left err
-  Right ts => case parse (term []) ts of
+  Right ts => case parse (module_ <* eof) ts of
     Left (Error msg []) => Left $ SyntaxError 0 0 msg
     Left (Error msg (t :: _)) => Left $ SyntaxError (line t) (col t) msg
-    Right (term, _) => Right term
+    Right (mod, _) => Right mod
