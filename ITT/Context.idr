@@ -58,4 +58,4 @@ lookupCtx (FS k) (_ :: ctx) = renameInDef FS $ lookupCtx k ctx
 export
 (++) : Telescope q n s -> Context q n -> Context q (s + n)
 (++) [] ys = ys
-(++) (AD n q ty :: xs) ys = D n q ty Variable :: xs ++ ys
+(++) (VD n q ty :: xs) ys = D n q ty Variable :: xs ++ ys

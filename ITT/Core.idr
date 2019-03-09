@@ -30,8 +30,8 @@ Show Name where
 
 mutual
   public export
-  record AbstractDef (q : Type) (n : Nat) where
-    constructor AD
+  record VarDef (q : Type) (n : Nat) where
+    constructor VD
     adn : String
     adq : q
     ty : TT q n
@@ -39,7 +39,7 @@ mutual
   public export
   data Telescope : (q : Type) -> (base : Nat) -> (size : Nat) -> Type where
     Nil : Telescope q n Z
-    (::) : (d : AbstractDef q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
+    (::) : (d : VarDef q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
 
   public export
   data Alt : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
@@ -58,9 +58,9 @@ mutual
   data TT : Type -> Nat -> Type where
     V : (i : Fin n) -> TT q n
     P : Name -> TT q n
-    Lam : (d : AbstractDef q n) -> (rhs : TT q (S n)) -> TT q n
-    Pi  : (d : AbstractDef q n) -> (rhs : TT q (S n)) -> TT q n
-    Let : (d : AbstractDef q n) -> (val : TT q (S n)) -> (rhs : TT q (S n)) -> TT q n
+    Lam : (d : VarDef q n) -> (rhs : TT q (S n)) -> TT q n
+    Pi  : (d : VarDef q n) -> (rhs : TT q (S n)) -> TT q n
+    Let : (d : VarDef q n) -> (val : TT q (S n)) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Match : (ss : List (TT q n))
         -> (pvs : Telescope q n pn)
@@ -76,8 +76,8 @@ eqTelescopeLen _ _ = Nothing
 
 mutual
   export
-  Eq q => Eq (AbstractDef q n) where
-    (==) (AD n q ty) (AD n' q' ty') =
+  Eq q => Eq (VarDef q n) where
+    (==) (VD n q ty) (VD n' q' ty') =
         (n == n') && (q == q') && (ty == ty')
 
   export

@@ -21,13 +21,13 @@ ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
 
 mutual
   export
-  adefQ : Traversal (AbstractDef q n) (AbstractDef q' n) q q'
-  adefQ g (AD n q ty) = AD n <$> g q <*> ttQ g ty
+  varDefQ : Traversal (VarDef q n) (VarDef q' n) q q'
+  varDefQ g (VD n q ty) = VD n <$> g q <*> ttQ g ty
 
   export
   telescopeQ : Traversal (Telescope q b s) (Telescope q' b s) q q'
   telescopeQ g [] = pure []
-  telescopeQ g (d :: ds) = (::) <$> adefQ g d <*> telescopeQ g ds
+  telescopeQ g (d :: ds) = (::) <$> varDefQ g d <*> telescopeQ g ds
 
   export
   altQ : Traversal (Alt q n pn) (Alt q' n pn) q q'
@@ -42,9 +42,9 @@ mutual
   export
   ttQ : Traversal (TT q n) (TT q' n) q q'
   ttQ g (V i) = pure $ V i
-  ttQ g (Lam d rhs) = Lam <$> adefQ g d <*> ttQ g rhs
-  ttQ g (Pi  d rhs) = Pi  <$> adefQ g d <*> ttQ g rhs
-  ttQ g (Let d val rhs) = Let <$> adefQ g d <*> ttQ g val <*> ttQ g rhs
+  ttQ g (Lam d rhs) = Lam <$> varDefQ g d <*> ttQ g rhs
+  ttQ g (Pi  d rhs) = Pi  <$> varDefQ g d <*> ttQ g rhs
+  ttQ g (Let d val rhs) = Let <$> varDefQ g d <*> ttQ g val <*> ttQ g rhs
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
   ttQ g (Match ss pvs ct)
     = Match
@@ -89,8 +89,8 @@ mutual
     | Right j = rename (tackFinR ds) <$> g j  -- this should be modified
 
   export
-  adefVars : Traversal (AbstractDef q m) (AbstractDef q n) (Fin m) (TT q n)
-  adefVars g (AD n q ty) = AD n q <$> ttVars g ty
+  varDefVars : Traversal (VarDef q m) (VarDef q n) (Fin m) (TT q n)
+  varDefVars g (VD n q ty) = VD n q <$> ttVars g ty
 
   telescopeVars' : Applicative t
     => (Fin m -> t (TT q n))
@@ -98,7 +98,7 @@ mutual
     -> (t (Telescope q n s), Fin (s + m) -> t (TT q (s + n)))
   telescopeVars' g [] = (pure [], g)
   telescopeVars' g (d :: ds) with (telescopeVars' g ds)
-    | (ds', g') = ((::) <$> adefVars g' d <*> ds', skipFZ g')
+    | (ds', g') = ((::) <$> varDefVars g' d <*> ds', skipFZ g')
 
   export
   telescopeVars : Traversal (Telescope q m s) (Telescope q n s) (Fin m) (TT q n)
@@ -128,11 +128,11 @@ mutual
   export
   ttVars : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
   ttVars g (V i) = g i
-  ttVars g (Lam d rhs) = Lam <$> adefVars g d <*> ttVars (skipFZ g) rhs
-  ttVars g (Pi  d rhs) = Pi  <$> adefVars g d <*> ttVars (skipFZ g) rhs
+  ttVars g (Lam d rhs) = Lam <$> varDefVars g d <*> ttVars (skipFZ g) rhs
+  ttVars g (Pi  d rhs) = Pi  <$> varDefVars g d <*> ttVars (skipFZ g) rhs
   ttVars g (Let d val rhs) =
     Let
-      <$> adefVars g d
+      <$> varDefVars g d
       <*> ttVars (skipFZ g) val
       <*> ttVars (skipFZ g) rhs
   ttVars g (App q f x)
