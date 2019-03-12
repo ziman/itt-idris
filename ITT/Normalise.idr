@@ -59,6 +59,8 @@ mutual
   whnfCT glob ctx ss (Leaf rhs) = Just $ subst (substScrut ss) rhs
   whnfCT glob ctx ss (Case s alts) =
     matchAlts glob ctx ss (whnf glob ctx $ lookup s ss) alts
+  whnfCT glob ctx ss (Forced s tm ct) =
+    whnfCT glob ctx ss ct
 
   covering export
   whnf : Globals q -> Context q n -> TT q n -> TT q n
