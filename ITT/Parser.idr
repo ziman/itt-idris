@@ -13,6 +13,8 @@ data Token
   = Ident String
   | ParL
   | ParR
+  | SqBrL
+  | SqBrR
   | Lam
   | Arrow
   | Equals
@@ -31,6 +33,8 @@ Eq Token where
     (Ident x, Ident y) => x == y
     (ParL, ParL) => True
     (ParR, ParR) => True
+    (SqBrL, SqBrL) => True
+    (SqBrR, SqBrR) => True
     (Lam, Lam) => True
     (Arrow, Arrow) => True
     (Dot, Dot) => True
@@ -96,6 +100,8 @@ lex src = case lex tokens src of
     tokens = 
       [ (is '(',       const ParL)
       , (is ')',       const ParR)
+      , (is '[',       const SqBrL)
+      , (is ']',       const SqBrR)
       , (is '_',       const Underscore)
       , (is '|',       const Pipe)
       , (ident,        kwdOrIdent)
@@ -247,7 +253,14 @@ mutual
 
   caseTree : Vect n String -> Vect pn String -> Rule (CaseTree (Maybe Q) n pn)
   caseTree ns pns =
-    (do
+    ( do
+        token SqBrL
+        s <- varName pns
+        token Equals
+        tm <- term (pns ++ ns)
+        token SqBrR
+        Forced s tm <$> caseTree ns pns
+    ) <|> (do
         token (Keyword "case")
         s <- varName pns
         alts <- assert_total $ many $ alt ns pns  -- termination wat?
