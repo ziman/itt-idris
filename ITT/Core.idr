@@ -54,6 +54,7 @@ mutual
   -- The surface language should make sure
   -- that they are not visible after inspection,
   -- unless bound by an as-pattern.
+  -- The as-bound variable will not be definitionally equal to its value, though!
   public export
   data CaseTree : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
     Leaf : (rhs : TT q (pn + n)) -> CaseTree q n pn

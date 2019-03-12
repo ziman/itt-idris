@@ -72,6 +72,11 @@ mutual
       text "case" <++> text (lookupName s pvs)
       $$ indent (assert_total $ vcat $ map (pretty (ctx, pvs)) alts)
 
+    pretty (ctx, pvs) (Forced s tm ct) =
+      text "|" <++> text (lookupName s pvs) <++> text "="
+      <++> pretty (PTT False NoParens, pvs ++ ctx) tm
+      $$ text "=>" <++> pretty (ctx, pvs) ct
+
   prettyScrut : ShowQ q => Context q n -> Binding q (pv + n) -> Telescope q n pv -> TT q n -> Doc
   prettyScrut ctx (B n q Erased) pvs tm =
     text n
