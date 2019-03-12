@@ -54,6 +54,10 @@ mutual
   data CaseTree : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
     Leaf : (rhs : TT q (pn + n)) -> CaseTree q n pn
     Case : (s : Fin pn) -> (alts : List (Alt q n pn)) -> CaseTree q n pn
+    Forced : (s : Fin (S pn))
+      -> (tm : TT q (pn + n))
+      -> (ct : CaseTree q n pn)
+      -> CaseTree q n (S pn)
 
   public export
   data TT : Type -> Nat -> Type where
@@ -112,6 +116,7 @@ mutual
   Eq q => Eq (CaseTree q n pn) where
     (==) (Leaf tm) (Leaf tm') = tm == tm
     (==) (Case s alts) (Case s' alts') = s == s' && assert_total (alts == alts')
+    (==) (Forced s tm ct) (Forced s' tm' ct') = s == s' && tm == tm' && ct == ct'
     (==) _ _ = False
 
   export

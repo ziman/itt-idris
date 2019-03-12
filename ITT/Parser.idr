@@ -67,7 +67,7 @@ lex src = case lex tokens src of
       _ => True
 
     ident : Lexer
-    ident = some $ pred (\x => isAlpha x || isDigit x || x == '_')
+    ident = some $ pred (\x => isAlpha x || isDigit x || x == '_' || x == '\'')
 
     colon : Lexer
     colon = is ':' <+> opt (is 'I' <|> is 'E' <|> is 'L' <|> is 'R')

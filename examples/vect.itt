@@ -1,0 +1,29 @@
+constructor Bool : Type
+constructor T : Bool
+constructor F : Bool
+
+constructor Nat : Type
+constructor Z : Nat
+constructor S : (n : Nat) -> Nat
+
+constructor Vect : (n : Nat) -> (a : Type) -> Type
+constructor Nil : (a : Type) -> Vect Z a
+constructor Cons : (a : Type) -> (n : Nat) -> (x : a) -> (xs : Vect n a) -> Vect (S n) a
+
+function vlen : (n : Nat) -> (a : Type) -> (xs : Vect n a) -> Nat
+  = \n : Nat. \a : Type. \xs : Vect n a.
+    match
+      xs = xs : Vect n a 
+      : Nat
+    with
+      case xs
+      | Nil => case n  -- forced constructor
+        | Z => Z
+        end
+      | Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect n' a')
+        | a' = a
+        | n = S n'     -- forced pattern
+        => S (vlen n' a xs')
+      end
+
+-- vim: ft=idris
