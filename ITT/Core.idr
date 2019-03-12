@@ -50,14 +50,18 @@ mutual
         -> Alt q n pn
     DefaultCase : (ct : CaseTree q n pn) -> Alt q n pn
 
+  -- We don't hide the inspected variables here.
+  -- The surface language should make sure
+  -- that they are not visible after inspection,
+  -- unless bound by an as-pattern.
   public export
   data CaseTree : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
     Leaf : (rhs : TT q (pn + n)) -> CaseTree q n pn
     Case : (s : Fin pn) -> (alts : List (Alt q n pn)) -> CaseTree q n pn
-    Forced : (s : Fin (S pn))
+    Forced : (s : Fin pn)
       -> (tm : TT q (pn + n))
       -> (ct : CaseTree q n pn)
-      -> CaseTree q n (S pn)
+      -> CaseTree q n pn
 
   public export
   data TT : Type -> Nat -> Type where

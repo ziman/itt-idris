@@ -127,13 +127,6 @@ mutual
           (map ttAssoc . skipTel args g . finAssoc)
           ct
 
-  -- this is a substitution in a substitution
-  forced : Applicative t
-    => Fin (S pn)  -> TT q (pn + m)
-    -> (Fin (S (pn + m)) -> t (TT q (S (pn + n))))
-    -> (Fin    (pn + m)  -> t (TT q (pn + n)))
-  forced i tm g j = ?rforced
-
   export
   -- this signature can't be expressed as Traversal because then (.) in altVars goes bonkers
   caseTreeVars : Applicative t => (Fin (pn + m) -> t (TT q (pn + n))) -> CaseTree q m pn -> t (CaseTree q n pn)
@@ -141,8 +134,8 @@ mutual
   caseTreeVars g (Case s alts) = Case s <$> assert_total (traverse (altVars g) alts)
   caseTreeVars g (Forced s tm ct) =
     ITT.Core.Forced s
-    <$> ttVars (forced s tm g) tm
-    <*> caseTreeVars (forced s tm g) ct
+    <$> ttVars g tm
+    <*> caseTreeVars g ct
 
   export
   ttVars : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
