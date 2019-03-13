@@ -147,9 +147,14 @@ ident = terminal $ \t => case tok t of
   _ => Nothing
 
 varName : Vect n String -> Rule (Fin n)
-varName ns = terminal $ \t => case tok t of
-  Ident n => lookupName n ns
-  _ => Nothing
+varName ns = do
+    n <- ident
+    aux n ns (lookupName n ns)  -- case block does not typecheck here
+  where
+    aux : String -> Vect n String -> Maybe (Fin n) -> Grammar (TokenData Token) False (Fin n)
+    aux n ns (Just i) = pure i
+    aux n ns Nothing = fail $ "variable " ++ show n
+      ++ " not found in scope " ++ show ns
 
 var : Vect n String -> Rule (Term n)
 var ns = V <$> varName ns
