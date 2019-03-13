@@ -13,17 +13,17 @@ constructor Cons : (a : Type) -> (n : Nat) -> (x : a) -> (xs : Vect n a) -> Vect
 function vlen : (n : Nat) -> (a : Type) -> (xs : Vect n a) -> Nat
   = \n : Nat. \a : Type. \xs : Vect n a.
     match
-      xs = xs : Vect n a 
+      n : Nat = n,
+      xs : Vect n a = xs
       : Nat
     with
       case xs
-      | Nil => case n  -- forced constructor
-        | Z => Z
-        end
+      | Nil
+        => [n = Z]
+          Z
       | Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect n' a')
-        | a' = a
-        | n = S n'     -- forced pattern
-        => S (vlen n' a xs')
+        => [a' = a] [n = S n']
+          S (vlen n' a xs')
       end
 
 -- vim: ft=idris

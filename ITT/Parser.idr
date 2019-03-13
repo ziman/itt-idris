@@ -248,13 +248,22 @@ mutual
         token Underscore
         commit
         token DblArrow
-        DefaultCase <$> caseTree ns pns
+        ct <- caseTree ns pns
+        pure $ DefaultCase ct
     )
 
   caseTree : Vect n String -> Vect pn String -> Rule (CaseTree (Maybe Q) n pn)
   caseTree ns pns =
     ( do
+        token (Keyword "case")
+        commit
+        s <- varName pns
+        alts <- many $ alt ns pns  -- termination wat?
+        token (Keyword "end")
+        pure $ Case s alts
+    ) <|> (do
         token SqBrL
+        commit
         s <- varName pns
         token Equals
         tm <- term (pns ++ ns)
@@ -262,12 +271,9 @@ mutual
         ct <- caseTree ns pns
         pure $ Forced s tm ct  -- fmap would trip the totality checker
     ) <|> (do
-        token (Keyword "case")
-        s <- varName pns
-        alts <- assert_total $ many $ alt ns pns  -- termination wat?
-        token (Keyword "end")
-        pure $ Case s alts
-    ) <|> (Leaf <$> term (pns ++ ns))
+        tm <- term (pns ++ ns)
+        pure $ Leaf tm
+    )
 
   matchScruts : Vect n String -> Scruts n -> Rule (Scruts n)
   matchScruts ns acc@(MkScruts pn pvs ss pns) = do
