@@ -259,7 +259,8 @@ mutual
         token Equals
         tm <- term (pns ++ ns)
         token SqBrR
-        Forced s tm <$> caseTree ns pns
+        ct <- caseTree ns pns
+        pure $ Forced s tm ct  -- fmap would trip the totality checker
     ) <|> (do
         token (Keyword "case")
         s <- varName pns
