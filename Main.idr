@@ -17,14 +17,14 @@ import Data.SortedSet as Set
 %default total
 
 covering
-checkClosed : TT Q Z -> IO ()
-checkClosed tm = case runTC (checkTm tm) (MkE L [] []) MkTCS of
+checkClosed : Globals Q -> TT Q Z -> IO ()
+checkClosed glob tm = case runTC (checkTm tm) (MkE L [] [] glob) MkTCS of
     Left fail => printLn fail
     Right (MkTCS, [], ty) => putStrLn $ show tm ++ "\n  : " ++ show ty
 
 covering
-inferClosed : TT (Maybe Q) Z -> IO ()
-inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTCS of
+inferClosed : Globals Evar -> TT (Maybe Q) Z -> IO ()
+inferClosed glob tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] [] glob) MkTCS of
     Left fail => do
       printLn tmEvar
       printLn fail
@@ -145,9 +145,5 @@ main = getArgs >>= \args => case args of
     case Parser.parse src of
       Left err => printLn err
       Right mod => do
-        print mod
-
-        putStrLn "### WHNF of main ###"
-        printLn $ whnf (toGlobals mod) (G {q = Maybe Q} $ N "main" 0)
 
   _ => putStrLn "usage: itt <filename.itt>"
