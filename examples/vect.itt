@@ -19,7 +19,7 @@ function vlen : (n : Nat) -> (a : Type) -> (xs : Vect n a) -> Nat
     with
       case xs
       | Nil
-        => [n = Z]
+        => [n n Z]
           Z
       | Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect n' a')
         => [a' = a] [n = S n']

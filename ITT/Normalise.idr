@@ -43,42 +43,42 @@ match glob ss cn _ _ = Stuck  -- number of arguments doesn't match
 
 mutual
   covering
-  matchAlts : Globals q -> Context q n -> Vect pn (TT q n)
+  matchAlts : Globals q -> Vect pn (TT q n)
     -> TT q n -> List (Alt q n pn) -> Maybe (TT q n)
-  matchAlts glob ctx ss scrut [] = Nothing  -- Stuck
-  matchAlts glob ctx ss scrut (DefaultCase ct :: _) = 
-    whnfCT glob ctx ss ct
-  matchAlts glob ctx ss scrut (CtorCase cn args ct :: alts) =
+  matchAlts glob ss scrut [] = Nothing  -- Stuck
+  matchAlts glob ss scrut (DefaultCase ct :: _) = 
+    whnfCT glob ss ct
+  matchAlts glob ss scrut (CtorCase cn args ct :: alts) =
     case match glob [] cn args scrut of
-      Yes ss' => whnfCT glob ctx (ss' ++ ss) ct
-      No      => matchAlts glob ctx ss scrut alts
+      Yes ss' => whnfCT glob (ss' ++ ss) ct
+      No      => matchAlts glob ss scrut alts
       Stuck   => Nothing
 
   covering
-  whnfCT : Globals q -> Context q n -> Vect pn (TT q n) -> CaseTree q n pn -> Maybe (TT q n)
-  whnfCT glob ctx ss (Leaf rhs) = Just $ subst (substScrut ss) rhs
-  whnfCT glob ctx ss (Case s alts) =
-    matchAlts glob ctx ss (whnf glob ctx $ lookup s ss) alts
-  whnfCT glob ctx ss (Forced s tm ct) =
-    whnfCT glob ctx ss ct
+  whnfCT : Globals q -> Vect pn (TT q n) -> CaseTree q n pn -> Maybe (TT q n)
+  whnfCT glob ss (Leaf rhs) = Just $ subst (substScrut ss) rhs
+  whnfCT glob ss (Case s alts) =
+    matchAlts glob ss (whnf glob $ lookup s ss) alts
+  whnfCT glob ss (Forced s tm ct) =
+    whnfCT glob ss ct
 
   covering export
-  whnf : Globals q -> Context q n -> TT q n -> TT q n
-  whnf glob ctx (V i) = V i
-  whnf glob ctx (G n) =
+  whnf : Globals q -> TT q n -> TT q n
+  whnf glob (V i) = V i
+  whnf glob (G n) =
     case Module.lookup n glob of
-      Just (D n q ty (Term tm)) => rename absurd $ whnf glob [] tm
+      Just (D n q ty (Term tm)) => rename absurd $ whnf glob tm
       _ => G n
-  whnf glob ctx (Lam b rhs) = Lam b rhs
-  whnf glob ctx (Pi  b rhs) = Pi b rhs
-  whnf glob ctx tm@(Let b val rhs)
-    = whnf glob ctx $ subst (substFZ tm) rhs
-  whnf glob ctx (App q f x) with (whnf glob ctx f)
-    | Lam b rhs = whnf glob ctx $ subst (substFZ $ whnf glob ctx x) rhs
+  whnf glob (Lam b rhs) = Lam b rhs
+  whnf glob (Pi  b rhs) = Pi b rhs
+  whnf glob tm@(Let b val rhs)
+    = whnf glob $ subst (substFZ tm) rhs
+  whnf glob (App q f x) with (whnf glob f)
+    | Lam b rhs = whnf glob $ subst (substFZ $ whnf glob x) rhs
     | f' = App q f' x
-  whnf glob ctx tm@(Match pvs ss ty ct) =
-    case whnfCT glob ctx ss ct of
+  whnf glob tm@(Match pvs ss ty ct) =
+    case whnfCT glob ss ct of
       Just result => result
       Nothing     => tm
-  whnf glob ctx Star = Star
-  whnf glob ctx Erased = Erased
+  whnf glob Star = Star
+  whnf glob Erased = Erased

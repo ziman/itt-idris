@@ -1,7 +1,7 @@
 module Evar
 
-import Lens
-import public TT
+import ITT.Lens
+import public ITT.Core
 import Control.Monad.State
 
 %default total

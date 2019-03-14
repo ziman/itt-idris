@@ -1,7 +1,13 @@
 import ITT.Core
+import ITT.Check
+import ITT.Erase
 import ITT.Parser
 import ITT.Pretty
 import ITT.Normalise
+
+import Inference.Evar
+import Inference.Infer
+import Inference.SmtModel
 
 import Data.Fin
 import Data.Vect
@@ -10,7 +16,6 @@ import Data.SortedSet as Set
 
 %default total
 
-{-
 covering
 checkClosed : TT Q Z -> IO ()
 checkClosed tm = case runTC (checkTm tm) (MkE L [] []) MkTCS of
@@ -129,7 +134,6 @@ inferClosed tm = case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] []) MkTC
                 -- we drop eqs we have already reached and checked
                 -- otherwise we'd loop forever in checking them again and again
                 iter (i+1) (MkConstrs (cs <+> cs') (waitingEqs <+> eqs')) st'
--}
 
 covering
 main : IO ()
@@ -144,6 +148,6 @@ main = getArgs >>= \args => case args of
         print mod
 
         putStrLn "### WHNF of main ###"
-        printLn $ whnf (toGlobals mod) [] (G {q = Maybe Q} $ N "main" 0)
+        printLn $ whnf (toGlobals mod) (G {q = Maybe Q} $ N "main" 0)
 
   _ => putStrLn "usage: itt <filename.itt>"
