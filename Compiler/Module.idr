@@ -16,7 +16,8 @@ checkClosed glob tm = case runTC (checkTm tm) (MkE L [] [] glob) MkTCS of
     Right (MkTCS, [], ty) => putStrLn $ show tm ++ "\n  : " ++ show ty
 -}
 
-processDef : Def (Maybe Q) () -> Def Evar Constrs
+inferDef : Globals Evar Constrs -> Def (Maybe Q) () -> Def Evar Constrs
+inferDef glob (D n q ty Abstract ()) = 
 
 covering
 processModule : Module (Maybe Q) -> ITT ()
