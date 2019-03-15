@@ -116,4 +116,4 @@ render' ind (Columns sep ds)
     cols = map (extendRowsTo rows) ls
 
 render : String -> Doc -> String
-render ind = unlines . render' ind
+render ind = concat . intersperse "\n" . render' ind
