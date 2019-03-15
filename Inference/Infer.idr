@@ -75,7 +75,9 @@ data Constr : Type where
 
 public export
 data DeferredEq : Type where
-  DeferEq : (g : Evar) -> (bt : Backtrace) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> DeferredEq
+  DeferEq : (g : Evar) -> (bt : Backtrace)
+    -> (glob : Globals Evar)
+    -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> DeferredEq
 
 export
 Show Constr where
@@ -84,7 +86,7 @@ Show Constr where
 
 export
 Show DeferredEq where
-  show (DeferEq g bt ctx x y) =
+  show (DeferEq g bt glob ctx x y) =
     show g ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
 public export
@@ -190,7 +192,7 @@ traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
 
 deferEq : Evar -> Term n -> Term n -> TC n ()
 deferEq g x y = MkTC $ \(MkE gs ctx bt glob), st
-  => Right (st, MkConstrs [] [DeferEq g bt ctx x y], ())
+  => Right (st, MkConstrs [] [DeferEq g bt glob ctx x y], ())
 
 mutual
   infix 3 ~=
@@ -245,8 +247,8 @@ mutual
   conv l r = throw $ CantConvert l r
 
 covering export
-resumeEq : Globals Evar -> DeferredEq -> TC n ()
-resumeEq glob (DeferEq g bt ctx x y) = MkTC $ \_env, st =>
+resumeEq : DeferredEq -> TC n ()
+resumeEq (DeferEq g bt glob ctx x y) = MkTC $ \env, st =>
   case x ~= y of
     MkTC f => f (MkE Set.empty ctx bt glob) st
 

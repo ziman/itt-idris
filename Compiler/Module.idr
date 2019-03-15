@@ -11,18 +11,66 @@ import Inference.SmtModel
 import Data.SortedSet as Set
 import Data.SortedMap as Map
 
-{-
-covering
-checkClosed : Globals Q -> TT Q Z -> IO ()
-checkClosed glob tm = case runTC (checkTm tm) (MkE L [] [] glob) MkTCS of
-    Left fail => printLn fail
-    Right (MkTCS, [], ty) => putStrLn $ show tm ++ "\n  : " ++ show ty
--}
+%default total
 
 banner : String -> ITT ()
 banner s = log hrule *> log s *> log hrule *> log ""
   where
     hrule = pack $ List.replicate (length s) '#'
+
+isRelevant : SortedMap ENum Q -> Evar -> Maybe Bool
+isRelevant vs (QQ I) = Just False
+isRelevant vs (QQ _) = Just True
+isRelevant vs (EV i) = case Map.lookup i vs of
+  Nothing => Nothing  -- we don't know yet
+  Just I  => Just False
+  Just _  => Just True
+
+newlyReachableEqs : SortedMap ENum Q -> List DeferredEq
+    -> (List DeferredEq, List DeferredEq)
+newlyReachableEqs vs [] = ([], [])
+newlyReachableEqs vs (eq@(DeferEq g _ _ _ _ _) :: eqs) =
+  let (reached, unknown) = newlyReachableEqs vs eqs
+    in case isRelevant vs g of
+      Nothing => (reached, eq :: unknown)    -- still unknown
+      Just True => (eq :: reached, unknown)  -- newly reached!
+      Just False => (reached, unknown)       -- definitely unreachable, drop it
+
+covering
+iterConstrs : Int
+    -> Constrs
+    -> Globals Evar
+    -> Infer.TCState
+    -> ITT (SortedMap ENum Q)
+iterConstrs i (MkConstrs cs eqs) glob st = do
+  log $ "  -> iteration " ++ show i 
+  solution <- liftIO $ SmtModel.solve cs
+  vals <- case solution of
+    Left err => throw err
+    Right vals => pure vals
+    
+  case newlyReachableEqs vals eqs of
+    ([], _) => do
+      log $ "    -> No more equalities, fixed point reached.\n"
+      pure vals
+
+    (newEqs, waitingEqs) => do
+      log $ unlines
+        [ "    " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
+        | DeferEq g bt glob ctx x y <- newEqs
+        ]
+
+      case Infer.TC.runTC (traverse_ resumeEq newEqs) (MkE Set.empty [] [] glob) st of
+        Left fail => throw $ show fail
+        Right (st', MkConstrs cs' eqs', ()) => do
+          -- we use waitingEqs (eqs from the previous iteration that have not been reached yet)
+          -- and eqs' (eqs from this iteration)
+          -- we drop eqs we have already reached and checked
+          -- otherwise we'd loop forever in checking them again and again
+          iterConstrs (i+1)
+            (MkConstrs (cs <+> cs') (waitingEqs <+> eqs'))
+            glob
+            st'
 
 covering export
 processModule : Module (Maybe Q) -> ITT ()
@@ -45,34 +93,15 @@ processModule raw = do
   banner "### Deferred equalities ###"
   log $ unlines $ map show (deferredEqs cs)
 
+  vals <- iterConstrs 1 cs (toGlobals evarified) MkTCS
 
-
+  banner "# Final valuation #"
+  log $ unlines
+    [ "  " ++ show i ++ " -> " ++ show q
+    | (i, q) <- Map.toList vals
+    ]
 
 {-
-  case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] [] glob) MkTCS of
-    Left fail => do
-      printLn tmEvar
-      printLn fail
-
-    Right (st, ceqs, ty) => do
-      putStrLn $ show tmEvar
-      putStrLn $ "  : " ++ show ty
-      putStrLn $ "\n###  Constraints ###\n"
-      for_ (constrs ceqs) $ \c => putStrLn $ "  " ++ show c
-      putStrLn $ "\nDeferred equalities:\n"
-      for_ (deferredEqs ceqs) $ \eq => putStrLn $ "  " ++ show eq
-
-      putStrLn $ "\n### Constraint solving ###\n"
-      eVals <- iter 1 ceqs st
-      case eVals of
-        Left err => putStrLn err
-        Right eVals => do
-          putStrLn $ "\n### Final valuation ###\n"
-          putStrLn $ unlines
-            [ "  " ++ show i ++ " -> " ++ show q
-            | (i, q) <- Map.toList eVals
-            ]
-
           case ttQ (substQ eVals) tmEvar of
             Nothing => putStrLn "did not substitute for all evars"
             Just tmQ => do
@@ -112,51 +141,8 @@ processModule raw = do
     substQ vs (QQ q) = Just q
     substQ vs (EV i) = Map.lookup i vs
 
-    isRelevant : SortedMap ENum Q -> Evar -> Maybe Bool
-    isRelevant vs (QQ I) = Just False
-    isRelevant vs (QQ _) = Just True
-    isRelevant vs (EV i) = case Map.lookup i vs of
-      Nothing => Nothing  -- we don't know yet
-      Just I  => Just False
-      Just _  => Just True
-
-    newlyReachableEqs : SortedMap ENum Q -> List DeferredEq -> (List DeferredEq, List DeferredEq)
-    newlyReachableEqs vs [] = ([], [])
-    newlyReachableEqs vs (eq@(DeferEq g _ _ _ _) :: eqs) =
-      let (reached, unknown) = newlyReachableEqs vs eqs
-        in case isRelevant vs g of
-          Nothing => (reached, eq :: unknown)    -- still unknown
-          Just True => (eq :: reached, unknown)  -- newly reached!
-          Just False => (reached, unknown)       -- definitely unreachable, drop it
 
     covering
     reruns : List DeferredEq -> Infer.TC Z ()
     reruns = traverse_ resumeEq
-
-    covering
-    iter : Int -> Constrs -> Infer.TCState -> IO (Either String (SortedMap ENum Q))
-    iter i (MkConstrs cs eqs) st = do
-      putStrLn $ "  -> iteration " ++ show i 
-      solution <- SmtModel.solve cs
-      case solution of
-        Left err => pure $ Left err
-        Right vals => case newlyReachableEqs vals eqs of
-          ([], _) => do
-            putStrLn "    No more equalities, fixed point reached."
-            pure $ Right vals
-
-          (newEqs, waitingEqs) => do
-            putStrLn $ unlines
-              [ "    " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
-              | DeferEq g bt ctx x y <- newEqs
-              ]
-
-            case Infer.TC.runTC (traverse_ resumeEq newEqs) (MkE Set.empty [] []) st of
-              Left fail => pure $ Left (show fail)
-              Right (st', MkConstrs cs' eqs', ()) => do
-                -- we use waitingEqs (eqs from the previous iteration that have not been reached yet)
-                -- and eqs' (eqs from this iteration)
-                -- we drop eqs we have already reached and checked
-                -- otherwise we'd loop forever in checking them again and again
-                iter (i+1) (MkConstrs (cs <+> cs') (waitingEqs <+> eqs')) st'
 -}
