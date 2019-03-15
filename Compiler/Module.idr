@@ -8,6 +8,7 @@ import Inference.Evar
 import Inference.Infer
 import Inference.SmtModel
 
+import Data.SortedSet as Set
 import Data.SortedMap as Map
 
 {-
@@ -17,22 +18,6 @@ checkClosed glob tm = case runTC (checkTm tm) (MkE L [] [] glob) MkTCS of
     Left fail => printLn fail
     Right (MkTCS, [], ty) => putStrLn $ show tm ++ "\n  : " ++ show ty
 -}
-
-inferDef : Globals Evar -> Def Evar
-    -> Either String (Def Evar, Constrs)
-inferDef glob (D n q ty Abstract) = ?rhsA
-inferDef glob (D n q ty Constructor) = ?rhsB
-inferDef glob (D n q ty (Term tm)) = ?rhsB
-
-inferDefs : Globals Evar -> List (Def Evar)
-    -> Either String (List (Def Evar), Constrs)
-inferDefs glob [] = Right ([], neutral)
-inferDefs glob (d::ds) =
-  case inferDef glob d of
-    Left err => Left err
-    Right (d', cs) => case inferDefs (Map.insert (dn d') d' glob) ds of
-      Left err => Left err
-      Right (ds', cs') => Right (d' :: ds', cs <+> cs')
 
 covering
 processModule : Module (Maybe Q) -> ITT ()
@@ -44,9 +29,9 @@ processModule raw = do
   let evarified = evarify moduleQ raw
   prn evarified
 
-  case inferDefs Map.empty (definitions evarified) of
-    Left err => throw err
-    Right (dsEvar, cs) => do
+  case runTC (inferDefs $ definitions evarified) (MkE Set.empty [] [] Map.empty) MkTCS of
+    Left err => throw $ show err
+    Right (dsEvar, cs, ()) => do
       log "### Inferred constraints ###"
       log $ unlines $ map show (constrs cs)
       log $ unlines $ map show (deferredEqs cs)

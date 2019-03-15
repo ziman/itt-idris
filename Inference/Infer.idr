@@ -11,6 +11,7 @@ import public Utils.OrdSemiring
 
 import Data.Fin
 import Data.SortedSet as Set
+import Data.SortedMap as Map
 
 %default total
 
@@ -160,6 +161,10 @@ withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
     Right (st', MkConstrs cs eqs, x)
         => Right (st', MkConstrs (CLeq bt (Set.fromList [QQ I]) q :: cs) eqs, x)
 
+withGlob : Def Evar -> TC n a -> TC n a
+withGlob d (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st =>
+  f (MkE gs ctx bt (Map.insert (dn d) d glob)) st
+
 withQ : Evar -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
     => f (MkE (Set.insert q gs) ctx bt glob) st
@@ -285,3 +290,23 @@ inferTm tm@(Match pvs ss ty ct) = traceTm tm "MATCH" $ do
 
 inferTm Star = pure Star
 inferTm Erased = throw CantInferErased
+
+covering export
+inferDef : Def Evar -> TC Z ()
+inferDef (D n q ty body) = trace ("DEF", n) $ do
+  tyTy <- inferTm ty
+  tyTy ~= Star
+
+  case body of
+    Abstract    => pure ()
+    Constructor => pure ()
+    Term tm => withGlob (D n q ty Abstract) $ do
+      tmTy <- inferTm tm
+      tmTy ~= ty
+
+covering export
+inferDefs : List (Def Evar) -> TC Z ()
+inferDefs [] = pure ()
+inferDefs (d :: ds) = do
+  inferDef d
+  withGlob d $ inferDefs ds
