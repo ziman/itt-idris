@@ -19,13 +19,18 @@ checkClosed glob tm = case runTC (checkTm tm) (MkE L [] [] glob) MkTCS of
     Right (MkTCS, [], ty) => putStrLn $ show tm ++ "\n  : " ++ show ty
 -}
 
+banner : String -> ITT ()
+banner s = log hrule *> log s *> log hrule *> log ""
+  where
+    hrule = pack $ List.replicate (length s) '#'
+
 covering export
 processModule : Module (Maybe Q) -> ITT ()
 processModule raw = do
-  log "### Desugared ###\n"
+  banner "### Desugared ###"
   prn raw
 
-  log "### Evarified ###\n"
+  banner "### Evarified ###"
   let evarified = evarify moduleQ raw
   prn evarified
 
@@ -34,9 +39,13 @@ processModule raw = do
     Left err => throw $ show err
     Right (st, cs, ()) => pure cs
 
-  log "\n### Inferred constraints ###\n"
+  banner "### Inferred constraints ###"
   log $ unlines $ map show (constrs cs)
+
+  banner "### Deferred equalities ###"
   log $ unlines $ map show (deferredEqs cs)
+
+
 
 
 {-
