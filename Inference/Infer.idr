@@ -195,6 +195,7 @@ mutual
     glob <- getGlobals
     conv (whnf glob p) (whnf glob q)
 
+  covering
   conv : Term n -> Term n -> TC n ()
   conv (V i) (V j) with (finEq i j)
     | True  = pure ()

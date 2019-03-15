@@ -8,6 +8,8 @@ import Inference.Evar
 import Inference.Infer
 import Inference.SmtModel
 
+import Data.SortedMap as Map
+
 {-
 covering
 checkClosed : Globals Q -> TT Q Z -> IO ()
@@ -16,12 +18,41 @@ checkClosed glob tm = case runTC (checkTm tm) (MkE L [] [] glob) MkTCS of
     Right (MkTCS, [], ty) => putStrLn $ show tm ++ "\n  : " ++ show ty
 -}
 
-inferDef : Globals Evar Constrs -> Def (Maybe Q) () -> Def Evar Constrs
-inferDef glob (D n q ty Abstract ()) = 
+inferDef : Globals Evar -> Def Evar
+    -> Either String (Def Evar, Constrs)
+inferDef glob (D n q ty Abstract) = ?rhsA
+inferDef glob (D n q ty Constructor) = ?rhsB
+inferDef glob (D n q ty (Term tm)) = ?rhsB
+
+inferDefs : Globals Evar -> List (Def Evar)
+    -> Either String (List (Def Evar), Constrs)
+inferDefs glob [] = Right ([], neutral)
+inferDefs glob (d::ds) =
+  case inferDef glob d of
+    Left err => Left err
+    Right (d', cs) => case inferDefs (Map.insert (dn d') d' glob) ds of
+      Left err => Left err
+      Right (ds', cs') => Right (d' :: ds', cs <+> cs')
 
 covering
 processModule : Module (Maybe Q) -> ITT ()
-processModule mod =
+processModule raw = do
+  log "### Desugared ###"
+  prn raw
+
+  log "### Evarified ###"
+  let evarified = evarify moduleQ raw
+  prn evarified
+
+  case inferDefs Map.empty (definitions evarified) of
+    Left err => throw err
+    Right (dsEvar, cs) => do
+      log "### Inferred constraints ###"
+      log $ unlines $ map show (constrs cs)
+      log $ unlines $ map show (deferredEqs cs)
+
+
+{-
   case Infer.TC.runTC (inferTm tmEvar) (MkE Set.empty [] [] glob) MkTCS of
     Left fail => do
       printLn tmEvar
@@ -132,3 +163,4 @@ processModule mod =
                 -- we drop eqs we have already reached and checked
                 -- otherwise we'd loop forever in checking them again and again
                 iter (i+1) (MkConstrs (cs <+> cs') (waitingEqs <+> eqs')) st'
+-}

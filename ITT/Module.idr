@@ -1,10 +1,11 @@
 module ITT.Module
 
 import public ITT.Core
+import public ITT.Lens
 import public Utils.Pretty
 import Inference.Evar
 import ITT.Pretty
-import Data.SortedMap as Map
+import public Data.SortedMap as Map
 import Data.SortedSet as Set
 
 public export
@@ -22,6 +23,16 @@ record Def (q : Type) where
   db  : Body q
 
 export
+bodyQ : Traversal (Body q) (Body q') q q'
+bodyQ g Abstract = pure Abstract
+bodyQ g Constructor = pure Constructor
+bodyQ g (Term tm) = Term <$> ttQ g tm
+
+export
+defQ : Traversal (Def q) (Def q') q q'
+defQ g (D n q ty b) = D n <$> g q <*> ttQ g ty <*> bodyQ g b
+
+public export
 Globals : (q : Type) -> Type
 Globals q = SortedMap Name (Def q)
 
@@ -57,6 +68,10 @@ public export
 record Module (q : Type) where
   constructor MkModule
   definitions : List (Def q)
+
+export
+moduleQ : Traversal (Module q) (Module q') q q'
+moduleQ g (MkModule ds) = MkModule <$> traverse (defQ g) ds
 
 export
 toGlobals : Module q -> Globals q
