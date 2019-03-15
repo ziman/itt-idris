@@ -22,19 +22,21 @@ checkClosed glob tm = case runTC (checkTm tm) (MkE L [] [] glob) MkTCS of
 covering export
 processModule : Module (Maybe Q) -> ITT ()
 processModule raw = do
-  log "### Desugared ###"
+  log "### Desugared ###\n"
   prn raw
 
-  log "### Evarified ###"
+  log "### Evarified ###\n"
   let evarified = evarify moduleQ raw
   prn evarified
 
-  case runTC (inferDefs $ definitions evarified) (MkE Set.empty [] [] Map.empty) MkTCS of
+  log "Running erasure inference..."
+  cs <- case runTC (inferDefs $ definitions evarified) (MkE Set.empty [] [] Map.empty) MkTCS of
     Left err => throw $ show err
-    Right (dsEvar, cs, ()) => do
-      log "### Inferred constraints ###"
-      log $ unlines $ map show (constrs cs)
-      log $ unlines $ map show (deferredEqs cs)
+    Right (st, cs, ()) => pure cs
+
+  log "### Inferred constraints ###"
+  log $ unlines $ map show (constrs cs)
+  log $ unlines $ map show (deferredEqs cs)
 
 
 {-

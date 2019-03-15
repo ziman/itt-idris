@@ -206,6 +206,11 @@ mutual
     | True  = pure ()
     | False = throw $ CantConvert (V i) (V j)
 
+  conv (G n) (G n') =
+    if n == n'
+      then pure ()
+      else throw $ CantConvert (G n) (G n')
+
   conv l@(Lam b@(B n q ty) rhs) r@(Lam b'@(B n' q' ty') rhs') =
     if q /= q'
       then throw $ CantConvert l r

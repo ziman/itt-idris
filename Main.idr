@@ -27,7 +27,7 @@ main = getArgs >>= \args => case args of
       Right mod => do
         result <- runITT $ processModule mod
         case result of
-          Left err => printLn err
+          Left err => putStrLn err
           Right () => pure ()
 
   _ => putStrLn "usage: itt <filename.itt>"
