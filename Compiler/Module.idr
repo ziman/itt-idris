@@ -34,7 +34,7 @@ processModule raw = do
     Left err => throw $ show err
     Right (st, cs, ()) => pure cs
 
-  log "### Inferred constraints ###"
+  log "\n### Inferred constraints ###\n"
   log $ unlines $ map show (constrs cs)
   log $ unlines $ map show (deferredEqs cs)
 
