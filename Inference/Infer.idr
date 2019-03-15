@@ -36,6 +36,7 @@ data ErrorMessage : Nat -> Type where
   NotPi : Ty n -> ErrorMessage n
   CantInferErased : ErrorMessage n
   NotImplemented : ErrorMessage n
+  UnknownGlobal : Name -> ErrorMessage n
 
 showEM : Context Evar n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
@@ -46,6 +47,12 @@ showEM ctx CantInferErased
     = "can't infer types for erased terms"
 showEM ctx NotImplemented
     = "WIP: not implemented yet"
+showEM ctx (UnknownGlobal n)
+    = "unknown global: " ++ show n
+
+public export
+Backtrace : Type
+Backtrace = List String
 
 public export
 record Failure where
@@ -59,6 +66,40 @@ export
 Show Failure where
   show (MkF bt _ ctx msg)
     = "With backtrace:\n" ++ unlines (map ("  " ++) bt) ++ showEM ctx msg
+
+public export
+data Constr : Type where
+  CEq : (v, w : Evar) -> Constr
+  CLeq : (bt : Backtrace) -> (gs : SortedSet Evar) -> (v : Evar) -> Constr
+
+public export
+data DeferredEq : Type where
+  DeferEq : (g : Evar) -> (bt : Backtrace) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> DeferredEq
+
+export
+Show Constr where
+  show (CEq v w) = show v ++ " ~ " ++ show w
+  show (CLeq bt gs v) = show (Set.toList gs) ++ " -> " ++ show v
+
+export
+Show DeferredEq where
+  show (DeferEq g bt ctx x y) =
+    show g ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
+
+public export
+record Constrs where
+  constructor MkConstrs
+  constrs : List Constr
+  deferredEqs : List DeferredEq
+
+export
+Semigroup Constrs where
+  (<+>) (MkConstrs cs eqs) (MkConstrs cs' eqs')
+    = MkConstrs (cs <+> cs') (eqs <+> eqs')
+
+export
+Monoid Constrs where
+  neutral = MkConstrs [] []
 
 public export
 record Env (n : Nat) where
@@ -201,6 +242,12 @@ resumeEq glob (DeferEq g bt ctx x y) = MkTC $ \_env, st =>
 covering export
 inferTm : Term n -> TC n (Ty n)
 inferTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
+inferTm tm@(G n) = traceTm tm "GLOB" $ do
+  glob <- getGlobals
+  case Module.lookup n glob of
+    Nothing => throw $ UnknownGlobal n
+    Just (D n q ty body) => pure $ weakenClosed ty
+
 inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
   tyTy <- withQ (QQ I) $ inferTm ty
   tyTy ~= Star
@@ -217,6 +264,9 @@ inferTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
 
   pure Star
 
+inferTm tm@(Let b@(B n q ty) val rhs) = traceTm tm "LET" $ do
+  throw NotImplemented
+
 inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
   glob <- getGlobals
   fTy <- whnf glob <$> inferTm f
@@ -228,9 +278,6 @@ inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
       pure $ subst (substFZ x) piRhs
 
     _ => throw $ NotPi fTy
-
-inferTm tm@(Let b@(B n q ty) val rhs) = traceTm tm "LET" $ do
-  throw NotImplemented
 
 inferTm tm@(Match pvs ss ty ct) = traceTm tm "MATCH" $ do
   throw NotImplemented

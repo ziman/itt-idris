@@ -170,3 +170,7 @@ mutual
 export
 fold : Monoid a => (Fin n -> a) -> TT q n -> a
 fold {n} f = runConst . ttVars {n} (MkConst . f)
+
+export
+weakenClosed : TT q Z -> TT q n
+weakenClosed = rename tackFinL

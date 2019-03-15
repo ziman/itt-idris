@@ -135,3 +135,7 @@ ShowQ q => Pretty () (TT q Z) where
 export
 ShowQ q => Show (TT q Z) where
   show = render " " . pretty ()
+
+export
+showTm : ShowQ q => Context q n -> TT q n -> String
+showTm ctx tm = render "  " $ pretty (PTT False NoAppParens, ctx) tm

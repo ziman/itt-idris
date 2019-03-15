@@ -35,9 +35,6 @@ data ErrorMessage : Nat -> Type where
   CantCheckErased : ErrorMessage n
   NotImplemented : ErrorMessage n
 
-showTm : Context Q n -> TT Q n -> String
-showTm ctx tm = render "  " $ pretty (PTT False NoAppParens, ctx) tm
-
 showEM : Context Q n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
     = "can't convert: " ++ showTm ctx x ++ " with " ++ showTm ctx y
@@ -51,6 +48,10 @@ showEM ctx CantCheckErased
     = "can't check erased terms"
 showEM ct NotImplemented
     = "not implemented yet"
+
+public export
+Backtrace : Type
+Backtrace = List String
 
 public export
 record Failure where
