@@ -34,6 +34,7 @@ data ErrorMessage : Nat -> Type where
   NotPi : Ty n -> ErrorMessage n
   CantCheckErased : ErrorMessage n
   NotImplemented : ErrorMessage n
+  UnknownGlobal : Name -> ErrorMessage n
 
 showEM : Context Q n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
@@ -46,8 +47,10 @@ showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
 showEM ctx CantCheckErased
     = "can't check erased terms"
-showEM ct NotImplemented
+showEM ctx NotImplemented
     = "not implemented yet"
+showEM ctx (UnknownGlobal n)
+    = "unknown global " ++ show n
 
 public export
 Backtrace : Type
@@ -222,6 +225,12 @@ infixl 2 =<<
 covering export
 checkTm : Term n -> TC n (Ty n)
 checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
+checkTm tm@(G n) = traceTm tm "GLOB" $ do
+  glob <- getGlobals
+  case Module.lookup n glob of
+    Nothing => throw $ UnknownGlobal n
+    Just (D n q ty b) => pure $ weakenClosed ty
+
 checkTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
   tyTy <- withQ I $ checkTm ty
   tyTy ~= Star

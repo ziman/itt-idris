@@ -2,6 +2,7 @@ module Compiler.Monad
 
 %access export
 
+public export
 record ITT (a : Type) where
   constructor MkITT
   runITT : IO (Either String a)

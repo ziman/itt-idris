@@ -19,7 +19,7 @@ checkClosed glob tm = case runTC (checkTm tm) (MkE L [] [] glob) MkTCS of
     Right (MkTCS, [], ty) => putStrLn $ show tm ++ "\n  : " ++ show ty
 -}
 
-covering
+covering export
 processModule : Module (Maybe Q) -> ITT ()
 processModule raw = do
   log "### Desugared ###"

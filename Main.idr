@@ -24,6 +24,10 @@ main = getArgs >>= \args => case args of
 
     case Parser.parse src of
       Left err => printLn err
-      Right mod => runITT $ processModule mod
+      Right mod => do
+        result <- runITT $ processModule mod
+        case result of
+          Left err => printLn err
+          Right () => pure ()
 
   _ => putStrLn "usage: itt <filename.itt>"
