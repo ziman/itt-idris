@@ -19,46 +19,6 @@ Set : Type -> Type
 Set = SortedSet
 
 public export
-Backtrace : Type
-Backtrace = List String
-
-public export
-data Constr : Type where
-  CEq : (v, w : Evar) -> Constr
-  CLeq : (bt : Backtrace) -> (gs : Set Evar) -> (v : Evar) -> Constr
-
-public export
-data DeferredEq : Type where
-  DeferEq : (g : Evar) -> (bt : Backtrace) -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> DeferredEq
-
-export
-Show Constr where
-  show (CEq v w) = show v ++ " ~ " ++ show w
-  show (CLeq bt gs v) = show (Set.toList gs) ++ " -> " ++ show v
-
-showTm : Context Evar n -> TT Evar n -> String
-showTm ctx tm = render "  " $ pretty (PTT False NoAppParens, ctx) tm
-
-export
-Show DeferredEq where
-  show (DeferEq g bt ctx x y) =
-    show g ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
-
-public export
-record Constrs where
-  constructor MkConstrs
-  constrs : List Constr
-  deferredEqs : List DeferredEq
-
-export
-Semigroup Constrs where
-  (<+>) (MkConstrs cs eqs) (MkConstrs cs' eqs') = MkConstrs (cs <+> cs') (eqs <+> eqs')
-
-export
-Monoid Constrs where
-  neutral = MkConstrs [] []
-
-public export
 Term : Nat -> Type
 Term = TT Evar
 

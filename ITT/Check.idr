@@ -19,10 +19,6 @@ record TCState where
   constructor MkTCS
 
 public export
-Backtrace : Type
-Backtrace = List String
-
-public export
 Term : Nat -> Type
 Term = TT Q
 
