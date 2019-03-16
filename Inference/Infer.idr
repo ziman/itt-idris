@@ -165,7 +165,10 @@ withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
 
 withGlob : Def Evar -> TC n a -> TC n a
 withGlob d (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st =>
-  f (MkE gs ctx bt (Map.insert (dn d) d glob)) st
+  case f (MkE gs ctx bt (Map.insert (dn d) d glob)) st of
+    Left fail => Left fail
+    Right (st', MkConstrs cs eqs, x)
+      => Right (st', MkConstrs (CLeq bt (Set.fromList [QQ I]) (dq d) :: cs) eqs, x)
 
 withQ : Evar -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
@@ -174,6 +177,10 @@ withQ q (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
 use : Fin n -> TC n ()
 use i = MkTC $ \(MkE gs ctx bt glob), st
     => Right (st, MkConstrs [CLeq bt gs (bq $ lookup i ctx)] [], ())
+
+useEvar : Evar -> TC n ()
+useEvar ev = MkTC $ \(MkE gs ctx bt glob), st
+    => Right (st, MkConstrs [CLeq bt gs ev] [], ())
 
 eqEvar : Evar -> Evar -> TC n ()
 eqEvar p q = MkTC $ \env, st => Right (st, MkConstrs [CEq p q] [], ())
@@ -259,7 +266,9 @@ inferTm tm@(G n) = traceTm tm "GLOB" $ do
   glob <- getGlobals
   case Module.lookup n glob of
     Nothing => throw $ UnknownGlobal n
-    Just (D n q ty body) => pure $ weakenClosed ty
+    Just (D n q ty body) => do
+      useEvar q
+      pure $ weakenClosed ty
 
 inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
   tyTy <- withQ (QQ I) $ inferTm ty

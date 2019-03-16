@@ -45,19 +45,19 @@ ShowQ q => Pretty () (Def q) where
   pretty () (D n q ty (Term tm)) =
     text "function"
     <++> text (show n)
-    <++> text ":"
+    <++> text (showCol q)
     <++> pretty (PTT False NoParens, Context.Nil) ty
     <++> text "="
     $$ indent (pretty (PTT True NoParens, Context.Nil) tm)
   pretty () (D n q ty Constructor) =
     text "constructor"
     <++> text (show n)
-    <++> text ":"
+    <++> text (showCol q)
     <++> pretty (PTT False NoParens, Context.Nil) ty
   pretty () (D n q ty Abstract) =
     text "postulate"
     <++> text (show n)
-    <++> text ":"
+    <++> text (showCol q)
     <++> pretty (PTT False NoParens, Context.Nil) ty
 
 export
