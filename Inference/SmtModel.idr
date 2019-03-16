@@ -1,8 +1,9 @@
 module SmtModel
 
-import TT
-import Smt
-import Infer
+import ITT.Core
+import Utils.Smt
+import Inference.Evar
+import Inference.Infer
 
 import public Data.SortedMap as Map
 import Data.SortedSet as Set

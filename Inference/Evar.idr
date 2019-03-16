@@ -1,8 +1,8 @@
 module Evar
 
-import Lens
-import public TT
-import Control.Monad.State
+import ITT.Lens
+import public ITT.Core
+import public Control.Monad.State
 
 %default total
 
@@ -51,8 +51,8 @@ Ord Evar where
   compare (EV i) (EV i') = compare i i'
 
 export
-evarify : TT (Maybe Q) n -> TT Evar n
-evarify tm = evalState (ttQ f tm) 0
+evarify : ((Maybe Q -> State Int Evar) -> a -> State Int b) -> a -> b
+evarify travQ x = evalState (travQ f x) 0
   where
     f : Maybe Q -> State Int Evar
     f (Just q) = pure $ QQ q

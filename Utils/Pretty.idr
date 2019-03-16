@@ -1,4 +1,4 @@
-module Pretty
+module Utils.Pretty
 
 %access export
 %default total
@@ -36,8 +36,11 @@ infixr 2 $$
 vcat : List Doc -> Doc
 vcat = Vcat
 
+punctuate : Doc -> List Doc -> Doc
+punctuate sep = concat . intersperse sep
+
 hsep : List Doc -> Doc
-hsep = concat . intersperse (text " ")
+hsep = punctuate (text " ")
 
 infixl 6 <++>
 (<++>) : Doc -> Doc -> Doc
@@ -113,4 +116,4 @@ render' ind (Columns sep ds)
     cols = map (extendRowsTo rows) ls
 
 render : String -> Doc -> String
-render ind = unlines . render' ind
+render ind = concat . intersperse "\n" . render' ind

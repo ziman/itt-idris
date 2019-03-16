@@ -1,4 +1,4 @@
-module OrdSemiring
+module Utils.OrdSemiring
 
 import Data.Vect
 

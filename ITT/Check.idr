@@ -1,11 +1,16 @@
 module Check
 
-import TT
-import Utils
-import OrdSemiring
+import public ITT.Core
+import public ITT.Module
+import ITT.Normalise
+import ITT.Pretty
+import Utils.Pretty
+import Utils.Misc
+import Utils.OrdSemiring
 
 import Data.Fin
 import Data.Vect
+import Data.SortedMap as Map
 
 %default total
 %hide Language.Reflection.V
@@ -13,10 +18,6 @@ import Data.Vect
 public export
 record TCState where
   constructor MkTCS
-
-public export
-Backtrace : Type
-Backtrace = List String
 
 public export
 Term : Nat -> Type
@@ -33,6 +34,8 @@ data ErrorMessage : Nat -> Type where
   AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
   CantCheckErased : ErrorMessage n
+  NotImplemented : ErrorMessage n
+  UnknownGlobal : Name -> ErrorMessage n
 
 showEM : Context Q n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
@@ -45,6 +48,14 @@ showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
 showEM ctx CantCheckErased
     = "can't check erased terms"
+showEM ctx NotImplemented
+    = "not implemented yet"
+showEM ctx (UnknownGlobal n)
+    = "unknown global " ++ show n
+
+public export
+Backtrace : Type
+Backtrace = List String
 
 public export
 record Failure where
@@ -56,7 +67,9 @@ record Failure where
 
 export
 Show Failure where
-  show (MkF bt _ ctx msg) = "With backtrace:\n" ++ unlines (map ("  " ++) bt) ++ showEM ctx msg
+  show (MkF bt _ ctx msg) = "With backtrace:\n"
+    ++ unlines (reverse $ map ("  " ++) bt)
+    ++ showEM ctx msg
 
 public export
 record Env (n : Nat) where
@@ -64,6 +77,7 @@ record Env (n : Nat) where
   quantity : Q
   context : Context Q n
   backtrace : Backtrace
+  globals : Globals Q
 
 public export
 Usage : Nat -> Type
@@ -74,7 +88,7 @@ usage0 [] = []
 usage0 (_ :: ctx) = semi0 :: usage0 ctx
 
 usage0e : Env n -> Vect n Q
-usage0e (MkE r ctx bt) = usage0 ctx
+usage0e (MkE r ctx bt glob) = usage0 ctx
 
 public export
 record TC (n : Nat) (a : Type) where
@@ -110,24 +124,31 @@ getEnv = MkTC $ \env, st => Right (st, usage0e env, env)
 getCtx : TC n (Context Q n)
 getCtx = context <$> getEnv
 
+getGlobals : TC n (Globals Q)
+getGlobals = globals <$> getEnv
+
 throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
     => Left (MkF (backtrace env) _ (context env) msg)
 
-withDef : Def Q n -> TC (S n) a -> TC n a
-withDef d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => case f (MkE r (d :: ctx) bt) st of
+withBnd : Binding Q n -> TC (S n) a -> TC n a
+withBnd b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
+  MkE r ctx bt glob => case f (MkE r (b :: ctx) bt glob) st of
     Left fail => Left fail
     Right (st', q' :: us, x) =>
         if q' .<=. q
            then Right (st', us, x)
            else Left (MkF bt _ ctx $ QuantityMismatch n q q')
 
-withDef0 : Def Q n -> TC (S n) a -> TC n a
-withDef0 d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => case f (MkE r (d :: ctx) bt) st of
+withBnd0 : Binding Q n -> TC (S n) a -> TC n a
+withBnd0 b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
+  MkE r ctx bt glob => case f (MkE r (b :: ctx) bt glob) st of
     Left fail => Left fail
     Right (st', _q' :: us, x) => Right (st', us, x)  -- don't check the quantity
+
+withGlob : Def Q -> TC n a -> TC n a
+withGlob d (MkTC f) = MkTC $ \(MkE r ctx bt glob), st =>
+  f (MkE r ctx bt (Map.insert (dn d) d glob)) st
 
 withQ : Q -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \env, st => f (record { quantity $= (.*. q) } env) st
@@ -140,17 +161,17 @@ use : Fin n -> TC n ()
 use i = MkTC $ \env, st => Right (st, useEnv (quantity env) i (context env), ())
 
 lookup : Fin n -> TC n (Ty n)
-lookup i = defType . lookupCtx i <$> getCtx
+lookup i = bty . lookup i <$> getCtx
 
 trace : Show tr => tr -> TC n a -> TC n a
 trace t (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => f (MkE r ctx (show t :: bt)) st
+  MkE r ctx bt glob => f (MkE r ctx (show t :: bt) glob) st
 
 traceTm : Show tr => Term n -> tr -> TC n a -> TC n a
 traceTm tm t (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt =>
+  MkE r ctx bt glob =>
     let msg = show t ++ ": " ++ showTm ctx tm
-      in f (MkE r ctx (msg :: bt)) st
+      in f (MkE r ctx (msg :: bt) glob) st
 
 infix 3 ~=
 mutual
@@ -162,12 +183,33 @@ mutual
         then pure ()
         else throw $ CantConvert (V i) (V j)
 
-  conv ltm@(Bind b d@(D n q ty) rhs) rtm@(Bind b' d'@(D n' q' ty') rhs') =
-    if (b, q) /= (b', q')
+  conv (G n) (G n') =
+    if n == n'
+      then pure ()
+      else throw $ CantConvert (G n) (G n')
+
+  conv ltm@(Lam b@(B n q ty) rhs) rtm@(Lam b'@(B n' q' ty') rhs') =
+    if q /= q'
        then throw $ CantConvert ltm rtm
        else do
          ty ~= ty'
-         withDef d $ rhs ~= rhs'
+         withBnd b $ rhs ~= rhs'
+
+  conv ltm@(Pi b@(B n q ty) rhs) rtm@(Pi b'@(B n' q' ty') rhs') =
+    if q /= q'
+       then throw $ CantConvert ltm rtm
+       else do
+         ty ~= ty'
+         withBnd b $ rhs ~= rhs'
+
+  conv ltm@(Let b@(B n q ty) val rhs) rtm@(Let b'@(B n' q' ty') val' rhs') =
+    if q /= q'
+       then throw $ CantConvert ltm rtm
+       else do
+         ty ~= ty'
+         withBnd b $ do
+           val ~= val'
+           rhs ~= rhs'
 
   conv lhs@(App q f x) rhs@(App q' f' x') =
     if q /= q'
@@ -184,7 +226,9 @@ mutual
 
   covering
   (~=) : TT Q n -> TT Q n -> TC n ()
-  (~=) p q = conv (rnf p) (rnf q)
+  (~=) p q = do
+    glob <- getGlobals
+    conv (whnf glob p) (whnf glob q)
 
 infixl 2 =<<
 (=<<) : Monad m => (a -> m b) -> m a -> m b
@@ -193,34 +237,67 @@ infixl 2 =<<
 covering export
 checkTm : Term n -> TC n (Ty n)
 checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
-checkTm tm@(Bind Lam d@(D n q ty) rhs) = traceTm tm "LAM" $ do
+checkTm tm@(G n) = traceTm tm "GLOB" $ do
+  glob <- getGlobals
+  case Module.lookup n glob of
+    Nothing => throw $ UnknownGlobal n
+    Just (D n q ty b) => pure $ weakenClosed ty
+
+checkTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
   tyTy <- withQ I $ checkTm ty
   tyTy ~= Star
 
-  Bind Pi d <$> (withDef d $ checkTm rhs)
+  Pi b <$> (withBnd b $ checkTm rhs)
 
-checkTm tm@(Bind Pi d@(D n q ty) rhs) = traceTm tm "PI" $ do
+checkTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
   tyTy <- withQ I $ checkTm ty
   tyTy ~= Star
 
-  withQ I $ withDef d $ do
+  withQ I $ withBnd b $ do
     rhsTy <- checkTm rhs
     rhsTy ~= Star
 
   pure Star
 
+checkTm tm@(Let b@(B n q ty) val rhs) = traceTm tm "LET" $ do
+  throw NotImplemented
+
 checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
-  fTy <- rnf <$> checkTm f
+  glob <- getGlobals
+  fTy <- whnf glob <$> checkTm f
   xTy <- checkTm x
   case fTy of
-    Bind Pi (D piN piQ piTy) piRhs =>
+    Pi (B piN piQ piTy) piRhs =>
         if piQ /= appQ
            then throw $ AppQuantityMismatch fTy tm
            else do
              xTy ~= piTy
-             pure $ substVars (substTop x) piRhs
+             pure $ subst (substFZ x) piRhs
 
     _ => throw $ NotPi fTy
 
+checkTm tm@(Match pvs ss rty ct) = traceTm tm "MATCH" $ do
+  throw NotImplemented
+
 checkTm Star = pure Star
 checkTm Erased = throw CantCheckErased
+
+covering export
+checkDef : Def Q -> TC Z ()
+checkDef (D n q ty body) = trace ("DEF", n) $ do
+    tyTy <- checkTm ty
+    tyTy ~= Star
+
+    case body of
+        Abstract => pure ()
+        Constructor => pure ()
+        Term tm => withGlob (D n q ty Abstract) $ do
+          tmTy <- checkTm tm
+          tmTy ~= ty
+
+covering export
+checkDefs : List (Def Q) -> TC Z ()
+checkDefs [] = pure ()
+checkDefs (d :: ds) = do
+  checkDef d
+  withGlob d $ checkDefs ds
