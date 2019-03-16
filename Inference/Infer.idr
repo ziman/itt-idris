@@ -38,6 +38,7 @@ data ErrorMessage : Nat -> Type where
   CantInferErased : ErrorMessage n
   NotImplemented : ErrorMessage n
   UnknownGlobal : Name -> ErrorMessage n
+  QuantityMismatch : Q -> Q -> ErrorMessage n
 
 showEM : Context Evar n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
@@ -50,6 +51,8 @@ showEM ctx NotImplemented
     = "WIP: not implemented yet"
 showEM ctx (UnknownGlobal n)
     = "unknown global: " ++ show n
+showEM ctx (QuantityMismatch q q')
+    = "quantity mismatch: " ++ show q ++ " /= " ++ show q'
 
 public export
 Backtrace : Type
@@ -183,6 +186,10 @@ useEvar ev = MkTC $ \(MkE gs ctx bt glob), st
     => Right (st, MkConstrs [CLeq bt gs ev] [], ())
 
 eqEvar : Evar -> Evar -> TC n ()
+eqEvar (QQ p) (QQ q) =
+  if p == q
+    then pure ()
+    else throw $ QuantityMismatch p q
 eqEvar p q = MkTC $ \env, st => Right (st, MkConstrs [CEq p q] [], ())
 
 lookup : Fin n -> TC n (Ty n)
@@ -220,28 +227,22 @@ mutual
       then pure ()
       else throw $ CantConvert (G n) (G n')
 
-  conv l@(Lam b@(B n q ty) rhs) r@(Lam b'@(B n' q' ty') rhs') =
-    if q /= q'
-      then throw $ CantConvert l r
-      else do
-        ty ~= ty'
-        withBnd b $ rhs ~= rhs'
+  conv l@(Lam b@(B n q ty) rhs) r@(Lam b'@(B n' q' ty') rhs') = do
+    eqEvar q q'
+    ty ~= ty'
+    withBnd b $ rhs ~= rhs'
 
-  conv l@(Pi b@(B n q ty) rhs) r@(Pi b'@(B n' q' ty') rhs') =
-    if q /= q'
-      then throw $ CantConvert l r
-      else do
-        ty ~= ty'
-        withBnd b $ rhs ~= rhs'
+  conv l@(Pi b@(B n q ty) rhs) r@(Pi b'@(B n' q' ty') rhs') = do
+    eqEvar q q'
+    ty ~= ty'
+    withBnd b $ rhs ~= rhs'
 
-  conv l@(Let b@(B n q ty) val rhs) r@(Let b'@(B n' q' ty') val' rhs') =
-    if q /= q'
-      then throw $ CantConvert l r
-      else do
-        ty ~= ty'
-        withBnd b $ do
-          val ~= val'
-          rhs ~= rhs'
+  conv l@(Let b@(B n q ty) val rhs) r@(Let b'@(B n' q' ty') val' rhs') = do
+    eqEvar q q'
+    ty ~= ty'
+    withBnd b $ do
+      val ~= val'
+      rhs ~= rhs'
 
   conv l@(App q f x) r@(App q' f' x') = do
     eqEvar q q'
