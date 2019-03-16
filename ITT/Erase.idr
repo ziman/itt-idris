@@ -1,6 +1,7 @@
 module Erase
 
 import public ITT.Core
+import public ITT.Module
 import public ITT.Context
 import Data.List
 
@@ -53,3 +54,23 @@ erase ctx (App R f x) = App () (erase ctx f) (erase ctx x)
 erase ctx (Match pvs ss rty ct) = Erased  -- TODO
 erase ctx Star = Star
 erase ctx Erased = Erased
+
+export
+eraseBody : Body Q -> Body ()
+eraseBody Abstract = Abstract
+eraseBody Constructor = Constructor
+eraseBody (Term tm) = Term $ erase [] tm
+
+export
+eraseDefs : List (Def Q) -> List (Def ())
+eraseDefs [] = []
+eraseDefs (D _ I _ _ :: ds) = eraseDefs ds
+eraseDefs (D _ E _ _ :: ds) = eraseDefs ds
+eraseDefs (D n L ty body :: ds) =
+  D n () (erase [] ty) (eraseBody body) :: eraseDefs ds
+eraseDefs (D n R ty body :: ds) =
+  D n () (erase [] ty) (eraseBody body) :: eraseDefs ds
+
+export
+eraseModule : Module Q -> Module ()
+eraseModule (MkModule ds) = MkModule (eraseDefs ds)

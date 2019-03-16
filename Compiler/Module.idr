@@ -1,6 +1,7 @@
 module Compiler.Module
 
 import ITT.Check
+import ITT.Erase
 import public ITT.Core
 import public ITT.Module
 import public Compiler.Monad
@@ -113,10 +114,14 @@ processModule raw = do
   banner "# Annotated program #"
   prn annotated
 
-  log "# Final check #"
+  banner "# Final check #"
   case Check.TC.runTC (checkDefs $ definitions annotated) (MkE L [] [] Map.empty) MkTCS of
     Left err => throw $ show err
     Right (MkTCS, [], ()) => log "OK"
+
+  banner "# Erased #"
+  let erased = eraseModule annotated
+  prn erased
 
   
 {-
