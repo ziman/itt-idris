@@ -68,8 +68,9 @@ record Failure where
 
 export
 Show Failure where
-  show (MkF bt _ ctx msg)
-    = "With backtrace:\n" ++ unlines (map ("  " ++) bt) ++ showEM ctx msg
+  show (MkF bt _ ctx msg) = "With backtrace:\n"
+    ++ unlines (reverse $ map ("  " ++) bt)
+    ++ showEM ctx msg
 
 public export
 data Constr : Type where
