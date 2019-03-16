@@ -16,8 +16,8 @@ However, any "primitives" you postulate have no bodies
 so the minimal consistent annotation is "everything is irrelevant".
 You'll probably want to override this to give more meaning to your primitives.
 
-You can look at [one of the example programs](https://github.com/ziman/itt-idris/blob/master/examples/simple.itt).
-I'll commit the outputs once the calculus has stabilised a bit.
+You can look at [one of the example programs](https://github.com/ziman/itt-idris/blob/master/examples/simple.itt)
+and [its output](https://github.com/ziman/itt-idris/blob/master/examples/simple.out).
 
 ## Making it easier
 
