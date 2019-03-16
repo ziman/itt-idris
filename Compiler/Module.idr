@@ -2,6 +2,7 @@ module Compiler.Module
 
 import ITT.Check
 import ITT.Erase
+import ITT.Normalise
 import public ITT.Core
 import public ITT.Module
 import public Compiler.Monad
@@ -117,48 +118,16 @@ processModule raw = do
   banner "# Final check #"
   case Check.TC.runTC (checkDefs $ definitions annotated) (MkE L [] [] Map.empty) MkTCS of
     Left err => throw $ show err
-    Right (MkTCS, [], ()) => log "OK"
+    Right (MkTCS, [], ()) => log "OK\n"
 
   banner "# Erased #"
   let erased = eraseModule annotated
   prn erased
-
   
-{-
-              let tmErased = erase [] tmQ
-
-              putStrLn "\n# Erased form #\n"
-              printLn tmErased
-
-              putStrLn "\n# Normal erased form #\n"
-              printLn $ rnf tmErased
-
-              putStrLn . render " " $ columns "  |  "
-                [ text "Unerased:"
-                  $$ pretty () tmQ
-                  $$ text ""
-                  $$ text "Erased:"
-                  $$ pretty () tmErased
-                , text "Unerased, reduced:"
-                  $$ pretty () (rnf tmQ)
-                  $$ text ""
-                  $$ text "Erased, reduced:"
-                  $$ pretty () (rnf tmErased)
-                ]
-
-              if rnf (erase [] tmQ) == erase [] (rnf tmQ)
-                 then putStrLn "\nErasure and reduction commute."
-                 else do
-                   putStrLn "\n!!! NON-COMMUTATIVITY !!!"
-                   printLn $ rnf (erase [] tmQ)
-                   printLn $ erase [] (rnf tmQ)
-  where
-    tmEvar : TT Evar Z
-    tmEvar = evarify tm
-
-
-
-    covering
-    reruns : List DeferredEq -> Infer.TC Z ()
-    reruns = traverse_ resumeEq
--}
+  banner "# WHNF #"
+  log . render " "
+    $ text "Unerased, reduced:"
+    $$ pretty () (whnf (toGlobals annotated) (G $ N "main" 0))
+    $$ text ""
+    $$ text "Erased, reduced:"
+    $$ pretty () (whnf (toGlobals erased) (G $ N "main" 0))
