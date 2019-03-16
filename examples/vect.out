@@ -1,0 +1,103 @@
+#############
+# Desugared #
+#############
+
+constructor Bool : Type
+
+constructor T : Bool
+
+constructor F : Bool
+
+constructor Nat : Type
+
+constructor Z : Nat
+
+constructor S : (n : Nat) -> Nat
+
+constructor Vect : (n : Nat) -> (a : Type) -> Type
+
+constructor Nil : (a : Type) -> Vect Z a
+
+constructor Cons : (a : Type) -> (n : Nat) -> (x : a) -> (xs : Vect n a) -> Vect (S n) a
+
+function vlen : (n : Nat) -> (a : Type) -> (xs : Vect n a) -> Nat =
+  \n : Nat.
+    \a : Type.
+      \xs : Vect n a.
+        match n : Nat = n, xs : Vect n a = xs : Nat of
+          case xs
+            Nil  => [n = Z]
+                Z
+            Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect n' a') => [a' = a]
+                [n = S n']
+                  S (vlen n' a xs')
+
+#############
+# Evarified #
+#############
+
+constructor Bool :0 Type
+
+constructor T :1 Bool
+
+constructor F :2 Bool
+
+constructor Nat :3 Type
+
+constructor Z :4 Nat
+
+constructor S :5 (n :6 Nat) -> Nat
+
+constructor Vect :7 (n :8 Nat) -> (a :9 Type) -> Type
+
+constructor Nil :10 (a :11 Type) -> Vect -13- Z -12- a
+
+constructor Cons :14 (a :15 Type) -> (n :16 Nat) -> (x :17 a) -> (xs :18 Vect -20- n -19- a) -> Vect -22- (S -23- n) -21- a
+
+function vlen :24 (n :25 Nat) -> (a :26 Type) -> (xs :27 Vect -29- n -28- a) -> Nat =
+  \n :30 Nat.
+    \a :31 Type.
+      \xs :32 Vect -34- n -33- a.
+        match n : Nat = n, xs : Vect -37- n -36- a = xs : Nat of
+          case xs
+            Nil  => [n = Z]
+                Z
+            Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
+                [n = S -45- n']
+                  S -46- (vlen -49- n' -48- a -47- xs')
+
+Running erasure inference...
+With backtrace:
+  ("DEF", vlen)
+  "LAM": (\n :30 Nat. \a :31 Type.
+      \xs :32 Vect -34- n -33- a.
+        match n : Nat = n, xs : Vect -37- n -36- a = xs : Nat of
+          case xs
+            Nil  => [n = Z]
+                Z
+            Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
+                [n = S -45- n']
+                  S -46- (vlen -49- n' -48- a -47- xs'))
+  "LAM": (\a :31 Type. \xs :32 Vect -34- n -33- a.
+      match n : Nat = n, xs : Vect -37- n -36- a = xs : Nat of
+        case xs
+          Nil  => [n = Z]
+              Z
+          Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
+              [n = S -45- n']
+                S -46- (vlen -49- n' -48- a -47- xs'))
+  "LAM": (\xs :32 Vect -34- n -33- a. match n : Nat = n, xs : Vect -37- n -36- a = xs : Nat of
+      case xs
+        Nil  => [n = Z]
+            Z
+        Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
+            [n = S -45- n']
+              S -46- (vlen -49- n' -48- a -47- xs'))
+  "MATCH": (match n : Nat = n, xs : Vect -37- n -36- a = xs : Nat of
+    case xs
+      Nil  => [n = Z]
+          Z
+      Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
+          [n = S -45- n']
+            S -46- (vlen -49- n' -48- a -47- xs'))
+WIP: not implemented yet

@@ -41,6 +41,8 @@ parensFrom required actual =
 mutual
   export
   ShowQ q => Pretty (Context q n) (Binding q n) where
+    pretty ctx (B n dq Erased)
+      = text n
     pretty ctx (B n dq ty)
       = text n <++> text (showCol dq) <++> pretty (PTT False NoParens, ctx) ty
 

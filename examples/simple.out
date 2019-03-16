@@ -1,0 +1,198 @@
+#############
+# Desugared #
+#############
+
+constructor Bool : Type
+
+constructor True : Bool
+
+constructor False : Bool
+
+constructor T : Type
+
+constructor C : (pf :I Bool) -> T
+
+constructor U : (t :E T) -> Type
+
+postulate g : (x :L U (C True)) -> Bool
+
+postulate b : Bool
+
+postulate d : U (C b)
+
+function main : Bool =
+  (\x : U (C False). g x) d
+
+#############
+# Evarified #
+#############
+
+constructor Bool :0 Type
+
+constructor True :1 Bool
+
+constructor False :2 Bool
+
+constructor T :3 Type
+
+constructor C :4 (pf :I Bool) -> T
+
+constructor U :5 (t :E T) -> Type
+
+postulate g :6 (x :L U -7- (C -8- True)) -> Bool
+
+postulate b :9 Bool
+
+postulate d :10 U -11- (C -12- b)
+
+function main :13 Bool =
+  (\x :15 U -16- (C -17- False). g -18- x) -14- d
+
+Running erasure inference...
+########################
+# Inferred constraints #
+########################
+
+[I] -> 0
+[] -> 0
+[I] -> 1
+[] -> 0
+[I] -> 2
+[I] -> 3
+[I] -> 0
+[I] -> I
+[I] -> 3
+[I] -> 4
+[I] -> 3
+[I] -> E
+[I] -> 5
+[I] -> 5
+[I] -> 4
+[I] -> 1
+8 ~ I
+7 ~ E
+[I] -> L
+[I] -> 0
+[I] -> 6
+[] -> 0
+[I] -> 9
+[] -> 5
+[] -> 4
+[] -> 9
+12 ~ I
+11 ~ E
+[I] -> 10
+[] -> 0
+[I] -> 13
+[I] -> 5
+[I] -> 4
+[I] -> 2
+17 ~ I
+16 ~ E
+[I] -> 15
+[] -> 6
+[] -> 15
+16 ~ 7
+18 ~ L
+[] -> 10
+11 ~ 16
+14 ~ 15
+[I] -> 13
+
+#######################
+# Deferred equalities #
+#######################
+
+16 -> C -17- False ~ C -8- True
+11 -> C -12- b ~ C -17- False
+
+  -> iteration 1
+    C -17- False ~ C -8- True
+    C -12- b ~ C -17- False
+
+  -> iteration 2
+    -> No more equalities, fixed point reached.
+
+###################
+# Final valuation #
+###################
+
+  0 -> R
+  1 -> I
+  2 -> I
+  3 -> I
+  4 -> L
+  5 -> L
+  6 -> L
+  7 -> E
+  8 -> I
+  9 -> L
+  10 -> L
+  11 -> E
+  12 -> I
+  13 -> L
+  14 -> L
+  15 -> L
+  16 -> E
+  17 -> I
+  18 -> L
+
+#####################
+# Annotated program #
+#####################
+
+constructor Bool :R Type
+
+constructor True :I Bool
+
+constructor False :I Bool
+
+constructor T :I Type
+
+constructor C :L (pf :I Bool) -> T
+
+constructor U :L (t :E T) -> Type
+
+postulate g :L (x :L U -E- (C -I- True)) -> Bool
+
+postulate b :L Bool
+
+postulate d :L U -E- (C -I- b)
+
+function main :L Bool =
+  (\x :L U -E- (C -I- False). g -L- x) -L- d
+
+###############
+# Final check #
+###############
+
+OK
+
+##########
+# Erased #
+##########
+
+constructor Bool : Type
+
+constructor C : T
+
+constructor U : Type
+
+postulate g : (x) -> Bool
+
+postulate b : Bool
+
+postulate d : U
+
+function main : Bool =
+  (\x. g x) d
+
+########
+# WHNF #
+########
+
+Unerased, reduced:
+g -L- d
+
+Erased, reduced:
+g d
