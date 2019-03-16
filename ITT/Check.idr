@@ -10,6 +10,7 @@ import Utils.OrdSemiring
 
 import Data.Fin
 import Data.Vect
+import Data.SortedMap as Map
 
 %default total
 %hide Language.Reflection.V
@@ -143,6 +144,10 @@ withBnd0 b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
     Left fail => Left fail
     Right (st', _q' :: us, x) => Right (st', us, x)  -- don't check the quantity
 
+withGlob : Def Q -> TC n a -> TC n a
+withGlob d (MkTC f) = MkTC $ \(MkE r ctx bt glob), st =>
+  f (MkE r ctx bt (Map.insert (dn d) d glob)) st
+
 withQ : Q -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \env, st => f (record { quantity $= (.*. q) } env) st
 
@@ -269,3 +274,23 @@ checkTm tm@(Match pvs ss rty ct) = traceTm tm "MATCH" $ do
 
 checkTm Star = pure Star
 checkTm Erased = throw CantCheckErased
+
+covering export
+checkDef : Def Q -> TC Z ()
+checkDef (D n q ty body) = trace ("DEF", n) $ do
+    tyTy <- checkTm ty
+    tyTy ~= Star
+
+    case body of
+        Abstract => pure ()
+        Constructor => pure ()
+        Term tm => withGlob (D n q ty Abstract) $ do
+          tmTy <- checkTm tm
+          tmTy ~= ty
+
+covering export
+checkDefs : List (Def Q) -> TC Z ()
+checkDefs [] = pure ()
+checkDefs (d :: ds) = do
+  checkDef d
+  withGlob d $ checkDefs ds

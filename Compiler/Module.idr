@@ -1,5 +1,6 @@
 module Compiler.Module
 
+import ITT.Check
 import public ITT.Core
 import public ITT.Module
 import public Compiler.Monad
@@ -72,13 +73,17 @@ iterConstrs i (MkConstrs cs eqs) glob st = do
             glob
             st'
 
+substQ : SortedMap ENum Q -> Evar -> Maybe Q
+substQ vs (QQ q) = Just q
+substQ vs (EV i) = Map.lookup i vs
+
 covering export
 processModule : Module (Maybe Q) -> ITT ()
 processModule raw = do
-  banner "### Desugared ###"
+  banner "# Desugared #"
   prn raw
 
-  banner "### Evarified ###"
+  banner "# Evarified #"
   let evarified = evarify moduleQ raw
   prn evarified
 
@@ -87,10 +92,10 @@ processModule raw = do
     Left err => throw $ show err
     Right (st, cs, ()) => pure cs
 
-  banner "### Inferred constraints ###"
+  banner "# Inferred constraints #"
   log $ unlines $ map show (constrs cs)
 
-  banner "### Deferred equalities ###"
+  banner "# Deferred equalities #"
   log $ unlines $ map show (deferredEqs cs)
 
   vals <- iterConstrs 1 cs (toGlobals evarified) MkTCS
@@ -101,17 +106,26 @@ processModule raw = do
     | (i, q) <- Map.toList vals
     ]
 
+  annotated <- case moduleQ (substQ vals) evarified of
+    Nothing => throw "did not solve all evars"
+    Just mod => pure mod
+
+  banner "# Annotated program #"
+  prn annotated
+
+  log "# Final check #"
+  case Check.TC.runTC (checkDefs $ definitions annotated) (MkE L [] [] Map.empty) MkTCS of
+    Left err => throw $ show err
+    Right (MkTCS, [], ()) => log "OK"
+
+  
 {-
-          case ttQ (substQ eVals) tmEvar of
-            Nothing => putStrLn "did not substitute for all evars"
-            Just tmQ => do
-              checkClosed tmQ
               let tmErased = erase [] tmQ
 
-              putStrLn "\n### Erased form ###\n"
+              putStrLn "\n# Erased form #\n"
               printLn tmErased
 
-              putStrLn "\n### Normal erased form ###\n"
+              putStrLn "\n# Normal erased form #\n"
               printLn $ rnf tmErased
 
               putStrLn . render " " $ columns "  |  "
@@ -137,9 +151,6 @@ processModule raw = do
     tmEvar : TT Evar Z
     tmEvar = evarify tm
 
-    substQ : SortedMap ENum Q -> Evar -> Maybe Q
-    substQ vs (QQ q) = Just q
-    substQ vs (EV i) = Map.lookup i vs
 
 
     covering
