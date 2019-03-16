@@ -100,7 +100,13 @@ processModule raw = do
   banner "# Deferred equalities #"
   log $ unlines $ map show (deferredEqs cs)
 
-  vals <- iterConstrs 1 cs (toGlobals evarified) MkTCS
+  let glob = toGlobals evarified
+  csWithMain <- case Module.lookup (N "main" 0) glob of
+    Nothing => throw "main function not found"
+    Just (D n q ty b) => pure $
+      cs <+> MkConstrs [CLeq [] (Set.fromList [QQ L]) q] []
+
+  vals <- iterConstrs 1 csWithMain glob MkTCS
 
   banner "# Final valuation #"
   log $ unlines
