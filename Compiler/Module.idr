@@ -104,6 +104,7 @@ processModule raw = do
   csWithMain <- case Module.lookup (N "main" 0) glob of
     Nothing => throw "main function not found"
     Just (D n q ty b) => pure $
+      -- add a constraint that uses `main` once
       cs <+> MkConstrs [CLeq [] (Set.fromList [QQ L]) q] []
 
   vals <- iterConstrs 1 csWithMain glob MkTCS
