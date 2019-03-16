@@ -9,12 +9,10 @@ ITT supports the following modalities:
 ITT can infer all of them by interleaving type checking and constraint solving
 using an external solver.
 
-ITT supports only variables, lambdas and applications so if you need global definitions,
-you need to bring them into scope using lambdas.
-Pattern matching is [work in progress](https://github.com/ziman/itt-idris/tree/adt).
+Pattern matching is work in progress.
 
 The inference algorithm does not need any modality annotations to work.
-However, any "primitives" you bring into scope with lambdas have no bodies
+However, any "primitives" you postulate have no bodies
 so the minimal consistent annotation is "everything is irrelevant".
 You'll probably want to override this to give more meaning to your primitives.
 
@@ -46,5 +44,3 @@ Run
 ```
 $ ./itt examples/simple.itt
 ```
-
-For editing, https://github.com/ziman/ttstar-vim might come handy.
