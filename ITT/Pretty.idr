@@ -101,6 +101,7 @@ mutual
     pretty (PTT top nl, ctx) (V i) with (lookup i ctx)
       | B n q' ty = text n
     pretty (PTT top nl, ctx) (G n) = text (show n)
+    pretty (PTT top nl, ctx) (Meta i) = text "_" <+> int i
     pretty (PTT True nl,  ctx) (Lam b rhs) = parensFrom NoAppParens nl $
       text "\\" <+> pretty ctx b <+> text "."
       $$ indent (pretty (PTT True NoParens, b::ctx) rhs)

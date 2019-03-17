@@ -68,6 +68,7 @@ mutual
   data TT : Type -> Nat -> Type where
     V : (i : Fin n) -> TT q n
     G : Name -> TT q n
+    Meta : Int -> TT q n
     Lam : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
     Pi  : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
     Let : (b : Binding q n) -> (val : TT q (S n)) -> (rhs : TT q (S n)) -> TT q n
@@ -129,6 +130,7 @@ mutual
     (==) (V i) (V j)
       = finEq i j
     (==) (G n) (G n') = n == n'
+    (==) (Meta i) (Meta j) = i == j
     (==) (Lam b rhs) (Lam b' rhs') = b == b' && rhs == rhs'
     (==) (Pi  b rhs) (Pi  b' rhs') = b == b' && rhs == rhs'
     (==) (Let b val rhs) (Let b' val' rhs') = b == b' && val == val' && rhs == rhs'

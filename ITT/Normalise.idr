@@ -69,6 +69,7 @@ mutual
     case Module.lookup n glob of
       Just (D n q ty (Term tm)) => rename absurd $ whnf glob tm
       _ => G n
+  whnf glob (Meta i) = Meta i
   whnf glob (Lam b rhs) = Lam b rhs
   whnf glob (Pi  b rhs) = Pi b rhs
   whnf glob tm@(Let b val rhs)

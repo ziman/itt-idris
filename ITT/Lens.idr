@@ -44,6 +44,7 @@ mutual
   ttQ : Traversal (TT q n) (TT q' n) q q'
   ttQ g (V i) = pure $ V i
   ttQ g (G n) = pure $ G n
+  ttQ g (Meta i) = pure $ Meta i
   ttQ g (Lam b rhs) = Lam <$> bindingQ g b <*> ttQ g rhs
   ttQ g (Pi  b rhs) = Pi  <$> bindingQ g b <*> ttQ g rhs
   ttQ g (Let b val rhs) = Let <$> bindingQ g b <*> ttQ g val <*> ttQ g rhs
@@ -141,6 +142,7 @@ mutual
   ttVars : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
   ttVars g (V i) = g i
   ttVars g (G n) = pure $ G n
+  ttVars g (Meta i) = pure $ Meta i
   ttVars g (Lam b rhs) = Lam <$> bindingVars g b <*> ttVars (skipFZ g) rhs
   ttVars g (Pi  b rhs) = Pi  <$> bindingVars g b <*> ttVars (skipFZ g) rhs
   ttVars g (Let b val rhs) =

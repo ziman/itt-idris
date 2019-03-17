@@ -33,6 +33,7 @@ erase ctx (V i) with (eraseVar ctx i)
   | Nothing = Erased  -- should be unreachable if erasure's correct
   | Just j = V j
 erase ctx (G n) = G n
+erase ctx (Meta i) = Meta i
 erase ctx (Lam b@(B n I ty) rhs) = erase (b::ctx) rhs
 erase ctx (Lam b@(B n E ty) rhs) = erase (b::ctx) rhs
 erase ctx (Lam b@(B n L ty) rhs) = Lam (B n () Erased) $ erase (b::ctx) rhs

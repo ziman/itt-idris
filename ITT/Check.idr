@@ -36,6 +36,7 @@ data ErrorMessage : Nat -> Type where
   CantCheckErased : ErrorMessage n
   NotImplemented : ErrorMessage n
   UnknownGlobal : Name -> ErrorMessage n
+  CantCheckMeta : Int -> ErrorMessage n
 
 showEM : Context Q n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
@@ -52,6 +53,8 @@ showEM ctx NotImplemented
     = "not implemented yet"
 showEM ctx (UnknownGlobal n)
     = "unknown global " ++ show n
+showEM ctx (CantCheckMeta i)
+    = "can't check meta _" ++ show i
 
 public export
 Backtrace : Type
@@ -242,6 +245,9 @@ checkTm tm@(G n) = traceTm tm "GLOB" $ do
   case Module.lookup n glob of
     Nothing => throw $ UnknownGlobal n
     Just (D n q ty b) => pure $ weakenClosed ty
+
+checkTm tm@(Meta i) = traceTm tm "META" $ do
+  throw $ CantCheckMeta i
 
 checkTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
   tyTy <- withQ I $ checkTm ty

@@ -23,6 +23,9 @@ Monoid Doc where
 text : String -> Doc
 text = Text
 
+int : Int -> Doc
+int = text . show
+
 show : Show a => a -> Doc
 show = Text . show
 
