@@ -30,6 +30,8 @@ Ty = TT Evar
 public export
 record TCState where
   constructor MkTCS
+  metaCounter : Int
+  metaValues : SortedMap Int (n ** TT Evar n)
 
 public export
 data ErrorMessage : Nat -> Type where
@@ -160,6 +162,19 @@ throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
     => Left (MkF (backtrace env) _ (context env) msg)
 
+getState : TC n TCState
+getState = MkTC $ \env, st => Right (st, neutral, st)
+
+putState : TCState -> TC n ()
+putState st = MkTC $ \env, _ => Right (st, neutral, ())
+
+freshMeta : TC n (TT Evar n)
+freshMeta = do
+  st <- getState
+  let i = metaCounter st
+  putState $ record { metaCounter = i+1 } st
+  pure $ Meta i
+
 withBnd : Binding Evar n -> TC (S n) a -> TC n a
 withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
   => case f (MkE gs (b :: ctx) bt glob) st of
@@ -253,6 +268,7 @@ mutual
       QQ _ => x ~= x'
       EV _ => deferEq q x x'
   conv Star Star = pure ()
+  conv (Meta i) (Meta j) = ???
   conv l r = throw $ CantConvert l r
 
 covering export
@@ -305,6 +321,9 @@ inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
 
 inferTm tm@(Match pvs ss ty ct) = traceTm tm "MATCH" $ do
   throw NotImplemented
+
+inferTm tm@(Meta i) = traceTm tm "META" $ do
+  freshMeta
 
 inferTm Star = pure Star
 inferTm Erased = throw CantInferErased
