@@ -14,7 +14,10 @@ function id : (b : Bool) -> Bool =
 
 function not : (b : Bool) -> Bool =
   \b : Bool.
-    match b : Bool = b : Bool of
+    match
+      b : Bool = b
+      -> Bool
+    with
       case b
         True  => False
         False  => True
@@ -25,13 +28,19 @@ constructor Refl : (x : Bool) -> Id x x
 
 function lemma : (b : Bool) -> Id b (not (not b)) =
   \b : Bool.
-    match b : Bool = b : Id b (not (not b)) of
+    match
+      b : Bool = b
+      -> Id b (not (not b))
+    with
       case b
         True  => Refl True
         False  => Refl False
 
 function main : Bool =
-  match x : Bool = not True : Bool of
+  match
+    x : Bool = not True
+    -> Bool
+  with
     case x
       True  => False
       False  => True
@@ -52,7 +61,10 @@ function id :3 (b :4 Bool) -> Bool =
 
 function not :6 (b :7 Bool) -> Bool =
   \b :8 Bool.
-    match b : Bool = b : Bool of
+    match
+      b : Bool = b
+      -> Bool
+    with
       case b
         True  => False
         False  => True
@@ -63,13 +75,19 @@ constructor Refl :13 (x :14 Bool) -> Id -16- x -15- x
 
 function lemma :17 (b :18 Bool) -> Id -20- b -19- (not -21- (not -22- b)) =
   \b :23 Bool.
-    match b : Bool = b : Id -26- b -25- (not -27- (not -28- b)) of
+    match
+      b : Bool = b
+      -> Id -26- b -25- (not -27- (not -28- b))
+    with
       case b
         True  => Refl -29- True
         False  => Refl -30- False
 
 function main :31 Bool =
-  match x : Bool = not -33- True : Bool of
+  match
+    x : Bool = not -33- True
+    -> Bool
+  with
     case x
       True  => False
       False  => True
@@ -77,11 +95,17 @@ function main :31 Bool =
 Running erasure inference...
 With backtrace:
   ("DEF", not)
-  "LAM": (\b :8 Bool. match b : Bool = b : Bool of
+  "LAM": (\b :8 Bool. match
+      b : Bool = b
+      -> Bool
+    with
       case b
         True  => False
         False  => True)
-  "MATCH": (match b : Bool = b : Bool of
+  "MATCH": (match
+    b : Bool = b
+    -> Bool
+  with
     case b
       True  => False
       False  => True)

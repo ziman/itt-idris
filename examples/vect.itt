@@ -15,7 +15,7 @@ function vlen : (n : Nat) -> (a : Type) -> (xs : Vect n a) -> Nat
     match
       n : Nat = n,
       xs : Vect n a = xs
-      : Nat
+      -> Nat
     with
       case xs
       | Nil

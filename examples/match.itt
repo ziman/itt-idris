@@ -5,7 +5,10 @@ constructor False : Bool
 function id : (b : Bool) -> Bool = \b : Bool. b
 
 function not : (b : Bool) -> Bool = \b : Bool.
-  match b : Bool = b : Bool with
+  match
+    b : Bool = b
+    -> Bool
+  with
     case b
     | True => False
     | False => True
@@ -15,14 +18,20 @@ constructor Id : (x : Bool) -> (y : Bool) -> Type
 constructor Refl : (x : Bool) -> Id x x
 
 function lemma : (b : Bool) -> Id b (not (not b)) = \b : Bool.
-  match b : Bool = b : Id b (not (not b)) with
+  match
+    b : Bool = b
+    -> Id b (not (not b))
+  with
     case b
     | True  => Refl True
     | False => Refl False
     end
 
 function main : Bool =
-  match x : Bool = not True : Bool with
+  match
+    x : Bool = not True
+    -> Bool
+  with
     case x
     | True  => False
     | False => True

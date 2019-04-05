@@ -24,7 +24,11 @@ function vlen : (n : Nat) -> (a : Type) -> (xs : Vect n a) -> Nat =
   \n : Nat.
     \a : Type.
       \xs : Vect n a.
-        match n : Nat = n, xs : Vect n a = xs : Nat of
+        match
+          n : Nat = n
+          xs : Vect n a = xs
+          -> Nat
+        with
           case xs
             Nil  => [n = Z]
                 Z
@@ -58,7 +62,11 @@ function vlen :24 (n :25 Nat) -> (a :26 Type) -> (xs :27 Vect -29- n -28- a) -> 
   \n :30 Nat.
     \a :31 Type.
       \xs :32 Vect -34- n -33- a.
-        match n : Nat = n, xs : Vect -37- n -36- a = xs : Nat of
+        match
+          n : Nat = n
+          xs : Vect -37- n -36- a = xs
+          -> Nat
+        with
           case xs
             Nil  => [n = Z]
                 Z
@@ -71,7 +79,11 @@ With backtrace:
   ("DEF", vlen)
   "LAM": (\n :30 Nat. \a :31 Type.
       \xs :32 Vect -34- n -33- a.
-        match n : Nat = n, xs : Vect -37- n -36- a = xs : Nat of
+        match
+          n : Nat = n
+          xs : Vect -37- n -36- a = xs
+          -> Nat
+        with
           case xs
             Nil  => [n = Z]
                 Z
@@ -79,21 +91,33 @@ With backtrace:
                 [n = S -45- n']
                   S -46- (vlen -49- n' -48- a -47- xs'))
   "LAM": (\a :31 Type. \xs :32 Vect -34- n -33- a.
-      match n : Nat = n, xs : Vect -37- n -36- a = xs : Nat of
+      match
+        n : Nat = n
+        xs : Vect -37- n -36- a = xs
+        -> Nat
+      with
         case xs
           Nil  => [n = Z]
               Z
           Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
               [n = S -45- n']
                 S -46- (vlen -49- n' -48- a -47- xs'))
-  "LAM": (\xs :32 Vect -34- n -33- a. match n : Nat = n, xs : Vect -37- n -36- a = xs : Nat of
+  "LAM": (\xs :32 Vect -34- n -33- a. match
+      n : Nat = n
+      xs : Vect -37- n -36- a = xs
+      -> Nat
+    with
       case xs
         Nil  => [n = Z]
             Z
         Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
             [n = S -45- n']
               S -46- (vlen -49- n' -48- a -47- xs'))
-  "MATCH": (match n : Nat = n, xs : Vect -37- n -36- a = xs : Nat of
+  "MATCH": (match
+    n : Nat = n
+    xs : Vect -37- n -36- a = xs
+    -> Nat
+  with
     case xs
       Nil  => [n = Z]
           Z

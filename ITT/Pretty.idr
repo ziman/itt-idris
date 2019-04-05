@@ -119,9 +119,11 @@ mutual
       <+> pretty (PTT False UseParens, ctx) x
     pretty (PTT top nl, ctx) (Match pvs ss ty ct) = parensFrom NoAppParens nl $
       text "match"
-      <++> punctuate (text ", ") (reverse $ prettyScruts ctx pvs ss)
-      <++> text ":" <++> pretty (PTT False NoParens, pvs ++ ctx) ty
-      <++> text "of"
+      $$ indent (
+        vcat (reverse $ prettyScruts ctx pvs ss)
+        $$ text "->" <++> pretty (PTT False NoParens, pvs ++ ctx) ty
+       )
+      $$ text "with"
       $$ indent (pretty (ctx, pvs) ct)
     pretty (PTT top nl, ctx) Star = text "Type"
     pretty (PTT top nl, ctx) Erased = text "_"

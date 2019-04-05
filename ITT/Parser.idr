@@ -293,7 +293,7 @@ mutual
     token (Keyword "match")
     commit
     s <- matchScruts ns (MkScruts Z [] [] [])
-    ignore colon  -- do we need this?
+    ignore (token Arrow)  -- should this be an annotated colon?
     ty <- term (s_pns s ++ ns)
     token (Keyword "with")
     ct <- caseTree ns (s_pns s)
