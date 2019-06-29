@@ -40,6 +40,6 @@ function main : Bool = (\x : U (C False). g x) d
 -- we express that we choose to erase less than we could
 -- in order to expose the effect of irrelevance.
 -- 
--- All other annotations were inferred automatically.
+-- All other annotations are inferred automatically.
 
 -- vim: ft=idris
