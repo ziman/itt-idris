@@ -40,6 +40,22 @@ namespace Lens
         | Left j = pure $ V (tackFinL j)
         | Right j = g j
 
+  patPatVars : Telescope q n pn
+    -> Traversal (Pat q n pn) (Pat q n pn) (Fin pn) (TT q (pn + n))
+  patPatVars pvs g (PV i) = PForced <$> g i
+  patPatVars pvs g (PCtor n) = pure $ PCtor n
+  patPatVars pvs g (PApp q f x) =
+    PApp q <$> patPatVars pvs g f <*> patPatVars pvs g x
+  patPatVars pvs g (PForced tm) = PForced <$> ttVars (adapt pvs g) tm
+    where
+      adapt : Applicative f
+        => Telescope q n pn
+        -> (g : Fin pn -> f (TT q (pn + n)))
+        -> Fin (pn + n) -> f (TT q (pn + n))
+      adapt pvs g i with (splitFin pvs i)
+        | Left j = g j
+        | Right _ = pure $ V i
+
 mkArgs : Telescope q n pn -> List (Fin pn)
 mkArgs [] = []
 mkArgs (b :: ds) = FZ :: map FS (mkArgs ds)
