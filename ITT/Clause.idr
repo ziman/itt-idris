@@ -4,7 +4,7 @@ import public ITT.Core
 import public ITT.Lens
 import Control.Monad.Identity
 
-%default total
+%default covering -- total
 
 public export
 data Pat : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
@@ -63,7 +63,6 @@ mkArgs : Telescope q n pn -> List (Fin pn)
 mkArgs [] = []
 mkArgs (b :: ds) = FZ :: map FS (mkArgs ds)
 
-
 substPat : Telescope q n pn
     -> Fin pn -> TT q (pn + n)
     -> Pat q n pn -> Pat q n pn
@@ -75,8 +74,29 @@ substPat {q} {n} {pn} pvs pv tm =
       | True  = pure tm
       | False = pure $ V (tackFinL i)
 
-substLhs : Telescope q n pn -> Fin pn -> TT q (pn + n) -> Lhs q n pn -> Lhs q n pn
+substLhs : Telescope q n pn
+    -> Fin pn -> TT q (pn + n)
+    -> Lhs q n pn -> Lhs q n pn
 substLhs pvs i tm (L args) = L $ map (substPat pvs i tm) args
+
+weakenFin : Telescope q n pn -> Telescope q (n + pn) pn'
+    -> Fin pn -> Fin (pn' + pn)
+
+weakenPat : Telescope q n pn -> Telescope q (n + pn) pn'
+    -> Pat q n pn -> Pat q n (pn' + pn)
+weakenPat pvs pvs' (PV i) = ?rhs_1
+weakenPat pvs pvs' (PCtor c) = PCtor c
+weakenPat pvs pvs' (PApp q f x) =
+  PApp q (weakenPat pvs pvs' f) (weakenPat pvs pvs' x)
+weakenPat {q} {n} {pn} {pn'} pvs pvs' (PForced tm) =
+    PForced $ rename gP tm
+  where
+    gP : Fin (pn + n) -> Fin ((pn' + pn) + n)
+    gP i = replace (plusAssociative pn' pn n) $ tackFinR pvs' i
+
+weakenLhs : Telescope q n pn -> Telescope q (n + pn) pn'
+    -> Lhs q n pn -> Lhs q n (pn' + pn)
+weakenLhs pvs pvs' (L args) = L $ map (weakenPat pvs pvs') args
 
 mutual
   foldAlt :
@@ -87,7 +107,15 @@ mutual
       -> List (Clause q n)
   foldAlt pvs lhs s (DefaultCase ct) = foldTree pvs lhs ct
   foldAlt pvs lhs s (CtorCase cn args ct) =
-      foldTree (args ++ pvs) (substLhs ?pvsx ?fx ?ttx lhs) ct
+      foldTree
+        (args ++ pvs)
+        (substLhs
+            ?pvsx
+            ?fx
+            ?ttx
+            ?lhsx
+        )
+        ct
       -- we need to weaken all patvars in lhs here
       -- because we're adding args in front of pvs
 
