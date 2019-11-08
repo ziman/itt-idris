@@ -1,5 +1,6 @@
 module ITT.Clause
 
+import ITT.Pretty  -- MOVE THIS TO PRETTY
 import public ITT.Core
 import public ITT.Lens
 import Control.Monad.Identity
@@ -9,7 +10,7 @@ import Control.Monad.Identity
 public export
 data Pat : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
   PV : (i : Fin pn) -> Pat q n pn
-  PCtor : (c : Name) -> Pat q n pn
+  PCtor : (cn : Name) -> Pat q n pn
   PForced : (tm : TT q (pn + n)) -> Pat q n pn
   PApp : q -> (f : Pat q n pn) -> (x : Pat q n pn) -> Pat q n pn
 
@@ -38,7 +39,7 @@ namespace Lens
   patTermVars : Telescope q n pn
     -> Traversal (Pat q m pn) (Pat q n pn) (Fin m) (TT q (pn + n))
   patTermVars pvs g (PV i) = pure $ PV i
-  patTermVars pvs g (PCtor n) = pure $ PCtor n
+  patTermVars pvs g (PCtor cn) = pure $ PCtor cn
   patTermVars pvs g (PApp q f x) =
     PApp q <$> patTermVars pvs g f <*> patTermVars pvs g x
   patTermVars pvs g (PForced tm) = PForced <$> ttVars (adaptT pvs g) tm
@@ -54,7 +55,7 @@ namespace Lens
   patPatVars : Telescope q n pn
     -> Traversal (Pat q n pn) (Pat q n pn) (Fin pn) (TT q (pn + n))
   patPatVars pvs g (PV i) = PForced <$> g i
-  patPatVars pvs g (PCtor n) = pure $ PCtor n
+  patPatVars pvs g (PCtor cn) = pure $ PCtor cn
   patPatVars pvs g (PApp q f x) =
     PApp q <$> patPatVars pvs g f <*> patPatVars pvs g x
   patPatVars pvs g (PForced tm) = PForced <$> ttVars (adaptP pvs g) tm
@@ -82,7 +83,7 @@ substLhs pvs i tm (L args) = L $ map (substPat pvs i tm) args
 weakenPat : Telescope q n pn -> Telescope q (pn + n) pn'
     -> Pat q n pn -> Pat q n (pn' + pn)
 weakenPat pvs pvs' (PV i) = PV $ tackFinR pvs' i
-weakenPat pvs pvs' (PCtor c) = PCtor c
+weakenPat pvs pvs' (PCtor cn) = PCtor cn
 weakenPat pvs pvs' (PApp q f x) =
   PApp q (weakenPat pvs pvs' f) (weakenPat pvs pvs' x)
 weakenPat {q} {n} {pn} {pn'} pvs pvs' (PForced tm) =
@@ -140,3 +141,19 @@ foldMatch {q} {n} {pn} pvs ss ty ct
   where
     lhs : Lhs q n pn
     lhs = L $ map PV $ mkArgs pvs
+
+export
+ShowQ q => Pretty (PrettyTT, Context q n, Telescope q n pn) (Pat q n pn) where
+  pretty (ptt, ctx, pctx) (PV i) = text $ lookupName i pctx
+  pretty (ptt, ctx, pctx) (PCtor cn) = text (show cn)
+  pretty (ptt, ctx, pctx) (PForced tm) = pretty (ptt, pctx ++ ctx) tm
+  pretty (PTT mll UseParens, ctx, pctx) (PApp q f x) =
+    parens $
+        pretty (PTT False NoAppParens, ctx, pctx) f
+        <+> text (showApp q)
+        <+> pretty (PTT mll UseParens, ctx, pctx) x
+  pretty (PTT mll _, ctx, pctx) (PApp q f x) =
+    pretty (PTT False NoAppParens, ctx, pctx) f
+    <+> text (showApp q)
+    <+> pretty (PTT mll UseParens, ctx, pctx) x
+
