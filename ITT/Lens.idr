@@ -74,11 +74,13 @@ mutual
         | Right j = Right j
 
   -- push all references to point beyond the telescope
+  export
   tackFinR : Telescope q n' s -> Fin n -> Fin (s + n)
   tackFinR []        f = f
   tackFinR (b :: ds) f = FS $ tackFinR ds f
 
   -- repeated weakening, identity at runtime
+  export
   tackFinL : Fin s -> Fin (s + n)
   tackFinL  FZ    = FZ
   tackFinL (FS i) = FS $ tackFinL i

@@ -37,8 +37,8 @@ namespace Lens
         -> (g : Fin m -> f (TT q (pn + n)))
         -> Fin (pn + m) -> f (TT q (pn + n))
       adapt pvs g i with (splitFin pvs i)
-        | Left j = ?rhsFA
-        | Right j = ?rhsFB
+        | Left j = pure $ V (tackFinL j)
+        | Right j = g j
 
 mkArgs : Telescope q n pn -> List (Fin pn)
 mkArgs [] = []
