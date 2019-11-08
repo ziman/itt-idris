@@ -107,14 +107,17 @@ mutual
       foldTree
         (args ++ pvs)
         (substLhs
-            ?pvsx
-            ?fx
-            ?ttx
-            (weakenLhs pvs args lhs)
-        )
+            (args ++ pvs)
+            (tackFinR args s)
+            (ctorApp (G cn) args)
+            (weakenLhs pvs args lhs))
         ct
       -- we need to weaken all patvars in lhs here
       -- because we're adding args in front of pvs
+    where
+      ctorApp : TT q (pn + n) -> Telescope q (pn + n) pn' -> TT q (pn' + pn + n)
+      ctorApp f [] = f
+      ctorApp f (B bn bq bty :: bs) = App bq (rename FS $ ctorApp f bs) (V FZ)
 
   foldTree :
       (pvs : Telescope q n pn)
