@@ -60,6 +60,7 @@ mutual
 mutual
   -- split references between those that point into the telescope
   -- and those that point beyond it
+  export
   splitFin : Telescope q n' s -> Fin (s + n) -> Either (Fin s) (Fin n)
   splitFin [] f = Right f
   splitFin (b :: ds) f = subSplit b ds f

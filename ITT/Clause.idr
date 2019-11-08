@@ -1,6 +1,7 @@
 module ITT.Clause
 
-import ITT.Core
+import public ITT.Core
+import public ITT.Lens
 
 %default total
 
@@ -22,22 +23,45 @@ record Clause (q : Type) (n : Nat) (pn : Nat) where
   lhs : Lhs q n pn
   rhs : TT q (pn + n)
 
+namespace Lens
+  patTermVars : Traversal (Pat q m pn) (Pat q n pn) (Fin m) (TT q n)
+  patTermVars g pat = ?rhs
+
 mkArgs : Telescope q n pn -> List (Fin pn)
 mkArgs [] = []
 mkArgs (b :: ds) = FZ :: map FS (mkArgs ds)
 
-substPat : Fin pn -> TT q (pn + n) -> Pat q n pn -> Pat q n pn
-substPat i tm pat = ?rhsP
 
-substLhs : Fin pn -> TT q (pn + n) -> Lhs q n pn -> Lhs q n pn
-substLhs i tm (L args) = L $ map (substPat i tm) args
+substPat : Telescope q n pn
+    -> Fin pn -> TT q (pn + n)
+    -> Pat q n pn -> Pat q n pn
+{-
+substPat pvs i tm (PV j) with (i == j)
+  | True  = PForced tm
+  | False = PV j
+substPat pvs i tm (PCtor c) = PCtor c
+substPat pvs i tm (PApp q f x) = PApp q (substPat pvs i tm f) (substPat pvs i tm x)
+substPat {pn} {q} {n} pvs i tm (PForced tmf) = PForced $ subst sf tmf
+  where
+    sf : Fin (pn + n) -> TT q (pn + n)
+    sf j with (splitFin pvs j)
+      | Left k with (k == i)
+        | True  = tm
+        | False = PV j
+      | Right _ = PV j
+-}
 
-foldTree : (lhs : Lhs q n pn)
+substLhs : Telescope q n pn -> Fin pn -> TT q (pn + n) -> Lhs q n pn -> Lhs q n pn
+substLhs pvs i tm (L args) = L $ map (substPat pvs i tm) args
+
+foldTree :
+    (pvs : Telescope q n pn)
+    -> (lhs : Lhs q n pn)
     -> (ct : CaseTree q n pn)
     -> List (Clause q n pn)
-foldTree lhs (Leaf rhs) = [C lhs rhs]
-foldTree lhs (Forced s tm ct) = foldTree (substLhs s tm lhs) ct
-foldTree lhs (Case s alts) = ?rhsC
+foldTree pvs lhs (Leaf rhs) = [C lhs rhs]
+foldTree pvs lhs (Forced s tm ct) = foldTree pvs (substLhs pvs s tm lhs) ct
+foldTree pvs lhs (Case s alts) = ?rhsC
 
 export
 foldMatch :
@@ -47,7 +71,7 @@ foldMatch :
     -> (ct : CaseTree q n pn)
     -> List (Clause q n pn)
 foldMatch {q} {n} {pn} pvs ss ty ct
-    = foldTree lhs ct
+    = foldTree pvs lhs ct
   where
     lhs : Lhs q n pn
     lhs = L $ map PV $ mkArgs pvs
