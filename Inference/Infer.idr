@@ -1,6 +1,7 @@
 module Infer
 
 import Utils.Misc
+import ITT.Clause
 import public ITT.Core
 import public ITT.Pretty
 import public ITT.Module

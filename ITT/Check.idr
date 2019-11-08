@@ -2,6 +2,7 @@ module Check
 
 import public ITT.Core
 import public ITT.Module
+import ITT.Clause
 import ITT.Normalise
 import ITT.Pretty
 import Utils.Pretty
