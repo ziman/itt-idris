@@ -2,6 +2,8 @@ module ITT.Clause
 
 import ITT.Core
 
+%default total
+
 public export
 data Pat : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
   PV : (i : Fin pn) -> Pat q n pn
@@ -24,10 +26,18 @@ mkArgs : Telescope q n pn -> List (Fin pn)
 mkArgs [] = []
 mkArgs (b :: ds) = FZ :: map FS (mkArgs ds)
 
+substPat : Fin pn -> TT q (pn + n) -> Pat q n pn -> Pat q n pn
+substPat i tm pat = ?rhsP
+
+substLhs : Fin pn -> TT q (pn + n) -> Lhs q n pn -> Lhs q n pn
+substLhs i tm (L args) = L $ map (substPat i tm) args
+
 foldTree : (lhs : Lhs q n pn)
     -> (ct : CaseTree q n pn)
     -> List (Clause q n pn)
-foldTree lhs ct = ?rhs
+foldTree lhs (Leaf rhs) = [C lhs rhs]
+foldTree lhs (Forced s tm ct) = foldTree (substLhs s tm lhs) ct
+foldTree lhs (Case s alts) = ?rhsC
 
 export
 foldMatch :
