@@ -2,6 +2,7 @@ module ITT.Clause
 
 import public ITT.Core
 import public ITT.Lens
+import Control.Monad.Identity
 
 %default total
 
@@ -64,21 +65,13 @@ mkArgs (b :: ds) = FZ :: map FS (mkArgs ds)
 substPat : Telescope q n pn
     -> Fin pn -> TT q (pn + n)
     -> Pat q n pn -> Pat q n pn
-{-
-substPat pvs i tm (PV j) with (i == j)
-  | True  = PForced tm
-  | False = PV j
-substPat pvs i tm (PCtor c) = PCtor c
-substPat pvs i tm (PApp q f x) = PApp q (substPat pvs i tm f) (substPat pvs i tm x)
-substPat {pn} {q} {n} pvs i tm (PForced tmf) = PForced $ subst sf tmf
+substPat {q} {n} {pn} pvs pv tm =
+    runIdentity . patPatVars pvs ?g
   where
-    sf : Fin (pn + n) -> TT q (pn + n)
-    sf j with (splitFin pvs j)
-      | Left k with (k == i)
-        | True  = tm
-        | False = PV j
-      | Right _ = PV j
--}
+    g : Fin pn -> Identity (TT q (pn + n))
+    g i with (i == pv)
+      | True  = pure tm
+      | False = pure $ V (tackFinL i)
 
 substLhs : Telescope q n pn -> Fin pn -> TT q (pn + n) -> Lhs q n pn -> Lhs q n pn
 substLhs pvs i tm (L args) = L $ map (substPat pvs i tm) args
