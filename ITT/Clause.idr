@@ -79,10 +79,7 @@ substLhs : Telescope q n pn
     -> Lhs q n pn -> Lhs q n pn
 substLhs pvs i tm (L args) = L $ map (substPat pvs i tm) args
 
-weakenFin : Telescope q n pn -> Telescope q (n + pn) pn'
-    -> Fin pn -> Fin (pn' + pn)
-
-weakenPat : Telescope q n pn -> Telescope q (n + pn) pn'
+weakenPat : Telescope q n pn -> Telescope q (pn + n) pn'
     -> Pat q n pn -> Pat q n (pn' + pn)
 weakenPat pvs pvs' (PV i) = ?rhs_1
 weakenPat pvs pvs' (PCtor c) = PCtor c
@@ -94,7 +91,7 @@ weakenPat {q} {n} {pn} {pn'} pvs pvs' (PForced tm) =
     gP : Fin (pn + n) -> Fin ((pn' + pn) + n)
     gP i = replace (plusAssociative pn' pn n) $ tackFinR pvs' i
 
-weakenLhs : Telescope q n pn -> Telescope q (n + pn) pn'
+weakenLhs : Telescope q n pn -> Telescope q (pn + n) pn'
     -> Lhs q n pn -> Lhs q n (pn' + pn)
 weakenLhs pvs pvs' (L args) = L $ map (weakenPat pvs pvs') args
 
@@ -113,7 +110,7 @@ mutual
             ?pvsx
             ?fx
             ?ttx
-            ?lhsx
+            (weakenLhs pvs args lhs)
         )
         ct
       -- we need to weaken all patvars in lhs here
