@@ -24,16 +24,21 @@ record Clause (q : Type) (n : Nat) (pn : Nat) where
   rhs : TT q (pn + n)
 
 namespace Lens
-  patTermVars : Traversal (Pat q m pn) (Pat q n pn) (Fin m) (TT q (pn + n))
-  patTermVars g (PV i) = pure $ PV i
-  patTermVars g (PCtor n) = pure $ PCtor n
-  patTermVars g (PApp q f x) = PApp q <$> patTermVars g f <*> patTermVars g x
-  patTermVars g (PForced tm) = PForced <$> ttVars (adapt g) tm
+  patTermVars : Telescope q n pn
+    -> Traversal (Pat q m pn) (Pat q n pn) (Fin m) (TT q (pn + n))
+  patTermVars pvs g (PV i) = pure $ PV i
+  patTermVars pvs g (PCtor n) = pure $ PCtor n
+  patTermVars pvs g (PApp q f x) =
+    PApp q <$> patTermVars pvs g f <*> patTermVars pvs g x
+  patTermVars pvs g (PForced tm) = PForced <$> ttVars (adapt pvs g) tm
     where
       adapt : Applicative f
-        => (g : Fin m -> f (TT q (pn + n)))
+        => Telescope q n pn
+        -> (g : Fin m -> f (TT q (pn + n)))
         -> Fin (pn + m) -> f (TT q (pn + n))
-      adapt = ?rhsF
+      adapt pvs g i with (splitFin pvs i)
+        | Left j = ?rhsFA
+        | Right j = ?rhsFB
 
 mkArgs : Telescope q n pn -> List (Fin pn)
 mkArgs [] = []
