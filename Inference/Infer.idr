@@ -40,7 +40,7 @@ data ErrorMessage : Nat -> Type where
   NotImplemented : ErrorMessage n
   UnknownGlobal : Name -> ErrorMessage n
   QuantityMismatch : Q -> Q -> ErrorMessage n
-  Debug : String -> ErrorMessage n
+  Debug : Doc -> ErrorMessage n
 
 showEM : Context Evar n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
@@ -55,8 +55,8 @@ showEM ctx (UnknownGlobal n)
     = "unknown global: " ++ show n
 showEM ctx (QuantityMismatch q q')
     = "quantity mismatch: " ++ show q ++ " /= " ++ show q'
-showEM ctx (Debug s)
-    = ">>> DEBUG <<< " ++ s
+showEM ctx (Debug doc)
+    = render "  " (text ">>> DEBUG <<< " $$ indent doc)
 
 public export
 Backtrace : Type
@@ -164,8 +164,8 @@ throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
     => Left (MkF (backtrace env) _ (context env) msg)
 
-throwDebug : Show b => b -> TC n a
-throwDebug = throw . Debug . show
+throwDebug : Doc -> TC n a
+throwDebug = throw . Debug
 
 withBnd : Binding Evar n -> TC (S n) a -> TC n a
 withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
@@ -310,9 +310,11 @@ inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
 
     _ => throw $ NotPi fTy
 
-inferTm tm@(Match pvs ss ty ct) = traceTm tm "MATCH" $ do
-    throwDebug clauses
+inferTm {n} tm@(Match pvs ss ty ct) = traceTm tm "MATCH" $ do
+    ctx <- getCtx
+    throwDebug $ vcat [pretty ctx c | c <- clauses]
   where
+    clauses : List (Clause Evar n)
     clauses = foldMatch pvs ss ty ct
 
 inferTm Star = pure Star

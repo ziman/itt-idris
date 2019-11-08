@@ -37,7 +37,7 @@ data ErrorMessage : Nat -> Type where
   CantCheckErased : ErrorMessage n
   NotImplemented : ErrorMessage n
   UnknownGlobal : Name -> ErrorMessage n
-  Debug : String -> ErrorMessage n
+  Debug : Doc -> ErrorMessage n
 
 showEM : Context Q n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
@@ -54,8 +54,8 @@ showEM ctx NotImplemented
     = "not implemented yet"
 showEM ctx (UnknownGlobal n)
     = "unknown global " ++ show n
-showEM ctx (Debug s)
-    = ">>> DEBUG <<< " ++ s
+showEM ctx (Debug doc)
+    = render "  " (text ">>> DEBUG <<< " $$ indent doc)
 
 public export
 Backtrace : Type
@@ -135,8 +135,8 @@ throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
     => Left (MkF (backtrace env) _ (context env) msg)
 
-debugThrow : Show b => b -> TC n a
-debugThrow = throw . Debug . show
+debugThrow : Doc -> TC n a
+debugThrow = throw . Debug
 
 withBnd : Binding Q n -> TC (S n) a -> TC n a
 withBnd b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
@@ -283,9 +283,11 @@ checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
 
     _ => throw $ NotPi fTy
 
-checkTm tm@(Match pvs ss rty ct) = traceTm tm "MATCH" $ do
-    throwDebug clauses
+checkTm {n} tm@(Match pvs ss rty ct) = traceTm tm "MATCH" $ do
+    ctx <- getCtx
+    throwDebug $ vcat [pretty ctx c | c <- clauses]
   where
+    clauses : List (Clause Q n)
     clauses = foldMatch pvs ss rty ct
 
 
