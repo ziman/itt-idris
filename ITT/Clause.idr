@@ -19,27 +19,37 @@ record Lhs (q : Type) (n : Nat) (pn : Nat) where
   args : List (Pat q n pn)
 
 public export
-record Clause (q : Type) (n : Nat) (pn : Nat) where
+record Clause (q : Type) (n : Nat) where
   constructor C
+  pn : Nat  -- erased, don't use!
+  pvs : Telescope q n pn  -- use this instead
   lhs : Lhs q n pn
   rhs : TT q (pn + n)
 
 namespace Lens
+  adaptT : Applicative f
+    => Telescope q n pn
+    -> (g : Fin m -> f (TT q (pn + n)))
+    -> Fin (pn + m) -> f (TT q (pn + n))
+  adaptT pvs g i with (splitFin pvs i)
+    | Left j = pure $ V (tackFinL j)
+    | Right j = g j
+
   patTermVars : Telescope q n pn
     -> Traversal (Pat q m pn) (Pat q n pn) (Fin m) (TT q (pn + n))
   patTermVars pvs g (PV i) = pure $ PV i
   patTermVars pvs g (PCtor n) = pure $ PCtor n
   patTermVars pvs g (PApp q f x) =
     PApp q <$> patTermVars pvs g f <*> patTermVars pvs g x
-  patTermVars pvs g (PForced tm) = PForced <$> ttVars (adapt pvs g) tm
-    where
-      adapt : Applicative f
-        => Telescope q n pn
-        -> (g : Fin m -> f (TT q (pn + n)))
-        -> Fin (pn + m) -> f (TT q (pn + n))
-      adapt pvs g i with (splitFin pvs i)
-        | Left j = pure $ V (tackFinL j)
-        | Right j = g j
+  patTermVars pvs g (PForced tm) = PForced <$> ttVars (adaptT pvs g) tm
+
+  adaptP : Applicative f
+    => Telescope q n pn
+    -> (g : Fin pn -> f (TT q (pn + n)))
+    -> Fin (pn + n) -> f (TT q (pn + n))
+  adaptP pvs g i with (splitFin pvs i)
+    | Left j = g j
+    | Right _ = pure $ V i
 
   patPatVars : Telescope q n pn
     -> Traversal (Pat q n pn) (Pat q n pn) (Fin pn) (TT q (pn + n))
@@ -47,15 +57,7 @@ namespace Lens
   patPatVars pvs g (PCtor n) = pure $ PCtor n
   patPatVars pvs g (PApp q f x) =
     PApp q <$> patPatVars pvs g f <*> patPatVars pvs g x
-  patPatVars pvs g (PForced tm) = PForced <$> ttVars (adapt pvs g) tm
-    where
-      adapt : Applicative f
-        => Telescope q n pn
-        -> (g : Fin pn -> f (TT q (pn + n)))
-        -> Fin (pn + n) -> f (TT q (pn + n))
-      adapt pvs g i with (splitFin pvs i)
-        | Left j = g j
-        | Right _ = pure $ V i
+  patPatVars pvs g (PForced tm) = PForced <$> ttVars (adaptP pvs g) tm
 
 mkArgs : Telescope q n pn -> List (Fin pn)
 mkArgs [] = []
@@ -82,20 +84,19 @@ mutual
       -> (lhs : Lhs q n pn)
       -> (s : Fin pn)
       -> (alt : Alt q n pn)
-      -> List (Clause q n pn)
+      -> List (Clause q n)
   foldAlt pvs lhs s (DefaultCase ct) = foldTree pvs lhs ct
   foldAlt pvs lhs s (CtorCase cn args ct) =
-      foldTree pvs (substLhs pvs s tm lhs) ct
-    where
-      tm : TT q (pn + n)
-      tm = ?tm
+      foldTree (args ++ pvs) (substLhs ?pvsx ?fx ?ttx lhs) ct
+      -- we need to weaken all patvars in lhs here
+      -- because we're adding args in front of pvs
 
   foldTree :
       (pvs : Telescope q n pn)
       -> (lhs : Lhs q n pn)
       -> (ct : CaseTree q n pn)
-      -> List (Clause q n pn)
-  foldTree pvs lhs (Leaf rhs) = [C lhs rhs]
+      -> List (Clause q n)
+  foldTree pvs lhs (Leaf rhs) = [C _ pvs lhs rhs]
   foldTree pvs lhs (Forced s tm ct) = foldTree pvs (substLhs pvs s tm lhs) ct
   foldTree pvs lhs (Case s alts) = concatMap (foldAlt pvs lhs s) alts
 
@@ -105,7 +106,7 @@ foldMatch :
     -> (ss : Vect pn (TT q n))
     -> (ty : TT q (pn + n))
     -> (ct : CaseTree q n pn)
-    -> List (Clause q n pn)
+    -> List (Clause q n)
 foldMatch {q} {n} {pn} pvs ss ty ct
     = foldTree pvs lhs ct
   where
