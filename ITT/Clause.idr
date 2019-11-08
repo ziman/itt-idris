@@ -67,7 +67,7 @@ substPat : Telescope q n pn
     -> Fin pn -> TT q (pn + n)
     -> Pat q n pn -> Pat q n pn
 substPat {q} {n} {pn} pvs pv tm =
-    runIdentity . patPatVars pvs ?g
+    runIdentity . patPatVars pvs g
   where
     g : Fin pn -> Identity (TT q (pn + n))
     g i with (i == pv)
@@ -81,7 +81,7 @@ substLhs pvs i tm (L args) = L $ map (substPat pvs i tm) args
 
 weakenPat : Telescope q n pn -> Telescope q (pn + n) pn'
     -> Pat q n pn -> Pat q n (pn' + pn)
-weakenPat pvs pvs' (PV i) = ?rhs_1
+weakenPat pvs pvs' (PV i) = PV $ tackFinR pvs' i
 weakenPat pvs pvs' (PCtor c) = PCtor c
 weakenPat pvs pvs' (PApp q f x) =
   PApp q (weakenPat pvs pvs' f) (weakenPat pvs pvs' x)
