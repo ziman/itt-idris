@@ -109,4 +109,6 @@ With backtrace:
     case b
       True  => False
       False  => True)
-WIP: not implemented yet
+>>> DEBUG <<< 
+  (b : Bool). True => False
+  (b : Bool). False => True
