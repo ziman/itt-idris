@@ -285,7 +285,7 @@ checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
 
 checkTm {n} tm@(Match pvs ss rty ct) = traceTm tm "MATCH" $ do
     ctx <- getCtx
-    throwDebug $ vcat [pretty ctx c | c <- clauses]
+    debugThrow $ vcat [pretty ctx c | c <- clauses]
   where
     clauses : List (Clause Q n)
     clauses = foldMatch pvs ss rty ct
