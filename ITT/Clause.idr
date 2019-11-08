@@ -152,10 +152,23 @@ ShowQ q => Pretty (PrettyTT, Context q n, Telescope q n pn) (Pat q n pn) where
   pretty (PTT mll UseParens, ctx, pctx) (PApp q f x) =
     parens $
         pretty (PTT False NoAppParens, ctx, pctx) f
-        <+> text (showApp q)
-        <+> pretty (PTT mll UseParens, ctx, pctx) x
+        <++> text (showApp q)
+        <++> pretty (PTT mll UseParens, ctx, pctx) x
   pretty (PTT mll _, ctx, pctx) (PApp q f x) =
     pretty (PTT False NoAppParens, ctx, pctx) f
-    <+> text (showApp q)
-    <+> pretty (PTT mll UseParens, ctx, pctx) x
+    <++> text (showApp q)
+    <++> pretty (PTT mll UseParens, ctx, pctx) x
 
+export
+ShowQ q => Pretty (Context q n, Telescope q n pn) (Lhs q n pn) where
+  pretty (ctx, pctx) (L args) =
+    hsep [pretty (PTT False UseParens, ctx, pctx) arg | arg <- args]
+
+export
+ShowQ q => Pretty (Context q n) (Clause q n) where
+  pretty ctx (C pn pvs lhs rhs) = 
+    hsep (prettyTelescope ctx [] pvs)
+    <+> text "."
+    <++> pretty (ctx, pvs) lhs
+    <++> text "=>"
+    <++> pretty (PTT True NoParens, pvs ++ ctx) rhs
