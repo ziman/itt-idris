@@ -5,7 +5,7 @@ import public ITT.Core
 import public ITT.Lens
 import Control.Monad.Identity
 
-%default covering -- total
+%default total
 
 public export
 data Pat : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
@@ -127,7 +127,9 @@ mutual
       -> List (Clause q n)
   foldTree pvs lhs (Leaf rhs) = [C _ pvs lhs rhs]
   foldTree pvs lhs (Forced s tm ct) = foldTree pvs (substLhs pvs s tm lhs) ct
-  foldTree pvs lhs (Case s alts) = concatMap (foldAlt pvs lhs s) alts
+  foldTree pvs lhs (Case s alts) =
+    -- I have no clue why assert_total is needed here
+    assert_total $ concatMap (foldAlt pvs lhs s) alts
 
 export
 foldMatch :
