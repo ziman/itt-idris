@@ -76,6 +76,14 @@ substPat {q} {n} {pn} pvs pv tm =
 substLhs : Telescope q n pn -> Fin pn -> TT q (pn + n) -> Lhs q n pn -> Lhs q n pn
 substLhs pvs i tm (L args) = L $ map (substPat pvs i tm) args
 
+foldAlt :
+    (pvs : Telescope q n pn)
+    -> (lhs : Lhs q n pn)
+    -> (s : Fin pn)
+    -> (alt : Alt q n pn)
+    -> List (Clause q n pn)
+foldAlt pvs lhs s alt = ?foldAlt
+
 foldTree :
     (pvs : Telescope q n pn)
     -> (lhs : Lhs q n pn)
@@ -83,7 +91,7 @@ foldTree :
     -> List (Clause q n pn)
 foldTree pvs lhs (Leaf rhs) = [C lhs rhs]
 foldTree pvs lhs (Forced s tm ct) = foldTree pvs (substLhs pvs s tm lhs) ct
-foldTree pvs lhs (Case s alts) = ?rhsC
+foldTree pvs lhs (Case s alts) = concatMap (foldAlt pvs lhs s) alts
 
 export
 foldMatch :
