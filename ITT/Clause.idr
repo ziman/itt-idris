@@ -45,7 +45,10 @@ namespace Lens
   patTermVars pvs g (PForced tm) = PForced <$> ttVars (adaptT pvs g) tm
 
   ptt : Pat q n pn -> TT q (pn + n)
-  ptt pat = ?rhs
+  ptt (PV i) = V $ tackFinL i
+  ptt (PCtor cn) = G cn
+  ptt (PForced tm) = tm
+  ptt (PApp q f x) = App q (ptt f) (ptt x)
 
   adaptP : Applicative f
     => Telescope q n pn
