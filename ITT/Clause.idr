@@ -63,24 +63,26 @@ namespace Lens
     PApp q <$> patPatVarsP pvs g f <*> patPatVarsP pvs g x
   patPatVarsP pvs g (PForced tm) = PForced <$> ttVars (adaptP pvs g) tm
 
-  patPatVars : Telescope q n pn
+  adaptPV : Applicative f
+    => Telescope q n pn
+    -> Telescope q n pn'
+    -> (g : Fin pn -> f (Fin pn'))
+    -> Fin (plus pn n)
+    -> f (TT q (pn' + n))
+  adaptPV pvs pvs' g i with (splitFin pvs i)
+    | Left j = V . tackFinL <$> g j
+    | Right j = pure $ V (tackFinR pvs' j)
+
+  patPatVars :
+    Telescope q n pn
+    -> Telescope q n pn'
     -> Traversal (Pat q n pn) (Pat q n pn') (Fin pn) (Fin pn')
-  patPatVars pvs g (PV i) = PV <$> g i
-  patPatVars pvs g (PCtor cn) = pure $ PCtor cn
-  patPatVars pvs g (PApp q f x) =
-    PApp q <$> patPatVars pvs g f <*> patPatVars pvs g x
-  patPatVars pvs g (PForced tm) = PForced <$> ttVars (adaptPV pvs g) tm
-    where
-      adaptPV : Applicative f
-        => Telescope q n pn
-        -> (g : Fin pn -> f (Fin pn'))
-        -> Fin (plus pn n)
-        -> f (TT q (pn' + n))
-    {-
-      adaptPV pvs g i with (splitFin pvs i)
-        adaptPV pvs g i | Left j = ?rhsX
-        adaptPV pvs g i | Right j = ?rhsY
-    -}
+  patPatVars pvs pvs' g (PV i) = PV <$> g i
+  patPatVars pvs pvs' g (PCtor cn) = pure $ PCtor cn
+  patPatVars pvs pvs' g (PApp q f x) =
+    PApp q <$> patPatVars pvs pvs' g f <*> patPatVars pvs pvs' g x
+  patPatVars pvs pvs' g (PForced tm) =
+    PForced <$> ttVars (adaptPV pvs pvs' g) tm
 
 mkArgs : Telescope q n pn -> List (Fin pn)
 mkArgs [] = []
@@ -97,10 +99,12 @@ substPat {q} {n} {pn} pvs pv r =
       | True  = pure r
       | False = pure $ PV i
 
-renamePatVars : Telescope q n pn
+renamePatVars :
+    Telescope q n pn
+    -> Telescope q n pn'
     -> (Fin pn -> Fin pn')
     -> Pat q n pn -> Pat q n pn'
-renamePatVars pvs g = runIdentity . patPatVars pvs (pure . g)
+renamePatVars pvs pvs' g = runIdentity . patPatVars pvs pvs' (pure . g)
 
 substLhs : Telescope q n pn
     -> Fin pn -> Pat q n pn
@@ -131,7 +135,11 @@ ctorApp :
 ctorApp f pvs [] = f
 ctorApp f pvs (B bn bq bty :: bs) =
   PApp bq
-    (renamePatVars (bs ++ pvs) FS $ ctorApp f pvs bs)
+    (renamePatVars
+        (bs ++ pvs)
+        (B bn bq (replace {P=TT q} (plusAssociative _ _ _) bty) :: bs ++ pvs)
+        FS
+        (ctorApp f pvs bs))
     (PV FZ)
 
 mutual
