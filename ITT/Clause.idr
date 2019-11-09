@@ -55,13 +55,32 @@ namespace Lens
     | Left j = ptt <$> g j
     | Right _ = pure $ V i
 
-  patPatVars : Telescope q n pn
+  patPatVarsP : Telescope q n pn
     -> Traversal (Pat q n pn) (Pat q n pn) (Fin pn) (Pat q n pn)
-  patPatVars pvs g (PV i) = g i
+  patPatVarsP pvs g (PV i) = g i
+  patPatVarsP pvs g (PCtor cn) = pure $ PCtor cn
+  patPatVarsP pvs g (PApp q f x) =
+    PApp q <$> patPatVarsP pvs g f <*> patPatVarsP pvs g x
+  patPatVarsP pvs g (PForced tm) = PForced <$> ttVars (adaptP pvs g) tm
+
+  patPatVars : Telescope q n pn
+    -> Traversal (Pat q n pn) (Pat q n pn') (Fin pn) (Fin pn')
+  patPatVars pvs g (PV i) = PV <$> g i
   patPatVars pvs g (PCtor cn) = pure $ PCtor cn
   patPatVars pvs g (PApp q f x) =
     PApp q <$> patPatVars pvs g f <*> patPatVars pvs g x
-  patPatVars pvs g (PForced tm) = PForced <$> ttVars (adaptP pvs g) tm
+  patPatVars pvs g (PForced tm) = PForced <$> ttVars (adaptPV pvs g) tm
+    where
+      adaptPV : Applicative f
+        => Telescope q n pn
+        -> (g : Fin pn -> f (Fin pn'))
+        -> Fin (plus pn n)
+        -> f (TT q (pn' + n))
+    {-
+      adaptPV pvs g i with (splitFin pvs i)
+        adaptPV pvs g i | Left j = ?rhsX
+        adaptPV pvs g i | Right j = ?rhsY
+    -}
 
 mkArgs : Telescope q n pn -> List (Fin pn)
 mkArgs [] = []
@@ -71,15 +90,17 @@ substPat : Telescope q n pn
     -> Fin pn -> Pat q n pn
     -> Pat q n pn -> Pat q n pn
 substPat {q} {n} {pn} pvs pv r =
-    runIdentity . patPatVars pvs g
+    runIdentity . patPatVarsP pvs g
   where
     g : Fin pn -> Identity (Pat q n pn)
     g i with (i == pv)
       | True  = pure r
       | False = pure $ PV i
 
-renamePatVars : (Fin pn -> Fin pn') -> Pat q n pn -> Pat q n pn'
-renamePatVars f pat = ?rhsX
+renamePatVars : Telescope q n pn
+    -> (Fin pn -> Fin pn')
+    -> Pat q n pn -> Pat q n pn'
+renamePatVars pvs g = runIdentity . patPatVars pvs (pure . g)
 
 substLhs : Telescope q n pn
     -> Fin pn -> Pat q n pn
@@ -102,6 +123,17 @@ weakenLhs : Telescope q n pn -> Telescope q (pn + n) pn'
     -> Lhs q n pn -> Lhs q n (pn' + pn)
 weakenLhs pvs pvs' (L args) = L $ map (weakenPat pvs pvs') args
 
+ctorApp :
+  Pat q n pn
+  -> Telescope q n pn
+  -> Telescope q (pn + n) pn'
+  -> Pat q n (pn' + pn)
+ctorApp f pvs [] = f
+ctorApp f pvs (B bn bq bty :: bs) =
+  PApp bq
+    (renamePatVars (bs ++ pvs) FS $ ctorApp f pvs bs)
+    (PV FZ)
+
 mutual
   foldAlt :
       (pvs : Telescope q n pn)
@@ -116,15 +148,11 @@ mutual
         (substLhs
             (args ++ pvs)
             (tackFinR args s)
-            (ctorApp (PCtor cn) args)
+            (ctorApp (PCtor cn) pvs args)
             (weakenLhs pvs args lhs))
         ct
       -- we need to weaken all patvars in lhs here
       -- because we're adding args in front of pvs
-    where
-      ctorApp : Pat q n pn -> Telescope q (pn + n) pn' -> Pat q n (pn' + pn)
-      ctorApp f [] = f
-      ctorApp f (B bn bq bty :: bs) = PApp bq (renamePatVars FS $ ctorApp f bs) (PV FZ)
 
   foldTree :
       (pvs : Telescope q n pn)
