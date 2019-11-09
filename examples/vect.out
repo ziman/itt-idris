@@ -126,6 +126,6 @@ With backtrace:
             S -46- (vlen -49- n' -48- a -47- xs'))
 >>> DEBUG <<< 
   (xs : Vect -37- n -36- a) (n : Nat).
-    [Nil] [Z] => Z
+    Nil [Z] => Z
   (xs' : Vect -41- n' -40- a') (x' : a') (n' : Nat) (a' : Type) (xs : Vect -37- n -36- a) (n : Nat).
-    [Cons -44- a -43- n' -42- x' -39- xs'] [S -45- n'] => S -46- (vlen -49- n' -48- a -47- xs')
+    (Cons  -44-  [a]  -43-  n'  -42-  x'  -39-  xs') [S -45- n'] => S -46- (vlen -49- n' -48- a -47- xs')
