@@ -149,7 +149,7 @@ ShowQ q => Pretty (PrettyTT, Context q n, Telescope q n pn) (Pat q n pn) where
   pretty (ptt, ctx, pctx) (PV i) = text $ lookupName i pctx
   pretty (ptt, ctx, pctx) (PCtor cn) = text (show cn)
   pretty (ptt, ctx, pctx) (PForced tm) =
-    text "[" <+> pretty (ptt, pctx ++ ctx) tm <+> text "]"
+    text "[" <+> pretty (PTT False NoParens, pctx ++ ctx) tm <+> text "]"
   pretty (PTT mll UseParens, ctx, pctx) (PApp q f x) =
     parens $
         pretty (PTT False NoAppParens, ctx, pctx) f
