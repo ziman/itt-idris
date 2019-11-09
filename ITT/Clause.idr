@@ -44,17 +44,20 @@ namespace Lens
     PApp q <$> patTermVars pvs g f <*> patTermVars pvs g x
   patTermVars pvs g (PForced tm) = PForced <$> ttVars (adaptT pvs g) tm
 
+  ptt : Pat q n pn -> TT q (pn + n)
+  ptt pat = ?rhs
+
   adaptP : Applicative f
     => Telescope q n pn
-    -> (g : Fin pn -> f (TT q (pn + n)))
+    -> (g : Fin pn -> f (Pat q n pn))
     -> Fin (pn + n) -> f (TT q (pn + n))
   adaptP pvs g i with (splitFin pvs i)
-    | Left j = g j
+    | Left j = ptt <$> g j
     | Right _ = pure $ V i
 
   patPatVars : Telescope q n pn
-    -> Traversal (Pat q n pn) (Pat q n pn) (Fin pn) (TT q (pn + n))
-  patPatVars pvs g (PV i) = PForced <$> g i
+    -> Traversal (Pat q n pn) (Pat q n pn) (Fin pn) (Pat q n pn)
+  patPatVars pvs g (PV i) = g i
   patPatVars pvs g (PCtor cn) = pure $ PCtor cn
   patPatVars pvs g (PApp q f x) =
     PApp q <$> patPatVars pvs g f <*> patPatVars pvs g x
@@ -65,18 +68,21 @@ mkArgs [] = []
 mkArgs (b :: ds) = FZ :: map FS (mkArgs ds)
 
 substPat : Telescope q n pn
-    -> Fin pn -> TT q (pn + n)
+    -> Fin pn -> Pat q n pn
     -> Pat q n pn -> Pat q n pn
-substPat {q} {n} {pn} pvs pv tm =
+substPat {q} {n} {pn} pvs pv r =
     runIdentity . patPatVars pvs g
   where
-    g : Fin pn -> Identity (TT q (pn + n))
+    g : Fin pn -> Identity (Pat q n pn)
     g i with (i == pv)
-      | True  = pure tm
-      | False = pure $ V (tackFinL i)
+      | True  = pure r
+      | False = pure $ PV i
+
+renamePatVars : (Fin pn -> Fin pn') -> Pat q n pn -> Pat q n pn'
+renamePatVars f pat = ?rhsX
 
 substLhs : Telescope q n pn
-    -> Fin pn -> TT q (pn + n)
+    -> Fin pn -> Pat q n pn
     -> Lhs q n pn -> Lhs q n pn
 substLhs pvs i tm (L args) = L $ map (substPat pvs i tm) args
 
@@ -110,15 +116,15 @@ mutual
         (substLhs
             (args ++ pvs)
             (tackFinR args s)
-            (ctorApp (G cn) args)
+            (ctorApp (PCtor cn) args)
             (weakenLhs pvs args lhs))
         ct
       -- we need to weaken all patvars in lhs here
       -- because we're adding args in front of pvs
     where
-      ctorApp : TT q (pn + n) -> Telescope q (pn + n) pn' -> TT q (pn' + pn + n)
+      ctorApp : Pat q n pn -> Telescope q (pn + n) pn' -> Pat q n (pn' + pn)
       ctorApp f [] = f
-      ctorApp f (B bn bq bty :: bs) = App bq (rename FS $ ctorApp f bs) (V FZ)
+      ctorApp f (B bn bq bty :: bs) = PApp bq (renamePatVars FS $ ctorApp f bs) (PV FZ)
 
   foldTree :
       (pvs : Telescope q n pn)
@@ -126,7 +132,7 @@ mutual
       -> (ct : CaseTree q n pn)
       -> List (Clause q n)
   foldTree pvs lhs (Leaf rhs) = [C _ pvs lhs rhs]
-  foldTree pvs lhs (Forced s tm ct) = foldTree pvs (substLhs pvs s tm lhs) ct
+  foldTree pvs lhs (Forced s tm ct) = foldTree pvs (substLhs pvs s (PForced tm) lhs) ct
   foldTree pvs lhs (Case s alts) =
     -- I have no clue why assert_total is needed here
     assert_total $ concatMap (foldAlt pvs lhs s) alts
