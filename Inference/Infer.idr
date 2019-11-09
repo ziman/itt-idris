@@ -268,57 +268,61 @@ resumeEq (DeferEq g bt glob ctx x y) = MkTC $ \env, st =>
   case x ~= y of
     MkTC f => f (MkE Set.empty ctx bt glob) st
 
-covering export
-inferTm : Term n -> TC n (Ty n)
-inferTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
-inferTm tm@(G n) = traceTm tm "GLOB" $ do
-  glob <- getGlobals
-  case Module.lookup n glob of
-    Nothing => throw $ UnknownGlobal n
-    Just (D n q ty body) => do
-      useEvar q
-      pure $ weakenClosed ty
+mutual
+  covering export
+  inferTm : Term n -> TC n (Ty n)
+  inferTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
+  inferTm tm@(G n) = traceTm tm "GLOB" $ do
+    glob <- getGlobals
+    case Module.lookup n glob of
+      Nothing => throw $ UnknownGlobal n
+      Just (D n q ty body) => do
+        useEvar q
+        pure $ weakenClosed ty
 
-inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
-  tyTy <- withQ (QQ I) $ inferTm ty
-  tyTy ~= Star
+  inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
+    tyTy <- withQ (QQ I) $ inferTm ty
+    tyTy ~= Star
 
-  Pi b <$> (withBnd b $ inferTm rhs)
+    Pi b <$> (withBnd b $ inferTm rhs)
 
-inferTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
-  tyTy <- withQ (QQ I) $ inferTm ty
-  tyTy ~= Star
+  inferTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
+    tyTy <- withQ (QQ I) $ inferTm ty
+    tyTy ~= Star
 
-  withBnd b $ do
-    rhsTy <- withQ (QQ I) $ inferTm rhs
-    rhsTy ~= Star
+    withBnd b $ do
+      rhsTy <- withQ (QQ I) $ inferTm rhs
+      rhsTy ~= Star
 
-  pure Star
+    pure Star
 
-inferTm tm@(Let b@(B n q ty) val rhs) = traceTm tm "LET" $ do
-  throw NotImplemented
+  inferTm tm@(Let b@(B n q ty) val rhs) = traceTm tm "LET" $ do
+    throw NotImplemented
 
-inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
-  glob <- getGlobals
-  fTy <- whnf glob <$> inferTm f
-  xTy <- inferTm x
-  case fTy of
-    Pi b@(B piN piQ piTy) piRhs => do
-      traceTm fTy "fTy" $ xTy ~= piTy
-      eqEvar appQ piQ
-      pure $ subst (substFZ x) piRhs
+  inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
+    glob <- getGlobals
+    fTy <- whnf glob <$> inferTm f
+    xTy <- inferTm x
+    case fTy of
+      Pi b@(B piN piQ piTy) piRhs => do
+        traceTm fTy "fTy" $ xTy ~= piTy
+        eqEvar appQ piQ
+        pure $ subst (substFZ x) piRhs
 
-    _ => throw $ NotPi fTy
+      _ => throw $ NotPi fTy
 
-inferTm {n} tm@(Match pvs ss ty ct) = traceTm tm "MATCH" $ do
+  inferTm {n} tm@(Match pvs ss ty ct) = traceTm tm "MATCH" $ do
+      for_ (foldMatch pvs ss ct) (inferClause pvs ty)
+      pure $ ty
+
+  inferTm Star = pure Star
+  inferTm Erased = throw CantInferErased
+
+  covering export
+  inferClause : Telescope q n pn -> TT q (pn + n) -> Clause Evar n -> TC n ()
+  inferClause pvs rty c = do
     ctx <- getCtx
-    throwDebug $ vcat [pretty ctx c | c <- clauses]
-  where
-    clauses : List (Clause Evar n)
-    clauses = foldMatch pvs ss ty ct
-
-inferTm Star = pure Star
-inferTm Erased = throw CantInferErased
+    throwDebug $ pretty ctx c
 
 covering export
 inferDef : Def Evar -> TC Z ()

@@ -180,10 +180,9 @@ export
 foldMatch :
     (pvs : Telescope q n pn)
     -> (ss : Vect pn (TT q n))
-    -> (ty : TT q (pn + n))
     -> (ct : CaseTree q n pn)
     -> List (Clause q n)
-foldMatch {q} {n} {pn} pvs ss ty ct
+foldMatch {q} {n} {pn} pvs ss ct
     = foldTree pvs lhs ct
   where
     lhs : Lhs q n pn
