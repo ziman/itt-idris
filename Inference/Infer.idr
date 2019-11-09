@@ -313,7 +313,7 @@ mutual
 
   inferTm {n} tm@(Match pvs ss ty ct) = traceTm tm "MATCH" $ do
       for_ (foldMatch pvs ss ct) (inferClause pvs ty)
-      pure $ ty
+      pure $ substTop pvs ss ty
 
   inferTm Star = pure Star
   inferTm Erased = throw CantInferErased

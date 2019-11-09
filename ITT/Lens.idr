@@ -177,3 +177,13 @@ fold {n} f = runConst . ttVars {n} (MkConst . f)
 export
 weakenClosed : TT q Z -> TT q n
 weakenClosed = rename tackFinL
+
+export
+substTop : Telescope q n pn -> Vect pn (TT q n) -> TT q (pn + n) -> TT q n
+substTop pvs ss = runIdentity . ttVars (pure . g pvs ss)
+  where
+    g : Telescope q n pn -> Vect pn (TT q n)
+      -> Fin (pn + n) -> TT q n
+    g pvs ss i with (splitFin pvs i)
+      | Left j = index j ss
+      | Right j = V j
