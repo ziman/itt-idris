@@ -148,7 +148,8 @@ export
 ShowQ q => Pretty (PrettyTT, Context q n, Telescope q n pn) (Pat q n pn) where
   pretty (ptt, ctx, pctx) (PV i) = text $ lookupName i pctx
   pretty (ptt, ctx, pctx) (PCtor cn) = text (show cn)
-  pretty (ptt, ctx, pctx) (PForced tm) = pretty (ptt, pctx ++ ctx) tm
+  pretty (ptt, ctx, pctx) (PForced tm) =
+    text "[" <+> pretty (ptt, pctx ++ ctx) tm <+> text "]"
   pretty (PTT mll UseParens, ctx, pctx) (PApp q f x) =
     parens $
         pretty (PTT False NoAppParens, ctx, pctx) f
@@ -169,6 +170,8 @@ ShowQ q => Pretty (Context q n) (Clause q n) where
   pretty ctx (C pn pvs lhs rhs) = 
     hsep (prettyTelescope ctx [] pvs)
     <+> text "."
-    <++> pretty (ctx, pvs) lhs
-    <++> text "=>"
-    <++> pretty (PTT True NoParens, pvs ++ ctx) rhs
+    $$ indent (
+      pretty (ctx, pvs) lhs
+      <++> text "=>"
+      <++> pretty (PTT True NoParens, pvs ++ ctx) rhs
+    )

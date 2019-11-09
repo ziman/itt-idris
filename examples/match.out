@@ -110,5 +110,7 @@ With backtrace:
       True  => False
       False  => True)
 >>> DEBUG <<< 
-  (b : Bool). True => False
-  (b : Bool). False => True
+  (b : Bool).
+    [True] => False
+  (b : Bool).
+    [False] => True
