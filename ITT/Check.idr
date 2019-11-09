@@ -241,58 +241,62 @@ infixl 2 =<<
 (=<<) : Monad m => (a -> m b) -> m a -> m b
 (=<<) f x = x >>= f
 
-covering export
-checkTm : Term n -> TC n (Ty n)
-checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
-checkTm tm@(G n) = traceTm tm "GLOB" $ do
-  glob <- getGlobals
-  case Module.lookup n glob of
-    Nothing => throw $ UnknownGlobal n
-    Just (D n q ty b) => pure $ weakenClosed ty
+mutual
+  covering export
+  checkTm : Term n -> TC n (Ty n)
+  checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
+  checkTm tm@(G n) = traceTm tm "GLOB" $ do
+    glob <- getGlobals
+    case Module.lookup n glob of
+      Nothing => throw $ UnknownGlobal n
+      Just (D n q ty b) => pure $ weakenClosed ty
 
-checkTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
-  tyTy <- withQ I $ checkTm ty
-  tyTy ~= Star
+  checkTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
+    tyTy <- withQ I $ checkTm ty
+    tyTy ~= Star
 
-  Pi b <$> (withBnd b $ checkTm rhs)
+    Pi b <$> (withBnd b $ checkTm rhs)
 
-checkTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
-  tyTy <- withQ I $ checkTm ty
-  tyTy ~= Star
+  checkTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
+    tyTy <- withQ I $ checkTm ty
+    tyTy ~= Star
 
-  withQ I $ withBnd b $ do
-    rhsTy <- checkTm rhs
-    rhsTy ~= Star
+    withQ I $ withBnd b $ do
+      rhsTy <- checkTm rhs
+      rhsTy ~= Star
 
-  pure Star
+    pure Star
 
-checkTm tm@(Let b@(B n q ty) val rhs) = traceTm tm "LET" $ do
-  throw NotImplemented
+  checkTm tm@(Let b@(B n q ty) val rhs) = traceTm tm "LET" $ do
+    throw NotImplemented
 
-checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
-  glob <- getGlobals
-  fTy <- whnf glob <$> checkTm f
-  xTy <- checkTm x
-  case fTy of
-    Pi (B piN piQ piTy) piRhs =>
-        if piQ /= appQ
-           then throw $ AppQuantityMismatch fTy tm
-           else do
-             xTy ~= piTy
-             pure $ subst (substFZ x) piRhs
+  checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
+    glob <- getGlobals
+    fTy <- whnf glob <$> checkTm f
+    xTy <- checkTm x
+    case fTy of
+      Pi (B piN piQ piTy) piRhs =>
+          if piQ /= appQ
+             then throw $ AppQuantityMismatch fTy tm
+             else do
+               xTy ~= piTy
+               pure $ subst (substFZ x) piRhs
 
-    _ => throw $ NotPi fTy
+      _ => throw $ NotPi fTy
 
-checkTm {n} tm@(Match pvs ss rty ct) = traceTm tm "MATCH" $ do
+  checkTm {n} tm@(Match pvs ss rty ct) = traceTm tm "MATCH" $ do
+      for_ (foldMatch pvs ss ct) (checkClause pvs rty)
+      pure $ substTop pvs ss rty
+
+  checkTm Star = pure Star
+  checkTm Erased = throw CantCheckErased
+
+  covering export
+  checkClause : Telescope q n pn -> TT q (pn + n) -> Clause q n -> TC n ()
+  checkClause pvs rty c = do
     ctx <- getCtx
-    debugThrow $ vcat [pretty ctx c | c <- clauses]
-  where
-    clauses : List (Clause Q n)
-    clauses = foldMatch pvs ss rty ct
-
-
-checkTm Star = pure Star
-checkTm Erased = throw CantCheckErased
+    -- throwDebug $ pretty ctx c
+    pure ()
 
 covering export
 checkDef : Def Q -> TC Z ()

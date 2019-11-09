@@ -322,7 +322,8 @@ mutual
   inferClause : Telescope q n pn -> TT q (pn + n) -> Clause Evar n -> TC n ()
   inferClause pvs rty c = do
     ctx <- getCtx
-    throwDebug $ pretty ctx c
+    --throwDebug $ pretty ctx c
+    pure ()
 
 covering export
 inferDef : Def Evar -> TC Z ()
