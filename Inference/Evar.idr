@@ -1,6 +1,6 @@
 module Evar
 
-import ITT.Lens
+import ITT.Core.Lens
 import public ITT.Core
 import public Control.Monad.State
 

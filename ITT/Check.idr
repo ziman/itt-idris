@@ -4,7 +4,7 @@ import public ITT.Core
 import public ITT.Module
 import ITT.Clause
 import ITT.Normalise
-import ITT.Pretty
+import ITT.Core.Pretty
 import Utils.Pretty
 import Utils.Misc
 import Utils.OrdSemiring

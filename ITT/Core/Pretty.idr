@@ -1,4 +1,4 @@
-module ITT.Pretty
+module ITT.Core.Pretty
 
 import public ITT.Core
 import public ITT.Context

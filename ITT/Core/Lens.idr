@@ -1,4 +1,4 @@
-module ITT.Lens
+module ITT.Core.Lens
 
 import public ITT.Core
 import Control.Monad.Identity

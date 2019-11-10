@@ -1,7 +1,7 @@
 module ITT.Context
 
 import public ITT.Core
-import public ITT.Lens
+import public ITT.Core.Lens
 import Control.Monad.Identity
 
 %default total

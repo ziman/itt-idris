@@ -3,7 +3,7 @@ module Infer
 import Utils.Misc
 import ITT.Clause
 import public ITT.Core
-import public ITT.Pretty
+import public ITT.Core.Pretty
 import public ITT.Module
 import public ITT.Context
 import public ITT.Normalise

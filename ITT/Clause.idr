@@ -1,8 +1,8 @@
 module ITT.Clause
 
-import ITT.Pretty  -- MOVE THIS TO PRETTY
+import ITT.Core.Pretty
 import public ITT.Core
-import public ITT.Lens
+import public ITT.Core.Lens
 import Control.Monad.Identity
 
 %default total

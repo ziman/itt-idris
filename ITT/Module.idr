@@ -1,10 +1,10 @@
 module ITT.Module
 
 import public ITT.Core
-import public ITT.Lens
+import public ITT.Core.Lens
 import public Utils.Pretty
 import Inference.Evar
-import ITT.Pretty
+import ITT.Core.Pretty
 import public Data.SortedMap as Map
 import Data.SortedSet as Set
 

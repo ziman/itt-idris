@@ -3,7 +3,7 @@ module ITT.Normalise
 import public ITT.Core
 import public ITT.Context
 import public ITT.Module
-import ITT.Lens
+import ITT.Core.Lens
 import Utils.Misc
 
 %default total

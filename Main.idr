@@ -2,7 +2,7 @@ import ITT.Core
 import ITT.Check
 import ITT.Erase
 import ITT.Parser
-import ITT.Pretty
+import ITT.Core.Pretty
 import ITT.Normalise
 
 import Compiler.Monad
