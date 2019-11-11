@@ -155,6 +155,13 @@ substF pvs s tm i with (splitFin pvs i)
     | False = V i
   | Right j = V i
 
+substG :
+    Telescope q n pn
+    -> Telescope q (pn + n) pn'
+    -> Fin pn
+    -> Fin (pn + n) -> TT q (pn' + pn + n)
+substG pvs args s i = ?rhsX
+
 mutual
   foldAlt :
       (pvs : Telescope q n pn)
@@ -172,7 +179,9 @@ mutual
             (tackFinR args s)
             (ctorApp (PCtor cn) pvs args)
             (weakenLhs pvs args lhs))
-        ?tySubst
+        (subst
+            (substG pvs args s)
+            ty)
         ct
       -- we need to weaken all patvars in lhs here
       -- because we're adding args in front of pvs
