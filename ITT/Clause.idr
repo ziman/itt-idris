@@ -22,8 +22,9 @@ record Lhs (q : Type) (n : Nat) (pn : Nat) where
 public export
 record Clause (q : Type) (n : Nat) where
   constructor C
-  pn : Nat  -- erased, don't use!
+  pn : Nat  -- erased, don't use! i'd make it implicit if i could
   pvs : Telescope q n pn  -- use this instead
+  ty : TT q (pn + n)
   lhs : Lhs q n pn
   rhs : TT q (pn + n)
 
@@ -149,11 +150,12 @@ mutual
   foldAlt :
       (pvs : Telescope q n pn)
       -> (lhs : Lhs q n pn)
+      -> (ty : TT q (pn + n))
       -> (s : Fin pn)
       -> (alt : Alt q n pn)
       -> List (Clause q n)
-  foldAlt pvs lhs s (DefaultCase ct) = foldTree pvs lhs ct
-  foldAlt pvs lhs s (CtorCase cn args ct) =
+  foldAlt pvs lhs ty s (DefaultCase ct) = foldTree pvs lhs ty ct
+  foldAlt pvs lhs ty s (CtorCase cn args ct) =
       foldTree
         (args ++ pvs)
         (substLhs
@@ -161,6 +163,7 @@ mutual
             (tackFinR args s)
             (ctorApp (PCtor cn) pvs args)
             (weakenLhs pvs args lhs))
+        ?tySubst
         ct
       -- we need to weaken all patvars in lhs here
       -- because we're adding args in front of pvs
@@ -168,22 +171,28 @@ mutual
   foldTree :
       (pvs : Telescope q n pn)
       -> (lhs : Lhs q n pn)
+      -> (ty : TT q (pn + n))
       -> (ct : CaseTree q n pn)
       -> List (Clause q n)
-  foldTree pvs lhs (Leaf rhs) = [C _ pvs lhs rhs]
-  foldTree pvs lhs (Forced s tm ct) = foldTree pvs (substLhs pvs s (PForced tm) lhs) ct
-  foldTree pvs lhs (Case s alts) =
+  foldTree pvs lhs ty (Leaf rhs) = [C _ pvs ty lhs rhs]
+  foldTree pvs lhs ty (Forced s tm ct) =
+    foldTree pvs
+        (substLhs pvs s (PForced tm) lhs)
+        (subst (?substF s tm) ty)
+        ct
+  foldTree pvs lhs ty (Case s alts) =
     -- I have no clue why assert_total is needed here
-    assert_total $ concatMap (foldAlt pvs lhs s) alts
+    assert_total $ concatMap (foldAlt pvs lhs ty s) alts
 
 export
 foldMatch :
     (pvs : Telescope q n pn)
     -> (ss : Vect pn (TT q n))
+    -> (ty : TT q (pn + n))
     -> (ct : CaseTree q n pn)
     -> List (Clause q n)
-foldMatch {q} {n} {pn} pvs ss ct
-    = foldTree pvs lhs ct
+foldMatch {q} {n} {pn} pvs ss ty ct
+    = foldTree pvs lhs ty ct
   where
     lhs : Lhs q n pn
     lhs = L $ map PV $ mkArgs pvs
@@ -211,7 +220,7 @@ ShowQ q => Pretty (Context q n, Telescope q n pn) (Lhs q n pn) where
 
 export
 ShowQ q => Pretty (Context q n) (Clause q n) where
-  pretty ctx (C pn pvs lhs rhs) = 
+  pretty ctx (C pn pvs ty lhs rhs) = 
     hsep (prettyTelescope ctx [] pvs)
     <+> text "."
     $$ indent (

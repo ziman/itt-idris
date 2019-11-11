@@ -312,15 +312,15 @@ mutual
       _ => throw $ NotPi fTy
 
   inferTm {n} tm@(Match pvs ss ty ct) = traceTm tm "MATCH" $ do
-      for_ (foldMatch pvs ss ct) (inferClause pvs ty)
+      traverse_ inferClause $ foldMatch pvs ss ty ct
       pure $ substTop pvs ss ty
 
   inferTm Star = pure Star
   inferTm Erased = throw CantInferErased
 
   covering export
-  inferClause : Telescope q n pn -> TT q (pn + n) -> Clause Evar n -> TC n ()
-  inferClause pvs rty c = do
+  inferClause : Clause Evar n -> TC n ()
+  inferClause c = do
     ctx <- getCtx
     --throwDebug $ pretty ctx c
     pure ()

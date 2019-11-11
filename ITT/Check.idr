@@ -285,15 +285,15 @@ mutual
       _ => throw $ NotPi fTy
 
   checkTm {n} tm@(Match pvs ss rty ct) = traceTm tm "MATCH" $ do
-      for_ (foldMatch pvs ss ct) (checkClause pvs rty)
+      traverse_ checkClause $ foldMatch pvs ss rty ct
       pure $ substTop pvs ss rty
 
   checkTm Star = pure Star
   checkTm Erased = throw CantCheckErased
 
   covering export
-  checkClause : Telescope q n pn -> TT q (pn + n) -> Clause q n -> TC n ()
-  checkClause pvs rty c = do
+  checkClause : Clause q n -> TC n ()
+  checkClause c = do
     ctx <- getCtx
     -- throwDebug $ pretty ctx c
     pure ()
