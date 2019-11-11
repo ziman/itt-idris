@@ -146,6 +146,15 @@ ctorApp f pvs (B bn bq bty :: bs) =
         (ctorApp f pvs bs))
     (PV FZ)
 
+substF : Telescope q n pn
+    -> Fin pn -> TT q (pn + n)
+    -> Fin (pn + n) -> TT q (pn + n)
+substF pvs s tm i with (splitFin pvs i)
+  | Left j with (j == s)
+    | True  = tm
+    | False = V i
+  | Right j = V i
+
 mutual
   foldAlt :
       (pvs : Telescope q n pn)
@@ -178,7 +187,7 @@ mutual
   foldTree pvs lhs ty (Forced s tm ct) =
     foldTree pvs
         (substLhs pvs s (PForced tm) lhs)
-        (subst (?substF s tm) ty)
+        (subst (substF pvs s tm) ty)
         ct
   foldTree pvs lhs ty (Case s alts) =
     -- I have no clue why assert_total is needed here
