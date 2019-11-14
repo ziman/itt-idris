@@ -155,12 +155,30 @@ substF pvs s tm i with (splitFin pvs i)
     | False = V i
   | Right j = V i
 
+substG_lemma :
+    (pvs : Telescope q n pn)
+    -> (tm : TT q (pn' + pn + n))
+    -> (args : Telescope q (pn + n) pn')
+    -> (s : Fin pn)
+    -> (i : Fin (pn + n)) -> TT q (pn' + pn + n)
+substG_lemma pvs tm args s i with (splitFin pvs i)
+  | Left j with (j == s)
+    | True = tm
+    | False = V $ replace {P=Fin} (plusAssociative _ _ _)
+        $ tackFinR args i
+  | Right j = V $ tackFinR (args ++ pvs) j
+
 substG :
     Telescope q n pn
+    -> Name
     -> Telescope q (pn + n) pn'
     -> Fin pn
     -> Fin (pn + n) -> TT q (pn' + pn + n)
-substG pvs args s i = ?rhsX
+substG {q} {n} {pn} {pn'} pvs cn args s i
+    = substG_lemma pvs tm args s i
+  where
+    tm : TT q (pn' + pn + n)
+    tm = ptt (ctorApp (PCtor cn) pvs args)
 
 mutual
   foldAlt :
@@ -180,7 +198,7 @@ mutual
             (ctorApp (PCtor cn) pvs args)
             (weakenLhs pvs args lhs))
         (subst
-            (substG pvs args s)
+            (substG pvs cn args s)
             ty)
         ct
       -- we need to weaken all patvars in lhs here
