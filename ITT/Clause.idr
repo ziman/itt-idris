@@ -263,4 +263,5 @@ ShowQ q => Pretty (Context q n) (Clause q n) where
       pretty (ctx, pvs) lhs
       <++> text "=>"
       $$ indent (pretty (PTT True NoParens, pvs ++ ctx) rhs)
+      $$ text ":" <++> pretty (PTT True NoParens, pvs ++ ctx) ty
     )
