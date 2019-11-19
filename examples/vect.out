@@ -75,87 +75,57 @@ function vlen :24 (n :25 Nat) -> (a :26 Type) -> (xs :27 Vect -29- n -28- a) -> 
                   S -46- (vlen -49- n' -48- a -47- xs')
 
 Running erasure inference...
-########################
-# Inferred constraints #
-########################
-
-[I] -> 0
-[] -> 0
-[I] -> 1
-[] -> 0
-[I] -> 2
-[I] -> 3
-[] -> 3
-[I] -> 4
-[I] -> 3
-[I] -> 6
-[I] -> 3
-[I] -> 5
-[I] -> 3
-[I] -> 8
-[I] -> 9
-[I] -> 7
-[I] -> 11
-[I] -> 7
-[I] -> 4
-13 ~ 8
-[I] -> 11
-12 ~ 9
-[I] -> 10
-[I] -> 15
-[I] -> 3
-[I] -> 16
-[I] -> 15
-[I] -> 17
-[I] -> 7
-[I] -> 16
-20 ~ 8
-[I] -> 15
-19 ~ 9
-[I] -> 18
-[I] -> 7
-[I] -> 5
-[I] -> 16
-23 ~ 6
-22 ~ 8
-[I] -> 15
-21 ~ 9
-[I] -> 14
-[I] -> 3
-[I] -> 25
-[I] -> 26
-[I] -> 7
-[I] -> 25
-29 ~ 8
-[I] -> 26
-28 ~ 9
-[I] -> 27
-[I] -> 3
-[I] -> 24
-[I] -> 3
-[I] -> 30
-[I] -> 31
-[I] -> 7
-[I] -> 30
-34 ~ 8
-[I] -> 31
-33 ~ 9
-[I] -> 32
-30 ~ 25
-[I] -> 30
-31 ~ 26
-[I] -> 31
-32 ~ 27
-33 ~ 28
-34 ~ 29
-[I] -> 32
-[I] -> 24
-
-#######################
-# Deferred equalities #
-#######################
-
-34 -> n ~ n
-33 -> a ~ a
-
-main function not found
+With backtrace:
+  ("DEF", vlen)
+  "LAM": (\n :30 Nat. \a :31 Type.
+      \xs :32 Vect -34- n -33- a.
+        match
+          n : Nat = n
+          xs : Vect -37- n -36- a = xs
+          -> Nat
+        with
+          case xs
+            Nil  => [n = Z]
+                Z
+            Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
+                [n = S -45- n']
+                  S -46- (vlen -49- n' -48- a -47- xs'))
+  "LAM": (\a :31 Type. \xs :32 Vect -34- n -33- a.
+      match
+        n : Nat = n
+        xs : Vect -37- n -36- a = xs
+        -> Nat
+      with
+        case xs
+          Nil  => [n = Z]
+              Z
+          Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
+              [n = S -45- n']
+                S -46- (vlen -49- n' -48- a -47- xs'))
+  "LAM": (\xs :32 Vect -34- n -33- a. match
+      n : Nat = n
+      xs : Vect -37- n -36- a = xs
+      -> Nat
+    with
+      case xs
+        Nil  => [n = Z]
+            Z
+        Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
+            [n = S -45- n']
+              S -46- (vlen -49- n' -48- a -47- xs'))
+  "MATCH": (match
+    n : Nat = n
+    xs : Vect -37- n -36- a = xs
+    -> Nat
+  with
+    case xs
+      Nil  => [n = Z]
+          Z
+      Cons (a' : Type) (n' : Nat) (x' : a') (xs' : Vect -41- n' -40- a') => [a' = a]
+          [n = S -45- n']
+            S -46- (vlen -49- n' -48- a -47- xs'))
+>>> DEBUG <<< 
+  (xs : Vect -37- n -36- a) (n : Nat).
+    Nil [Z] =>
+      Z
+    : Nat

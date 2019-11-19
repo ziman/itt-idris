@@ -147,6 +147,10 @@ withBnd b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
            then Right (st', us, x)
            else Left (MkF bt _ ctx $ QuantityMismatch n q q')
 
+withTele : Telescope Q n pn -> TC (pn + n) a -> TC n a
+withTele [] x = x
+withTele (b :: ds) x = withBnd b $ withTele ds x
+
 withBnd0 : Binding Q n -> TC (S n) a -> TC n a
 withBnd0 b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
   MkE r ctx bt glob => case f (MkE r (b :: ctx) bt glob) st of
@@ -291,12 +295,23 @@ mutual
   checkTm Star = pure Star
   checkTm Erased = throw CantCheckErased
 
-  covering export
+  covering
   checkClause : Clause q n -> TC n ()
-  checkClause c = do
-    ctx <- getCtx
-    -- throwDebug $ pretty ctx c
-    pure ()
+  checkClause (C pn pvs ty lhs rhs) = do
+    withTele pvs $ do
+      rhsTy <- checkTm rhs
+      ty ~= rhsTy
+    -- todo: check case tree?
+    -- todo: check LHS:
+    --   1. construct type of F as \Pi (x : \sigma) \to \rho
+    --      -> no substitution necessary, this is easy
+    --   2. check pattern the standard way
+    --   3. get the type of the pattern/LHS
+    -- so the tree folding code does not need to subst in rty
+
+  covering
+  checkPat : Pat q n pn -> TC n (Ty (pn + n))
+  checkPat pat = ?checkPat_rhs
 
 covering export
 checkDef : Def Q -> TC Z ()

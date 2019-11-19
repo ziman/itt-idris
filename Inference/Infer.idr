@@ -322,8 +322,8 @@ mutual
   inferClause : Clause Evar n -> TC n ()
   inferClause c = do
     ctx <- getCtx
-    --throwDebug $ pretty ctx c
-    pure ()
+    throwDebug $ pretty ctx c
+    -- pure ()
 
 covering export
 inferDef : Def Evar -> TC Z ()
