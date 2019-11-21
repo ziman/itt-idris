@@ -149,7 +149,8 @@ withBnd b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
 
 withTele : Telescope Q n pn -> TC (pn + n) a -> TC n a
 withTele [] x = x
-withTele (b :: ds) x = withBnd b $ withTele ds x
+withTele (b :: bs) x = withTele bs $ withBnd b x
+-- todo: is this the right order?
 
 withBnd0 : Binding Q n -> TC (S n) a -> TC n a
 withBnd0 b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
@@ -289,29 +290,35 @@ mutual
       _ => throw $ NotPi fTy
 
   checkTm {n} tm@(Match pvs ss rty ct) = traceTm tm "MATCH" $ do
-      traverse_ checkClause $ foldMatch pvs ss rty ct
+      traverse_ (checkClause rty) (foldMatch pvs ss ct)
       pure $ substTop pvs ss rty
 
   checkTm Star = pure Star
   checkTm Erased = throw CantCheckErased
 
   covering
-  checkClause : Clause q n -> TC n ()
-  checkClause (C pn pvs ty lhs rhs) = do
+  checkClause : Ty (pn + n) -> Clause Q n -> TC n ()
+  checkClause rty (C pn pvs lhs rhs) = do
+    lhsTy <- checkLhs pvs rty lhs
     withTele pvs $ do
       rhsTy <- checkTm rhs
-      ty ~= rhsTy
-    -- todo: check case tree?
-    -- todo: check LHS:
-    --   1. construct type of F as \Pi (x : \sigma) \to \rho
-    --      -> no substitution necessary, this is easy
-    --   2. check pattern the standard way
-    --   3. get the type of the pattern/LHS
-    -- so the tree folding code does not need to subst in rty
+      lhsTy ~= rhsTy
+
+  -- todo: tree folding splits some variables:
+  -- pvs = p0 p1 p2 p3 p4
+  -- pvs' = p0 p10 p11 p12 p2 p30 p31 p4
+  covering
+  checkLhs :
+    Telescope Q n pn 
+    -> Ty (pn + n)
+    -> Telescope Q (pn + n) pn'
+    -> Lhs Q n pn'
+    -> TC n (Ty (pn' + n))
+  checkLhs pvs rty (L ps) = ?checkLhs_rhs
 
   covering
-  checkPat : Pat q n pn -> TC n (Ty (pn + n))
-  checkPat pat = ?checkPat_rhs
+  checkPat : Telescope Q n pn -> Pat Q n pn -> TC n (Ty (pn + n))
+  checkPat pvs pat = ?checkPat_rhs
 
 covering export
 checkDef : Def Q -> TC Z ()
