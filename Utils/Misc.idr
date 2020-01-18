@@ -1,6 +1,7 @@
 module Utils
 
 import public Data.Fin
+import public Data.Vect
 
 %access export
 %default total
@@ -21,6 +22,10 @@ public export
 record Or where
   constructor MkOr
   runOr : Bool
+
+lookup : Fin n -> Vect n a -> a
+lookup  FZ    (x :: _) = x
+lookup (FS i) (x :: xs) = lookup i xs
 
 export
 Semigroup Or where
