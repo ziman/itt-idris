@@ -80,13 +80,13 @@ substQ vs (QQ q) = Just q
 substQ vs (EV i) = Map.lookup i vs
 
 covering export
-processModule : Module (Maybe Q) -> ITT ()
+processModule : TT (Maybe Q) Z -> ITT ()
 processModule raw = do
   banner "# Desugared #"
   prn raw
 
   banner "# Evarified #"
-  let evarified = evarify moduleQ raw
+  let evarified = evarify ttQ raw
   prn evarified
 
   log "Running erasure inference..."

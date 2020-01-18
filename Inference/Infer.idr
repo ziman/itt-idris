@@ -38,7 +38,6 @@ data ErrorMessage : Nat -> Type where
   NotPi : Ty n -> ErrorMessage n
   CantInferErased : ErrorMessage n
   NotImplemented : ErrorMessage n
-  UnknownGlobal : Name -> ErrorMessage n
   QuantityMismatch : Q -> Q -> ErrorMessage n
   Debug : Doc -> ErrorMessage n
 
@@ -51,8 +50,6 @@ showEM ctx CantInferErased
     = "can't infer types for erased terms"
 showEM ctx NotImplemented
     = "WIP: not implemented yet"
-showEM ctx (UnknownGlobal n)
-    = "unknown global: " ++ show n
 showEM ctx (QuantityMismatch q q')
     = "quantity mismatch: " ++ show q ++ " /= " ++ show q'
 showEM ctx (Debug doc)
@@ -84,7 +81,6 @@ data Constr : Type where
 public export
 data DeferredEq : Type where
   DeferEq : (g : Evar) -> (bt : Backtrace)
-    -> (glob : Globals Evar)
     -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> DeferredEq
 
 export
@@ -94,7 +90,7 @@ Show Constr where
 
 export
 Show DeferredEq where
-  show (DeferEq g bt glob ctx x y) =
+  show (DeferEq g bt ctx x y) =
     show g ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
 public export
@@ -118,7 +114,6 @@ record Env (n : Nat) where
   guards : Set Evar
   context : Context Evar n
   backtrace : Backtrace
-  globals : Globals Evar
 
 public export
 record TC (n : Nat) (a : Type) where
@@ -157,9 +152,6 @@ getEnv = MkTC $ \env, st => Right (st, neutral, env)
 getCtx : TC n (Context Evar n)
 getCtx = context <$> getEnv
 
-getGlobals : TC n (Globals Evar)
-getGlobals = globals <$> getEnv
-
 throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
     => Left (MkF (backtrace env) _ (context env) msg)
@@ -168,29 +160,22 @@ throwDebug : Doc -> TC n a
 throwDebug = throw . Debug
 
 withBnd : Binding Evar n -> TC (S n) a -> TC n a
-withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
-  => case f (MkE gs (b :: ctx) bt glob) st of
+withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt), st
+  => case f (MkE gs (b :: ctx) bt) st of
     Left fail => Left fail
     Right (st', MkConstrs cs eqs, x)
         => Right (st', MkConstrs (CLeq bt (Set.fromList [QQ I]) q :: cs) eqs, x)
 
-withGlob : Def Evar -> TC n a -> TC n a
-withGlob d (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st =>
-  case f (MkE gs ctx bt (Map.insert (dn d) d glob)) st of
-    Left fail => Left fail
-    Right (st', MkConstrs cs eqs, x)
-      => Right (st', MkConstrs (CLeq bt (Set.fromList [QQ I]) (dq d) :: cs) eqs, x)
-
 withQ : Evar -> TC n a -> TC n a
-withQ q (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
-    => f (MkE (Set.insert q gs) ctx bt glob) st
+withQ q (MkTC f) = MkTC $ \(MkE gs ctx bt), st
+    => f (MkE (Set.insert q gs) ctx bt) st
 
 use : Fin n -> TC n ()
-use i = MkTC $ \(MkE gs ctx bt glob), st
+use i = MkTC $ \(MkE gs ctx bt), st
     => Right (st, MkConstrs [CLeq bt gs (bq $ lookup i ctx)] [], ())
 
 useEvar : Evar -> TC n ()
-useEvar ev = MkTC $ \(MkE gs ctx bt glob), st
+useEvar ev = MkTC $ \(MkE gs ctx bt), st
     => Right (st, MkConstrs [CLeq bt gs ev] [], ())
 
 eqEvar : Evar -> Evar -> TC n ()
@@ -204,36 +189,30 @@ lookup : Fin n -> TC n (Ty n)
 lookup i = bty . lookup i <$> getCtx
 
 trace : Show tr => tr -> TC n a -> TC n a
-trace t (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
-  => f (MkE gs ctx (show t :: bt) glob) st
+trace t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
+  => f (MkE gs ctx (show t :: bt)) st
 
 traceTm : Show tr => Term n -> tr -> TC n a -> TC n a
-traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt glob), st
+traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
   => let msg = show t ++ ": " ++ showTm ctx tm
-      in f (MkE gs ctx (msg :: bt) glob) st
+      in f (MkE gs ctx (msg :: bt)) st
 
 deferEq : Evar -> Term n -> Term n -> TC n ()
-deferEq g x y = MkTC $ \(MkE gs ctx bt glob), st
-  => Right (st, MkConstrs [] [DeferEq g bt glob ctx x y], ())
+deferEq g x y = MkTC $ \(MkE gs ctx bt), st
+  => Right (st, MkConstrs [] [DeferEq g bt ctx x y], ())
 
 mutual
   infix 3 ~=
   covering export
   (~=) : Term n -> Term n -> TC n ()
   (~=) p q = do
-    glob <- getGlobals
-    conv (whnf glob p) (whnf glob q)
+    conv (whnf p) (whnf q)
 
   covering
   conv : Term n -> Term n -> TC n ()
   conv (V i) (V j) with (finEq i j)
     | True  = pure ()
     | False = throw $ CantConvert (V i) (V j)
-
-  conv (G n) (G n') =
-    if n == n'
-      then pure ()
-      else throw $ CantConvert (G n) (G n')
 
   conv l@(Lam b@(B n q ty) rhs) r@(Lam b'@(B n' q' ty') rhs') = do
     eqEvar q q'
@@ -245,13 +224,6 @@ mutual
     ty ~= ty'
     withBnd b $ rhs ~= rhs'
 
-  conv l@(Let b@(B n q ty) val rhs) r@(Let b'@(B n' q' ty') val' rhs') = do
-    eqEvar q q'
-    ty ~= ty'
-    withBnd b $ do
-      val ~= val'
-      rhs ~= rhs'
-
   conv l@(App q f x) r@(App q' f' x') = do
     eqEvar q q'
     f ~= f'
@@ -260,25 +232,25 @@ mutual
       QQ _ => x ~= x'
       EV _ => deferEq q x x'
   conv Star Star = pure ()
+  conv Bool_ Bool_ = pure ()
+  conv True_ True_ = pure ()
+  conv False_ False_ = pure ()
+  conv (If_ c t e) (If_ c' t' e') = do
+    c ~= c'
+    t ~= t'
+    e ~= e'
   conv l r = throw $ CantConvert l r
 
 covering export
 resumeEq : DeferredEq -> TC n ()
-resumeEq (DeferEq g bt glob ctx x y) = MkTC $ \env, st =>
+resumeEq (DeferEq g bt ctx x y) = MkTC $ \env, st =>
   case x ~= y of
-    MkTC f => f (MkE Set.empty ctx bt glob) st
+    MkTC f => f (MkE Set.empty ctx bt) st
 
 mutual
   covering export
   inferTm : Term n -> TC n (Ty n)
   inferTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
-  inferTm tm@(G n) = traceTm tm "GLOB" $ do
-    glob <- getGlobals
-    case Module.lookup n glob of
-      Nothing => throw $ UnknownGlobal n
-      Just (D n q ty body) => do
-        useEvar q
-        pure $ weakenClosed ty
 
   inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
     tyTy <- withQ (QQ I) $ inferTm ty
@@ -296,12 +268,8 @@ mutual
 
     pure Star
 
-  inferTm tm@(Let b@(B n q ty) val rhs) = traceTm tm "LET" $ do
-    throw NotImplemented
-
   inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
-    glob <- getGlobals
-    fTy <- whnf glob <$> inferTm f
+    fTy <- whnf <$> inferTm f
     xTy <- inferTm x
     case fTy of
       Pi b@(B piN piQ piTy) piRhs => do
@@ -311,36 +279,18 @@ mutual
 
       _ => throw $ NotPi fTy
 
-  inferTm {n} tm@(Match pvs ss ty ct) = traceTm tm "MATCH" $ do
-      traverse_ inferClause $ foldMatch pvs ss ty ct
-      pure $ substTop pvs ss ty
-
   inferTm Star = pure Star
   inferTm Erased = throw CantInferErased
 
-  covering export
-  inferClause : Clause Evar n -> TC n ()
-  inferClause c = do
-    ctx <- getCtx
-    throwDebug $ pretty ctx c
-    -- pure ()
+  inferTm Bool_ = pure Star
+  inferTm True_ = pure Bool_
+  inferTm False_ = pure False_
+  inferTm (If_ c t e) = do
+    cty <- inferTm c
+    cty ~= Bool_
 
-covering export
-inferDef : Def Evar -> TC Z ()
-inferDef (D n q ty body) = trace ("DEF", n) $ do
-  tyTy <- inferTm ty
-  tyTy ~= Star
+    tty <- inferTm t
+    ety <- inferTm e
+    tty ~= ety
 
-  case body of
-    Abstract    => pure ()
-    Constructor => pure ()
-    Term tm => withGlob (D n q ty Abstract) $ do
-      tmTy <- inferTm tm
-      tmTy ~= ty
-
-covering export
-inferDefs : List (Def Evar) -> TC Z ()
-inferDefs [] = pure ()
-inferDefs (d :: ds) = do
-  inferDef d
-  withGlob d $ inferDefs ds
+    pure tty
