@@ -1,34 +1,29 @@
--- Let's assume we have Booleans.
-constructor Bool : Type
-constructor True : Bool
-constructor False : Bool
-
 -- T is a type that contains an irrelevant Boolean.
 -- Change to (pf :E Bool) to cause type error.
 --
 -- If you change it to (pf : Bool), inference will still make it irrelevant
 -- since it is not necessary to make it relevant for the program to typecheck.
-constructor T : Type
-constructor C : (pf :I Bool) -> T
+\T : Type.
+\C : (pf :I Bool) -> T.
 
 -- U is indexed with T, which has an irrelevant constructor field,
 -- but we want the index of U itself to be relevant.
-constructor U : (t :E T) -> Type
+\U : (t :E T) -> Type.
 
 -- Function `g` takes an element of `U (C True)`,
 -- (and needs it at runtime so it can't be erased).
 --
 -- Since `g` does not have a body, from which ITT could infer
 -- that its argument should be retained, we need to assert it.
-postulate g : (x :L U (C True)) -> Bool
+\g : (x :L U (C True)) -> Bool.
 
 -- But we have only `d : U (C b)` for some unknown Boolean `b`.
-postulate b : Bool
-postulate d : U (C b)
+\b : Bool.
+\d : U (C b).
 
 -- Thanks to the irrelevance of C's argument, we *can* apply `g` to `d`
 -- and it does not matter that `b` may or may not be equal to `True`.
-function main : Bool = (\x : U (C False). g x) d
+(\x : U (C False). g x) d
 
 -- Also notice that we didn't use any unnecessary annotations above,
 -- neither on binders, nor in applications.
