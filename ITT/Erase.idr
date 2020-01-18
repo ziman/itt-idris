@@ -32,7 +32,6 @@ erase : (ctx : Context Q n) -> (tm : TT Q n) -> TT () (eraseN ctx)
 erase ctx (V i) with (eraseVar ctx i)
   | Nothing = Erased  -- should be unreachable if erasure's correct
   | Just j = V j
-erase ctx (G n) = G n
 erase ctx (Lam b@(B n I ty) rhs) = erase (b::ctx) rhs
 erase ctx (Lam b@(B n E ty) rhs) = erase (b::ctx) rhs
 erase ctx (Lam b@(B n L ty) rhs) = Lam (B n () Erased) $ erase (b::ctx) rhs
@@ -41,19 +40,16 @@ erase ctx (Pi b@(B n I ty) rhs) = erase (b::ctx) rhs
 erase ctx (Pi b@(B n E ty) rhs) = erase (b::ctx) rhs
 erase ctx (Pi b@(B n L ty) rhs) = Pi (B n () Erased) $ erase (b::ctx) rhs
 erase ctx (Pi b@(B n R ty) rhs) = Pi (B n () Erased) $ erase (b::ctx) rhs
-erase ctx (Let b@(B n I ty) val rhs) = erase (b::ctx) rhs
-erase ctx (Let b@(B n E ty) val rhs) = erase (b::ctx) rhs
-erase ctx (Let b@(B n L ty) val rhs)
-    = Let (B n () Erased) (erase (b::ctx) val) (erase (b::ctx) rhs)
-erase ctx (Let b@(B n R ty) val rhs)
-    = Let (B n () Erased) (erase (b::ctx) val) (erase (b::ctx) rhs)
 erase ctx (App I f x) = erase ctx f
 erase ctx (App E f x) = erase ctx f
 erase ctx (App L f x) = App () (erase ctx f) (erase ctx x)
 erase ctx (App R f x) = App () (erase ctx f) (erase ctx x)
-erase ctx (Match pvs ss rty ct) = Erased  -- TODO
 erase ctx Star = Star
 erase ctx Erased = Erased
+erase ctx Bool_ = Bool_
+erase ctx (If_ c t e) = If_ (erase ctx c) (erase ctx t) (erase ctx e)
+erase ctx True_ = True_
+erase ctx False_ = False_
 
 export
 eraseBody : Body Q -> Body ()
