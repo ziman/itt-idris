@@ -210,7 +210,11 @@ mutual
     pure $ Pi b rhs
 
   atom : Vect n String -> Rule (Term n)
-  atom ns = ref ns <|> do { token ParL; tm <- term ns; token ParR; pure tm }
+  atom ns = ref ns
+    <|> (token (Keyword "Bool") *> pure Bool_)
+    <|> (token (Keyword "True") *> pure True_)
+    <|> (token (Keyword "False") *> pure False_)
+    <|> do { token ParL; tm <- term ns; token ParR; pure tm }
 
   -- includes nullary applications (= variables)
   app : Vect n String -> Rule (Term n)
@@ -228,10 +232,12 @@ mutual
     ) <|> pure acc
 
   term : Vect n String -> Rule (Term n)
-  term ns = lam ns <|> pi ns <|> type <|> erased <|> app ns
-    <|> (token (Keyword "Bool") *> pure Bool_)
-    <|> (token (Keyword "True") *> pure True_)
-    <|> (token (Keyword "False") *> pure False_)
+  term ns
+    = lam ns
+    <|> pi ns
+    <|> type
+    <|> erased
+    <|> app ns
     <|> if_ ns
 
   if_ : Vect n String -> Rule (Term n)

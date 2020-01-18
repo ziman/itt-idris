@@ -284,7 +284,7 @@ mutual
 
   inferTm Bool_ = pure Star
   inferTm True_ = pure Bool_
-  inferTm False_ = pure False_
+  inferTm False_ = pure Bool_
   inferTm (If_ c t e) = do
     cty <- inferTm c
     cty ~= Bool_

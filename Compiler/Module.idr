@@ -118,7 +118,7 @@ processModule raw = do
     Left err => throw $ show err
     Right (MkTCS, _usage, ty) => do
       prn ty
-      log "OK\n"
+      log "\n** OK **\n"
 
   banner "# Erased #"
   let erased = erase [] annotated
