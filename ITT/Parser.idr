@@ -91,9 +91,9 @@ lex src = case lex tokens src of
       where
         keywords : List String
         keywords =
-          [ "Type", "where", "data", "case", "of", "with"
-          , "let", "in", "match", "end"
-          , "function", "constructor", "postulate"
+          [ "Type", "Bool"
+          , "True", "False"
+          , "if", "then", "else"
           ]
 
     tokens : TokenMap Token
@@ -163,7 +163,7 @@ name : Rule Name
 name = map (\n => N n 0) ident
 
 ref : Vect n String -> Rule (Term n)
-ref ns = (V <$> varName ns) <|> (G <$> name)
+ref ns = V <$> varName ns
 
 parens : Grammar (TokenData Token) c a -> Rule a
 parens p = token ParL *> p <* token ParR
@@ -209,17 +209,6 @@ mutual
     rhs <- term (bn b :: ns)
     pure $ Pi b rhs
 
-  letE : Vect n String -> Rule (Term n)
-  letE ns = do
-    token (Keyword "let")
-    commit
-    b <- binding ns
-    token Equals
-    val <- term (bn b :: ns)
-    token (Keyword "in")
-    rhs <- term (bn b :: ns)
-    pure $ Let b val rhs
-
   atom : Vect n String -> Rule (Term n)
   atom ns = ref ns <|> do { token ParL; tm <- term ns; token ParR; pure tm }
 
@@ -238,105 +227,31 @@ mutual
         telescope ns (MkTele (S $ t_s acc) (b :: t_tele acc) (bn b :: t_names acc))
     ) <|> pure acc
 
-  alt : Vect n String -> Vect pn String -> Rule (Alt (Maybe Q) n pn)
-  alt ns pns =
-    (do
-        token Pipe
-        cn <- name
-        commit
-        t  <- telescope (pns ++ ns) (MkTele Z [] [])
-        token DblArrow
-        ct <- caseTree ns (t_names t ++ pns)
-        pure $ CtorCase cn (t_tele t) ct
-    ) <|> (do
-        token Pipe
-        token Underscore
-        commit
-        token DblArrow
-        ct <- caseTree ns pns
-        pure $ DefaultCase ct
-    )
-
-  caseTree : Vect n String -> Vect pn String -> Rule (CaseTree (Maybe Q) n pn)
-  caseTree ns pns =
-    ( do
-        token (Keyword "case")
-        commit
-        s <- varName pns
-        alts <- many $ alt ns pns  -- termination wat?
-        token (Keyword "end")
-        pure $ Case s alts
-    ) <|> (do
-        token SqBrL
-        commit
-        s <- varName pns
-        token Equals
-        tm <- term (pns ++ ns)
-        token SqBrR
-        ct <- caseTree ns pns
-        pure $ Forced s tm ct  -- fmap would trip the totality checker
-    ) <|> (do
-        tm <- term (pns ++ ns)
-        pure $ Leaf tm
-    )
-
-  matchScruts : Vect n String -> Scruts n -> Rule (Scruts n)
-  matchScruts ns acc@(MkScruts pn pvs ss pns) = do
-    b <- binding (pns ++ ns)
-    token Equals
-    val <- term ns
-    let acc' = MkScruts (S pn) (b :: pvs) (val :: ss) (bn b :: pns)
-    do { token Comma; matchScruts ns acc' } <|> pure acc'
-
-  matchE : Vect n String -> Rule (Term n)
-  matchE ns = do
-    token (Keyword "match")
-    commit
-    s <- matchScruts ns (MkScruts Z [] [] [])
-    ignore (token Arrow)  -- should this be an annotated colon?
-    ty <- term (s_pns s ++ ns)
-    token (Keyword "with")
-    ct <- caseTree ns (s_pns s)
-    pure $ Match (s_pvs s) (s_ss s) ty ct
-
   term : Vect n String -> Rule (Term n)
-  term ns = lam ns <|> pi ns <|> type <|> erased <|> app ns <|> letE ns <|> matchE ns
+  term ns = lam ns <|> pi ns <|> type <|> erased <|> app ns
+    <|> (token (Keyword "Bool") *> pure Bool_)
+    <|> (token (Keyword "True") *> pure True_)
+    <|> (token (Keyword "False") *> pure False_)
+    <|> if_ ns
+
+  if_ : Vect n String -> Rule (Term n)
+  if_ ns = do
+    token (Keyword "if")
+    c <- term ns
+    token (Keyword "then")
+    t <- term ns
+    token (Keyword "else")
+    e <- term ns
+    pure $ If_ c t e
 
   erased : Rule (Term n)
   erased = token Underscore *> pure Erased
 
-definition : Rule (Def (Maybe Q))
-definition =
-  (do
-    token (Keyword "function")
-    commit
-    b <- binding []
-    token Equals
-    tm <- term []
-    pure $ mkDef b (Term tm)
-  ) <|> (do
-    token (Keyword "constructor")
-    commit
-    b <- binding []
-    pure $ mkDef b Constructor    
-  ) <|> (do
-    token (Keyword "postulate")
-    commit
-    b <- binding []
-    pure $ mkDef b Abstract
-  )
-  where
-    mkDef : Binding (Maybe Q) Z -> Body (Maybe Q) -> Def (Maybe Q)
-    mkDef (B n q ty) b = D (N n 0) q ty b
-
-module_ : Rule (Module (Maybe Q))
-module_ = MkModule <$> some definition
-
 export
-parse : String -> Either ParseError (Module (Maybe Q))
+parse : String -> Either ParseError (TT (Maybe Q) Z)
 parse src = case lex src of
   Left err => Left err
-  Right ts => case parse (module_ <* eof) ts of
+  Right ts => case Text.Parser.Core.parse (term [] <* eof) ts of
     Left (Error msg []) => Left $ SyntaxError 0 0 msg
     Left (Error msg (t :: _)) => Left $ SyntaxError (line t) (col t) msg
-    Right (mod, _) => Right mod
+    Right (tm, _) => Right tm
