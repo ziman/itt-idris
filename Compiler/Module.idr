@@ -32,7 +32,7 @@ isRelevant vs (EV i) = case Map.lookup i vs of
 newlyReachableEqs : SortedMap ENum Q -> List DeferredEq
     -> (List DeferredEq, List DeferredEq)
 newlyReachableEqs vs [] = ([], [])
-newlyReachableEqs vs (eq@(DeferEq g _ _ _ _ _) :: eqs) =
+newlyReachableEqs vs (eq@(DeferEq g _ _ _ _) :: eqs) =
   let (reached, unknown) = newlyReachableEqs vs eqs
     in case isRelevant vs g of
       Nothing => (reached, eq :: unknown)    -- still unknown
@@ -42,10 +42,9 @@ newlyReachableEqs vs (eq@(DeferEq g _ _ _ _ _) :: eqs) =
 covering
 iterConstrs : Int
     -> Constrs
-    -> Globals Evar
     -> Infer.TCState
     -> ITT (SortedMap ENum Q)
-iterConstrs i (MkConstrs cs eqs) glob st = do
+iterConstrs i (MkConstrs cs eqs) st = do
   log $ "  -> iteration " ++ show i 
   solution <- liftIO $ SmtModel.solve cs
   vals <- case solution of
@@ -60,10 +59,10 @@ iterConstrs i (MkConstrs cs eqs) glob st = do
     (newEqs, waitingEqs) => do
       log $ unlines
         [ "    " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
-        | DeferEq g bt glob ctx x y <- newEqs
+        | DeferEq g bt ctx x y <- newEqs
         ]
 
-      case Infer.TC.runTC (traverse_ resumeEq newEqs) (MkE Set.empty [] [] glob) st of
+      case Infer.TC.runTC (traverse_ resumeEq newEqs) (MkE Set.empty [] []) st of
         Left fail => throw $ show fail
         Right (st', MkConstrs cs' eqs', ()) => do
           -- we use waitingEqs (eqs from the previous iteration that have not been reached yet)
@@ -72,7 +71,6 @@ iterConstrs i (MkConstrs cs eqs) glob st = do
           -- otherwise we'd loop forever in checking them again and again
           iterConstrs (i+1)
             (MkConstrs (cs <+> cs') (waitingEqs <+> eqs'))
-            glob
             st'
 
 substQ : SortedMap ENum Q -> Evar -> Maybe Q
@@ -90,9 +88,9 @@ processModule raw = do
   prn evarified
 
   log "Running erasure inference..."
-  cs <- case runTC (inferDefs $ definitions evarified) (MkE Set.empty [] [] Map.empty) MkTCS of
+  cs <- case Infer.TC.runTC (inferTm evarified) (MkE Set.empty [] []) MkTCS of
     Left err => throw $ show err
-    Right (st, cs, ()) => pure cs
+    Right (_st, cs, _ty) => pure cs
 
   banner "# Inferred constraints #"
   log $ unlines $ map show (constrs cs)
@@ -100,14 +98,7 @@ processModule raw = do
   banner "# Deferred equalities #"
   log $ unlines $ map show (deferredEqs cs)
 
-  let glob = toGlobals evarified
-  csWithMain <- case Module.lookup (N "main" 0) glob of
-    Nothing => throw "main function not found"
-    Just (D n q ty b) => pure $
-      -- add a constraint that uses `main` once
-      cs <+> MkConstrs [CLeq [] (Set.fromList [QQ L]) q] []
-
-  vals <- iterConstrs 1 csWithMain glob MkTCS
+  vals <- iterConstrs 1 cs MkTCS
 
   banner "# Final valuation #"
   log $ unlines
@@ -115,7 +106,7 @@ processModule raw = do
     | (i, q) <- Map.toList vals
     ]
 
-  annotated <- case moduleQ (substQ vals) evarified of
+  annotated <- case ttQ (substQ vals) evarified of
     Nothing => throw "did not solve all evars"
     Just mod => pure mod
 
@@ -123,18 +114,20 @@ processModule raw = do
   prn annotated
 
   banner "# Final check #"
-  case Check.TC.runTC (checkDefs $ definitions annotated) (MkE L [] [] Map.empty) MkTCS of
+  case Check.TC.runTC (checkTm annotated) (MkE L [] []) MkTCS of
     Left err => throw $ show err
-    Right (MkTCS, [], ()) => log "OK\n"
+    Right (MkTCS, _usage, ty) => do
+      prn ty
+      log "OK\n"
 
   banner "# Erased #"
-  let erased = eraseModule annotated
+  let erased = erase [] annotated
   prn erased
   
   banner "# WHNF #"
   log . render " "
     $ text "Unerased, reduced:"
-    $$ pretty () (whnf (toGlobals annotated) (G $ N "main" 0))
+    $$ pretty () (whnf annotated)
     $$ text ""
     $$ text "Erased, reduced:"
-    $$ pretty () (whnf (toGlobals erased) (G $ N "main" 0))
+    $$ pretty () (whnf erased)

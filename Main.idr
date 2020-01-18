@@ -25,7 +25,7 @@ main = getArgs >>= \args => case args of
     case Parser.parse src of
       Left err => printLn err
       Right tm => do
-        result <- runITT $ processModule mod
+        result <- runITT $ processModule tm
         case result of
           Left err => putStrLn err
           Right () => pure ()
