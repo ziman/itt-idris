@@ -43,42 +43,18 @@ mutual
     (::) : (b : Binding q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
 
   public export
-  data Alt : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
-    CtorCase : (cn : Name)
-        -> (args : Telescope q (pn + n) s)
-        -> (ct : CaseTree q n (s + pn))
-        -> Alt q n pn
-    DefaultCase : (ct : CaseTree q n pn) -> Alt q n pn
-
-  -- We don't hide the inspected variables here.
-  -- The surface language should make sure
-  -- that they are not visible after inspection,
-  -- unless bound by an as-pattern.
-  -- The as-bound variable will not be definitionally equal to its value, though!
-  public export
-  data CaseTree : (q : Type) -> (n : Nat) -> (pn : Nat) -> Type where
-    Leaf : (rhs : TT q (pn + n)) -> CaseTree q n pn
-    Case : (s : Fin pn) -> (alts : List (Alt q n pn)) -> CaseTree q n pn
-    Forced : (s : Fin pn)
-      -> (tm : TT q (pn + n))
-      -> (ct : CaseTree q n pn)
-      -> CaseTree q n pn
-
-  public export
   data TT : Type -> Nat -> Type where
     V : (i : Fin n) -> TT q n
-    G : Name -> TT q n
     Lam : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
     Pi  : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
-    Let : (b : Binding q n) -> (val : TT q (S n)) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
-    Match : (pvs : Telescope q n pn)
-        -> (ss : Vect pn (TT q n))
-        -> (ty : TT q (pn + n))
-        -> (ct : CaseTree q n pn)
-        -> TT q n
     Star : TT q n
     Erased : TT q n
+
+    Bool_  : TT q n
+    If_    : TT q n -> TT q n -> TT q n -> TT q n
+    True_  : TT q n
+    False_ : TT q n
 
 namespace Telescope
   eqTelescopeLen : (xs : Telescope q b s) -> (ys : Telescope q b s') -> Maybe (s = s')
@@ -109,34 +85,18 @@ mutual
     (==) _ _ = False
 
   export
-  Eq q => Eq (Alt q n pn) where
-    (==) (CtorCase cn args ct) (CtorCase cn' args' ct') with (eqTelescopeLen args args')
-      | Just Refl = cn == cn' && args == args' && ct == ct'
-      | Nothing   = False
-    (==) (DefaultCase ct) (DefaultCase ct')
-      = ct == ct'
-    (==) _ _ = False
-
-  export
-  Eq q => Eq (CaseTree q n pn) where
-    (==) (Leaf tm) (Leaf tm') = tm == tm
-    (==) (Case s alts) (Case s' alts') = s == s' && assert_total (alts == alts')
-    (==) (Forced s tm ct) (Forced s' tm' ct') = s == s' && tm == tm' && ct == ct'
-    (==) _ _ = False
-
-  export
   Eq q => Eq (TT q n) where
     (==) (V i) (V j)
       = finEq i j
-    (==) (G n) (G n') = n == n'
     (==) (Lam b rhs) (Lam b' rhs') = b == b' && rhs == rhs'
     (==) (Pi  b rhs) (Pi  b' rhs') = b == b' && rhs == rhs'
-    (==) (Let b val rhs) (Let b' val' rhs') = b == b' && val == val' && rhs == rhs'
     (==) (App q f x) (App q' f' x')
       = (q == q') && (f == f') && (x == x')
-    (==) (Match pvs ss ty ct) (Match pvs' ss' ty' ct') with (eqTelescopeLen pvs pvs')
-      | Just Refl = assert_total $ (ss == ss') && (ty == ty') && (pvs == pvs') && (ct == ct')
-      | Nothing   = False
     (==) Star Star = True
     (==) Erased Erased = True
+    (==) Bool_ Bool_ = True
+    (==) (If_ c t e) (If_ c' t' e') =
+        (c == c') && (t == t') && (e == e')
+    (==) True_ True_ = True
+    (==) False_ False_ = True
     _ == _ = False
