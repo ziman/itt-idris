@@ -30,32 +30,17 @@ mutual
   telescopeQ g (b :: ds) = (::) <$> bindingQ g b <*> telescopeQ g ds
 
   export
-  altQ : Traversal (Alt q n pn) (Alt q' n pn) q q'
-  altQ g (CtorCase cn args ct) = CtorCase cn <$> telescopeQ g args <*> caseTreeQ g ct
-  altQ g (DefaultCase ct) = DefaultCase <$> caseTreeQ g ct
-
-  export
-  caseTreeQ : Traversal (CaseTree q n pn) (CaseTree q' n pn) q q'
-  caseTreeQ g (Leaf tm) = Leaf <$> ttQ g tm
-  caseTreeQ g (Case s alts) = Case s <$> assert_total (traverse (altQ g) alts)
-  caseTreeQ g (Forced s tm ct) = Forced s <$> ttQ g tm <*> caseTreeQ g ct
-
-  export
   ttQ : Traversal (TT q n) (TT q' n) q q'
   ttQ g (V i) = pure $ V i
-  ttQ g (G n) = pure $ G n
   ttQ g (Lam b rhs) = Lam <$> bindingQ g b <*> ttQ g rhs
   ttQ g (Pi  b rhs) = Pi  <$> bindingQ g b <*> ttQ g rhs
-  ttQ g (Let b val rhs) = Let <$> bindingQ g b <*> ttQ g val <*> ttQ g rhs
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
-  ttQ g (Match pvs ss ty ct)
-    = Match
-        <$> telescopeQ g pvs
-        <*> assert_total (traverse (ttQ g) ss)
-        <*> ttQ g ty
-        <*> caseTreeQ g ct
   ttQ g Star = pure Star
   ttQ g Erased = pure Erased
+  ttQ g Bool_ = pure Bool_
+  ttQ g (If_ c t e) = If_ <$> ttQ g c <*> ttQ g t <*> ttQ g e
+  ttQ g True_ = pure True_
+  ttQ g False_ = pure False_
 
 mutual
   -- split references between those that point into the telescope
@@ -122,45 +107,18 @@ mutual
   ttAssoc = replace (plusAssociative _ _ _)
 
   export
-  altVars : Traversal (Alt q m pn) (Alt q n pn) (Fin (pn + m)) (TT q (pn + n))
-  altVars g (DefaultCase ct) = DefaultCase <$> caseTreeVars g ct
-  altVars g (CtorCase cn args ct) = CtorCase cn
-    <$> telescopeVars g args
-    <*> caseTreeVars
-          (map ttAssoc . skipTel args g . finAssoc)
-          ct
-
-  export
-  -- this signature can't be expressed as Traversal because then (.) in altVars goes bonkers
-  caseTreeVars : Applicative t => (Fin (pn + m) -> t (TT q (pn + n))) -> CaseTree q m pn -> t (CaseTree q n pn)
-  caseTreeVars g (Leaf tm) = Leaf <$> ttVars g tm
-  caseTreeVars g (Case s alts) = Case s <$> assert_total (traverse (altVars g) alts)
-  caseTreeVars g (Forced s tm ct) =
-    ITT.Core.Forced s
-    <$> ttVars g tm
-    <*> caseTreeVars g ct
-
-  export
   ttVars : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
   ttVars g (V i) = g i
-  ttVars g (G n) = pure $ G n
   ttVars g (Lam b rhs) = Lam <$> bindingVars g b <*> ttVars (skipFZ g) rhs
   ttVars g (Pi  b rhs) = Pi  <$> bindingVars g b <*> ttVars (skipFZ g) rhs
-  ttVars g (Let b val rhs) =
-    Let
-      <$> bindingVars g b
-      <*> ttVars (skipFZ g) val
-      <*> ttVars (skipFZ g) rhs
   ttVars g (App q f x)
     = App q <$> ttVars g f <*> ttVars g x
-  ttVars g (Match pvs ss ty ct) with (telescopeVars' g pvs)
-    | (pvs', g') = Match
-        <$> pvs'
-        <*> assert_total (traverse (ttVars g) ss)
-        <*> ttVars g' ty
-        <*> caseTreeVars g' ct
   ttVars g Star = pure Star
   ttVars g Erased = pure Erased
+  ttVars g Bool_ = pure Bool_
+  ttVars g (If_ c t e) = If_ <$> ttVars g c <*> ttVars g t <*> ttVars g e
+  ttVars g True_ = pure True_
+  ttVars g False_ = pure False_
 
   export
   subst : (Fin n -> TT q m) -> TT q n -> TT q m
