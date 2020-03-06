@@ -4,6 +4,7 @@ import public Utils.Misc
 import public Utils.Pretty
 import public Utils.OrdSemiring
 import public ITT.Quantity
+import public Data.Nat
 import public Data.Fin
 import public Data.Vect
 import Control.Monad.Identity
@@ -31,11 +32,11 @@ Show Name where
 
 mutual
   public export
-  record Binding (q : Type) (n : Nat) where
+  record Binding' (ttqn : Type) (q : Type) (n : Nat) where
     constructor B
     bn : String
     bq : q
-    bty : TT q n
+    bty : ttqn  -- TT q n
 
   public export
   data Telescope : (q : Type) -> (base : Nat) -> (size : Nat) -> Type where
@@ -56,10 +57,14 @@ mutual
     True_  : TT q n
     False_ : TT q n
 
+  public export
+  Binding : (q : Type) -> (n : Nat) -> Type
+  Binding q n = Binding' (TT q n) q n
+
 namespace Telescope
   eqTelescopeLen : (xs : Telescope q b s) -> (ys : Telescope q b s') -> Maybe (s = s')
   eqTelescopeLen [] [] = Just Refl
-  eqTelescopeLen (x :: xs) (y :: ys) = cong <$> eqTelescopeLen xs ys
+  eqTelescopeLen (x :: xs) (y :: ys) = cong S <$> eqTelescopeLen xs ys
   eqTelescopeLen _ _ = Nothing
 
   export
@@ -70,7 +75,8 @@ namespace Telescope
   export
   (++) : Telescope q (s + n) s' -> Telescope q n s -> Telescope q n (s' + s)
   (++) [] ys = ys
-  (++) {s} {n} {s' = S s'} (x :: xs) ys = replace (plusAssociative s' s n) x :: xs ++ ys
+  (++) {s} {n} {s' = S s'} (x :: xs) ys =
+    replace {p = Binding _} (plusAssociative s' s n) x :: xs ++ ys
 
 mutual
   export
