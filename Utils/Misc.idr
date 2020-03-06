@@ -1,20 +1,22 @@
-module Utils
+module Utils.Misc
 
 import public Data.Fin
 import public Data.Vect
 
-%access export
 %default total
 
+export
 finEq : Fin n -> Fin n -> Bool
 finEq FZ FZ = True
 finEq FZ (FS _) = False
 finEq (FS _) FZ = False
 finEq (FS x) (FS y) = finEq x y
 
+export
 eqBy : Eq b => (a -> b) -> a -> a -> Bool
 eqBy f x y = f x == f y
 
+export
 compareBy : Ord b => (a -> b) -> a -> a -> Ordering
 compareBy f x y = compare (f x) (f y)
 
@@ -23,6 +25,7 @@ record Or where
   constructor MkOr
   runOr : Bool
 
+export
 lookup : Fin n -> Vect n a -> a
 lookup  FZ    (x :: _) = x
 lookup (FS i) (x :: xs) = lookup i xs
