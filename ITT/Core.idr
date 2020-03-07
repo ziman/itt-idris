@@ -32,16 +32,8 @@ Show Name where
 
 mutual
   public export
-  record Binding' (ttqn : Type) (q : Type) (n : Nat) where
-    constructor B
-    bn : String
-    bq : q
-    bty : ttqn  -- TT q n
-
-  public export
-  data Telescope : (q : Type) -> (base : Nat) -> (size : Nat) -> Type where
-    Nil : Telescope q n Z
-    (::) : (b : Binding q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
+  data Binding : (q : Type) -> (n : Nat) -> Type where
+    B : (bn : String) -> (bq : q) -> (bty : TT q n) -> Binding q n
 
   public export
   data TT : Type -> Nat -> Type where
@@ -57,11 +49,11 @@ mutual
     True_  : TT q n
     False_ : TT q n
 
-  public export
-  Binding : (q : Type) -> (n : Nat) -> Type
-  Binding q n = Binding' (TT q n) q n
-
 namespace Telescope
+  public export
+  data Telescope : (q : Type) -> (base : Nat) -> (size : Nat) -> Type where
+    Nil : Telescope q n Z
+    (::) : (b : Binding q (m + n)) -> (ds : Telescope q n m) -> Telescope q n (S m)
   eqTelescopeLen : (xs : Telescope q b s) -> (ys : Telescope q b s') -> Maybe (s = s')
   eqTelescopeLen [] [] = Just Refl
   eqTelescopeLen (x :: xs) (y :: ys) = cong S <$> eqTelescopeLen xs ys
