@@ -1,8 +1,6 @@
-module Check
+module ITT.Check
 
 import public ITT.Core
-import public ITT.Module
-import ITT.Clause
 import ITT.Normalise
 import ITT.Core.Pretty
 import Utils.Pretty
@@ -10,11 +8,11 @@ import Utils.Misc
 import Utils.OrdSemiring
 
 import Data.Fin
+import Data.List
 import Data.Vect
-import Data.SortedMap as Map
+import Data.Strings
 
 %default total
-%hide Language.Reflection.V
 
 public export
 record TCState where
@@ -62,7 +60,7 @@ public export
 record Failure where
   constructor MkF
   backtrace : Backtrace
-  n : Nat
+  0 n : Nat
   context : Context Q n
   errorMessage : ErrorMessage n
 
@@ -149,7 +147,7 @@ withBnd0 : Binding Q n -> TC (S n) a -> TC n a
 withBnd0 b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
   MkE r ctx bt => case f (MkE r (b :: ctx) bt) st of
     Left fail => Left fail
-    Right (st', _q' :: us, x) => Right (st', us, x)  -- don't check the quantity
+    Right (st', q' :: us, x) => Right (st', us, x)  -- don't check the quantity
 
 withQ : Q -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \env, st => f (record { quantity $= (.*. q) } env) st
