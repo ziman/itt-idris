@@ -1,4 +1,4 @@
-module Evar
+module Inference.Evar
 
 import ITT.Core.Lens
 import public ITT.Core

@@ -2,7 +2,6 @@ module ITT.Normalise
 
 import public ITT.Core
 import public ITT.Context
-import public ITT.Module
 import ITT.Core.Lens
 import Utils.Misc
 
@@ -24,16 +23,16 @@ mutual
   whnf (V i) = V i
   whnf (Lam b rhs) = Lam b rhs
   whnf (Pi  b rhs) = Pi b rhs
-  whnf (App q f x) with (whnf f)
-    | Lam b rhs = whnf $ subst (substFZ $ whnf x) rhs
-    | f' = App q f' x
+  whnf (App q f x) = case whnf f of
+    Lam b rhs => whnf $ subst (substFZ $ whnf x) rhs
+    f' => App q f' x
   whnf Star = Star
   whnf Erased = Erased
 
   whnf Bool_ = Bool_
-  whnf (If_ c t e) with (whnf c)
-    | True_  = whnf t
-    | False_ = whnf e
-    | c' = If_ c' t e
+  whnf (If_ c t e) = case whnf c of
+    True_  => whnf t
+    False_ => whnf e
+    c' => If_ c' t e
   whnf True_ = True_
   whnf False_ = False_

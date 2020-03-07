@@ -73,8 +73,8 @@ mutual
 
   export
   ShowQ q => Pretty (PrettyTT, Context q n) (TT q n) where
-    pretty (PTT top nl, ctx) (V i) with (lookup i ctx)
-      | B n q' ty = text n
+    pretty (PTT top nl, ctx) (V i) = case lookup i ctx of
+      B n q' ty => text n
     pretty (PTT True nl,  ctx) (Lam b rhs) = parensFrom NoAppParens nl $
       text "\\" <+> pretty ctx b <+> text "."
       $$ indent (pretty (PTT True NoParens, b::ctx) rhs)
@@ -109,7 +109,7 @@ ShowQ q => Pretty (Context q n) (TT q n) where
 
 export
 ShowQ q => Pretty () (TT q Z) where
-  pretty () = pretty (PTT True NoParens, the (Context _ _) [])
+  pretty {q} () = pretty (PTT True NoParens, the (Context q Z) [])
 
 export
 ShowQ q => Show (TT q Z) where
