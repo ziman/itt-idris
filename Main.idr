@@ -8,6 +8,7 @@ import ITT.Normalise
 import Compiler.Monad
 import Compiler.Module
 
+import System
 import Data.Fin
 import Data.Vect
 import Data.SortedMap as Map
@@ -18,7 +19,7 @@ import Data.SortedSet as Set
 covering
 main : IO ()
 main = getArgs >>= \args => case args of
-  [_exe, fname] => do
+  [exe, fname] => do
     Right src <- readFile fname
       | Left err => printLn err
 
