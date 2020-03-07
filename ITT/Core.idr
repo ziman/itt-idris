@@ -58,6 +58,10 @@ namespace Binding
   bty : Binding q n -> TT q n
   bty (B bn bq bty_) = bty_
 
+  public export
+  bn : Binding q n -> String
+  bn (B bn_ bq bty) = bn_
+
 namespace Telescope
   public export
   data Telescope : (q : Type) -> (base : Nat) -> (size : Nat) -> Type where

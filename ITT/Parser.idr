@@ -3,7 +3,10 @@ module ITT.Parser
 import public ITT.Core
 
 import Text.Lexer
+import Text.Lexer.Core
 import Text.Parser
+import Text.Parser.Core
+import Data.List
 import Data.Vect
 
 %default total
@@ -26,6 +29,25 @@ data Token
   | Pipe
   | Colon (Maybe Q)
   | Keyword String
+
+Show Token where
+  show (Ident s) = "identifier " ++ show s
+  show ParL = "("
+  show ParR = ")"
+  show SqBrL = "["
+  show SqBrR = "]"
+  show Lam = "\\"
+  show Arrow = "->"
+  show Equals = "="
+  show DblArrow = "=>"
+  show Comma = ","
+  show Dot = "."
+  show Space = "(space)"
+  show Comment = "(comment)"
+  show Underscore = "_"
+  show Pipe = "|"
+  show (Colon mbQ) = "colon"
+  show (Keyword kwd) = "keyword " ++ show kwd
 
 Eq Token where
   (==) x y = case (x, y) of
@@ -125,7 +147,7 @@ Rule : Type -> Type
 Rule = Grammar (TokenData Token) True
 
 token : Token -> Rule ()
-token t = terminal $ \t' =>
+token t = terminal (show t) $ \t' =>
   if t == tok t'
     then Just ()
     else Nothing
@@ -141,7 +163,7 @@ lookupName x (y :: ys) =
     else FS <$> lookupName x ys
 
 ident : Rule String
-ident = terminal $ \t => case tok t of
+ident = terminal "identifier" $ \t => case tok t of
   Ident n => Just n
   _ => Nothing
 
@@ -164,11 +186,11 @@ name = map (\n => N n 0) ident
 ref : Vect n String -> Rule (Term n)
 ref ns = V <$> varName ns
 
-parens : Grammar (TokenData Token) c a -> Rule a
+parens : {c : _} -> Grammar (TokenData Token) c a -> Rule a
 parens p = token ParL *> p <* token ParR
 
 colon : Rule (Maybe Q)
-colon = terminal $ \t => case tok t of
+colon = terminal "colon" $ \t => case tok t of
   Colon mq => Just mq
   _ => Nothing
 
@@ -195,25 +217,22 @@ mutual
     commit
     b <- binding ns
     token Dot
-    rhs <- term (bn b :: ns)
-    pure $ Lam b rhs
+    Lam b <$> term (bn b :: ns)
 
   pi : Vect n String -> Rule (Term n)
   pi ns = do
     token ParL
     b <- binding ns
-    token ParR
-    token Arrow
+    token ParR <* token Arrow
     commit
-    rhs <- term (bn b :: ns)
-    pure $ Pi b rhs
+    Pi b <$> term (bn b :: ns)
 
   atom : Vect n String -> Rule (Term n)
   atom ns = ref ns
     <|> (token (Keyword "Bool") *> pure Bool_)
     <|> (token (Keyword "True") *> pure True_)
     <|> (token (Keyword "False") *> pure False_)
-    <|> do { token ParL; tm <- term ns; token ParR; pure tm }
+    <|> (token ParL *> term ns <* token ParR)
 
   -- includes nullary applications (= variables)
   app : Vect n String -> Rule (Term n)
@@ -221,7 +240,7 @@ mutual
     head <- atom ns
     commit
     args <- many (atom ns)
-    pure $ foldl (App Nothing) head args
+    Empty $ foldl (App Nothing) head args
 
   telescope : Vect n String -> Tele n -> Grammar (TokenData Token) False (Tele n)
   telescope ns acc =
@@ -240,14 +259,10 @@ mutual
     <|> if_ ns
 
   if_ : Vect n String -> Rule (Term n)
-  if_ ns = do
-    token (Keyword "if")
-    c <- term ns
-    token (Keyword "then")
-    t <- term ns
-    token (Keyword "else")
-    e <- term ns
-    pure $ If_ c t e
+  if_ ns = If_
+    <$> (token (Keyword "if") *> commit *> term ns)
+    <*> (token (Keyword "then") *> term ns)
+    <*> (token (Keyword "else") *> term ns)
 
   erased : Rule (Term n)
   erased = token Underscore *> pure Erased
