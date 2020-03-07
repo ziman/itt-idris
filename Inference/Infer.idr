@@ -1,4 +1,4 @@
-module Infer
+module Inference.Infer
 
 import Utils.Misc
 import public ITT.Core
@@ -9,8 +9,9 @@ import public Inference.Evar
 import public Utils.OrdSemiring
 
 import Data.Fin
-import Data.SortedSet as Set
-import Data.SortedMap as Map
+import Data.List
+import Data.Strings
+import Data.SortedSet
 
 %default total
 
@@ -61,7 +62,7 @@ public export
 record Failure where
   constructor MkF
   backtrace : Backtrace
-  n : Nat
+  0 n : Nat
   context : Context Evar n
   errorMessage : ErrorMessage n
 
@@ -84,7 +85,7 @@ data DeferredEq : Type where
 export
 Show Constr where
   show (CEq v w) = show v ++ " ~ " ++ show w
-  show (CLeq bt gs v) = show (Set.toList gs) ++ " -> " ++ show v
+  show (CLeq bt gs v) = show (SortedSet.toList {k=Evar} gs) ++ " -> " ++ show v
 
 export
 Show DeferredEq where
@@ -162,11 +163,11 @@ withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt), st
   => case f (MkE gs (b :: ctx) bt) st of
     Left fail => Left fail
     Right (st', MkConstrs cs eqs, x)
-        => Right (st', MkConstrs (CLeq bt (Set.fromList [QQ I]) q :: cs) eqs, x)
+        => Right (st', MkConstrs (CLeq bt (SortedSet.fromList [QQ I]) q :: cs) eqs, x)
 
 withQ : Evar -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \(MkE gs ctx bt), st
-    => f (MkE (Set.insert q gs) ctx bt) st
+    => f (MkE (SortedSet.insert q gs) ctx bt) st
 
 use : Fin n -> TC n ()
 use i = MkTC $ \(MkE gs ctx bt), st
@@ -208,9 +209,9 @@ mutual
 
   covering
   conv : Term n -> Term n -> TC n ()
-  conv (V i) (V j) with (finEq i j)
-    | True  = pure ()
-    | False = throw $ CantConvert (V i) (V j)
+  conv (V i) (V j) = case finEq i j of
+    True  => pure ()
+    False => throw $ CantConvert (V i) (V j)
 
   conv l@(Lam b@(B n q ty) rhs) r@(Lam b'@(B n' q' ty') rhs') = do
     eqEvar q q'
@@ -243,7 +244,7 @@ covering export
 resumeEq : DeferredEq -> TC n ()
 resumeEq (DeferEq g bt ctx x y) = MkTC $ \env, st =>
   case x ~= y of
-    MkTC f => f (MkE Set.empty ctx bt) st
+    MkTC f => f (MkE SortedSet.empty ctx bt) st
 
 mutual
   covering export
