@@ -1,7 +1,6 @@
-module Parser
+module ITT.Parser
 
 import public ITT.Core
-import public ITT.Module
 
 import Text.Lexer
 import Text.Parser

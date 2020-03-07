@@ -4,27 +4,29 @@ import ITT.Check
 import ITT.Erase
 import ITT.Normalise
 import public ITT.Core
-import public ITT.Module
 import public Compiler.Monad
 
 import Inference.Evar
-import Inference.Infer
+import public Inference.Infer
 import Inference.SmtModel
 
-import Data.SortedSet as Set
-import Data.SortedMap as Map
+import Data.List
+import Data.Strings
+import Data.SortedSet
+import Data.SortedMap
 
 %default total
 
 banner : String -> ITT ()
 banner s = log hrule *> log s *> log hrule *> log ""
   where
+    hrule : String
     hrule = pack $ List.replicate (length s) '#'
 
 isRelevant : SortedMap ENum Q -> Evar -> Maybe Bool
 isRelevant vs (QQ I) = Just False
 isRelevant vs (QQ _) = Just True
-isRelevant vs (EV i) = case Map.lookup i vs of
+isRelevant vs (EV i) = case SortedMap.lookup i vs of
   Nothing => Nothing  -- we don't know yet
   Just I  => Just False
   Just _  => Just True
@@ -42,7 +44,7 @@ newlyReachableEqs vs (eq@(DeferEq g _ _ _ _) :: eqs) =
 covering
 iterConstrs : Int
     -> Constrs
-    -> Infer.TCState
+    -> Inference.Infer.TCState.TCState
     -> ITT (SortedMap ENum Q)
 iterConstrs i (MkConstrs cs eqs) st = do
   log $ "  -> iteration " ++ show i 
@@ -62,7 +64,7 @@ iterConstrs i (MkConstrs cs eqs) st = do
         | DeferEq g bt ctx x y <- newEqs
         ]
 
-      case Infer.TC.runTC (traverse_ resumeEq newEqs) (MkE Set.empty [] []) st of
+      case Infer.TC.runTC (traverse_ resumeEq newEqs) (MkE SortedSet.empty [] []) st of
         Left fail => throw $ show fail
         Right (st', MkConstrs cs' eqs', ()) => do
           -- we use waitingEqs (eqs from the previous iteration that have not been reached yet)
@@ -75,7 +77,7 @@ iterConstrs i (MkConstrs cs eqs) st = do
 
 substQ : SortedMap ENum Q -> Evar -> Maybe Q
 substQ vs (QQ q) = Just q
-substQ vs (EV i) = Map.lookup i vs
+substQ vs (EV i) = SortedMap.lookup i vs
 
 covering export
 processModule : TT (Maybe Q) Z -> ITT ()
@@ -88,9 +90,9 @@ processModule raw = do
   prn evarified
 
   log "Running erasure inference..."
-  cs <- case Infer.TC.runTC (inferTm evarified) (MkE Set.empty [] []) MkTCS of
+  cs <- case Infer.TC.runTC (inferTm evarified) (MkE SortedSet.empty [] []) MkTCS of
     Left err => throw $ show err
-    Right (_st, cs, _ty) => pure cs
+    Right (st, cs, ty) => pure cs
 
   banner "# Inferred constraints #"
   log $ unlines $ map show (constrs cs)
@@ -103,7 +105,7 @@ processModule raw = do
   banner "# Final valuation #"
   log $ unlines
     [ "  " ++ show i ++ " -> " ++ show q
-    | (i, q) <- Map.toList vals
+    | (i, q) <- SortedMap.toList vals
     ]
 
   annotated <- case ttQ (substQ vals) evarified of
@@ -116,7 +118,7 @@ processModule raw = do
   banner "# Final check #"
   case Check.TC.runTC (checkTm annotated) (MkE L [] []) MkTCS of
     Left err => throw $ show err
-    Right (MkTCS, _usage, ty) => do
+    Right (MkTCS, usage, ty) => do
       prn ty
       log "\n** OK **\n"
 
