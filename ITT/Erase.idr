@@ -1,7 +1,6 @@
-module Erase
+module ITT.Erase
 
 import public ITT.Core
-import public ITT.Module
 import public ITT.Context
 import Data.List
 
@@ -29,9 +28,9 @@ eraseVar (B n q ty :: ds) (FS i) with (eraseVar ds i)
 -- erase for runtime
 export
 erase : (ctx : Context Q n) -> (tm : TT Q n) -> TT () (eraseN ctx)
-erase ctx (V i) with (eraseVar ctx i)
-  | Nothing = Erased  -- should be unreachable if erasure's correct
-  | Just j = V j
+erase ctx (V i) = case eraseVar ctx i of
+  Nothing => Erased  -- should be unreachable if erasure's correct
+  Just j => V j
 erase ctx (Lam b@(B n I ty) rhs) = erase (b::ctx) rhs
 erase ctx (Lam b@(B n E ty) rhs) = erase (b::ctx) rhs
 erase ctx (Lam b@(B n L ty) rhs) = Lam (B n () Erased) $ erase (b::ctx) rhs
@@ -50,23 +49,3 @@ erase ctx Bool_ = Bool_
 erase ctx (If_ c t e) = If_ (erase ctx c) (erase ctx t) (erase ctx e)
 erase ctx True_ = True_
 erase ctx False_ = False_
-
-export
-eraseBody : Body Q -> Body ()
-eraseBody Abstract = Abstract
-eraseBody Constructor = Constructor
-eraseBody (Term tm) = Term $ erase [] tm
-
-export
-eraseDefs : List (Def Q) -> List (Def ())
-eraseDefs [] = []
-eraseDefs (D _ I _ _ :: ds) = eraseDefs ds
-eraseDefs (D _ E _ _ :: ds) = eraseDefs ds
-eraseDefs (D n L ty body :: ds) =
-  D n () (erase [] ty) (eraseBody body) :: eraseDefs ds
-eraseDefs (D n R ty body :: ds) =
-  D n () (erase [] ty) (eraseBody body) :: eraseDefs ds
-
-export
-eraseModule : Module Q -> Module ()
-eraseModule (MkModule ds) = MkModule (eraseDefs ds)
