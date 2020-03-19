@@ -44,7 +44,7 @@ newlyReachableEqs vs (eq@(DeferEq g _ _ _ _) :: eqs) =
 covering
 iterConstrs : Int
     -> Constrs
-    -> Inference.Infer.TCState.TCState
+    -> Inference.Infer.TCState
     -> ITT (SortedMap ENum Q)
 iterConstrs i (MkConstrs cs eqs) st = do
   log $ "  -> iteration " ++ show i 

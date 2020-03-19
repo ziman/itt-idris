@@ -9,6 +9,7 @@ import Compiler.Monad
 import Compiler.Module
 
 import System
+import System.File
 import Data.Fin
 import Data.Vect
 import Data.SortedMap as Map
