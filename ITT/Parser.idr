@@ -46,7 +46,7 @@ Show Token where
   show Comment = "(comment)"
   show Underscore = "_"
   show Pipe = "|"
-  show (Colon mbQ) = "colon"
+  show (Colon mbQ) = "colon " ++ show mbQ
   show (Keyword kwd) = "keyword " ++ show kwd
 
 Eq Token where
@@ -73,12 +73,13 @@ Eq Token where
 public export
 data ParseError : Type where
   LexError : Int -> Int -> String -> ParseError
-  SyntaxError : Int -> Int -> String -> ParseError
+  SyntaxError : Int -> Int -> String -> List (TokenData Token) -> ParseError
 
 export
 Show ParseError where
   show (LexError r c msg) = "lex error at " ++ show (r, c) ++ ": " ++ msg
-  show (SyntaxError r c msg) = "syntax error at " ++ show (r, c) ++ ": " ++ msg
+  show (SyntaxError r c msg ts) = "syntax error at " ++ show (r, c) ++ ": " ++ msg
+    ++ "; next up: " ++ show [TokenData.tok t | t <- take 8 ts]
 
 lex : String -> Either ParseError (List (TokenData Token))
 lex src = case lex tokens src of
@@ -127,7 +128,7 @@ lex src = case lex tokens src of
       , (is '|',       const Pipe)
       , (ident,        kwdOrIdent)
       , (is '\\',      const Lam)
-      , (exact "->",   const Arrow)
+      , (exact "->" ,  const Arrow)
       , (is '.',       const Dot)
       , (is ',',       const Comma)
       , (exact "=>",   const DblArrow)
@@ -147,7 +148,7 @@ Rule : Type -> Type
 Rule = Grammar (TokenData Token) True
 
 token : Token -> Rule ()
-token t = terminal (show t) $ \t' =>
+token t = terminal ("expecting " ++ show t) $ \t' =>
   if t == tok t'
     then Just ()
     else Nothing
@@ -223,7 +224,8 @@ mutual
   pi ns = do
     token ParL
     b <- binding ns
-    token ParR <* token Arrow
+    token ParR
+    token Arrow
     commit
     Pi b <$> term (bn b :: ns)
 
@@ -272,6 +274,6 @@ parse : String -> Either ParseError (TT (Maybe Q) Z)
 parse src = case lex src of
   Left err => Left err
   Right ts => case Text.Parser.Core.parse (term [] <* eof) ts of
-    Left (Error msg []) => Left $ SyntaxError 0 0 msg
-    Left (Error msg (t :: _)) => Left $ SyntaxError (line t) (col t) msg
+    Left (Error msg []) => Left $ SyntaxError 0 0 msg []
+    Left (Error msg (tt :: tts)) => Left $ SyntaxError (line tt) (col tt) msg (tt :: tts)
     Right (tm, _) => Right tm
