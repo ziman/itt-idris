@@ -1,7 +1,6 @@
 module Utils.Pretty
 
 import Data.List
-import Utils.Stdlib
 
 %default total
 
