@@ -413,9 +413,6 @@ uglyWriteFile fname content = do
   whatever <- fPutStr f content
   closeFile f
 
-system : String -> IO Int
-system cmd = schemeCall Int "system" [cmd]
-
 export
 solve : AllSmtValue as => SmtM (FList Smt as) -> IO (Either SmtError (FList Prelude.id as))
 solve @{asv} {as} model =

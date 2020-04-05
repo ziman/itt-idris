@@ -42,4 +42,4 @@
 -- 
 -- All other annotations are inferred automatically.
 
--- vim: ft=idris
+-- vim: ft=idris2
