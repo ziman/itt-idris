@@ -357,7 +357,7 @@ checkVect _ _ = Nothing
 checkClause : (argn : Nat) -> RawClause -> Maybe (Clause (Maybe Q) argn)
 checkClause argn rc =
   checkVect argn rc.lhs <&>
-    \lhs => MkClause rc.pi lhs rc.rhs
+    \lhs => MkClause rc.pi (lhs <&> \p => (Nothing, p)) rc.rhs
 
 checkClauses : List RawClause -> Maybe (argn ** List (Clause (Maybe Q) argn))
 checkClauses [] = Nothing

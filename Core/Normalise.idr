@@ -107,7 +107,7 @@ mutual
 
 matchClause : Clause q argn -> Vect argn (TT q n) -> Outcome (TT q n)
 matchClause clause args =
-  matchPats (\_ => Nothing) clause.lhs args >>=
+  matchPats (\_ => Nothing) (snd <$> clause.lhs) args >>=
     \s => case fromSubst s of
       Nothing => Error UnmatchedPatVar
       Just vs => Match $ subst (\i => lookup i vs) clause.rhs

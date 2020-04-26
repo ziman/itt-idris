@@ -66,6 +66,14 @@ parens : Doc -> Doc
 parens d = text "(" <+> d <+> text ")"
 
 export
+brackets : Doc -> Doc
+brackets d = text "[" <+> d <+> text "]"
+
+export
+braces : Doc -> Doc
+braces d = text "{" <+> d <+> text "}"
+
+export
 columns : String -> List Doc -> Doc
 columns = Columns
 

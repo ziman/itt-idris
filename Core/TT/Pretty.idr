@@ -27,6 +27,7 @@ export
 Ord NestingLevel where
   compare = compareBy nlToInt
 
+export
 Pretty () Name where
   pretty () n = text $ show n
 
@@ -111,3 +112,8 @@ ShowQ q => Show (TT q Z) where
 export
 showTm : ShowQ q => Context q n -> TT q n -> String
 showTm ctx tm = render "  " $ pretty (PTT False NoAppParens, ctx) tm
+
+export
+ShowQ q => Pretty () (Context q n) where
+  pretty () Nil = neutral
+  pretty () (b :: bs) = parens (pretty bs b) <+> pretty () bs
