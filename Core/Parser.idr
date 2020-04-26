@@ -316,7 +316,13 @@ telescope {k} ns t = option (k ** t) $ do
   b <- parens $ binding ns
   telescope (b.name :: ns) (b :: t)
 
-names : Telescope q b n -> Vect n String
+context : {k : Nat} -> Vect k String -> Context (Maybe Q) k
+    -> Grammar (TokenData Token) False (n ** Context (Maybe Q) n)
+context {k} ns ctx = option (k ** ctx) $ do
+  b <- parens $ binding ns
+  context (b.name :: ns) (b :: ctx)
+
+names : Context q n -> Vect n String
 names [] = []
 names (b :: bs) = b.name :: names bs
 
@@ -330,14 +336,18 @@ record RawClause where
 rawClause : String -> Rule RawClause
 rawClause fn = do
   kwd "forall"
-  (pn ** pvs) <- telescope [] []
-  token Dot
-  let pns = names pvs
-  token (Ident fn)
-  pats <- many (patAtom pns)
-  token SquigArrow
-  rhs <- term pns
-  pure $ MkRC pvs pats rhs
+  pnpvs <- context [] []
+  cont pnpvs
+ where
+  cont : (pn ** Context (Maybe Q) pn) -> Rule RawClause
+  cont (pn ** pvs) = do
+    token Dot
+    let pns = names pvs
+    token (Ident fn)
+    pats <- many (patAtom pns)
+    token SquigArrow
+    rhs <- term pns
+    pure $ MkRC pvs pats rhs
 
 checkVect : (n : Nat) -> List a -> Maybe (Vect n a)
 checkVect Z [] = Just []

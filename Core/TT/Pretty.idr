@@ -27,6 +27,9 @@ export
 Ord NestingLevel where
   compare = compareBy nlToInt
 
+Pretty () Name where
+  pretty () n = text $ show n
+
 public export
 record PrettyTT where
   constructor PTT
@@ -74,6 +77,7 @@ mutual
 
   export
   ShowQ q => Pretty (PrettyTT, Context q n) (TT q n) where
+    pretty (PTT top nl, ctx) (P n) = pretty () n
     pretty (PTT top nl, ctx) (V i) = case lookup i ctx of
       B n q' ty => text n
     pretty (PTT True nl,  ctx) (Lam b rhs) = parensFrom NoAppParens nl $
@@ -89,20 +93,8 @@ mutual
       pretty (PTT False NoAppParens, ctx) f 
       <+> text (showApp q')
       <+> pretty (PTT False UseParens, ctx) x
-    pretty (PTT top nl, ctx) Star = text "Type"
+    pretty (PTT top nl, ctx) Type_ = text "Type"
     pretty (PTT top nl, ctx) Erased = text "_"
-    pretty (PTT top nl, ctx) Bool_ = text "Bool"
-    pretty (PTT True nl, ctx) (If_ c t e) = parensFrom NoAppParens nl $
-      text "if" <++> pretty (PTT False NoParens, ctx) c
-      $$ indent (text "then" <++> pretty (PTT True NoParens, ctx) t)
-      $$ indent (text "else" <++> pretty (PTT True NoParens, ctx) e)
-    pretty (PTT False nl, ctx) (If_ c t e) = parensFrom NoAppParens nl $
-      text "if"
-      <++> pretty (PTT False NoParens, ctx) c
-      <++> text "then" <++> pretty (PTT False NoParens, ctx) t
-      <++> text "else" <++> pretty (PTT False NoParens, ctx) e
-    pretty (PTT top nl, ctx) True_ = text "True"
-    pretty (PTT top nl, ctx) False_ = text "False"
 
 export
 ShowQ q => Pretty (Context q n) (TT q n) where
