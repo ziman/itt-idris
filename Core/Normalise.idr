@@ -128,7 +128,7 @@ whnf gs (App q f x) =
       xWHNF <- whnf gs x
       whnf gs $ subst (substFZ xWHNF) rhs
     fWHNF => case unApply' q fWHNF x of
-      (P n, args) => case lookup n gs of
+      (P n, args) => case .body <$> lookup n gs of
           Nothing => Left $ UnknownGlobal n
           Just (Clauses argn cs) => case maybeTake argn args of
               Just (fargs, rest) => case matchClauses (snd <$> fargs) cs of

@@ -10,7 +10,7 @@ import public Core.Pattern
 public export
 record Clause (q : Type) (argn : Nat) where
   constructor MkClause
-  {n : Nat}
-  pi : Context q n
-  lhs : Vect argn (Pat q n)
-  rhs : TT q n
+  {pn : Nat}
+  pi : Context q pn
+  lhs : Vect argn (Pat q pn)
+  rhs : TT q pn

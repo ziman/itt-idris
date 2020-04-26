@@ -1,5 +1,6 @@
 module Core.Globals
 
+import public Core.TT
 import public Core.Clause
 import Data.SortedMap
 
@@ -7,17 +8,29 @@ import Data.SortedMap
 %undotted_record_projections off
 
 public export
-data Definition : (q : Type) -> Type where
-  Postulate : Definition q
-  Constructor : Definition q
-  Foreign : String -> Definition q
-  Clauses : (argn : Nat) -> List (Clause q argn) -> Definition q
+data Body : (q : Type) -> Type where
+  Postulate : Body q
+  Constructor : Body q
+  Foreign : String -> Body q
+  Clauses : (argn : Nat) -> List (Clause q argn) -> Body q
+
+public export
+record Definition (q : Type) where
+  constructor MkDef
+  binding : Binding q Z
+  body : Body q
 
 export
 record Globals (q : Type) where
   constructor MkGlobals
-  byName : SortedMap Name (Definition q)
+  definitions : SortedMap Name (Definition q)
 
 export
 lookup : Name -> Globals q -> Maybe (Definition q)
-lookup n gs = SortedMap.lookup n gs.byName
+lookup n gs = lookup n gs.definitions
+
+export
+toGlobals : List (Definition q) -> Globals q
+toGlobals ds =
+  MkGlobals $ SortedMap.fromList
+    [(UN d.binding.name, d) | d <- ds]

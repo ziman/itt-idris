@@ -1,6 +1,9 @@
-module ITT.Parser
+module Core.Parser
 
-import public ITT.Core
+import public Core.Globals
+
+import Core.TT
+import Core.Clause
 
 import Text.Lexer
 import Text.Lexer.Core
@@ -15,9 +18,12 @@ data Token
   = Ident String
   | ParL
   | ParR
+  | BraceL
+  | BraceR
   | SqBrL
   | SqBrR
   | Lam
+  | SquigArrow
   | Arrow
   | Equals
   | DblArrow
@@ -34,10 +40,13 @@ Show Token where
   show (Ident s) = "identifier " ++ show s
   show ParL = "("
   show ParR = ")"
+  show BraceL = "{"
+  show BraceR = "}"
   show SqBrL = "["
   show SqBrR = "]"
   show Lam = "\\"
   show Arrow = "->"
+  show SquigArrow = "->"
   show Equals = "="
   show DblArrow = "=>"
   show Comma = ","
@@ -54,10 +63,13 @@ Eq Token where
     (Ident x, Ident y) => x == y
     (ParL, ParL) => True
     (ParR, ParR) => True
+    (BraceL, BraceL) => True
+    (BraceR, BraceR) => True
     (SqBrL, SqBrL) => True
     (SqBrR, SqBrR) => True
     (Lam, Lam) => True
     (Arrow, Arrow) => True
+    (SquigArrow, SquigArrow) => True
     (Dot, Dot) => True
     (Space, Space) => True
     (Equals, Equals) => True
@@ -113,15 +125,15 @@ lex src = case lex tokens src of
       where
         keywords : List String
         keywords =
-          [ "Type", "Bool"
-          , "True", "False"
-          , "if", "then", "else"
+          [ "Type", "foreign", "postulate", "data", "where", "end"
           ]
 
     tokens : TokenMap Token
     tokens = 
       [ (is '(',       const ParL)
       , (is ')',       const ParR)
+      , (is '{',       const BraceL)
+      , (is '}',       const BraceR)
       , (is '[',       const SqBrL)
       , (is ']',       const SqBrR)
       , (is '_',       const Underscore)
@@ -129,6 +141,7 @@ lex src = case lex tokens src of
       , (ident,        kwdOrIdent)
       , (is '\\',      const Lam)
       , (exact "->" ,  const Arrow)
+      , (exact "~>" ,  const SquigArrow)
       , (is '.',       const Dot)
       , (is ',',       const Comma)
       , (exact "=>",   const DblArrow)
@@ -153,8 +166,8 @@ token t = terminal ("expecting " ++ show t) $ \t' =>
     then Just ()
     else Nothing
 
-type : Rule (Term n)
-type = token (Keyword "Type") *> pure Star
+kwd : String -> Rule ()
+kwd s = token (Keyword s)
 
 lookupName : Eq a => a -> Vect n a -> Maybe (Fin n)
 lookupName x [] = Nothing
@@ -180,9 +193,6 @@ varName ns = do
 
 var : Vect n String -> Rule (Term n)
 var ns = V <$> varName ns
-
-name : Rule Name
-name = map (\n => N n 0) ident
 
 ref : Vect n String -> Rule (Term n)
 ref ns = V <$> varName ns
@@ -218,7 +228,7 @@ mutual
     commit
     b <- binding ns
     token Dot
-    Lam b <$> term (bn b :: ns)
+    Lam b <$> term (b.name :: ns)
 
   pi : Vect n String -> Rule (Term n)
   pi ns = do
@@ -227,13 +237,11 @@ mutual
     token ParR
     token Arrow
     commit
-    Pi b <$> term (bn b :: ns)
+    Pi b <$> term (b.name :: ns)
 
   atom : Vect n String -> Rule (Term n)
   atom ns = ref ns
-    <|> (token (Keyword "Bool") *> pure Bool_)
-    <|> (token (Keyword "True") *> pure True_)
-    <|> (token (Keyword "False") *> pure False_)
+    <|> (kwd "Type" *> pure Type_)
     <|> (token ParL *> term ns <* token ParR)
 
   -- includes nullary applications (= variables)
@@ -244,36 +252,111 @@ mutual
     args <- many (atom ns)
     Empty $ foldl (App Nothing) head args
 
-  telescope : Vect n String -> Tele n -> Grammar (TokenData Token) False (Tele n)
-  telescope ns acc =
-    (do
-        b <- parens $ binding (t_names acc ++ ns)
-        telescope ns (MkTele (S $ t_s acc) (b :: t_tele acc) (bn b :: t_names acc))
-    ) <|> pure acc
-
   term : Vect n String -> Rule (Term n)
   term ns
     = lam ns
     <|> pi ns
-    <|> type
     <|> erased
     <|> app ns
-    <|> if_ ns
-
-  if_ : Vect n String -> Rule (Term n)
-  if_ ns = If_
-    <$> (token (Keyword "if") *> commit *> term ns)
-    <*> (token (Keyword "then") *> term ns)
-    <*> (token (Keyword "else") *> term ns)
 
   erased : Rule (Term n)
   erased = token Underscore *> pure Erased
 
+patAtom : Vect n String -> Rule (Pat (Maybe Q) n)
+patAtom = ?rhs_patAtom
+
+postulate_ : Rule (List (Definition (Maybe Q)))
+postulate_ = do
+  kwd "postulate"
+  commit
+  bnd <- binding []
+  kwd "end"
+  pure [MkDef bnd Postulate]
+
+dataDecl : Rule (List (Definition (Maybe Q)))
+dataDecl = do
+  kwd "data"
+  commit
+  bnd <- binding []
+  kwd "where"
+  bnds <- sepBy (token Comma) (binding [])
+  kwd "end"
+  pure [MkDef b Constructor | b <- bnd :: bnds]
+
+telescope : Vect k String -> Rule (n ** Telescope (Maybe Q) k n)
+telescope ns =
+  (do
+    token ParL
+    b <- binding ns
+    token ParR
+    (n ** bs) <- telescope (b.name :: ns)
+    pure (S n ** b :: bs)
+  ) <|> pure (Z ** [])
+
+names : Telescope q b n -> Vect n String
+names [] = []
+names (b :: bs) = b.name :: names bs
+
+record RawClause where
+  constructor MkRC
+  {pn : Nat}
+  pi : Context (Maybe Q) pn
+  lhs : List (Pat (Maybe Q) pn)
+  rhs : TT (Maybe Q) pn
+
+rawClause : String -> Rule RawClause
+rawClause fn = do
+  (pn ** pvs) <- (telescope [] <* token Dot) <|> pure (Z ** [])
+  let pns = names pvs
+  token (Ident fn)
+  pats <- many (patAtom pns)
+  token SquigArrow
+  rhs <- term pns
+  pure $ MkRC pvs pats rhs
+
+checkVect : (n : Nat) -> List a -> Maybe (Vect n a)
+checkVect Z [] = Just []
+checkVect (S n) (x :: xs) = (x ::) <$> checkVect n xs
+checkVect _ _ = Nothing
+
+checkClause : (argn : Nat) -> RawClause -> Maybe (Clause (Maybe Q) argn)
+checkClause argn rc =
+  checkVect argn rc.lhs <&>
+    \lhs => MkClause rc.pi lhs rc.rhs
+
+checkClauses : List RawClause -> Maybe (argn ** Clause (Maybe Q) argn)
+checkClauses [] = Nothing
+checkClauses (c :: cs) =
+  let argn = length c.lhs
+    in case traverse (checkClause argn) (c :: cs) of
+      Nothing => Nothing
+      Just cs' => Just (argn ** cs')
+
+clauseFun : Rule (List (Definition (Maybe Q)))
+clauseFun = do
+  bnd <- binding []
+  commit
+  kwd "where"
+  rcs <- sepBy1 (token Comma) (rawClause bnd.name)
+  kwd "end"
+  case checkClauses rcs of
+    Nothing => fail "ill-formed clauses"
+    Just (argn ** cs) => pure [MkDef b (Clauses argn cs)]
+
+definitions : Rule (List (Definition (Maybe Q)))
+definitions = 
+  postulate_
+  <|> dataDecl
+  <|> clauseFun
+
+globals : Rule (Globals (Maybe Q))
+globals = toGlobals . concat <$> many definitions
+
 export
-parse : String -> Either ParseError (TT (Maybe Q) Z)
+parse : String -> Either ParseError (Globals (Maybe Q))
 parse src = case lex src of
   Left err => Left err
-  Right ts => case Text.Parser.Core.parse (term [] <* eof) ts of
+  Right ts => case Text.Parser.Core.parse (globals <* eof) ts of
     Left (Error msg []) => Left $ SyntaxError 0 0 msg []
     Left (Error msg (tt :: tts)) => Left $ SyntaxError (line tt) (col tt) msg (tt :: tts)
-    Right (tm, _) => Right tm
+    Right (gs, _) => Right gs

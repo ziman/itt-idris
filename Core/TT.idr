@@ -13,23 +13,30 @@ import Control.Monad.Identity
 %undotted_record_projections off
 
 public export
-data Name = N String Int
+data Name
+  = UN String
+  | MN String Int
 
 export
 Eq Name where
-  (==) (N x i) (N y j) = (x == y) && (i == j)
+  (==) (UN x) (UN y) = x == y
+  (==) (MN x i) (MN y j) = (x == y) && (i == j)
+  (==) _ _ = False
 
 export
 Ord Name where
-  compare (N x i) (N y j) =
+  compare (MN x i) (MN y j) =
     case compare x y of
       EQ => compare i j
       xy => xy
+  compare (UN x) (UN y) = compare x y
+  compare (UN _) (MN _ _) = LT
+  compare (MN _ _) (UN _) = GT
 
 export
 Show Name where
-  show (N s 0) = s
-  show (N s i) = s ++ show i
+  show (UN s) = s
+  show (MN s i) = "{" ++ s ++ show i ++ "}"
 
 mutual
   public export
