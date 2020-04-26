@@ -125,7 +125,7 @@ lex src = case lex tokens src of
       where
         keywords : List String
         keywords =
-          [ "Type", "foreign", "postulate", "data", "where", "end"
+          [ "Type", "foreign", "postulate", "data", "where", "end", "forall"
           ]
 
     tokens : TokenMap Token
@@ -232,9 +232,7 @@ mutual
 
   pi : Vect n String -> Rule (Term n)
   pi ns = do
-    token ParL
-    b <- binding ns
-    token ParR
+    b <- parens $ binding ns
     token Arrow
     commit
     Pi b <$> term (b.name :: ns)
@@ -242,7 +240,7 @@ mutual
   atom : Vect n String -> Rule (Term n)
   atom ns = ref ns
     <|> (kwd "Type" *> pure Type_)
-    <|> (token ParL *> term ns <* token ParR)
+    <|> (parens $ term ns)
 
   -- includes nullary applications (= variables)
   app : Vect n String -> Rule (Term n)
@@ -283,15 +281,11 @@ dataDecl = do
   kwd "end"
   pure [MkDef b Constructor | b <- bnd :: bnds]
 
-telescope : Vect k String -> Rule (n ** Telescope (Maybe Q) k n)
-telescope ns =
-  (do
-    token ParL
-    b <- binding ns
-    token ParR
-    (n ** bs) <- telescope (b.name :: ns)
-    pure (S n ** b :: bs)
-  ) <|> pure (Z ** [])
+telescope : {k : Nat} -> Vect (k + b) String -> Telescope (Maybe Q) b k
+    -> Grammar (TokenData Token) False (n ** Telescope (Maybe Q) b n)
+telescope {k} ns t = option (k ** t) $ do
+  b <- parens $ binding ns
+  telescope (b.name :: ns) (b :: t)
 
 names : Telescope q b n -> Vect n String
 names [] = []
@@ -306,7 +300,9 @@ record RawClause where
 
 rawClause : String -> Rule RawClause
 rawClause fn = do
-  (pn ** pvs) <- (telescope [] <* token Dot) <|> pure (Z ** [])
+  kwd "forall"
+  (pn ** pvs) <- telescope [] []
+  token Dot
   let pns = names pvs
   token (Ident fn)
   pats <- many (patAtom pns)
@@ -324,7 +320,7 @@ checkClause argn rc =
   checkVect argn rc.lhs <&>
     \lhs => MkClause rc.pi lhs rc.rhs
 
-checkClauses : List RawClause -> Maybe (argn ** Clause (Maybe Q) argn)
+checkClauses : List RawClause -> Maybe (argn ** List (Clause (Maybe Q) argn))
 checkClauses [] = Nothing
 checkClauses (c :: cs) =
   let argn = length c.lhs
@@ -339,9 +335,13 @@ clauseFun = do
   kwd "where"
   rcs <- sepBy1 (token Comma) (rawClause bnd.name)
   kwd "end"
-  case checkClauses rcs of
-    Nothing => fail "ill-formed clauses"
-    Just (argn ** cs) => pure [MkDef b (Clauses argn cs)]
+  cont bnd rcs -- for some reason inference fails here
+ where
+  cont : Binding (Maybe Q) Z -> List RawClause -> Grammar (TokenData Token) False (List (Definition (Maybe Q)))
+  cont bnd rcs =
+    case checkClauses rcs of
+      Nothing => fail "ill-formed clauses"
+      Just (argn ** cs) => pure [MkDef bnd (Clauses argn cs)]
 
 definitions : Rule (List (Definition (Maybe Q)))
 definitions = 
@@ -349,7 +349,7 @@ definitions =
   <|> dataDecl
   <|> clauseFun
 
-globals : Rule (Globals (Maybe Q))
+globals : Grammar (TokenData Token) False (Globals (Maybe Q))
 globals = toGlobals . concat <$> many definitions
 
 export
