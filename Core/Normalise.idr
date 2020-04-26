@@ -33,8 +33,16 @@ data Outcome : a -> Type where
   Mismatch : Outcome a
   Stuck : Outcome a
 
+matchClause : Clause q argn -> Vect argn (q, TT q n) -> Outcome (TT q n)
+matchClause clause args = ?rhs
+
 matchClauses : Vect argn (q, TT q n) -> List (Clause q argn) -> Maybe (TT q n)
-matchClauses args cs = ?rhs_matchClauses
+matchClauses args [] = Nothing
+matchClauses args (c :: cs) =
+  case matchClause c args of
+    Match tm => Just tm
+    Mismatch => matchClauses args cs
+    Stuck => Nothing
 
 covering export
 whnf : Globals q -> TT q n -> Either Error (TT q n)
