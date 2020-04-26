@@ -7,9 +7,9 @@ import public Core.Pattern
 %undotted_record_projections off
 
 public export
-record Clause (q : Type) where
+record Clause (q : Type) (argn : Nat) where
   constructor MkClause
   n : Nat
   pi : Telescope q Z n
-  lhs : Pat q n
+  lhs : Vect argn (Pat q n)
   rhs : TT q n

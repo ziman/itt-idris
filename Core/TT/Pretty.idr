@@ -1,8 +1,8 @@
 module Core.TT.Pretty
 
-import public ITT.Core
-import public ITT.Context
-import public ITT.Quantity
+import public Core.TT
+import public Core.Context
+import public Core.Quantity
 import public Utils.Pretty
 
 %default total

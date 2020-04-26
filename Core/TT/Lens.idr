@@ -1,6 +1,7 @@
 module Core.TT.Lens
 
-import public ITT.Core
+import Utils.Misc
+import public Core.TT
 import Control.Monad.Identity
 
 %default total
@@ -32,16 +33,13 @@ mutual
 
   export
   ttQ : Traversal (TT q n) (TT q' n) q q'
+  ttQ g (P n) = pure $ P n
   ttQ g (V i) = pure $ V i
   ttQ g (Lam b rhs) = Lam <$> bindingQ g b <*> ttQ g rhs
   ttQ g (Pi  b rhs) = Pi  <$> bindingQ g b <*> ttQ g rhs
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
-  ttQ g Star = pure Star
+  ttQ g Type_ = pure Type_
   ttQ g Erased = pure Erased
-  ttQ g Bool_ = pure Bool_
-  ttQ g (If_ c t e) = If_ <$> ttQ g c <*> ttQ g t <*> ttQ g e
-  ttQ g True_ = pure True_
-  ttQ g False_ = pure False_
 
 mutual
   -- split references between those that point into the telescope
@@ -104,17 +102,14 @@ mutual
 
   export
   ttVars : Traversal (TT q m) (TT q n) (Fin m) (TT q n)
+  ttVars g (P n) = pure $ P n
   ttVars g (V i) = g i
   ttVars g (Lam b rhs) = Lam <$> bindingVars g b <*> ttVars (skipFZ g) rhs
   ttVars g (Pi  b rhs) = Pi  <$> bindingVars g b <*> ttVars (skipFZ g) rhs
   ttVars g (App q f x)
     = App q <$> ttVars g f <*> ttVars g x
-  ttVars g Star = pure Star
+  ttVars g Type_ = pure Type_
   ttVars g Erased = pure Erased
-  ttVars g Bool_ = pure Bool_
-  ttVars g (If_ c t e) = If_ <$> ttVars g c <*> ttVars g t <*> ttVars g e
-  ttVars g True_ = pure True_
-  ttVars g False_ = pure False_
 
   export
   subst : (Fin n -> TT q m) -> TT q n -> TT q m

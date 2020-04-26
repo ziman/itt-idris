@@ -5,6 +5,11 @@ import public Data.Vect
 
 %default total
 
+infixl 3 <&>
+public export
+(<&>) : Functor f => f a -> (a -> b) -> f b
+(<&>) x f = f <$> x
+
 export
 finEq : Fin n -> Fin n -> Bool
 finEq FZ FZ = True
@@ -42,7 +47,11 @@ Monoid Or where
 public export
 record Const (a : Type) (b : Type) where
   constructor MkConst
-  runConst : a
+  value : a
+
+export
+runConst : Const a b -> a
+runConst c = c.value
 
 export
 Functor (Const a) where
