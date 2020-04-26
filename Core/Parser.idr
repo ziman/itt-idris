@@ -260,8 +260,35 @@ mutual
   erased : Rule (Term n)
   erased = token Underscore *> pure Erased
 
-patAtom : Vect n String -> Rule (Pat (Maybe Q) n)
-patAtom = ?rhs_patAtom
+patVar : Vect n String -> Rule (Pat (Maybe Q) n)
+patVar ns = PV <$> varName ns
+
+patForced : Vect n String -> Rule (Pat (Maybe Q) n)
+patForced ns = do
+  token SqBrL
+  tm <- term ns
+  token SqBrR
+  pure (PForced tm)
+
+patCtor : Rule PCtor
+patCtor = 
+  (token BraceL *> (Forced . UN <$> ident) <* token BraceR)
+  <|> (Checked . UN <$> ident)
+
+patNullaryCtor : Rule (Pat (Maybe Q) n)
+patNullaryCtor = do
+  c <- patCtor
+  pure $ PCtorApp c []
+
+mutual
+  patCtorApp : Vect n String -> Rule (Pat (Maybe Q) n)
+  patCtorApp ns = parens $ do
+    c <- patCtor
+    args <- many (patAtom ns)
+    pure $ PCtorApp c [(Nothing, arg) | arg <- args]
+
+  patAtom : Vect n String -> Rule (Pat (Maybe Q) n)
+  patAtom ns = patForced ns <|> patCtorApp ns <|> patVar ns <|> patNullaryCtor
 
 postulate_ : Rule (List (Definition (Maybe Q)))
 postulate_ = do
