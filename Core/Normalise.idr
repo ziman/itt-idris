@@ -33,8 +33,32 @@ data Outcome : a -> Type where
   Mismatch : Outcome a
   Stuck : Outcome a
 
+Subst : Type -> Nat -> Nat -> Type
+Subst q n pn = Fin pn -> Maybe (TT q n)
+
+fromSubst : {n : Nat} -> (Fin n -> Maybe a) -> Maybe (Vect n a)
+fromSubst {n = Z}   g = pure []
+fromSubst {n = S n} g = [| g FZ :: fromSubst (g . FS) |]
+
+matchPat : Subst q n pn -> Pat q pn -> TT q n -> Outcome (Subst q n pn)
+matchPat s pat tm = ?rhs1
+
+matchPats : Subst q n pn -> Vect argn (Pat q pn) -> Vect argn (q, TT q n) -> Outcome (Subst q n pn)
+matchPats s [] [] = Match s
+matchPats s (p :: ps) ((_, tm) :: tms) =
+  case matchPat s p tm of
+    Match s' => matchPats s' ps tms
+    Mismatch => Mismatch
+    Stuck => Stuck
+
 matchClause : Clause q argn -> Vect argn (q, TT q n) -> Outcome (TT q n)
-matchClause clause args = ?rhs
+matchClause clause args =
+  case matchPats (\_ => Nothing) clause.lhs args of
+    Match s => case fromSubst s of
+      Nothing => Stuck  -- something's wrong with the patterns
+      Just vs => Match $ subst (\i => lookup i vs) clause.rhs
+    Mismatch => Mismatch
+    Stuck => Stuck
 
 matchClauses : Vect argn (q, TT q n) -> List (Clause q argn) -> Maybe (TT q n)
 matchClauses args [] = Nothing
