@@ -1,0 +1,137 @@
+#############
+# Desugared #
+#############
+
+\T : Type.
+ \C : (pf :I Bool) -> T.
+  \U : (t :E T) -> Type.
+   \g : (x :L U (C True)) -> Bool.
+    \b : Bool.
+     \d : U (C b).
+      (\x : U (C False). g x) d
+#############
+# Evarified #
+#############
+
+\T :0 Type.
+ \C :1 (pf :I Bool) -> T.
+  \U :2 (t :E T) -> Type.
+   \g :3 (x :L U -4- (C -5- True)) -> Bool.
+    \b :6 Bool.
+     \d :7 U -8- (C -9- b).
+      (\x :11 U -12- (C -13- False). g -14- x) -10- d
+Running erasure inference...
+########################
+# Inferred constraints #
+########################
+
+[I] -> 0
+[I] -> I
+[I] -> 0
+[I] -> 1
+[I] -> 0
+[I] -> E
+[I] -> 2
+[I] -> 2
+[I] -> 1
+5 ~ I
+4 ~ E
+[I] -> L
+[I] -> 3
+[I] -> 6
+[I] -> 2
+[I] -> 1
+[I] -> 6
+9 ~ I
+8 ~ E
+[I] -> 7
+[I] -> 2
+[I] -> 1
+13 ~ I
+12 ~ E
+[I] -> 11
+[] -> 3
+[] -> 11
+12 ~ 4
+14 ~ L
+[] -> 7
+8 ~ 12
+10 ~ 11
+
+#######################
+# Deferred equalities #
+#######################
+
+12 -> C -13- False ~ C -5- True
+8 -> C -9- b ~ C -13- False
+
+  -> iteration 1
+    C -13- False ~ C -5- True
+    C -9- b ~ C -13- False
+
+  -> iteration 2
+    -> No more equalities, fixed point reached.
+
+###################
+# Final valuation #
+###################
+
+  0 -> I
+  1 -> I
+  2 -> I
+  3 -> L
+  4 -> E
+  5 -> I
+  6 -> I
+  7 -> L
+  8 -> E
+  9 -> I
+  10 -> L
+  11 -> L
+  12 -> E
+  13 -> I
+  14 -> L
+
+#####################
+# Annotated program #
+#####################
+
+\T :I Type.
+ \C :I (pf :I Bool) -> T.
+  \U :I (t :E T) -> Type.
+   \g :L (x :L U -E- (C -I- True)) -> Bool.
+    \b :I Bool.
+     \d :L U -E- (C -I- b).
+      (\x :L U -E- (C -I- False). g -L- x) -L- d
+###############
+# Final check #
+###############
+
+(T :I Type) -> (C :I (pf :I Bool) -> T) -> (U :I (t :E T) -> Type) -> (g :L (x :L U -E- (C -I- True)) -> Bool) -> (b :I Bool) -> (d :L U -E- (C -I- b)) -> Bool
+
+** OK **
+
+##########
+# Erased #
+##########
+
+\g.
+ \d.
+  (\x. g x) d
+########
+# WHNF #
+########
+
+Unerased, reduced:
+\T :I Type.
+ \C :I (pf :I Bool) -> T.
+  \U :I (t :E T) -> Type.
+   \g :L (x :L U -E- (C -I- True)) -> Bool.
+    \b :I Bool.
+     \d :L U -E- (C -I- b).
+      (\x :L U -E- (C -I- False). g -L- x) -L- d
+
+Erased, reduced:
+\g.
+ \d.
+  (\x. g x) d

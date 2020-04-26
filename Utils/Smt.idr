@@ -1,9 +1,14 @@
-module Smt
+module Utils.Smt
 
 import System
+import System.File
 import Text.Lexer
 import Text.Parser
-import Data.SortedMap as Map
+import Text.Parser.Core
+import Text.Lexer.Core
+import Data.List
+import Data.Strings
+import Data.SortedMap
 
 %default total
 
@@ -15,7 +20,7 @@ data SExp : Type where
 public export
 data SmtError : Type where
   Unsatisfiable : SmtError
-  SmtFileError : FileError -> SmtError
+  FileIOError : FileError -> SmtError
   LexError : Int -> Int -> String -> SmtError
   SmtParseError : Int -> Int -> String -> SmtError
   StrangeSmtOutput : List SExp -> SmtError
@@ -38,8 +43,8 @@ Show SExp where
 
 export
 Show SmtError where
-  show (SmtFileError err) = show err
   show Unsatisfiable = "unsatisfiable"
+  show (FileIOError err) = show err
   show (LexError row col rest) = "could not lex at " ++ show (row, col) ++ ": " ++ rest
   show (SmtParseError row col msg) = "parse error at " ++ show (row, col) ++ ": " ++ msg
   show (StrangeSmtOutput ss) = "unrecognised SMT solver output: " ++ unlines (map show ss)
@@ -85,17 +90,17 @@ parseSExps src = case lexSExp src of
     Rule = Grammar (TokenData SToken) True
 
     atom : Rule SExp
-    atom = terminal $ \t => case tok t of
+    atom = terminal "atom" $ \t => case tok t of
       Atom s => Just $ A s
       _ => Nothing
 
     parL : Rule ()
-    parL = terminal $ \t => case tok t of
+    parL = terminal "(" $ \t => case tok t of
       ParL => Just ()
       _ => Nothing
 
     parR : Rule ()
-    parR = terminal $ \t => case tok t of
+    parR = terminal ")" $ \t => case tok t of
       ParR => Just ()
       _ => Nothing
 
@@ -105,7 +110,7 @@ parseSExps src = case lexSExp src of
       commit
       xs <- many sexp
       parR
-      pure $ L xs
+      Empty $ L xs
      )
 
 export
@@ -126,7 +131,7 @@ export
 runSmtM : SmtM a -> Either SmtError (String, a)
 runSmtM (MkSmtM f) = case f MkSmtState of
   Left err => Left err
-  Right (_st, ss, x) => Right (unlines $ map show ss, x)
+  Right (st, ss, x) => Right (unlines $ map show ss, x)
 
 export
 Functor SmtM where
@@ -222,7 +227,7 @@ binop op (MkSmt x) (MkSmt y) = MkSmt $ L [A op, x, y]
 
 public export
 Pred2 : Type
-Pred2 = {a, b : Type} -> Smt a -> Smt b -> Smt Bool
+Pred2 = {0 a, b : Type} -> Smt a -> Smt b -> Smt Bool
 
 export
 (Num a, SmtValue a) => Num (Smt a) where
@@ -318,7 +323,10 @@ declFun2 n ta tb tc = do
       , sexp tc
       ]
     ]
-  pure $ \(MkSmt sx), (MkSmt sy) => MkSmt (L [A n, sx, sy])
+  pure applyF
+ where 
+   applyF : Smt a -> Smt b -> Smt c
+   applyF (MkSmt sx) (MkSmt sy) = MkSmt (L [A n, sx, sy])
 
 export
 defineEnumFun2
@@ -359,11 +367,12 @@ parseSol (A "unsat" :: _) = Left Unsatisfiable
 parseSol [A "sat", L (A "model" :: ms)] = Right varMap
   where
     parseVar : SExp -> SortedMap String SExp
-    parseVar (L [A "define-fun", A n, L [], _ty, val]) = Map.fromList [(n, val)]
-    parseVar _ = Map.empty
+    parseVar (L [A "define-fun", A n, L [], ty, val]) =
+      SortedMap.fromList [(n, val)]
+    parseVar _ = SortedMap.empty
 
     varMap : SortedMap String SExp
-    varMap = foldr (Map.mergeLeft . parseVar) Map.empty ms
+    varMap = foldr (SortedMap.mergeLeft . parseVar) SortedMap.empty ms
 
 parseSol ss = Left $ StrangeSmtOutput ss
 
@@ -372,14 +381,14 @@ parseSol ss = Left $ StrangeSmtOutput ss
 public export
 AllSmtValue : List (Type, Type) -> Type
 AllSmtValue [] = ()
-AllSmtValue [(_tag, a)] = SmtValue a
-AllSmtValue ((_tag, a) :: as) = (SmtValue a, AllSmtValue as)
+AllSmtValue [(tag, a)] = SmtValue a
+AllSmtValue ((tag, a) :: as) = (SmtValue a, AllSmtValue as)
 
 private
 decodeVar : SortedMap String SExp -> SmtValue a -> (tag, Smt a) -> Either SmtError (tag, a)
-decodeVar varMap _ (_tag, MkSmt (L xs)) = Left $ NotVariable (L xs)
+decodeVar varMap sv (tag, MkSmt (L xs)) = Left $ NotVariable (L xs)
 decodeVar varMap sv (tag, MkSmt (A v)) =
-  case Map.lookup v varMap of
+  case SortedMap.lookup v varMap of
   Nothing => Left $ NotInModel v
   Just s  => case smtRead @{sv} s of
     Nothing => Left $ CouldNotParse s
@@ -387,7 +396,7 @@ decodeVar varMap sv (tag, MkSmt (A v)) =
 
 
 private
-decode : AllSmtValue as -> SortedMap String SExp -> FList Smt as -> Either SmtError (FList Basics.id as)
+decode : AllSmtValue as -> SortedMap String SExp -> FList Smt as -> Either SmtError (FList Prelude.id as)
 decode _ varMap [] = Right []
 decode {as = [(tag, a)]} sv varMap [vs] = do
     vs' <- traverse (decodeVar varMap sv) vs
@@ -397,17 +406,24 @@ decode {as = (tag, a) :: _ :: as} (sv, svs) varMap (vs :: vsX :: vss) = do
     vss' <- decode svs varMap (vsX :: vss)
     pure $ vs' :: vss'
 
+uglyWriteFile : String -> String -> IO ()
+uglyWriteFile fname content = do
+  Right f <- openFile fname WriteTruncate
+    | Left f => pure ()
+  whatever <- fPutStr f content
+  closeFile f
+
 export
-solve : AllSmtValue as => SmtM (FList Smt as) -> IO (Either SmtError (FList Basics.id as))
+solve : AllSmtValue as => SmtM (FList Smt as) -> IO (Either SmtError (FList Prelude.id as))
 solve @{asv} {as} model =
     case runSmtM model' of
       Left err => pure $ Left err
       Right (src, vars) => do
         -- WARNING: this is really horrible
-        writeFile "/tmp/model.smt" src
-        System.system "z3 -in -smt2 < /tmp/model.smt > /tmp/solution.smt"
+        uglyWriteFile "/tmp/model.smt" src
+        retVal <- system "z3 -in -smt2 < /tmp/model.smt > /tmp/solution.smt"
         Right sol <- readFile "/tmp/solution.smt"
-            | Left err => pure (Left (SmtFileError err))
+            | Left err => pure (Left (FileIOError err))
 
         pure $ parseSExps sol
             >>= parseSol

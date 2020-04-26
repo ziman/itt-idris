@@ -1,22 +1,23 @@
-module Check
+module Core.Check
 
-import TT
-import Utils
-import OrdSemiring
+import public Core.TT
+import Core.Normalise
+import Core.TT.Pretty
+import Utils.Pretty
+import Utils.Misc
+import Utils.OrdSemiring
 
 import Data.Fin
+import Data.List
 import Data.Vect
+import Data.Strings
 
 %default total
-%hide Language.Reflection.V
+%undotted_record_projections off
 
 public export
 record TCState where
   constructor MkTCS
-
-public export
-Backtrace : Type
-Backtrace = List String
 
 public export
 Term : Nat -> Type
@@ -33,6 +34,8 @@ data ErrorMessage : Nat -> Type where
   AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
   CantCheckErased : ErrorMessage n
+  NotImplemented : ErrorMessage n
+  Debug : Doc -> ErrorMessage n
 
 showEM : Context Q n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
@@ -45,18 +48,28 @@ showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
 showEM ctx CantCheckErased
     = "can't check erased terms"
+showEM ctx NotImplemented
+    = "not implemented yet"
+showEM ctx (Debug doc)
+    = render "  " (text ">>> DEBUG <<< " $$ indent doc)
+
+public export
+Backtrace : Type
+Backtrace = List String
 
 public export
 record Failure where
   constructor MkF
   backtrace : Backtrace
-  n : Nat
+  0 n : Nat
   context : Context Q n
   errorMessage : ErrorMessage n
 
 export
 Show Failure where
-  show (MkF bt _ ctx msg) = "With backtrace:\n" ++ unlines (map ("  " ++) bt) ++ showEM ctx msg
+  show (MkF bt _ ctx msg) = "With backtrace:\n"
+    ++ unlines (reverse $ map ("  " ++) bt)
+    ++ showEM ctx msg
 
 public export
 record Env (n : Nat) where
@@ -114,20 +127,28 @@ throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
     => Left (MkF (backtrace env) _ (context env) msg)
 
-withDef : Def Q n -> TC (S n) a -> TC n a
-withDef d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => case f (MkE r (d :: ctx) bt) st of
+debugThrow : Doc -> TC n a
+debugThrow = throw . Debug
+
+withBnd : Binding Q n -> TC (S n) a -> TC n a
+withBnd b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
+  MkE r ctx bt => case f (MkE r (b :: ctx) bt) st of
     Left fail => Left fail
     Right (st', q' :: us, x) =>
         if q' .<=. q
            then Right (st', us, x)
            else Left (MkF bt _ ctx $ QuantityMismatch n q q')
 
-withDef0 : Def Q n -> TC (S n) a -> TC n a
-withDef0 d@(D n q ty) (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => case f (MkE r (d :: ctx) bt) st of
+withTele : Telescope Q n pn -> TC (pn + n) a -> TC n a
+withTele [] x = x
+withTele (b :: bs) x = withTele bs $ withBnd b x
+-- todo: is this the right order?
+
+withBnd0 : Binding Q n -> TC (S n) a -> TC n a
+withBnd0 b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
+  MkE r ctx bt => case f (MkE r (b :: ctx) bt) st of
     Left fail => Left fail
-    Right (st', _q' :: us, x) => Right (st', us, x)  -- don't check the quantity
+    Right (st', q' :: us, x) => Right (st', us, x)  -- don't check the quantity
 
 withQ : Q -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \env, st => f (record { quantity $= (.*. q) } env) st
@@ -140,7 +161,7 @@ use : Fin n -> TC n ()
 use i = MkTC $ \env, st => Right (st, useEnv (quantity env) i (context env), ())
 
 lookup : Fin n -> TC n (Ty n)
-lookup i = defType . lookupCtx i <$> getCtx
+lookup i = bty . lookup i <$> getCtx
 
 trace : Show tr => tr -> TC n a -> TC n a
 trace t (MkTC f) = MkTC $ \env, st => case env of
@@ -162,12 +183,19 @@ mutual
         then pure ()
         else throw $ CantConvert (V i) (V j)
 
-  conv ltm@(Bind b d@(D n q ty) rhs) rtm@(Bind b' d'@(D n' q' ty') rhs') =
-    if (b, q) /= (b', q')
+  conv ltm@(Lam b@(B n q ty) rhs) rtm@(Lam b'@(B n' q' ty') rhs') =
+    if q /= q'
        then throw $ CantConvert ltm rtm
        else do
          ty ~= ty'
-         withDef d $ rhs ~= rhs'
+         withBnd b $ rhs ~= rhs'
+
+  conv ltm@(Pi b@(B n q ty) rhs) rtm@(Pi b'@(B n' q' ty') rhs') =
+    if q /= q'
+       then throw $ CantConvert ltm rtm
+       else do
+         ty ~= ty'
+         withBnd b $ rhs ~= rhs'
 
   conv lhs@(App q f x) rhs@(App q' f' x') =
     if q /= q'
@@ -180,47 +208,70 @@ mutual
 
   conv Star Star = pure ()
 
+  conv Bool_ Bool_ = pure ()
+  conv True_ True_ = pure ()
+  conv False_ False_ = pure ()
+  conv (If_ c t e) (If_ c' t' e') = do
+    c ~= c'
+    t ~= t'
+    e ~= e'
+
   conv p q = throw $ CantConvert p q
 
   covering
   (~=) : TT Q n -> TT Q n -> TC n ()
-  (~=) p q = conv (rnf p) (rnf q)
+  (~=) p q = conv (whnf p) (whnf q)
 
 infixl 2 =<<
 (=<<) : Monad m => (a -> m b) -> m a -> m b
 (=<<) f x = x >>= f
 
-covering export
-checkTm : Term n -> TC n (Ty n)
-checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
-checkTm tm@(Bind Lam d@(D n q ty) rhs) = traceTm tm "LAM" $ do
-  tyTy <- withQ I $ checkTm ty
-  tyTy ~= Star
+mutual
+  covering export
+  checkTm : Term n -> TC n (Ty n)
+  checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
 
-  Bind Pi d <$> (withDef d $ checkTm rhs)
+  checkTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
+    tyTy <- withQ I $ checkTm ty
+    tyTy ~= Star
 
-checkTm tm@(Bind Pi d@(D n q ty) rhs) = traceTm tm "PI" $ do
-  tyTy <- withQ I $ checkTm ty
-  tyTy ~= Star
+    Pi b <$> (withBnd b $ checkTm rhs)
 
-  withQ I $ withDef d $ do
-    rhsTy <- checkTm rhs
-    rhsTy ~= Star
+  checkTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
+    tyTy <- withQ I $ checkTm ty
+    tyTy ~= Star
 
-  pure Star
+    withQ I $ withBnd b $ do
+      rhsTy <- checkTm rhs
+      rhsTy ~= Star
 
-checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
-  fTy <- rnf <$> checkTm f
-  xTy <- checkTm x
-  case fTy of
-    Bind Pi (D piN piQ piTy) piRhs =>
-        if piQ /= appQ
-           then throw $ AppQuantityMismatch fTy tm
-           else do
-             xTy ~= piTy
-             pure $ substVars (substTop x) piRhs
+    pure Star
 
-    _ => throw $ NotPi fTy
+  checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
+    fTy <- whnf <$> checkTm f
+    xTy <- checkTm x
+    case fTy of
+      Pi (B piN piQ piTy) piRhs =>
+          if piQ /= appQ
+             then throw $ AppQuantityMismatch fTy tm
+             else do
+               xTy ~= piTy
+               pure $ subst (substFZ x) piRhs
 
-checkTm Star = pure Star
-checkTm Erased = throw CantCheckErased
+      _ => throw $ NotPi fTy
+
+  checkTm Star = pure Star
+  checkTm Erased = throw CantCheckErased
+
+  checkTm Bool_ = pure Star
+  checkTm True_ = pure Bool_
+  checkTm False_ = pure Bool_
+  checkTm (If_ c t e) = do
+    cty <- checkTm c
+    cty ~= Bool_
+
+    tty <- checkTm t
+    ety <- checkTm e
+    tty ~= ety
+
+    pure tty

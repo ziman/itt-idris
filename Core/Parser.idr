@@ -1,0 +1,279 @@
+module ITT.Parser
+
+import public ITT.Core
+
+import Text.Lexer
+import Text.Lexer.Core
+import Text.Parser
+import Text.Parser.Core
+import Data.List
+import Data.Vect
+
+%default total
+
+data Token
+  = Ident String
+  | ParL
+  | ParR
+  | SqBrL
+  | SqBrR
+  | Lam
+  | Arrow
+  | Equals
+  | DblArrow
+  | Comma
+  | Dot
+  | Space
+  | Comment
+  | Underscore
+  | Pipe
+  | Colon (Maybe Q)
+  | Keyword String
+
+Show Token where
+  show (Ident s) = "identifier " ++ show s
+  show ParL = "("
+  show ParR = ")"
+  show SqBrL = "["
+  show SqBrR = "]"
+  show Lam = "\\"
+  show Arrow = "->"
+  show Equals = "="
+  show DblArrow = "=>"
+  show Comma = ","
+  show Dot = "."
+  show Space = "(space)"
+  show Comment = "(comment)"
+  show Underscore = "_"
+  show Pipe = "|"
+  show (Colon mbQ) = "colon " ++ show mbQ
+  show (Keyword kwd) = "keyword " ++ show kwd
+
+Eq Token where
+  (==) x y = case (x, y) of
+    (Ident x, Ident y) => x == y
+    (ParL, ParL) => True
+    (ParR, ParR) => True
+    (SqBrL, SqBrL) => True
+    (SqBrR, SqBrR) => True
+    (Lam, Lam) => True
+    (Arrow, Arrow) => True
+    (Dot, Dot) => True
+    (Space, Space) => True
+    (Equals, Equals) => True
+    (DblArrow, DblArrow) => True
+    (Comma, Comma) => True
+    (Comment, Comment) => True
+    (Pipe, Pipe) => True
+    (Underscore, Underscore) => True
+    (Colon mq, Colon mq') => mq == mq'
+    (Keyword x, Keyword y) => x == y
+    _ => False
+
+public export
+data ParseError : Type where
+  LexError : Int -> Int -> String -> ParseError
+  SyntaxError : Int -> Int -> String -> List (TokenData Token) -> ParseError
+
+export
+Show ParseError where
+  show (LexError r c msg) = "lex error at " ++ show (r, c) ++ ": " ++ msg
+  show (SyntaxError r c msg ts) = "syntax error at " ++ show (r, c) ++ ": " ++ msg
+    ++ "; next up: " ++ show [TokenData.tok t | t <- take 8 ts]
+
+lex : String -> Either ParseError (List (TokenData Token))
+lex src = case lex tokens src of
+    (ts, (_, _, "")) => Right $ filter notSpace ts
+    (_, (r, c, rest)) => Left $ LexError r c rest
+  where
+    notSpace : TokenData Token -> Bool
+    notSpace td = case tok td of
+      Space   => False
+      Comment => False
+      _ => True
+
+    ident : Lexer
+    ident = some $ pred (\x => isAlpha x || isDigit x || x == '_' || x == '\'')
+
+    colon : Lexer
+    colon = is ':' <+> opt (is 'I' <|> is 'E' <|> is 'L' <|> is 'R')
+
+    parseColon : String -> Token
+    parseColon ":I" = Colon (Just I)
+    parseColon ":E" = Colon (Just E)
+    parseColon ":L" = Colon (Just L)
+    parseColon ":R" = Colon (Just R)
+    parseColon _ = Colon Nothing
+
+    kwdOrIdent : String -> Token
+    kwdOrIdent s =
+        if s `elem` keywords
+          then Keyword s
+          else Ident   s
+      where
+        keywords : List String
+        keywords =
+          [ "Type", "Bool"
+          , "True", "False"
+          , "if", "then", "else"
+          ]
+
+    tokens : TokenMap Token
+    tokens = 
+      [ (is '(',       const ParL)
+      , (is ')',       const ParR)
+      , (is '[',       const SqBrL)
+      , (is ']',       const SqBrR)
+      , (is '_',       const Underscore)
+      , (is '|',       const Pipe)
+      , (ident,        kwdOrIdent)
+      , (is '\\',      const Lam)
+      , (exact "->" ,  const Arrow)
+      , (is '.',       const Dot)
+      , (is ',',       const Comma)
+      , (exact "=>",   const DblArrow)
+      , (is '=',       const Equals)
+      , (space,        const Space)
+      , (colon,        parseColon)
+      , (lineComment (exact "--"), const Comment)
+      ]
+
+Term : Nat -> Type
+Term = TT (Maybe Q) 
+
+Ty : Nat -> Type
+Ty = TT (Maybe Q)
+
+Rule : Type -> Type
+Rule = Grammar (TokenData Token) True
+
+token : Token -> Rule ()
+token t = terminal ("expecting " ++ show t) $ \t' =>
+  if t == tok t'
+    then Just ()
+    else Nothing
+
+type : Rule (Term n)
+type = token (Keyword "Type") *> pure Star
+
+lookupName : Eq a => a -> Vect n a -> Maybe (Fin n)
+lookupName x [] = Nothing
+lookupName x (y :: ys) =
+  if x == y
+    then Just FZ
+    else FS <$> lookupName x ys
+
+ident : Rule String
+ident = terminal "identifier" $ \t => case tok t of
+  Ident n => Just n
+  _ => Nothing
+
+varName : Vect n String -> Rule (Fin n)
+varName ns = do
+    n <- ident
+    aux n ns (lookupName n ns)  -- case block does not typecheck here
+  where
+    aux : String -> Vect n String -> Maybe (Fin n) -> Grammar (TokenData Token) False (Fin n)
+    aux n ns (Just i) = pure i
+    aux n ns Nothing = fail $ "variable " ++ show n
+      ++ " not found in scope " ++ show ns
+
+var : Vect n String -> Rule (Term n)
+var ns = V <$> varName ns
+
+name : Rule Name
+name = map (\n => N n 0) ident
+
+ref : Vect n String -> Rule (Term n)
+ref ns = V <$> varName ns
+
+parens : {c : _} -> Grammar (TokenData Token) c a -> Rule a
+parens p = token ParL *> p <* token ParR
+
+colon : Rule (Maybe Q)
+colon = terminal "colon" $ \t => case tok t of
+  Colon mq => Just mq
+  _ => Nothing
+
+record Scruts (n : Nat) where
+  constructor MkScruts
+  s_pn : Nat
+  s_pvs : Telescope (Maybe Q) n s_pn
+  s_ss  : Vect s_pn (Term n)
+  s_pns : Vect s_pn String
+
+record Tele (npn : Nat) where
+  constructor MkTele
+  t_s : Nat
+  t_tele : Telescope (Maybe Q) npn t_s
+  t_names : Vect t_s String
+
+mutual
+  binding : Vect n String -> Rule (Binding (Maybe Q) n)
+  binding ns = B <$> ident <*> colon <*> term ns
+
+  lam : Vect n String -> Rule (Term n)
+  lam ns = do
+    token Lam
+    commit
+    b <- binding ns
+    token Dot
+    Lam b <$> term (bn b :: ns)
+
+  pi : Vect n String -> Rule (Term n)
+  pi ns = do
+    token ParL
+    b <- binding ns
+    token ParR
+    token Arrow
+    commit
+    Pi b <$> term (bn b :: ns)
+
+  atom : Vect n String -> Rule (Term n)
+  atom ns = ref ns
+    <|> (token (Keyword "Bool") *> pure Bool_)
+    <|> (token (Keyword "True") *> pure True_)
+    <|> (token (Keyword "False") *> pure False_)
+    <|> (token ParL *> term ns <* token ParR)
+
+  -- includes nullary applications (= variables)
+  app : Vect n String -> Rule (Term n)
+  app ns = do
+    head <- atom ns
+    commit
+    args <- many (atom ns)
+    Empty $ foldl (App Nothing) head args
+
+  telescope : Vect n String -> Tele n -> Grammar (TokenData Token) False (Tele n)
+  telescope ns acc =
+    (do
+        b <- parens $ binding (t_names acc ++ ns)
+        telescope ns (MkTele (S $ t_s acc) (b :: t_tele acc) (bn b :: t_names acc))
+    ) <|> pure acc
+
+  term : Vect n String -> Rule (Term n)
+  term ns
+    = lam ns
+    <|> pi ns
+    <|> type
+    <|> erased
+    <|> app ns
+    <|> if_ ns
+
+  if_ : Vect n String -> Rule (Term n)
+  if_ ns = If_
+    <$> (token (Keyword "if") *> commit *> term ns)
+    <*> (token (Keyword "then") *> term ns)
+    <*> (token (Keyword "else") *> term ns)
+
+  erased : Rule (Term n)
+  erased = token Underscore *> pure Erased
+
+export
+parse : String -> Either ParseError (TT (Maybe Q) Z)
+parse src = case lex src of
+  Left err => Left err
+  Right ts => case Text.Parser.Core.parse (term [] <* eof) ts of
+    Left (Error msg []) => Left $ SyntaxError 0 0 msg []
+    Left (Error msg (tt :: tts)) => Left $ SyntaxError (line tt) (col tt) msg (tt :: tts)
+    Right (tm, _) => Right tm

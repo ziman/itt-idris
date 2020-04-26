@@ -1,8 +1,10 @@
-module Pretty
+module Utils.Pretty
 
-%access export
+import Data.List
+
 %default total
 
+export
 data Doc : Type where
   Text : String -> Doc
   Vcat : List Doc -> Doc
@@ -14,46 +16,63 @@ public export
 interface Pretty ctx a where
   pretty : ctx -> a -> Doc
 
+export
 Semigroup Doc where
   (<+>) = Hang
 
+export
 Monoid Doc where
   neutral = Text ""
 
+export
 text : String -> Doc
 text = Text
 
+export
 show : Show a => a -> Doc
 show = Text . show
 
 infixr 2 $$
+export
 ($$) : Doc -> Doc -> Doc
 ($$) (Vcat xs) (Vcat ys) = Vcat (xs ++ ys)
 ($$) x (Vcat ys) = Vcat (x :: ys)
 ($$) (Vcat xs) y = Vcat (xs ++ [y])
 ($$) x y = Vcat [x,y]
 
+export
 vcat : List Doc -> Doc
 vcat = Vcat
 
+export
+punctuate : Doc -> List Doc -> Doc
+punctuate sep = concat . intersperse sep
+
+export
 hsep : List Doc -> Doc
-hsep = concat . intersperse (text " ")
+hsep = punctuate (text " ")
 
 infixl 6 <++>
+export
 (<++>) : Doc -> Doc -> Doc
 (<++>) x y = x <+> text " " <+> y
 
+export
 indent : Doc -> Doc
 indent = Indent
 
+export
 parens : Doc -> Doc
 parens d = text "(" <+> d <+> text ")"
 
+export
 columns : String -> List Doc -> Doc
 columns = Columns
 
+export
 data CN = CL Nat | CR Nat | CE
 
+export
 compareNat : Nat -> Nat -> CN
 compareNat Z Z = CE
 compareNat n Z = CR n
@@ -112,5 +131,6 @@ render' ind (Columns sep ds)
     cols : List (List String)
     cols = map (extendRowsTo rows) ls
 
+export
 render : String -> Doc -> String
-render ind = unlines . render' ind
+render ind = concat . intersperse "\n" . render' ind
