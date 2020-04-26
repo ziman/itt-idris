@@ -76,16 +76,20 @@ zipMatch [] [] = Just []
 zipMatch (x :: xs) (y :: ys) = ((x,y) ::) <$> zipMatch xs ys
 zipMatch _ _ = Nothing
 
+ctorMatches : PCtor -> Name -> Bool
+ctorMatches (Forced _) _ = True
+ctorMatches (Checked cn) cn' = cn == cn'
+
 mutual
   matchPat : Subst q n pn -> Pat q pn -> TT q n -> Outcome (Subst q n pn)
   matchPat s (PV pv) tm = case s pv of
     Nothing => Match $ insert pv (Just tm) s
     Just _  => Error OvermatchedPatVar
   matchPat s (PForced _) _ = Match s
-  matchPat s (PCtor isForced cn ps) tm =
+  matchPat s (PCtorApp ctor ps) tm =
     case unApply tm of
-      (P cn', args) =>
-          if cn' == cn
+      (P cn, args) =>
+          if ctorMatches ctor cn
             then case zipMatch (snd <$> ps) (snd <$> args) of
               Just psArgs =>
                 let psa = fromList psArgs
