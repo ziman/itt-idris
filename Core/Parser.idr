@@ -195,7 +195,7 @@ var : Vect n String -> Rule (Term n)
 var ns = V <$> varName ns
 
 ref : Vect n String -> Rule (Term n)
-ref ns = V <$> varName ns
+ref ns = P . UN <$> ident
 
 parens : {c : _} -> Grammar (TokenData Token) c a -> Rule a
 parens p = token ParL *> p <* token ParR
@@ -238,7 +238,9 @@ mutual
     Pi b <$> term (b.name :: ns)
 
   atom : Vect n String -> Rule (Term n)
-  atom ns = ref ns
+  atom ns = 
+    var ns
+    <|> ref ns
     <|> (kwd "Type" *> pure Type_)
     <|> (parens $ term ns)
 
