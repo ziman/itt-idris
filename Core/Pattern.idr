@@ -8,6 +8,5 @@ import public Core.TT
 public export
 data Pat : (q : Type) -> (n : Nat) -> Type where
   PV : (pv : Fin n) -> Pat q n
-  PC : (cn : Name) -> Pat q n
-  PApp : q -> Pat q n -> Pat q n -> Pat q n
+  PCtor : (isForced : Bool) -> (cn : Name) -> List (q, Pat q n) -> Pat q n
   PForced : TT q n -> Pat q n

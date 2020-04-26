@@ -6,12 +6,17 @@ import public Core.TT
 %undotted_record_projections off
 
 export
-unApply : q -> TT q n -> TT q n -> (TT q n, List (q, TT q n))
-unApply q_ f x = go f [(q_,x)]
+unApply' : q -> TT q n -> TT q n -> (TT q n, List (q, TT q n))
+unApply' q_ f x = go f [(q_,x)]
   where
     go : TT q n -> List (q, TT q n) -> (TT q n, List (q, TT q n))
     go (App q f x) args = go f ((q,x) :: args)
     go f args = (f, args)
+
+export
+unApply : TT q n -> (TT q n, List (q, TT q n))
+unApply (App q f x) = unApply' q f x
+unApply tm = (tm, [])
 
 export
 mkApp : TT q n -> List (q, TT q n) -> TT q n
