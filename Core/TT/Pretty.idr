@@ -1,4 +1,4 @@
-module ITT.Core.Pretty
+module Core.TT.Pretty
 
 import public ITT.Core
 import public ITT.Context
@@ -6,6 +6,7 @@ import public ITT.Quantity
 import public Utils.Pretty
 
 %default total
+%undotted_record_projections off
 
 public export
 data NestingLevel

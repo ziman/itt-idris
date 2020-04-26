@@ -1,8 +1,8 @@
-module ITT.Check
+module Core.Check
 
-import public ITT.Core
-import ITT.Normalise
-import ITT.Core.Pretty
+import public Core.TT
+import Core.Normalise
+import Core.TT.Pretty
 import Utils.Pretty
 import Utils.Misc
 import Utils.OrdSemiring
@@ -13,6 +13,7 @@ import Data.Vect
 import Data.Strings
 
 %default total
+%undotted_record_projections off
 
 public export
 record TCState where

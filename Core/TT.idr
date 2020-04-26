@@ -1,15 +1,16 @@
-module ITT.Core
+module Core.TT
 
 import public Utils.Misc
 import public Utils.Pretty
 import public Utils.OrdSemiring
-import public ITT.Quantity
+import public Core.Quantity
 import public Data.Nat
 import public Data.Fin
 import public Data.Vect
 import Control.Monad.Identity
 
 %default total
+%undotted_record_projections off
 
 public export
 data Name = N String Int
@@ -37,17 +38,13 @@ mutual
 
   public export
   data TT : Type -> Nat -> Type where
+    P : (gn : Name) -> TT q n
     V : (i : Fin n) -> TT q n
     Lam : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
     Pi  : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
-    Star : TT q n
+    Type_ : TT q n
     Erased : TT q n
-
-    Bool_  : TT q n
-    If_    : TT q n -> TT q n -> TT q n -> TT q n
-    True_  : TT q n
-    False_ : TT q n
 
 namespace Binding
   public export
@@ -97,17 +94,12 @@ mutual
 
   export
   Eq q => Eq (TT q n) where
-    (==) (V i) (V j)
-      = finEq i j
+    (==) (P n) (P n') = n == n'
+    (==) (V i) (V j) = finEq i j
     (==) (Lam b rhs) (Lam b' rhs') = b == b' && rhs == rhs'
     (==) (Pi  b rhs) (Pi  b' rhs') = b == b' && rhs == rhs'
     (==) (App q f x) (App q' f' x')
       = (q == q') && (f == f') && (x == x')
-    (==) Star Star = True
+    (==) Type_ Type_ = True
     (==) Erased Erased = True
-    (==) Bool_ Bool_ = True
-    (==) (If_ c t e) (If_ c' t' e') =
-        (c == c') && (t == t') && (e == e')
-    (==) True_ True_ = True
-    (==) False_ False_ = True
     _ == _ = False

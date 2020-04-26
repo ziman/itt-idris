@@ -1,9 +1,10 @@
-module ITT.Quantity
+module Core.Quantity
 
 import Utils.Misc
 import public Utils.OrdSemiring
 
 %default total
+%undotted_record_projections off
 
 public export
 interface ShowQ q where

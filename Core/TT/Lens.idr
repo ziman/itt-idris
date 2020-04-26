@@ -1,9 +1,10 @@
-module ITT.Core.Lens
+module Core.TT.Lens
 
 import public ITT.Core
 import Control.Monad.Identity
 
 %default total
+%undotted_record_projections off
 
 public export
 Traversal : Type -> Type -> Type -> Type -> Type
