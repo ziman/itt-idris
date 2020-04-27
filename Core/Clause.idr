@@ -18,15 +18,17 @@ record Clause (q : Type) (argn : Nat) where
   lhs : Vect argn (q, Pat q pn)
   rhs : TT q pn
 
-prettyPi : ShowQ q => Context q n -> Doc
-prettyPi [] = neutral
-prettyPi pi = pretty () pi <+> text "."
+prettyPi : ShowQ q => Context q n -> Doc -> Doc
+prettyPi [] clause = clause
+prettyPi pi clause =
+  text "forall" <++> pretty () pi <+> text "."
+    $$ indent clause
 
 export
 ShowQ q => Pretty Name (Clause q argn) where
   pretty fn c =
-    prettyPi c.pi
-    <++> pretty () fn
-    <++> hsep [pretty c.pi pat | (q, pat) <- toList c.lhs]
-    <++> text "~>"
-    <++> pretty (PTT True NoParens, c.pi) c.rhs
+    prettyPi c.pi $
+      pretty () fn
+      <++> hsep [pretty c.pi pat | (q, pat) <- toList c.lhs]
+      <++> text "~>"
+      <++> pretty (PTT True NoParens, c.pi) c.rhs
