@@ -27,6 +27,16 @@ postulate g : (x :L U (C True)) -> Bool.
 postulate b : Bool.
 postulate d : U (C b).
 
+not : (x : Bool) -> Bool {
+  not True ~> False,
+  not False ~> True
+}
+
+id : (a : Type) -> (x : a) -> a {
+  (a : Type) (x : a).
+    id a x ~> x
+}
+
 -- Thanks to the irrelevance of C's argument, we *can* apply `g` to `d`
 -- and it does not matter that `b` may or may not be equal to `True`.
 --
