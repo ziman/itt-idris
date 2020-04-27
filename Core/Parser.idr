@@ -340,14 +340,14 @@ record RawClause where
 
 rawClause : String -> Rule RawClause
 rawClause fn = do
-  kwd "forall"
-  commit
   pnpvs <- context [] []
   cont pnpvs
  where
   cont : (pn ** Context (Maybe Q) pn) -> Rule RawClause
   cont (pn ** pvs) = do
-    token Dot
+    case pn of
+      Z => pure ()
+      _ => token Dot <|> fail {c = False} "dot expected"  -- this sets c=False
     let pns = names pvs
     token (Ident fn)
     pats <- many (patAtom pns)

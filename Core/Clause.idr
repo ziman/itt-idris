@@ -18,13 +18,15 @@ record Clause (q : Type) (argn : Nat) where
   lhs : Vect argn (q, Pat q pn)
   rhs : TT q pn
 
+prettyPi : ShowQ q => Context q n -> Doc
+prettyPi [] = neutral
+prettyPi pi = pretty () pi <+> text "."
+
 export
 ShowQ q => Pretty Name (Clause q argn) where
   pretty fn c =
-    text "forall"
-    <++> pretty () c.pi
-    <+> text "."
+    prettyPi c.pi
     <++> pretty () fn
     <++> hsep [pretty c.pi pat | (q, pat) <- toList c.lhs]
-    <++> text "="
+    <++> text "~>"
     <++> pretty (PTT True NoParens, c.pi) c.rhs

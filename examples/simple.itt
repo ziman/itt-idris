@@ -33,7 +33,7 @@ postulate d : U (C b).
 -- We can even coerce `d` to `U (C False)`, and it'll still work.
 --
 main : Bool {
-  forall . main ~> (\x : U (C False). g x) d
+  main ~> (\x : U (C False). g x) d
 }
 
 -- Also notice that we didn't use any unnecessary annotations above,
