@@ -31,13 +31,14 @@ record Definition (q : Type) where
 export
 ShowQ q => Pretty () (Definition q) where
   pretty () (MkDef b Postulate) =
-    text "postulate" <++> parens (pretty (Context.Nil {q}) b)
+    text "postulate" <++> pretty (Context.Nil {q}) b <+> text "."
 
   pretty () (MkDef b Constructor) =
-    text "constructor" <++> parens (pretty (Context.Nil {q}) b)
+    text "constructor" <++> pretty (Context.Nil {q}) b <+> text "."
 
   pretty () (MkDef b (Foreign code)) =
-    text "foreign" <++> parens (pretty (Context.Nil {q}) b) <++> text "=" <++> text (show code)
+    text "foreign" <++> pretty (Context.Nil {q}) b
+        $$ indent (text "=" <++> text (show code) <+> text ".")
 
   pretty () (MkDef b (Clauses argn cs)) =
     pretty (Context.Nil {q}) b <++> text "{"

@@ -301,7 +301,8 @@ postulate_ : Rule (List (Definition (Maybe Q)))
 postulate_ = do
   kwd "postulate"
   commit
-  bnd <- parens $ binding []
+  bnd <- binding []
+  token Dot
   pure [MkDef bnd Postulate]
 
 dataDecl : Rule (List (Definition (Maybe Q)))
@@ -309,9 +310,9 @@ dataDecl = do
   kwd "data"
   commit
   bnd <- binding []
-  kwd "where"
+  token BraceL
   bnds <- sepBy (token Comma) (binding [])
-  kwd "end"
+  token BraceR
   pure [MkDef b Constructor | b <- bnd :: bnds]
 
 telescope : {k : Nat} -> Vect (k + b) String -> Telescope (Maybe Q) b k
@@ -375,10 +376,10 @@ checkClauses (c :: cs) =
 clauseFun : Rule (List (Definition (Maybe Q)))
 clauseFun = do
   bnd <- binding []
+  token BraceL
   commit
-  kwd "where"
   rcs <- sepBy1 (token Comma) (rawClause bnd.name)
-  kwd "end"
+  token BraceR
   cont bnd rcs -- for some reason inference fails here
  where
   cont : Binding (Maybe Q) Z -> List RawClause -> Grammar (TokenData Token) False (List (Definition (Maybe Q)))
