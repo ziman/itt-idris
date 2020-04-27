@@ -30,8 +30,18 @@ record Definition (q : Type) where
 
 export
 ShowQ q => Pretty () (Definition q) where
-  pretty () d = pretty (Context.Nil {q}) d.binding <++> text "{"
-    $$ indent (pretty (UN d.binding.name) d.body)
+  pretty () (MkDef b Postulate) =
+    text "postulate" <++> parens (pretty (Context.Nil {q}) b)
+
+  pretty () (MkDef b Constructor) =
+    text "constructor" <++> parens (pretty (Context.Nil {q}) b)
+
+  pretty () (MkDef b (Foreign code)) =
+    text "foreign" <++> parens (pretty (Context.Nil {q}) b) <++> text "=" <++> text (show code)
+
+  pretty () (MkDef b (Clauses argn cs)) =
+    pretty (Context.Nil {q}) b <++> text "{"
+    $$ indent (vcat (map (pretty (UN b.name)) cs))
     $$ text "}"
 
 export

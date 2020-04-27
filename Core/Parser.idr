@@ -125,7 +125,7 @@ lex src = case lex tokens src of
       where
         keywords : List String
         keywords =
-          [ "Type", "foreign", "postulate", "data", "where", "end", "forall"
+          [ "Type", "foreign", "postulate", "data", "where", "forall"
           ]
 
     tokens : TokenMap Token
@@ -197,7 +197,7 @@ var ns = V <$> varName ns
 ref : Vect n String -> Rule (Term n)
 ref ns = P . UN <$> ident
 
-parens : {c : _} -> Grammar (TokenData Token) c a -> Rule a
+parens : {c : _} -> Inf (Grammar (TokenData Token) c a) -> Rule a
 parens p = token ParL *> p <* token ParR
 
 colon : Rule (Maybe Q)
@@ -237,12 +237,15 @@ mutual
     commit
     Pi b <$> term (b.name :: ns)
 
+  pterm : Vect n String -> Rule (Term n)
+  pterm ns = parens (term ns)
+
   atom : Vect n String -> Rule (Term n)
   atom ns = 
     var ns
     <|> ref ns
     <|> (kwd "Type" *> pure Type_)
-    <|> (parens $ term ns)
+    <|> pterm ns
 
   -- includes nullary applications (= variables)
   app : Vect n String -> Rule (Term n)
@@ -268,6 +271,7 @@ patVar ns = PV <$> varName ns
 patForced : Vect n String -> Rule (Pat (Maybe Q) n)
 patForced ns = do
   token SqBrL
+  commit
   tm <- term ns
   token SqBrR
   pure (PForced tm)
@@ -286,6 +290,7 @@ mutual
   patCtorApp : Vect n String -> Rule (Pat (Maybe Q) n)
   patCtorApp ns = parens $ do
     c <- patCtor
+    commit
     args <- many (patAtom ns)
     pure $ PCtorApp c [(Nothing, arg) | arg <- args]
 
@@ -296,8 +301,7 @@ postulate_ : Rule (List (Definition (Maybe Q)))
 postulate_ = do
   kwd "postulate"
   commit
-  bnd <- binding []
-  kwd "end"
+  bnd <- parens $ binding []
   pure [MkDef bnd Postulate]
 
 dataDecl : Rule (List (Definition (Maybe Q)))
@@ -336,6 +340,7 @@ record RawClause where
 rawClause : String -> Rule RawClause
 rawClause fn = do
   kwd "forall"
+  commit
   pnpvs <- context [] []
   cont pnpvs
  where
@@ -382,14 +387,14 @@ clauseFun = do
       Nothing => fail "ill-formed clauses"
       Just (argn ** cs) => pure [MkDef bnd (Clauses argn cs)]
 
-definitions : Rule (List (Definition (Maybe Q)))
-definitions = 
+definition : Rule (List (Definition (Maybe Q)))
+definition = 
   postulate_
   <|> dataDecl
   <|> clauseFun
 
 globals : Grammar (TokenData Token) False (Globals (Maybe Q))
-globals = toGlobals . concat <$> many definitions
+globals = toGlobals . concat <$> many definition
 
 export
 parse : String -> Either ParseError (Globals (Maybe Q))
