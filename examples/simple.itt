@@ -1,13 +1,13 @@
--- T is a type that contains an irrelevant Boolean.
--- Change to (pf :E Bool) to cause type error.
---
--- If you change it to (pf : Bool), inference will still make it irrelevant
--- since it is not necessary to make it relevant for the program to typecheck.
 data Bool : Type {
   True : Bool,
   False : Bool
 }
 
+-- T is a type that contains an irrelevant Boolean.
+-- Change to (pf :E Bool) to cause type error.
+--
+-- If you change it to (pf : Bool), inference will still make it irrelevant
+-- since it is not necessary to make it relevant for the program to typecheck.
 data T : Type {
     C : (pf :I Bool) -> T
 }
@@ -58,4 +58,4 @@ main : Bool {
 -- 
 -- All other annotations are inferred automatically.
 
--- vim: ft=idris2
+-- vim: ft=ttstar

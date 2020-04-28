@@ -1,10 +1,10 @@
 module Inference.Infer
 
 import Utils.Misc
-import public ITT.Core
-import public ITT.Core.Pretty
-import public ITT.Context
-import public ITT.Normalise
+import public Core.TT
+import public Core.TT.Pretty
+import public Core.Context
+import public Core.Normalise
 import public Inference.Evar
 import public Utils.OrdSemiring
 

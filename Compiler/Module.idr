@@ -1,14 +1,14 @@
 module Compiler.Module
 
-import ITT.Check
-import ITT.Erase
-import ITT.Normalise
-import public ITT.Core
+import Core.Check
+import Core.Erase
+import Core.Normalise
+import public Core.TT
 import public Compiler.Monad
 
 import Inference.Evar
-import public Inference.Infer
-import Inference.SmtModel
+-- import public Inference.Infer
+-- import Inference.SmtModel
 
 import Data.List
 import Data.Strings
@@ -31,6 +31,7 @@ isRelevant vs (EV i) = case SortedMap.lookup i vs of
   Just I  => Just False
   Just _  => Just True
 
+{-
 newlyReachableEqs : SortedMap ENum Q -> List DeferredEq
     -> (List DeferredEq, List DeferredEq)
 newlyReachableEqs vs [] = ([], [])
@@ -74,17 +75,19 @@ iterConstrs i (MkConstrs cs eqs) st = do
           iterConstrs (i+1)
             (MkConstrs (cs <+> cs') (waitingEqs <+> eqs'))
             st'
+-}
 
 substQ : SortedMap ENum Q -> Evar -> Maybe Q
 substQ vs (QQ q) = Just q
 substQ vs (EV i) = SortedMap.lookup i vs
 
 covering export
-processModule : TT (Maybe Q) Z -> ITT ()
-processModule raw = do
+processModule : Globals (Maybe Q) -> ITT ()
+processModule gs = do
   banner "# Desugared #"
-  prn raw
+  printP () gs
 
+  {-
   banner "# Evarified #"
   let evarified = evarify ttQ raw
   prn evarified
@@ -133,3 +136,4 @@ processModule raw = do
     $$ text ""
     $$ text "Erased, reduced:"
     $$ pretty () (whnf erased)
+  -}

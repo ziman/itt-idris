@@ -35,6 +35,7 @@ data ErrorMessage : Nat -> Type where
   NotPi : Ty n -> ErrorMessage n
   CantCheckErased : ErrorMessage n
   NotImplemented : ErrorMessage n
+  WHNFError : EvalError -> ErrorMessage n
   Debug : Doc -> ErrorMessage n
 
 showEM : Context Q n -> ErrorMessage n -> String
@@ -46,6 +47,8 @@ showEM ctx (AppQuantityMismatch fTy tm)
     = "quantity mismatch in application of (_ : " ++ showTm ctx fTy ++ "): " ++ showTm ctx tm
 showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
+showEM ctx (WHNFError e)
+    = "WHNF error: " ++ show e
 showEM ctx CantCheckErased
     = "can't check erased terms"
 showEM ctx NotImplemented
@@ -121,11 +124,11 @@ getEnv : TC n (Env n)
 getEnv = MkTC $ \env, st => Right (st, usage0e env, env)
 
 getCtx : TC n (Context Q n)
-getCtx = context <$> getEnv
+getCtx = .context <$> getEnv
 
 throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
-    => Left (MkF (backtrace env) _ (context env) msg)
+    => Left (MkF env.backtrace _ env.context msg)
 
 debugThrow : Doc -> TC n a
 debugThrow = throw . Debug
@@ -158,10 +161,10 @@ useEnv q  FZ    (_ :: ctx) = q :: usage0 ctx
 useEnv q (FS x) (_ :: ctx) = semi0 :: useEnv q x ctx
 
 use : Fin n -> TC n ()
-use i = MkTC $ \env, st => Right (st, useEnv (quantity env) i (context env), ())
+use i = MkTC $ \env, st => Right (st, useEnv env.quantity i env.context, ())
 
 lookup : Fin n -> TC n (Ty n)
-lookup i = bty . lookup i <$> getCtx
+lookup i = .type . lookup i <$> getCtx
 
 trace : Show tr => tr -> TC n a -> TC n a
 trace t (MkTC f) = MkTC $ \env, st => case env of
@@ -173,82 +176,88 @@ traceTm tm t (MkTC f) = MkTC $ \env, st => case env of
     let msg = show t ++ ": " ++ showTm ctx tm
       in f (MkE r ctx (msg :: bt)) st
 
+covering
+whnfTC : Globals q => TT q n -> TC n (TT q n)
+whnfTC tm = case whnf %search tm of
+  Left e => throw $ WHNFError e
+  Right tm' => pure tm'
+
 infix 3 ~=
 mutual
   covering
-  conv : TT Q n -> TT Q n -> TC n ()
+  conv : Globals Q => TT Q n -> TT Q n -> TC n ()
+
+  conv (P n) (P n') =
+    if n == n'
+      then pure ()
+      else throw $ CantConvert (P n) (P n')
 
   conv (V i) (V j) =
     if finEq i j
-        then pure ()
-        else throw $ CantConvert (V i) (V j)
+      then pure ()
+      else throw $ CantConvert (V i) (V j)
 
   conv ltm@(Lam b@(B n q ty) rhs) rtm@(Lam b'@(B n' q' ty') rhs') =
     if q /= q'
-       then throw $ CantConvert ltm rtm
-       else do
-         ty ~= ty'
-         withBnd b $ rhs ~= rhs'
+      then throw $ CantConvert ltm rtm
+      else do
+        ty ~= ty'
+        withBnd b $ rhs ~= rhs'
 
   conv ltm@(Pi b@(B n q ty) rhs) rtm@(Pi b'@(B n' q' ty') rhs') =
     if q /= q'
-       then throw $ CantConvert ltm rtm
-       else do
-         ty ~= ty'
-         withBnd b $ rhs ~= rhs'
+      then throw $ CantConvert ltm rtm
+      else do
+        ty ~= ty'
+        withBnd b $ rhs ~= rhs'
 
   conv lhs@(App q f x) rhs@(App q' f' x') =
     if q /= q'
-       then throw $ CantConvert lhs rhs
-       else do
-         f ~= f'
-         case q of
-            I => pure ()
-            _ => x ~= x'
+      then throw $ CantConvert lhs rhs
+      else do
+        f ~= f'
+        case q of
+          I => pure ()
+          _ => x ~= x'
 
-  conv Star Star = pure ()
-
-  conv Bool_ Bool_ = pure ()
-  conv True_ True_ = pure ()
-  conv False_ False_ = pure ()
-  conv (If_ c t e) (If_ c' t' e') = do
-    c ~= c'
-    t ~= t'
-    e ~= e'
+  conv Type_ Type_ = pure ()
 
   conv p q = throw $ CantConvert p q
 
   covering
-  (~=) : TT Q n -> TT Q n -> TC n ()
-  (~=) p q = conv (whnf p) (whnf q)
-
-infixl 2 =<<
-(=<<) : Monad m => (a -> m b) -> m a -> m b
-(=<<) f x = x >>= f
+  (~=) : Globals Q => TT Q n -> TT Q n -> TC n ()
+  (~=) p q = do
+    p' <- whnfTC p
+    q' <- whnfTC q
+    conv p' q'
 
 mutual
   covering export
-  checkTm : Term n -> TC n (Ty n)
+  checkTm : Globals Q => Term n -> TC n (Ty n)
+  checkTm tm@(P n) = traceTm tm "GLOB" $ do
+    throw NotImplemented
+    -- useGlob n
+
   checkTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
 
   checkTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
     tyTy <- withQ I $ checkTm ty
-    tyTy ~= Star
+    tyTy ~= Type_
 
     Pi b <$> (withBnd b $ checkTm rhs)
 
   checkTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
     tyTy <- withQ I $ checkTm ty
-    tyTy ~= Star
+    tyTy ~= Type_
 
     withQ I $ withBnd b $ do
       rhsTy <- checkTm rhs
-      rhsTy ~= Star
+      rhsTy ~= Type_
 
-    pure Star
+    pure Type_
 
   checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
-    fTy <- whnf <$> checkTm f
+    fTy <- whnfTC =<< checkTm f
     xTy <- checkTm x
     case fTy of
       Pi (B piN piQ piTy) piRhs =>
@@ -260,18 +269,5 @@ mutual
 
       _ => throw $ NotPi fTy
 
-  checkTm Star = pure Star
+  checkTm Type_ = pure Type_
   checkTm Erased = throw CantCheckErased
-
-  checkTm Bool_ = pure Star
-  checkTm True_ = pure Bool_
-  checkTm False_ = pure Bool_
-  checkTm (If_ c t e) = do
-    cty <- checkTm c
-    cty ~= Bool_
-
-    tty <- checkTm t
-    ety <- checkTm e
-    tty ~= ety
-
-    pure tty

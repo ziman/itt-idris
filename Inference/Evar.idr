@@ -1,7 +1,7 @@
 module Inference.Evar
 
-import ITT.Core.Lens
-import public ITT.Core
+import Core.TT.Lens
+import public Core.TT
 import public Control.Monad.State
 
 %default total

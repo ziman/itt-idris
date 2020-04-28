@@ -6,9 +6,16 @@ import public Data.Vect
 %default total
 
 infixl 3 <&>
+%inline
 public export
 (<&>) : Functor f => f a -> (a -> b) -> f b
 (<&>) x f = f <$> x
+
+infixl 2 =<<
+%inline
+public export
+(=<<) : Monad m => (a -> m b) -> m a -> m b
+(=<<) f x = x >>= f
 
 export
 finEq : Fin n -> Fin n -> Bool

@@ -1,9 +1,14 @@
 module Compiler.Monad
 
+import Utils.Pretty
+
+%default total
+%undotted_record_projections off
+
 public export
 record ITT (a : Type) where
   constructor MkITT
-  runITT : IO (Either String a)
+  run : IO (Either String a)
 
 export
 Functor ITT where
@@ -21,7 +26,7 @@ export
 Monad ITT where
   (>>=) (MkITT f) g = MkITT $ f >>= \x => case x of
     Left e => pure $ Left e
-    Right x => runITT (g x)
+    Right x => (g x).run
 
 export
 liftIO : IO a -> ITT a
@@ -34,6 +39,10 @@ log = liftIO . putStrLn
 export
 prn : Show a => a -> ITT ()
 prn = log . show
+
+export
+printP : Pretty ctx a => ctx -> a -> ITT ()
+printP ctx = log . render "  " . pretty ctx
 
 export
 throw : String -> ITT a

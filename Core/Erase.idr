@@ -1,7 +1,7 @@
-module ITT.Erase
+module Core.Erase
 
-import public ITT.Core
-import public ITT.Context
+import public Core.TT
+import public Core.Context
 import Data.List
 
 %default total
@@ -28,6 +28,7 @@ eraseVar (B n q ty :: ds) (FS i) with (eraseVar ds i)
 -- erase for runtime
 export
 erase : (ctx : Context Q n) -> (tm : TT Q n) -> TT () (eraseN ctx)
+erase ctx (P n) = P n
 erase ctx (V i) = case eraseVar ctx i of
   Nothing => Erased  -- should be unreachable if erasure's correct
   Just j => V j
@@ -43,9 +44,5 @@ erase ctx (App I f x) = erase ctx f
 erase ctx (App E f x) = erase ctx f
 erase ctx (App L f x) = App () (erase ctx f) (erase ctx x)
 erase ctx (App R f x) = App () (erase ctx f) (erase ctx x)
-erase ctx Star = Star
+erase ctx Type_ = Type_
 erase ctx Erased = Erased
-erase ctx Bool_ = Bool_
-erase ctx (If_ c t e) = If_ (erase ctx c) (erase ctx t) (erase ctx e)
-erase ctx True_ = True_
-erase ctx False_ = False_

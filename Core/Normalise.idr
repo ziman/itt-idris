@@ -18,6 +18,13 @@ data EvalError
   | ConstructorArityMismatch
 
 export
+Show EvalError where
+  show (UnknownGlobal n) = "unknown global: " ++ show n
+  show UnmatchedPatVar = "unmatched patvar"
+  show OvermatchedPatVar = "overmatched patvar"
+  show ConstructorArityMismatch = "constructor arity mismatch"
+
+export
 substFZ : TT q n -> Fin (S n) -> TT q n
 substFZ tm  FZ    = tm
 substFZ tm (FS x) = V x
