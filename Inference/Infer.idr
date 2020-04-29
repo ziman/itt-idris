@@ -317,9 +317,23 @@ inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
 inferTm Type_ = pure Type_
 inferTm Erased = throw CantInferErased
 
-covering export
-inferPat : Pat Evar n -> TC n ()
-inferPat pat = ?rhs
+mutual
+  covering export
+  inferPat : Pat Evar n -> TC n (Ty n)
+  inferPat pat = ?rhs
+
+  covering export
+  inferPatApp : TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
+  inferPatApp fTy [] = pure fTy
+  inferPatApp fTy ((appQ, pat) :: pats) = do
+    patTy <- inferPat pat
+    whnfTC fTy >>= \case
+      Pi b@(B piN piQ piTy) piRhs => do
+        patTy ~= piTy
+        eqEvar appQ piQ
+        pure $ subst (substFZ $ patToTm pat) piRhs
+
+      _ => throw $ NotPi fTy
 
 covering export
 inferBinding : Binding Evar n -> TC n ()
@@ -336,26 +350,26 @@ inferCtx (b :: bs) = do
     inferBinding b
 
 covering export
-inferClause : {argn : Nat} -> Clause Evar argn -> TC Z ()
-inferClause (MkClause pi lhs rhs) = do
+inferClause : TT Evar Z -> {argn : Nat} -> Clause Evar argn -> TC Z ()
+inferClause fTy (MkClause pi lhs rhs) = do
   inferCtx pi
   withCtx pi $ do
-    lhsTy <- inferPat lhs
+    lhsTy <- inferPatApp (weakenClosed fTy) (toList lhs)
     rhsTy <- inferTm rhs
     lhsTy ~= rhsTy
 
 covering export
-inferBody : Body Evar -> TC Z ()
-inferBody Postulate = pure ()
-inferBody Constructor = pure ()
-inferBody (Foreign _) = pure ()
-inferBody (Clauses argn cs) = traverse_ inferClause cs
+inferBody : TT Evar Z -> Body Evar -> TC Z ()
+inferBody fTy Postulate = pure ()
+inferBody fTy Constructor = pure ()
+inferBody fTy (Foreign _) = pure ()
+inferBody fTy (Clauses argn cs) = traverse_ (inferClause fTy) cs
 
 covering export
 inferDefinition : Definition Evar -> TC Z ()
 inferDefinition (MkDef bnd body) = do
   inferBinding bnd
-  inferBody body
+  inferBody bnd.type body
 
 covering export
 inferGlobals : TC Z ()

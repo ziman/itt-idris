@@ -3,6 +3,7 @@ module Core.Pattern
 import public Core.TT
 import public Core.TT.Lens
 import public Core.TT.Pretty
+import Core.TT.Utils
 
 %default total
 %undotted_record_projections off
@@ -39,3 +40,12 @@ mutual
   patQ f (PV i) = pure $ PV i
   patQ f (PCtorApp cn args) = PCtorApp cn <$> traverse (qpatQ f) args
   patQ f (PForced tm) = PForced <$> ttQ f tm
+
+export
+patToTm : Pat q n -> TT q n
+patToTm (PV i) = V i
+patToTm (PCtorApp (Forced cn) args) =
+  mkApp (P cn) [(q, patToTm arg) | (q, arg) <- args]
+patToTm (PCtorApp (Checked cn) args) =
+  mkApp (P cn) [(q, patToTm arg) | (q, arg) <- args]
+patToTm (PForced tm) = tm
