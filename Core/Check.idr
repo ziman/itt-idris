@@ -78,6 +78,7 @@ public export
 record Env (n : Nat) where
   constructor MkE
   quantity : Q
+  globals : Globals Q
   context : Context Q n
   backtrace : Backtrace
 
@@ -90,7 +91,7 @@ usage0 [] = []
 usage0 (_ :: ctx) = semi0 :: usage0 ctx
 
 usage0e : Env n -> Vect n Q
-usage0e (MkE r ctx bt) = usage0 ctx
+usage0e env = usage0 env.context
 
 public export
 record TC (n : Nat) (a : Type) where
@@ -126,6 +127,9 @@ getEnv = MkTC $ \env, st => Right (st, usage0e env, env)
 getCtx : TC n (Context Q n)
 getCtx = .context <$> getEnv
 
+getGlobals : TC n (Globals Q)
+getGlobals = .globals <$> getEnv
+
 throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
     => Left (MkF env.backtrace _ env.context msg)
@@ -135,7 +139,7 @@ debugThrow = throw . Debug
 
 withBnd : Binding Q n -> TC (S n) a -> TC n a
 withBnd b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => case f (MkE r (b :: ctx) bt) st of
+  MkE r gs ctx bt => case f (MkE r gs (b :: ctx) bt) st of
     Left fail => Left fail
     Right (st', q' :: us, x) =>
         if q' .<=. q
@@ -149,7 +153,7 @@ withTele (b :: bs) x = withTele bs $ withBnd b x
 
 withBnd0 : Binding Q n -> TC (S n) a -> TC n a
 withBnd0 b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => case f (MkE r (b :: ctx) bt) st of
+  MkE r gs ctx bt => case f (MkE r gs (b :: ctx) bt) st of
     Left fail => Left fail
     Right (st', q' :: us, x) => Right (st', us, x)  -- don't check the quantity
 
@@ -168,24 +172,26 @@ lookup i = .type . lookup i <$> getCtx
 
 trace : Show tr => tr -> TC n a -> TC n a
 trace t (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt => f (MkE r ctx (show t :: bt)) st
+  MkE r gs ctx bt => f (MkE r gs ctx (show t :: bt)) st
 
 traceTm : Show tr => Term n -> tr -> TC n a -> TC n a
 traceTm tm t (MkTC f) = MkTC $ \env, st => case env of
-  MkE r ctx bt =>
+  MkE r gs ctx bt =>
     let msg = show t ++ ": " ++ showTm ctx tm
-      in f (MkE r ctx (msg :: bt)) st
+      in f (MkE r gs ctx (msg :: bt)) st
 
 covering
-whnfTC : Globals q => TT q n -> TC n (TT q n)
-whnfTC tm = case whnf %search tm of
-  Left e => throw $ WHNFError e
-  Right tm' => pure tm'
+whnfTC : TT Q n -> TC n (TT Q n)
+whnfTC tm = do
+  gs <- getGlobals
+  case whnf gs tm of
+    Left e => throw $ WHNFError e
+    Right tm' => pure tm'
 
 infix 3 ~=
 mutual
   covering
-  conv : Globals Q => TT Q n -> TT Q n -> TC n ()
+  conv : TT Q n -> TT Q n -> TC n ()
 
   conv (P n) (P n') =
     if n == n'
@@ -225,7 +231,7 @@ mutual
   conv p q = throw $ CantConvert p q
 
   covering
-  (~=) : Globals Q => TT Q n -> TT Q n -> TC n ()
+  (~=) : TT Q n -> TT Q n -> TC n ()
   (~=) p q = do
     p' <- whnfTC p
     q' <- whnfTC q
@@ -233,7 +239,7 @@ mutual
 
 mutual
   covering export
-  checkTm : Globals Q => Term n -> TC n (Ty n)
+  checkTm : Term n -> TC n (Ty n)
   checkTm tm@(P n) = traceTm tm "GLOB" $ do
     throw NotImplemented
     -- useGlob n
