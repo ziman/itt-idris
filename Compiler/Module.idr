@@ -89,7 +89,7 @@ processModule gs = do
 
   {-
   banner "# Evarified #"
-  let evarified = evarify ttQ raw
+  let evarified = evarify ttQ gs
   prn evarified
 
   log "Running erasure inference..."

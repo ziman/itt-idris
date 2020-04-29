@@ -49,20 +49,30 @@ export
 record Globals (q : Type) where
   constructor MkGlobals
   definitions : SortedMap Name (Definition q)
-
-export
-ShowQ q => Pretty () (Globals q) where
-  pretty () gs = vcat
-    [ pretty () d $$ text ""
-    | (_, d) <- SortedMap.toList $ gs.definitions
-    ]
+  ordering : List Name
 
 export
 lookup : Name -> Globals q -> Maybe (Definition q)
 lookup n gs = lookup n gs.definitions
 
 export
+toList : Globals q -> List (Name, Definition q)
+toList gs with (gs.ordering)
+  toList gs | []      = []
+  toList gs | n :: ns = case lookup n gs of
+      Nothing => toList gs | ns
+      Just d  => (n, d) :: toList gs | ns
+
+export
 toGlobals : List (Definition q) -> Globals q
 toGlobals ds =
-  MkGlobals $ SortedMap.fromList
-    [(UN d.binding.name, d) | d <- ds]
+  MkGlobals
+    (SortedMap.fromList [(UN d.binding.name, d) | d <- ds])
+    [UN d.binding.name | d <- ds]
+
+export
+ShowQ q => Pretty () (Globals q) where
+  pretty () gs = vcat
+    [ pretty () d $$ text ""
+    | (_, d) <- toList gs
+    ]
