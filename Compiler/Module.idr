@@ -92,18 +92,17 @@ processModule raw = do
   prn evarified
 
   log "Running erasure inference..."
-  {-
-  cs <- case Infer.TC.runTC (inferTm evarified) (MkE SortedSet.empty [] []) MkTCS of
+  cs <- case Infer.runTC inferGlobals (MkE SortedSet.empty evarified [] []) MkTCS of
     Left err => throw $ show err
-    Right (st, cs, ty) => pure cs
+    Right (st, cs, ()) => pure cs
 
   banner "# Inferred constraints #"
-  log $ unlines $ map show (constrs cs)
+  log $ unlines $ map show cs.constrs
 
   banner "# Deferred equalities #"
-  log $ unlines $ map show (deferredEqs cs)
+  log $ unlines $ map show cs.deferredEqs
 
-  vals <- iterConstrs 1 cs MkTCS
+  vals <- iterConstrs 1 evarified cs MkTCS
 
   banner "# Final valuation #"
   log $ unlines
@@ -111,6 +110,7 @@ processModule raw = do
     | (i, q) <- SortedMap.toList vals
     ]
 
+  {-
   annotated <- case ttQ (substQ vals) evarified of
     Nothing => throw "did not solve all evars"
     Just mod => pure mod
