@@ -31,7 +31,8 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
 
     eNumsC : Constr -> SortedSet ENum
     eNumsC (CEq v w) = ev v <+> ev w
-    eNumsC (CLeq bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
+    eNumsC (CSum bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
+    eNumsC (CMax bt g v) = concat $ the (List _) [ev v, ev g]
 
 declVars : SmtType Q -> List ENum -> SmtM (SortedMap ENum (Smt Q))
 declVars smtQ [] = pure $ SortedMap.empty
@@ -60,11 +61,14 @@ model cs = do
   let product = foldMap mul (lit semi1) ev
   let prodSum = foldMap add (lit semi0) (product . SortedSet.toList)
 
-  for_ {b = ()} (SortedMap.toList cleqm) $ \(v, gss) =>
+  for_ {b = ()} (SortedMap.toList csumm) $ \(v, gss) =>
     assert $ prodSum gss `leq` ev v
 
   for_ {b = ()} ceqs $ \(v, w) =>
     assertEq (ev v) (ev w)
+
+  for_ {b = ()} cmaxs $ \(v, w) =>
+    assert $ ev v `leq` ev w
 
   minimise $ numberOf R
   minimise $ numberOf L
@@ -78,13 +82,18 @@ model cs = do
   foldMap op neutr f [x] = f x
   foldMap op neutr f (x :: xs) = f x `op` foldMap op neutr f xs
 
-  cleqs : List (Evar, Set Evar)
-  cleqs = cs >>= \c => case c of
-    CLeq bt gs v => [(v, gs)]
+  cmaxs : List (Evar, Evar)
+  cmaxs = cs >>= \case
+    CMax bt g v => [(v, g)]
     _ => []
 
-  cleqm : SortedMap Evar (List (Set Evar))
-  cleqm = foldr (\(v, gs) => SortedMap.mergeWith (++) (SortedMap.insert v [gs] neutral)) neutral cleqs
+  csums : List (Evar, Set Evar)
+  csums = cs >>= \c => case c of
+    CSum bt gs v => [(v, gs)]
+    _ => []
+
+  csumm : SortedMap Evar (List (Set Evar))
+  csumm = foldr (\(v, gs) => SortedMap.mergeWith (++) (SortedMap.insert v [gs] neutral)) neutral csums
 
   ceqs : List (Evar, Evar)
   ceqs = cs >>= \c => case c of

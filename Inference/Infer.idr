@@ -83,7 +83,8 @@ Show Failure where
 public export
 data Constr : Type where
   CEq : (v, w : Evar) -> Constr
-  CLeq : (bt : Backtrace) -> (gs : SortedSet Evar) -> (v : Evar) -> Constr
+  CSum : (bt : Backtrace) -> (gs : SortedSet Evar) -> (v : Evar) -> Constr
+  CMax : (bt : Backtrace) -> (u : Evar) -> (v : Evar) -> Constr
 
 public export
 data DeferredEq : Type where
@@ -93,7 +94,8 @@ data DeferredEq : Type where
 export
 Show Constr where
   show (CEq v w) = show v ++ " ~ " ++ show w
-  show (CLeq bt gs v) = show (SortedSet.toList {k=Evar} gs) ++ " -> " ++ show v
+  show (CSum bt gs v) = show (SortedSet.toList {k=Evar} gs) ++ " ~+> " ++ show v
+  show (CMax bt u v) = show u ++ " ~> " ++ show v
 
 export
 Show DeferredEq where
@@ -179,7 +181,7 @@ withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => case f (MkE gs globs (b :: ctx) bt) st of
     Left fail => Left fail
     Right (st', MkConstrs cs eqs, x)
-        => Right (st', MkConstrs (CLeq bt (SortedSet.fromList [QQ I]) q :: cs) eqs, x)
+        => Right (st', MkConstrs (CSum bt (SortedSet.fromList [QQ I]) q :: cs) eqs, x)
 
 withCtx : Context Evar n -> TC n a -> TC Z a
 withCtx [] tc = tc
@@ -191,16 +193,17 @@ withQ q (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
 
 useEvar : Evar -> TC n ()
 useEvar ev = MkTC $ \(MkE gs globs ctx bt), st
-    => Right (st, MkConstrs [CLeq bt gs ev] [], ())
+    => Right (st, MkConstrs [CSum bt gs ev] [], ())
+
+infix 3 ~+>
+(~+>) : List Evar -> Evar -> TC n ()
+gs ~+> q = MkTC $ \(MkE gs' globs ctx bt), st =>
+  Right (st, MkConstrs [CSum bt (SortedSet.fromList gs) q] [], ())
 
 infix 3 ~>
 (~>) : Evar -> Evar -> TC n ()
 (~>) p q = MkTC $ \(MkE gs globs ctx bt), st
-    => Right (st, MkConstrs [CLeq bt (insert p empty) q] [], ())
-
-useFromEvar : Evar -> TC n ()
-useFromEvar ev = MkTC $ \(MkE gs globs ctx bt), st
-    => Right (st, MkConstrs [CLeq bt (insert ev SortedSet.empty) g | g <- SortedSet.toList gs] [], ())
+    => Right (st, MkConstrs [CMax bt p q] [], ())
 
 eqEvar : Evar -> Evar -> TC n ()
 eqEvar (QQ p) (QQ q) =
@@ -341,7 +344,7 @@ mutual
   inferPat : Evar -> Evar -> Pat Evar n -> TC n (Ty n)
   inferPat fq q pat@(PV i) = traceCtx pat "PV" $ do
     b <- lookup i
-    b.qv ~> q
+    b.qv ~> q  -- you can't refer to the same subpattern multiple times
     pure b.type
 
   inferPat fq q pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
@@ -351,8 +354,8 @@ mutual
         pure b.type
       Checked cn => do
         b <- lookupGlobal cn
-        fq ~> b.qv
-        QQ L ~> q
+        fq ~> b.qv  -- this probably should be additive but it doesn't matter, does it
+        QQ L ~> q   -- inspect the subterm
         pure b.type
 
     inferPatApp fq q cTy args
@@ -369,7 +372,8 @@ mutual
       Pi b@(B piN piQ piTy) piRhs => do
         patTy ~= piTy
         eqEvar appQ piQ
-        inferPatApp fq q
+        appQ ~> q  -- this is a subpattern -> inspection inherits using max (not sum)
+        inferPatApp fq appQ
           (subst (substFZ $ patToTm pat) piRhs)
           pats
 
@@ -394,7 +398,7 @@ inferClause : Binding Evar Z -> {argn : Nat} -> Clause Evar argn -> TC Z ()
 inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE" $ do
   inferCtx pi
   withCtx pi $ do
-    lhsTy <- inferPatApp fbnd.qv fbnd.qv (weakenClosed fbnd.type) (toList lhs)
+    lhsTy <- inferPatApp fbnd.qv (QQ R) (weakenClosed fbnd.type) (toList lhs)
     rhsTy <- withQ fbnd.qv $ inferTm rhs
     traceTm lhsTy "CLAUSE-CONV" $ do
       lhsTy ~= rhsTy
