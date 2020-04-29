@@ -110,14 +110,14 @@ processModule raw = do
     | (i, q) <- SortedMap.toList vals
     ]
 
-  {-
-  annotated <- case ttQ (substQ vals) evarified of
+  annotated <- case the (Maybe (Globals Q)) $ globalsQ (substQ vals) evarified of
     Nothing => throw "did not solve all evars"
-    Just mod => pure mod
+    Just gs => pure gs
 
   banner "# Annotated program #"
   prn annotated
 
+  {-
   banner "# Final check #"
   case Check.TC.runTC (checkTm annotated) (MkE L [] []) MkTCS of
     Left err => throw $ show err

@@ -51,7 +51,7 @@ main :L Bool {
 --
 -- The only three places with an annotation are exactly those
 -- that choose the *meaning* of our program, and are therefore necessary.
---
+
 -- In other words, by these three annotations,
 -- we express that we choose to erase less than we could
 -- in order to expose the effect of irrelevance.

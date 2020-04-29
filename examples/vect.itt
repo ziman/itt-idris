@@ -1,0 +1,29 @@
+data Bool : Type {
+  True : Bool,
+  False : Bool
+}
+
+data Nat : Type {
+  Z : Nat,
+  S : (n : Nat) -> Nat
+}
+
+data Vect : (n : Nat) -> Type {
+  Nil : Vect Z,
+  Cons : (n : Nat) -> (x : Bool) -> (xs : Vect n) -> Vect (S n)
+}
+
+length : (n : Nat) -> (xs : Vect n) -> Nat {
+  length Z Nil ~> Z,
+  forall (n : Nat) (x : Bool) (xs : Vect n).
+    length ({S} n) (Cons [n] x xs) ~> S (length n xs)
+}
+
+main :L Nat {
+  main ~>
+    length
+      (S (S Z))
+      (Cons (S Z) True
+        (Cons Z False
+          Nil))
+}
