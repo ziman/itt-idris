@@ -126,7 +126,11 @@ record Env (n : Nat) where
 public export
 record TC (n : Nat) (a : Type) where
   constructor MkTC
-  runTC : Env n -> TCState -> Either Failure (TCState, Constrs, a)
+  run : Env n -> TCState -> Either Failure (TCState, Constrs, a)
+
+export
+runTC : TC n a -> Env n -> TCState -> Either Failure (TCState, Constrs, a)
+runTC tc = tc.run
 
 export
 Functor (TC n) where

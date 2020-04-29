@@ -31,7 +31,6 @@ isRelevant vs (EV i) = case SortedMap.lookup i vs of
   Just I  => Just False
   Just _  => Just True
 
-{-
 newlyReachableEqs : SortedMap ENum Q -> List DeferredEq
     -> (List DeferredEq, List DeferredEq)
 newlyReachableEqs vs [] = ([], [])
@@ -43,17 +42,19 @@ newlyReachableEqs vs (eq@(DeferEq g _ _ _ _) :: eqs) =
       Just False => (reached, unknown)       -- definitely unreachable, drop it
 
 covering
-iterConstrs : Int
+iterConstrs :
+    Int
+    -> Globals Evar
     -> Constrs
     -> Inference.Infer.TCState
     -> ITT (SortedMap ENum Q)
-iterConstrs i (MkConstrs cs eqs) st = do
+iterConstrs i gs (MkConstrs cs eqs) st = do
   log $ "  -> iteration " ++ show i 
   solution <- liftIO $ SmtModel.solve cs
   vals <- case solution of
     Left err => throw err
     Right vals => pure vals
-    
+
   case newlyReachableEqs vals eqs of
     ([], _) => do
       log $ "    -> No more equalities, fixed point reached.\n"
@@ -65,17 +66,16 @@ iterConstrs i (MkConstrs cs eqs) st = do
         | DeferEq g bt ctx x y <- newEqs
         ]
 
-      case Infer.TC.runTC (traverse_ resumeEq newEqs) (MkE SortedSet.empty [] []) st of
+      case Infer.runTC (traverse_ resumeEq newEqs) (MkE SortedSet.empty gs [] []) st of
         Left fail => throw $ show fail
         Right (st', MkConstrs cs' eqs', ()) => do
           -- we use waitingEqs (eqs from the previous iteration that have not been reached yet)
           -- and eqs' (eqs from this iteration)
           -- we drop eqs we have already reached and checked
           -- otherwise we'd loop forever in checking them again and again
-          iterConstrs (i+1)
+          iterConstrs (i+1) gs
             (MkConstrs (cs <+> cs') (waitingEqs <+> eqs'))
             st'
--}
 
 substQ : SortedMap ENum Q -> Evar -> Maybe Q
 substQ vs (QQ q) = Just q
