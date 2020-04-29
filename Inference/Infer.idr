@@ -364,7 +364,9 @@ mutual
       Pi b@(B piN piQ piTy) piRhs => do
         patTy ~= piTy
         eqEvar appQ piQ
-        pure $ subst (substFZ $ patToTm pat) piRhs
+        inferPatApp
+          (subst (substFZ $ patToTm pat) piRhs)
+          pats
 
       _ => throw $ NotPi fTy
 
@@ -379,7 +381,7 @@ inferCtx : Context Evar n -> TC Z ()
 inferCtx [] = pure ()
 inferCtx (b :: bs) = do
   inferCtx bs
-  withCtx bs $ do
+  withCtx bs $ traceCtx b "CTX-BND" $ do
     inferBinding b
 
 covering export
@@ -389,7 +391,8 @@ inferClause fTy c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE" 
   withCtx pi $ do
     lhsTy <- inferPatApp (weakenClosed fTy) (toList lhs)
     rhsTy <- inferTm rhs
-    lhsTy ~= rhsTy
+    traceTm lhsTy "CLAUSE-CONV" $ do
+      lhsTy ~= rhsTy
 
 covering export
 inferBody : TT Evar Z -> Body Evar -> TC Z ()
