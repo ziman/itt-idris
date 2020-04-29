@@ -128,6 +128,10 @@ weakenClosed : TT q Z -> TT q n
 weakenClosed = rename tackFinL
 
 export
+weakenClosedBinding : Binding q Z -> Binding q n
+weakenClosedBinding (B n q ty) = B n q (weakenClosed ty)
+
+export
 substTop : Telescope q n pn -> Vect pn (TT q n) -> TT q (pn + n) -> TT q n
 substTop pvs ss = runIdentity . ttVars (pure . g pvs ss)
   where

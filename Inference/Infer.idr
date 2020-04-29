@@ -1,6 +1,7 @@
 module Inference.Infer
 
 import Utils.Misc
+import Core.TT.Lens
 import public Core.TT
 import public Core.TT.Pretty
 import public Core.Context
@@ -40,6 +41,7 @@ data ErrorMessage : Nat -> Type where
   NotImplemented : ErrorMessage n
   QuantityMismatch : Q -> Q -> ErrorMessage n
   WhnfError : EvalError -> ErrorMessage n
+  UnknownGlobal : Name -> ErrorMessage n
   Debug : Doc -> ErrorMessage n
 
 showEM : Context Evar n -> ErrorMessage n -> String
@@ -53,6 +55,10 @@ showEM ctx NotImplemented
     = "WIP: not implemented yet"
 showEM ctx (QuantityMismatch q q')
     = "quantity mismatch: " ++ show q ++ " /= " ++ show q'
+showEM ctx (UnknownGlobal n)
+    = "unknown global: " ++ show n
+showEM ctx (WhnfError e)
+    = "reduction error: " ++ show e
 showEM ctx (Debug doc)
     = render "  " (text ">>> DEBUG <<< " $$ indent doc)
 
@@ -175,10 +181,6 @@ withQ : Evar -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
     => f (MkE (SortedSet.insert q gs) globs ctx bt) st
 
-use : Fin n -> TC n ()
-use i = MkTC $ \(MkE gs globs ctx bt), st
-    => Right (st, MkConstrs [CLeq bt gs (lookup i ctx).qv] [], ())
-
 useEvar : Evar -> TC n ()
 useEvar ev = MkTC $ \(MkE gs globs ctx bt), st
     => Right (st, MkConstrs [CLeq bt gs ev] [], ())
@@ -190,8 +192,14 @@ eqEvar (QQ p) (QQ q) =
     else throw $ QuantityMismatch p q
 eqEvar p q = MkTC $ \env, st => Right (st, MkConstrs [CEq p q] [], ())
 
-lookup : Fin n -> TC n (Ty n)
-lookup i = .type . lookup i <$> getCtx
+lookup : Fin n -> TC n (Binding Evar n)
+lookup i = lookup i <$> getCtx
+
+lookupGlobal : Name -> TC n (Binding Evar n)
+lookupGlobal n =
+  (lookup n <$> getGlobals) >>= \case
+    Nothing => throw $ UnknownGlobal n
+    Just d => pure $ weakenClosedBinding d.binding
 
 trace : Show tr => tr -> TC n a -> TC n a
 trace t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
@@ -262,9 +270,15 @@ resumeEq (DeferEq g bt ctx x y) = MkTC $ \env, st =>
 mutual
   covering export
   inferTm : Term n -> TC n (Ty n)
-  inferTm tm@(P n) = throw $ NotImplemented
+  inferTm tm@(P n) = traceTm tm "GLOB" $ do
+    b <- lookupGlobal n
+    useEvar b.qv
+    pure $ b.type
 
-  inferTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
+  inferTm tm@(V i) = traceTm tm "VAR" $ do
+    b <- lookup i
+    useEvar b.qv
+    pure $ b.type
 
   inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
     tyTy <- withQ (QQ I) $ inferTm ty
