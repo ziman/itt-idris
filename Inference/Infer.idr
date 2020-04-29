@@ -323,7 +323,7 @@ inferTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
 
 inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
   fTy <- whnfTC =<< inferTm f
-  xTy <- inferTm x
+  xTy <- withQ appQ $ inferTm x
   case fTy of
     Pi b@(B piN piQ piTy) piRhs => do
       traceTm fTy "fTy" $ xTy ~= piTy
@@ -363,7 +363,7 @@ mutual
   inferPatApp : Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
   inferPatApp fq fTy [] = pure fTy
   inferPatApp fq fTy ((appQ, pat) :: pats) = do
-    patTy <- inferPat fq pat
+    patTy <- withQ appQ $ inferPat fq pat
     whnfTC fTy >>= \case
       Pi b@(B piN piQ piTy) piRhs => do
         patTy ~= piTy
@@ -378,7 +378,7 @@ mutual
 covering export
 inferBinding : Binding Evar n -> TC n ()
 inferBinding bnd@(B n q ty) = traceCtx bnd "BINDING" $ do
-  tyTy <- inferTm ty
+  tyTy <- withQ (QQ I) $ inferTm ty
   tyTy ~= Type_
 
 covering export

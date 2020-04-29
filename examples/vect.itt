@@ -5,7 +5,7 @@ data Bool : Type {
 
 data Nat : Type {
   Z : Nat,
-  S : (n : Nat) -> Nat
+  S : (n :L Nat) -> Nat
 }
 
 data Vect : (n : Nat) -> Type {
