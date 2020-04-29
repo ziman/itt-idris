@@ -193,6 +193,10 @@ useEvar : Evar -> TC n ()
 useEvar ev = MkTC $ \(MkE gs globs ctx bt), st
     => Right (st, MkConstrs [CLeq bt gs ev] [], ())
 
+useCtor : Evar -> Evar -> TC n ()
+useCtor fq cq = MkTC $ \(MkE gs globs ctx bt), st
+    => Right (st, MkConstrs [CLeq bt (insert fq empty) cq] [], ())
+
 useFromEvar : Evar -> TC n ()
 useFromEvar ev = MkTC $ \(MkE gs globs ctx bt), st
     => Right (st, MkConstrs [CLeq bt (insert ev SortedSet.empty) g | g <- SortedSet.toList gs] [], ())
@@ -333,38 +337,39 @@ inferTm Erased = throw CantInferErased
 
 mutual
   covering export
-  inferPat : Pat Evar n -> TC n (Ty n)
-  inferPat pat@(PV i) = traceCtx pat "PV" $ do
+  inferPat : Evar -> Pat Evar n -> TC n (Ty n)
+  inferPat fq pat@(PV i) = traceCtx pat "PV" $ do
     b <- lookup i
     useFromEvar b.qv
     pure b.type
 
-  inferPat pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
+  inferPat fq pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
     cTy <- case ctor of
       Forced cn => do
         b <- lookupGlobal cn
         pure b.type
       Checked cn => do
         b <- lookupGlobal cn
-        useEvar b.qv
+        useCtor fq b.qv
         pure b.type
 
-    inferPatApp cTy args
+    inferPatApp fq cTy args
 
 
-  inferPat pat@(PForced tm) = traceCtx pat "PFORCED" $
+  inferPat fq pat@(PForced tm) = traceCtx pat "PFORCED" $
     inferTm tm
 
   covering export
-  inferPatApp : TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
-  inferPatApp fTy [] = pure fTy
-  inferPatApp fTy ((appQ, pat) :: pats) = do
-    patTy <- inferPat pat
+  inferPatApp : Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
+  inferPatApp fq fTy [] = pure fTy
+  inferPatApp fq fTy ((appQ, pat) :: pats) = do
+    patTy <- inferPat fq pat
     whnfTC fTy >>= \case
       Pi b@(B piN piQ piTy) piRhs => do
         patTy ~= piTy
         eqEvar appQ piQ
         inferPatApp
+          fq
           (subst (substFZ $ patToTm pat) piRhs)
           pats
 
@@ -385,28 +390,27 @@ inferCtx (b :: bs) = do
     inferBinding b
 
 covering export
-inferClause : TT Evar Z -> {argn : Nat} -> Clause Evar argn -> TC Z ()
-inferClause fTy c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE" $ do
+inferClause : Binding Evar Z -> {argn : Nat} -> Clause Evar argn -> TC Z ()
+inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE" $ do
   inferCtx pi
   withCtx pi $ do
-    lhsTy <- inferPatApp (weakenClosed fTy) (toList lhs)
-    rhsTy <- inferTm rhs
+    lhsTy <- inferPatApp fbnd.qv (weakenClosed fbnd.type) (toList lhs)
+    rhsTy <- withQ fbnd.qv $ inferTm rhs
     traceTm lhsTy "CLAUSE-CONV" $ do
       lhsTy ~= rhsTy
 
 covering export
-inferBody : TT Evar Z -> Body Evar -> TC Z ()
-inferBody fTy Postulate = pure ()
-inferBody fTy Constructor = pure ()
-inferBody fTy (Foreign _) = pure ()
-inferBody fTy (Clauses argn cs) = traverse_ (inferClause fTy) cs
+inferBody : Binding Evar Z -> Body Evar -> TC Z ()
+inferBody fbnd Postulate = pure ()
+inferBody fbnd Constructor = pure ()
+inferBody fbnd (Foreign _) = pure ()
+inferBody fbnd (Clauses argn cs) = traverse_ (inferClause fbnd) cs
 
 covering export
 inferDefinition : Definition Evar -> TC Z ()
-inferDefinition d@(MkDef bnd body) = traceDoc (pretty () d) "DEF" $
-  withQ bnd.qv $ do
-    inferBinding bnd
-    inferBody bnd.type body
+inferDefinition d@(MkDef bnd body) = traceDoc (pretty () d) "DEF" $ do
+  inferBinding bnd
+  inferBody bnd body
 
 covering export
 inferGlobals : TC Z ()
