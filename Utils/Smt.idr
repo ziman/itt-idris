@@ -11,6 +11,7 @@ import Data.Strings
 import Data.SortedMap
 
 %default total
+%undotted_record_projections off
 
 public export
 data SExp : Type where
@@ -52,10 +53,8 @@ Show SmtError where
   show (NotInModel v) = "variable not found in model: " ++ show v
   show (CouldNotParse ss) = "could not parse model value: " ++ show ss
 
-private
 data SToken = ParL | ParR | Atom String | Space
 
-private
 lexSExp : String -> Either SmtError (List (TokenData SToken))
 lexSExp src = case lex tokens src of
     (ts, (_, _, "")) => Right $ filter notSpace ts
@@ -77,7 +76,6 @@ lexSExp src = case lex tokens src of
       , (pred isSpace, const Space)
       ]
 
-private
 parseSExps : String -> Either SmtError (List SExp)
 parseSExps src = case lexSExp src of
     Left err => Left err
@@ -118,7 +116,6 @@ record Smt (ty : Type) where
   constructor MkSmt
   sexp : SExp
 
-private
 record SmtState where
   constructor MkSmtState
 
@@ -157,33 +154,26 @@ Monad SmtM where
       Left err => Left err
       Right (st'', ss'', x'') => Right (st'', ss' <+> ss'', x'')
 
-private
 tell : List SExp -> SmtM ()
 tell ss = MkSmtM $ \st => Right (st, ss, ())
 
-private
 tellL : List SExp -> SmtM ()
 tellL xs = tell [L xs]
 
-private
 mitm : SmtM a -> SmtM (List SExp, a)
 mitm (MkSmtM f) = MkSmtM $ \st => case f st of
   Left err => Left err
   Right (st', ss, x) => Right (st', neutral, (ss, x))
 
-private
 get : SmtM SmtState
 get = MkSmtM $ \st => Right (st, neutral, st)
 
-private
 put : SmtState -> SmtM ()
 put st = MkSmtM $ \_ => Right (st, neutral, ())
 
-private
 modify : (SmtState -> SmtState) -> SmtM ()
 modify f = MkSmtM $ \st => Right (f st, neutral, ())
 
-private
 throw : SmtError -> SmtM a
 throw err = MkSmtM $ \_ => Left err
 
@@ -221,7 +211,6 @@ export
 SmtEnum Bool where
   smtEnumValues = [False, True]
 
-private
 binop : String -> Smt a -> Smt b -> Smt c
 binop op (MkSmt x) (MkSmt y) = MkSmt $ L [A op, x, y]
 
@@ -361,7 +350,6 @@ data FList : (Type -> Type) -> List (Type, Type) -> Type where
   Nil : FList f []
   (::) : List (tag, f a) -> FList f as -> FList f ((tag, a) :: as)
 
-private
 parseSol : List SExp -> Either SmtError (SortedMap String SExp)
 parseSol (A "unsat" :: _) = Left Unsatisfiable
 parseSol [A "sat", L (A "model" :: ms)] = Right varMap
@@ -384,7 +372,6 @@ AllSmtValue [] = ()
 AllSmtValue [(tag, a)] = SmtValue a
 AllSmtValue ((tag, a) :: as) = (SmtValue a, AllSmtValue as)
 
-private
 decodeVar : SortedMap String SExp -> SmtValue a -> (tag, Smt a) -> Either SmtError (tag, a)
 decodeVar varMap sv (tag, MkSmt (L xs)) = Left $ NotVariable (L xs)
 decodeVar varMap sv (tag, MkSmt (A v)) =
@@ -394,8 +381,6 @@ decodeVar varMap sv (tag, MkSmt (A v)) =
     Nothing => Left $ CouldNotParse s
     Just val => Right (tag, val)
 
-
-private
 decode : AllSmtValue as -> SortedMap String SExp -> FList Smt as -> Either SmtError (FList Prelude.id as)
 decode _ varMap [] = Right []
 decode {as = [(tag, a)]} sv varMap [vs] = do

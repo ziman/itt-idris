@@ -193,6 +193,10 @@ useEvar : Evar -> TC n ()
 useEvar ev = MkTC $ \(MkE gs globs ctx bt), st
     => Right (st, MkConstrs [CLeq bt gs ev] [], ())
 
+useFromEvar : Evar -> TC n ()
+useFromEvar ev = MkTC $ \(MkE gs globs ctx bt), st
+    => Right (st, MkConstrs [CLeq bt (insert ev SortedSet.empty) g | g <- SortedSet.toList gs] [], ())
+
 eqEvar : Evar -> Evar -> TC n ()
 eqEvar (QQ p) (QQ q) =
   if p == q
@@ -320,7 +324,25 @@ inferTm Erased = throw CantInferErased
 mutual
   covering export
   inferPat : Pat Evar n -> TC n (Ty n)
-  inferPat pat = ?rhs
+  inferPat (PV i) = do
+    b <- lookup i
+    useFromEvar b.qv
+    pure b.type
+
+  inferPat (PCtorApp ctor args) = do
+    cTy <- case ctor of
+      Forced cn => do
+        b <- lookupGlobal cn
+        pure b.type
+      Checked cn => do
+        b <- lookupGlobal cn
+        useEvar b.qv
+        pure b.type
+
+    inferPatApp cTy args
+
+
+  inferPat (PForced tm) = inferTm tm
 
   covering export
   inferPatApp : TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
@@ -367,9 +389,10 @@ inferBody fTy (Clauses argn cs) = traverse_ (inferClause fTy) cs
 
 covering export
 inferDefinition : Definition Evar -> TC Z ()
-inferDefinition (MkDef bnd body) = do
-  inferBinding bnd
-  inferBody bnd.type body
+inferDefinition (MkDef bnd body) =
+  withQ bnd.qv $ do
+    inferBinding bnd
+    inferBody bnd.type body
 
 covering export
 inferGlobals : TC Z ()
