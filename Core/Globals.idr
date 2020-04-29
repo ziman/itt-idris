@@ -57,12 +57,12 @@ lookup : Name -> Globals q -> Maybe (Definition q)
 lookup n gs = lookup n gs.definitions
 
 export
-toList : Globals q -> List (Name, Definition q)
+toList : Globals q -> List (Definition q)
 toList gs with (gs.ordering)
   toList gs | []      = []
   toList gs | n :: ns = case lookup n gs of
       Nothing => toList gs | ns
-      Just d  => (n, d) :: toList gs | ns
+      Just d  => d :: toList gs | ns
 
 export
 toGlobals : List (Definition q) -> Globals q
@@ -73,10 +73,9 @@ toGlobals ds =
 
 export
 ShowQ q => Pretty () (Globals q) where
-  pretty () gs = vcat
-    [ pretty () d $$ text ""
-    | (_, d) <- toList gs
-    ]
+  pretty () gs =
+    vcat
+      [pretty () d $$ text "" | d <- toList gs]
 
 export
 ShowQ q => Show (Globals q) where

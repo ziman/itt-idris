@@ -14,6 +14,7 @@ import Data.Strings
 import Data.SortedSet
 
 %default total
+%undotted_record_projections off
 
 public export
 Set : Type -> Type
@@ -38,6 +39,7 @@ data ErrorMessage : Nat -> Type where
   CantInferErased : ErrorMessage n
   NotImplemented : ErrorMessage n
   QuantityMismatch : Q -> Q -> ErrorMessage n
+  WhnfError : EvalError -> ErrorMessage n
   Debug : Doc -> ErrorMessage n
 
 showEM : Context Evar n -> ErrorMessage n -> String
@@ -111,6 +113,7 @@ public export
 record Env (n : Nat) where
   constructor MkE
   guards : Set Evar
+  globals : Globals Evar
   context : Context Evar n
   backtrace : Backtrace
 
@@ -149,32 +152,35 @@ getEnv : TC n (Env n)
 getEnv = MkTC $ \env, st => Right (st, neutral, env)
 
 getCtx : TC n (Context Evar n)
-getCtx = context <$> getEnv
+getCtx = .context <$> getEnv
+
+getGlobals : TC n (Globals Evar)
+getGlobals = .globals <$> getEnv
 
 throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
-    => Left (MkF (backtrace env) _ (context env) msg)
+    => Left (MkF env.backtrace _ env.context msg)
 
 throwDebug : Doc -> TC n a
 throwDebug = throw . Debug
 
 withBnd : Binding Evar n -> TC (S n) a -> TC n a
-withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs ctx bt), st
-  => case f (MkE gs (b :: ctx) bt) st of
+withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
+  => case f (MkE gs globs (b :: ctx) bt) st of
     Left fail => Left fail
     Right (st', MkConstrs cs eqs, x)
         => Right (st', MkConstrs (CLeq bt (SortedSet.fromList [QQ I]) q :: cs) eqs, x)
 
 withQ : Evar -> TC n a -> TC n a
-withQ q (MkTC f) = MkTC $ \(MkE gs ctx bt), st
-    => f (MkE (SortedSet.insert q gs) ctx bt) st
+withQ q (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
+    => f (MkE (SortedSet.insert q gs) globs ctx bt) st
 
 use : Fin n -> TC n ()
-use i = MkTC $ \(MkE gs ctx bt), st
-    => Right (st, MkConstrs [CLeq bt gs (bq $ lookup i ctx)] [], ())
+use i = MkTC $ \(MkE gs globs ctx bt), st
+    => Right (st, MkConstrs [CLeq bt gs (lookup i ctx).qv] [], ())
 
 useEvar : Evar -> TC n ()
-useEvar ev = MkTC $ \(MkE gs ctx bt), st
+useEvar ev = MkTC $ \(MkE gs globs ctx bt), st
     => Right (st, MkConstrs [CLeq bt gs ev] [], ())
 
 eqEvar : Evar -> Evar -> TC n ()
@@ -185,30 +191,44 @@ eqEvar (QQ p) (QQ q) =
 eqEvar p q = MkTC $ \env, st => Right (st, MkConstrs [CEq p q] [], ())
 
 lookup : Fin n -> TC n (Ty n)
-lookup i = bty . lookup i <$> getCtx
+lookup i = .type . lookup i <$> getCtx
 
 trace : Show tr => tr -> TC n a -> TC n a
-trace t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
-  => f (MkE gs ctx (show t :: bt)) st
+trace t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
+  => f (MkE gs globs ctx (show t :: bt)) st
 
 traceTm : Show tr => Term n -> tr -> TC n a -> TC n a
-traceTm tm t (MkTC f) = MkTC $ \(MkE gs ctx bt), st
+traceTm tm t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => let msg = show t ++ ": " ++ showTm ctx tm
-      in f (MkE gs ctx (msg :: bt)) st
+      in f (MkE gs globs ctx (msg :: bt)) st
 
 deferEq : Evar -> Term n -> Term n -> TC n ()
-deferEq g x y = MkTC $ \(MkE gs ctx bt), st
+deferEq g x y = MkTC $ \(MkE gs globs ctx bt), st
   => Right (st, MkConstrs [] [DeferEq g bt ctx x y], ())
+
+whnfTC : Term n -> TC n (Term n)
+whnfTC tm = do
+  gs <- getGlobals
+  case whnf gs tm of
+    Left e => throw $ WhnfError e
+    Right tm' => pure tm'
 
 mutual
   infix 3 ~=
   covering export
   (~=) : Term n -> Term n -> TC n ()
   (~=) p q = do
-    conv (whnf p) (whnf q)
+    p' <- whnfTC p
+    q' <- whnfTC q
+    conv p' q'
 
   covering
   conv : Term n -> Term n -> TC n ()
+  conv (P n) (P n') =
+    if n == n'
+      then pure ()
+      else throw $ CantConvert (P n) (P n')
+
   conv (V i) (V j) = case finEq i j of
     True  => pure ()
     False => throw $ CantConvert (V i) (V j)
@@ -230,45 +250,40 @@ mutual
       QQ I => pure ()
       QQ _ => x ~= x'
       EV _ => deferEq q x x'
-  conv Star Star = pure ()
-  conv Bool_ Bool_ = pure ()
-  conv True_ True_ = pure ()
-  conv False_ False_ = pure ()
-  conv (If_ c t e) (If_ c' t' e') = do
-    c ~= c'
-    t ~= t'
-    e ~= e'
+  conv Type_ Type_ = pure ()
   conv l r = throw $ CantConvert l r
 
 covering export
 resumeEq : DeferredEq -> TC n ()
 resumeEq (DeferEq g bt ctx x y) = MkTC $ \env, st =>
   case x ~= y of
-    MkTC f => f (MkE SortedSet.empty ctx bt) st
+    MkTC f => f (MkE SortedSet.empty env.globals ctx bt) st
 
 mutual
   covering export
   inferTm : Term n -> TC n (Ty n)
+  inferTm tm@(P n) = throw $ NotImplemented
+
   inferTm tm@(V i) = traceTm tm "VAR" $ use i *> lookup i
 
   inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
     tyTy <- withQ (QQ I) $ inferTm ty
-    tyTy ~= Star
+    tyTy ~= Type_
 
     Pi b <$> (withBnd b $ inferTm rhs)
 
   inferTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
     tyTy <- withQ (QQ I) $ inferTm ty
-    tyTy ~= Star
+    tyTy ~= Type_
 
     withBnd b $ do
       rhsTy <- withQ (QQ I) $ inferTm rhs
-      rhsTy ~= Star
+      rhsTy ~= Type_
 
-    pure Star
+    pure Type_
 
   inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
-    fTy <- whnf <$> inferTm f
+    fTy <- whnfTC =<< inferTm f
     xTy <- inferTm x
     case fTy of
       Pi b@(B piN piQ piTy) piRhs => do
@@ -278,18 +293,5 @@ mutual
 
       _ => throw $ NotPi fTy
 
-  inferTm Star = pure Star
+  inferTm Type_ = pure Type_
   inferTm Erased = throw CantInferErased
-
-  inferTm Bool_ = pure Star
-  inferTm True_ = pure Bool_
-  inferTm False_ = pure Bool_
-  inferTm (If_ c t e) = do
-    cty <- inferTm c
-    cty ~= Bool_
-
-    tty <- inferTm t
-    ety <- inferTm e
-    tty ~= ety
-
-    pure tty

@@ -7,7 +7,7 @@ import public Core.TT
 import public Compiler.Monad
 
 import Inference.Evar
--- import public Inference.Infer
+import public Inference.Infer
 -- import Inference.SmtModel
 
 import Data.List

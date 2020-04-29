@@ -402,4 +402,5 @@ parse src = case lex src of
   Right ts => case Text.Parser.Core.parse (globals <* eof) ts of
     Left (Error msg []) => Left $ SyntaxError 0 0 msg []
     Left (Error msg (tt :: tts)) => Left $ SyntaxError (line tt) (col tt) msg (tt :: tts)
-    Right (gs, _) => Right gs
+    Right (gs, []) => Right gs
+    Right (gs, t::ts) => Left $ SyntaxError (line t) (col t) "eof expected" (t :: ts)
