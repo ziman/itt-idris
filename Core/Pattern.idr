@@ -49,3 +49,7 @@ patToTm (PCtorApp (Forced cn) args) =
 patToTm (PCtorApp (Checked cn) args) =
   mkApp (P cn) [(q, patToTm arg) | (q, arg) <- args]
 patToTm (PForced tm) = tm
+
+export
+showPat : ShowQ q => Context q n -> Pat q n -> String
+showPat ctx = render "  " . pretty ctx
