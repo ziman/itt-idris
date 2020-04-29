@@ -1,11 +1,13 @@
 module Core.Clause
 
 import public Core.TT
+import public Core.TT.Lens
 import public Core.TT.Pretty
 import public Core.Context
 import public Core.Pattern
 
 import Data.List
+import Data.Vect
 
 %default total
 %undotted_record_projections off
@@ -32,3 +34,8 @@ ShowQ q => Pretty Name (Clause q argn) where
       <++> hsep [pretty c.pi pat | (q, pat) <- toList c.lhs]
       <++> text "~>"
       <++> pretty (PTT True NoParens, c.pi) c.rhs
+
+export
+clauseQ : Traversal (Clause q argn) (Clause q' argn) q q'
+clauseQ f (MkClause pi lhs rhs) =
+  [| MkClause (contextQ f pi) (traverse (qpatQ f) lhs) (ttQ f rhs) |]

@@ -87,11 +87,11 @@ processModule gs = do
   banner "# Desugared #"
   printP () gs
 
-  {-
   banner "# Evarified #"
-  let evarified = evarify ttQ gs
+  let evarified = evarify globalsQ gs
   prn evarified
 
+  {-
   log "Running erasure inference..."
   cs <- case Infer.TC.runTC (inferTm evarified) (MkE SortedSet.empty [] []) MkTCS of
     Left err => throw $ show err

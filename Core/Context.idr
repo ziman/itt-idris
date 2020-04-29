@@ -24,3 +24,8 @@ export
 (++) : Telescope q n s -> Context q n -> Context q (s + n)
 [] ++ ctx = ctx
 (b :: bs) ++ ctx = b :: (bs ++ ctx)
+
+export
+contextQ : Traversal (Context q n) (Context q' n) q q'
+contextQ f Nil = pure Nil
+contextQ f (b :: bs) = [| bindingQ f b :: contextQ f bs |]

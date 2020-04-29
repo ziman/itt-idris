@@ -1,6 +1,7 @@
 module Core.Pattern
 
 import public Core.TT
+import public Core.TT.Lens
 import public Core.TT.Pretty
 
 %default total
@@ -27,3 +28,14 @@ ShowQ q => Pretty (Context q n) (Pat q n) where
   pretty ctx (PCtorApp ctor args) =
     parens $ hsep (pretty () ctor :: map (pretty ctx . snd) args)
   pretty ctx (PForced tm) = brackets $ pretty ctx tm
+
+mutual
+  export
+  qpatQ : Traversal (q, Pat q n) (q', Pat q' n) q q'
+  qpatQ f (q, pat) = MkPair <$> f q <*> patQ f pat
+
+  export
+  patQ : Traversal (Pat q n) (Pat q' n) q q'
+  patQ f (PV i) = pure $ PV i
+  patQ f (PCtorApp cn args) = PCtorApp cn <$> traverse (qpatQ f) args
+  patQ f (PForced tm) = PForced <$> ttQ f tm

@@ -1,6 +1,7 @@
 module Core.Globals
 
 import public Core.TT
+import public Core.TT.Lens
 import public Core.TT.Pretty
 import public Core.Clause
 import Data.SortedMap
@@ -76,3 +77,25 @@ ShowQ q => Pretty () (Globals q) where
     [ pretty () d $$ text ""
     | (_, d) <- toList gs
     ]
+
+export
+ShowQ q => Show (Globals q) where
+  show = render "  " . pretty ()
+
+export
+bodyQ : Traversal (Body q) (Body q') q q'
+bodyQ f Postulate = pure Postulate
+bodyQ f Constructor = pure Constructor
+bodyQ f (Foreign code) = pure $ Foreign code
+bodyQ f (Clauses argn cs) = Clauses argn <$> traverse (clauseQ f) cs
+
+export
+definitionQ : Traversal (Definition q) (Definition q') q q'
+definitionQ f (MkDef binding body) = MkDef <$> bindingQ f binding <*> bodyQ f body
+
+export
+globalsQ : Traversal (Globals q) (Globals q') q q'
+globalsQ f (MkGlobals ds ord) =
+  MkGlobals
+    <$> traverse (definitionQ f) ds
+    <*> pure ord
