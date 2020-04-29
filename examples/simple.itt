@@ -42,7 +42,7 @@ id : (a : Type) -> (x : a) -> a {
 --
 -- We can even coerce `d` to `U (C False)`, and it'll still work.
 --
-main : Bool {
+main :L Bool {
   main ~> (\x : U (C False). g x) d
 }
 
