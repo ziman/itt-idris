@@ -83,16 +83,16 @@ substQ vs (EV i) = SortedMap.lookup i vs
 
 covering export
 processModule : Globals (Maybe Q) -> ITT ()
-processModule gs = do
+processModule raw = do
   banner "# Desugared #"
-  printP () gs
+  printP () raw
 
   banner "# Evarified #"
-  let evarified = evarify globalsQ gs
+  let evarified = evarify globalsQ raw
   prn evarified
 
-  {-
   log "Running erasure inference..."
+  {-
   cs <- case Infer.TC.runTC (inferTm evarified) (MkE SortedSet.empty [] []) MkTCS of
     Left err => throw $ show err
     Right (st, cs, ty) => pure cs

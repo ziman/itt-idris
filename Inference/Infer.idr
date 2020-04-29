@@ -181,6 +181,10 @@ withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
     Right (st', MkConstrs cs eqs, x)
         => Right (st', MkConstrs (CLeq bt (SortedSet.fromList [QQ I]) q :: cs) eqs, x)
 
+withCtx : Context Evar n -> TC n a -> TC Z a
+withCtx [] tc = tc
+withCtx (b :: bs) tc = withCtx bs $ withBnd b tc
+
 withQ : Evar -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
     => f (MkE (SortedSet.insert q gs) globs ctx bt) st
@@ -271,45 +275,90 @@ resumeEq (DeferEq g bt ctx x y) = MkTC $ \env, st =>
   case x ~= y of
     MkTC f => f (MkE SortedSet.empty env.globals ctx bt) st
 
-mutual
-  covering export
-  inferTm : Term n -> TC n (Ty n)
-  inferTm tm@(P n) = traceTm tm "GLOB" $ do
-    b <- lookupGlobal n
-    useEvar b.qv
-    pure $ b.type
+covering export
+inferTm : Term n -> TC n (Ty n)
+inferTm tm@(P n) = traceTm tm "GLOB" $ do
+  b <- lookupGlobal n
+  useEvar b.qv
+  pure $ b.type
 
-  inferTm tm@(V i) = traceTm tm "VAR" $ do
-    b <- lookup i
-    useEvar b.qv
-    pure $ b.type
+inferTm tm@(V i) = traceTm tm "VAR" $ do
+  b <- lookup i
+  useEvar b.qv
+  pure $ b.type
 
-  inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
-    tyTy <- withQ (QQ I) $ inferTm ty
-    tyTy ~= Type_
+inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
+  tyTy <- withQ (QQ I) $ inferTm ty
+  tyTy ~= Type_
 
-    Pi b <$> (withBnd b $ inferTm rhs)
+  Pi b <$> (withBnd b $ inferTm rhs)
 
-  inferTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
-    tyTy <- withQ (QQ I) $ inferTm ty
-    tyTy ~= Type_
+inferTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
+  tyTy <- withQ (QQ I) $ inferTm ty
+  tyTy ~= Type_
 
-    withBnd b $ do
-      rhsTy <- withQ (QQ I) $ inferTm rhs
-      rhsTy ~= Type_
+  withBnd b $ do
+    rhsTy <- withQ (QQ I) $ inferTm rhs
+    rhsTy ~= Type_
 
-    pure Type_
+  pure Type_
 
-  inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
-    fTy <- whnfTC =<< inferTm f
-    xTy <- inferTm x
-    case fTy of
-      Pi b@(B piN piQ piTy) piRhs => do
-        traceTm fTy "fTy" $ xTy ~= piTy
-        eqEvar appQ piQ
-        pure $ subst (substFZ x) piRhs
+inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
+  fTy <- whnfTC =<< inferTm f
+  xTy <- inferTm x
+  case fTy of
+    Pi b@(B piN piQ piTy) piRhs => do
+      traceTm fTy "fTy" $ xTy ~= piTy
+      eqEvar appQ piQ
+      pure $ subst (substFZ x) piRhs
 
-      _ => throw $ NotPi fTy
+    _ => throw $ NotPi fTy
 
-  inferTm Type_ = pure Type_
-  inferTm Erased = throw CantInferErased
+inferTm Type_ = pure Type_
+inferTm Erased = throw CantInferErased
+
+covering export
+inferPat : Pat Evar n -> TC n ()
+inferPat pat = ?rhs
+
+covering export
+inferBinding : Binding Evar n -> TC n ()
+inferBinding (B n q ty) = do
+  tyTy <- inferTm ty
+  tyTy ~= Type_
+
+covering export
+inferCtx : Context Evar n -> TC Z ()
+inferCtx [] = pure ()
+inferCtx (b :: bs) = do
+  inferCtx bs
+  withCtx bs $ do
+    inferBinding b
+
+covering export
+inferClause : {argn : Nat} -> Clause Evar argn -> TC Z ()
+inferClause (MkClause pi lhs rhs) = do
+  inferCtx pi
+  withCtx pi $ do
+    lhsTy <- inferPat lhs
+    rhsTy <- inferTm rhs
+    lhsTy ~= rhsTy
+
+covering export
+inferBody : Body Evar -> TC Z ()
+inferBody Postulate = pure ()
+inferBody Constructor = pure ()
+inferBody (Foreign _) = pure ()
+inferBody (Clauses argn cs) = traverse_ inferClause cs
+
+covering export
+inferDefinition : Definition Evar -> TC Z ()
+inferDefinition (MkDef bnd body) = do
+  inferBinding bnd
+  inferBody body
+
+covering export
+inferGlobals : TC Z ()
+inferGlobals = do
+  gs <- Globals.toList <$> getGlobals
+  traverse_ inferDefinition gs
