@@ -1,6 +1,6 @@
 module Inference.SmtModel
 
-import ITT.Core
+import Core.TT
 import Utils.Smt
 import Inference.Evar
 import Inference.Infer

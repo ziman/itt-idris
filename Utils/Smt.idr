@@ -153,7 +153,7 @@ export
 Monad SmtM where
   (>>=) (MkSmtM f) g = MkSmtM $ \st => case f st of
     Left err => Left err
-    Right (st', ss', x') => case runSmtM' (g x') st' of
+    Right (st', ss', x') => case (g x').runSmtM' st' of
       Left err => Left err
       Right (st'', ss'', x'') => Right (st'', ss' <+> ss'', x'')
 
@@ -319,8 +319,8 @@ declFun2 n ta tb tc = do
     [ L
       [ A "declare-fun"
       , A n
-      , L [sexp ta, sexp tb]
-      , sexp tc
+      , L [ta.sexp, tb.sexp]
+      , tc.sexp
       ]
     ]
   pure applyF
