@@ -109,7 +109,7 @@ usage0 ctx = MkUsage empty (localUsage0 ctx)
 public export
 record TC (n : Nat) (a : Type) where
   constructor MkTC
-  runTC : Env n -> TCState -> Either Failure (TCState, Usage n, a)
+  run : Env n -> TCState -> Either Failure (TCState, Usage n, a)
 
 Functor (TC n) where
   map f (MkTC g) = MkTC $ \env, st => case g env st of
@@ -297,3 +297,7 @@ mutual
 
   checkTm Type_ = pure Type_
   checkTm Erased = throw CantCheckErased
+
+export
+checkGlobals : TC Z ()
+checkGlobals = ?rhs

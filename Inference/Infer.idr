@@ -91,10 +91,6 @@ record TC (n : Nat) (a : Type) where
   run : Env n -> TCState -> Either Failure (TCState, Constrs, a)
 
 export
-runTC : TC n a -> Env n -> TCState -> Either Failure (TCState, Constrs, a)
-runTC tc = tc.run
-
-export
 Functor (TC n) where
   map f (MkTC g) = MkTC $ \env, st => case g env st of
     Left fail => Left fail

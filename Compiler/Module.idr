@@ -66,7 +66,7 @@ iterConstrs i gs (MkConstrs cs eqs) st = do
         | DeferEq g bt ctx x y <- newEqs
         ]
 
-      case Infer.runTC (traverse_ resumeEq newEqs) (MkE SortedSet.empty gs [] []) st of
+      case (traverse_ Infer.resumeEq newEqs).run (MkE SortedSet.empty gs [] []) st of
         Left fail => throw $ show fail
         Right (st', MkConstrs cs' eqs', ()) => do
           -- we use waitingEqs (eqs from the previous iteration that have not been reached yet)
@@ -96,7 +96,7 @@ processModule raw = do
   prn evarified
 
   log "Running erasure inference..."
-  cs <- case Infer.runTC inferGlobals (MkE SortedSet.empty evarified [] []) MkTCS of
+  cs <- case inferGlobals.run (MkE SortedSet.empty evarified [] []) MkTCS of
     Left err => throw $ show err
     Right (st, cs, ()) => pure cs
 
@@ -121,14 +121,13 @@ processModule raw = do
   banner "# Annotated program #"
   prn annotated
 
-  {-
   banner "# Final check #"
-  case Check.TC.runTC (checkTm annotated) (MkE L [] []) MkTCS of
+  case checkGlobals.run (MkE L annotated [] []) MkTCS of
     Left err => throw $ show err
-    Right (MkTCS, usage, ty) => do
-      prn ty
+    Right (MkTCS, usage, ()) => do
       log "\n** OK **\n"
 
+  {-
   banner "# Erased #"
   let erased = erase [] annotated
   prn erased
