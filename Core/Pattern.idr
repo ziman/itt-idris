@@ -29,7 +29,7 @@ ShowQ q => Pretty (Context q n) (Pat q n) where
   pretty ctx (PCtorApp ctor args) =
     parens $ concat $
       pretty () ctor
-        :: map (\(q, arg) => text (showApp q) <+> pretty ctx arg) args
+        :: [text (showApp q) <+> pretty ctx arg | (q, arg) <- args]
   pretty ctx (PForced tm) = brackets $ pretty ctx tm
 
 mutual
