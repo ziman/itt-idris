@@ -133,7 +133,7 @@ whnf : Globals q -> TT q n -> Either EvalError (TT q n)
 whnf gs (P n) =
   case .body <$> lookup n gs of
     -- constant pattern matching functions
-    Just (Clauses Z [MkClause [] lhs rhs]) =>
+    Just (Clauses Z [MkClause [] [] rhs]) =>
       whnf gs $ weakenClosed rhs
     _ => pure $ P n
 whnf gs (V i) = pure $ V i
@@ -155,3 +155,37 @@ whnf gs (App q f x) =
           _ => pure $ App q fWHNF x  -- not a pattern matching function
 whnf gs Type_ = pure Type_
 whnf gs Erased = pure Erased
+
+covering export
+nf : Globals q -> TT q n -> Either EvalError (TT q n)
+nf gs (P n) =
+  case .body <$> lookup n gs of
+    Just (Clauses Z [MkClause [] [] rhs]) =>
+      nf gs $ weakenClosed rhs
+    _ => pure $ P n
+nf gs (V i) = pure $ V i
+nf gs (Lam (B n q ty) rhs) = do
+  b' <- B n q <$> nf gs ty
+  Lam b' <$> nf gs rhs
+nf gs (Pi (B n q ty) rhs) = do
+  b' <- B n q <$> nf gs ty
+  Pi b' <$> nf gs rhs
+nf gs (App q f x) =
+  whnf gs f >>= \case
+    Lam b rhs => do
+      xNF <- nf gs x
+      nf gs $ subst (substFZ xNF) rhs
+    fWHNF => case unApply' q fWHNF x of
+      (P n, args) => case .body <$> lookup n gs of
+          Nothing => Left $ UnknownGlobal n
+          Just (Clauses argn cs) => case maybeTake argn args of
+              Just (fargs, rest) => do
+                fargsNF <- traverse (nf gs . snd) fargs
+                case matchClauses fargsNF cs of
+                  Just fx => nf gs $ mkApp fx rest
+                  Nothing => mkApp (P n) <$> nfArgs gs args  -- stuck
+              Nothing => mkApp (P n) <$> nfArgs gs args  -- underapplied
+          _ => mkApp (P n) <$> nfArgs gs args  -- not a pattern matching function
+  where
+    nfArgs : {0 q : Type} -> Globals q -> List (q, TT q n) -> Either EvalError (List (q, TT q n))
+    nfArgs gs = traverse (\(q', tm) => nf gs tm >>= \tmNF => Right (q', tmNF))

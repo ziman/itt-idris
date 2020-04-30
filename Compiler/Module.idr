@@ -134,15 +134,15 @@ processModule raw = do
   let erased = eraseGlobals annotated
   prn erased
 
-  banner "# WHNF of `main` #"
+  banner "# NF of `main` #"
 
   log . render " "
     $ text "Unerased, reduced:"
-    $$ case whnf annotated (P (UN "main")) of
+    $$ case nf annotated (P (UN "main")) of
         Left e => text $ show e
-        Right nf => pretty () (the (TT Q Z) nf)
+        Right mnf => pretty () (the (TT Q Z) mnf)
     $$ text ""
     $$ text "Erased, reduced:"
-    $$ case whnf erased (P (UN "main")) of
+    $$ case nf erased (P (UN "main")) of
         Left e => text $ show e
-        Right nf => pretty () (the (TT () Z) nf)
+        Right mnf => pretty () (the (TT () Z) mnf)

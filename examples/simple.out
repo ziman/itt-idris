@@ -298,9 +298,9 @@ main : Bool {
   main ~> (\x. g x) d
 }
 
-##################
-# WHNF of `main` #
-##################
+################
+# NF of `main` #
+################
 
 Unerased, reduced:
 g ᴸ d

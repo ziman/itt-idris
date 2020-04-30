@@ -355,12 +355,12 @@ main : Pair {
   main ~> P (apply not true) (apply false true)
 }
 
-##################
-# WHNF of `main` #
-##################
+################
+# NF of `main` #
+################
 
 Unerased, reduced:
-P ᴸ (apply ᴸ not ᴸ (true ᴵ False)) ᴸ (apply ᴸ false ᴸ (true ᴵ False))
+P ᴸ False ᴸ False
 
 Erased, reduced:
-P (apply not true) (apply false true)
+P False False
