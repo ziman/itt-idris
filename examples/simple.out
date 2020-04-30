@@ -275,3 +275,35 @@ main :ᴸ Bool {
   main ~> (\x :ᴸ U ᴱ (C ᴵ False). g ᴸ x) ᴸ d
 }
 
+###############
+# Final check #
+###############
+
+
+** OK **
+
+##########
+# Erased #
+##########
+
+constructor True : Bool.
+
+constructor False : Bool.
+
+postulate g : (x) -> Bool.
+
+postulate d : U.
+
+main : Bool {
+  main ~> (\x. g x) d
+}
+
+##################
+# WHNF of `main` #
+##################
+
+Unerased, reduced:
+g ᴸ d
+
+Erased, reduced:
+g d

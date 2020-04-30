@@ -337,3 +337,36 @@ main :ᴸ Nat {
   main ~> length ᴵ (S ᴸ Z) ᴸ (Cons ᴵ Z ᴵ True ᴸ Nil)
 }
 
+###############
+# Final check #
+###############
+
+
+** OK **
+
+##########
+# Erased #
+##########
+
+constructor Z : Nat.
+
+constructor S : (n) -> Nat.
+
+constructor Nil : Vect.
+
+constructor Cons : (xs) -> Vect.
+
+length : (xs) -> Nat {
+  length Nil ~> Z
+  forall (xs).
+    length (Cons xs) ~> S (length xs)
+}
+
+main : Nat {
+  main ~> length (Cons Nil)
+}
+
+##################
+# WHNF of `main` #
+##################
+

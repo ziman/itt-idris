@@ -316,3 +316,51 @@ main :ᴸ Pair {
   main ~> P ᴸ (apply ᴸ not ᴸ (true ᴵ False)) ᴸ (apply ᴸ false ᴸ (true ᴵ False))
 }
 
+###############
+# Final check #
+###############
+
+
+** OK **
+
+##########
+# Erased #
+##########
+
+constructor True : Bool.
+
+constructor False : Bool.
+
+constructor P : (x) -> (y) -> Pair.
+
+not : (x) -> Bool {
+  not True ~> False
+  not False ~> True
+}
+
+false : (x) -> Bool {
+  false _ ~> False
+}
+
+true : Bool {
+  true ~> True
+}
+
+apply : (f) -> (y) -> Bool {
+  forall (y)(f).
+    apply f y ~> f y
+}
+
+main : Pair {
+  main ~> P (apply not true) (apply false true)
+}
+
+##################
+# WHNF of `main` #
+##################
+
+Unerased, reduced:
+P ᴸ (apply ᴸ not ᴸ (true ᴵ False)) ᴸ (apply ᴸ false ᴸ (true ᴵ False))
+
+Erased, reduced:
+P (apply not true) (apply false true)
