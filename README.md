@@ -1,5 +1,7 @@
 # ITT
 
+ITT infers quantity/erasure annotations from pattern matching dependent programs.
+
 ITT supports the following modalities:
 * **I** (irrelevance) -- erased at runtime, disregarded in conversion checks
 * **E** (erased) -- erased at runtime, subject to conversion checks
@@ -9,8 +11,6 @@ ITT supports the following modalities:
 ITT can infer all of them by interleaving type checking and constraint solving
 using an external solver.
 
-Pattern matching is work in progress.
-
 The inference algorithm does not need any modality annotations to work.
 However, any "primitives" you postulate have no bodies
 so the minimal consistent annotation is "everything is irrelevant".
@@ -18,6 +18,8 @@ You'll probably want to override this to give more meaning to your primitives.
 
 You can look at [one of the example programs](https://github.com/ziman/itt-idris/blob/master/examples/simple.itt)
 and [its output](https://github.com/ziman/itt-idris/blob/master/examples/simple.out).
+Here's a [vector length program](https://github.com/ziman/itt-idris/blob/master/examples/vect.itt)
+and [its output](https://github.com/ziman/itt-idris/blob/master/examples/vect.out).
 
 ## Making it easier
 
@@ -42,5 +44,5 @@ $ idris -p contrib Main.idr -o itt
 
 Run
 ```
-$ ./itt examples/simple.itt
+$ build/exec/itt examples/simple.itt
 ```
