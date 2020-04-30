@@ -59,16 +59,16 @@ model cs = do
   leq <- defineEnumFun2 "leq" smtQ smtQ smtBool (.<=.)
 
   let product = foldMap mul (lit semi1) ev
-  let prodSum = foldMap add (lit semi0) (product . SortedSet.toList)
+  let prodSum = foldMap add (lit semi0) product
 
-  for_ {b = ()} (SortedMap.toList csumm) $ \(v, gss) =>
-    assert $ prodSum gss `leq` ev v
+  for_ {b = ()} ccs.equalities $ \c =>
+    assertEq (ev c.v) (ev c.w)
 
-  for_ {b = ()} ceqs $ \(v, w) =>
-    assertEq (ev v) (ev w)
+  for_ {b = ()} ccs.sums $ \c =>
+    assert $ prodSum c.inputs `leq` ev c.result
 
-  for_ {b = ()} cmaxs $ \(v, w) =>
-    assert $ ev v `leq` ev w
+  for_ {b = ()} ccs.maxes $ \c =>
+    assert $ product c.inputs `leq` ev c.result
 
   minimise $ numberOf R
   minimise $ numberOf L
@@ -82,23 +82,8 @@ model cs = do
   foldMap op neutr f [x] = f x
   foldMap op neutr f (x :: xs) = f x `op` foldMap op neutr f xs
 
-  cmaxs : List (Evar, Evar)
-  cmaxs = cs >>= \case
-    CMax bt g v => [(v, g)]
-    _ => []
-
-  csums : List (Evar, Set Evar)
-  csums = cs >>= \c => case c of
-    CSum bt gs v => [(v, gs)]
-    _ => []
-
-  csumm : SortedMap Evar (List (Set Evar))
-  csumm = foldr (\(v, gs) => SortedMap.mergeWith (++) (SortedMap.insert v [gs] neutral)) neutral csums
-
-  ceqs : List (Evar, Evar)
-  ceqs = cs >>= \c => case c of
-    CEq x y => [(x, y)]
-    _ => []
+  ccs : CollectedConstrs
+  ccs = collect cs
 
 export
 solve : List Constr -> IO (Either String (SortedMap ENum Q))

@@ -60,28 +60,28 @@ public export
 record Sum where
   constructor MkSum
   result : Evar
-  inputs : List (SortedSet Evar)
+  inputs : List (List Evar)
 
 public export
 record Max where
   constructor MkMax
   result : Evar
-  inputs : SortedSet Evar
+  inputs : List Evar
 
 public export
 record CollectedConstrs where
   constructor MkCC
   equalities : List Equality
-  sums : SortedMap Evar (List (SortedSet Evar))
-  maxes : SortedMap Evar (SortedSet Evar)
+  sums : List Sum
+  maxes : List Max
 
 export
 collect : List Constr -> CollectedConstrs
 collect cs =
   MkCC
     (foldr addEq [] cs)
-    (foldr addSum empty cs)
-    (foldr addMax empty cs)
+    (map toSum . toList $ foldr addSum empty cs)
+    (map toMax . toList $ foldr addMax empty cs)
   where
     addEq : Constr -> List Equality -> List Equality
     addEq (CEq v w) xs = MkEq v w :: xs
@@ -91,6 +91,12 @@ collect cs =
     addSum (CSum bt gs v) cs = mergeWith (++) (insert v [gs] empty) cs
     addSum _ cs = cs
 
+    toSum : (Evar, List (SortedSet Evar)) -> Sum
+    toSum (result, inputs) = MkSum result (map toList inputs)
+
     addMax : Constr -> SortedMap Evar (SortedSet Evar) -> SortedMap Evar (SortedSet Evar)
     addMax (CMax bt u v) cs = mergeWith union (insert v (insert u empty) empty) cs
     addMax _ cs = cs
+
+    toMax : (Evar, SortedSet Evar) -> Max
+    toMax (result, inputs) = MkMax result (toList inputs)
