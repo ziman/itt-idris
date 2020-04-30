@@ -6,6 +6,10 @@ import public Utils.OrdSemiring
 %default total
 %undotted_record_projections off
 
+export
+xDEBUG : Bool
+xDEBUG = False
+
 public export
 interface ShowQ q where
   showCol : q -> String
@@ -53,8 +57,15 @@ ShowQ () where
 
 export
 ShowQ Q where
-  showCol q = ":" ++ showSup q
-  showApp q = " " ++ showSup q ++ " "
+  showCol q =
+    if xDEBUG
+      then ":" ++ showSup q
+      else ":" ++ show q
+
+  showApp q =
+    if xDEBUG
+      then " " ++ showSup q ++ " "
+      else " "
 
 export
 ShowQ (Maybe Q) where
