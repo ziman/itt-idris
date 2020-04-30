@@ -130,6 +130,6 @@ OrdSemiring Q where
     (E, E) => True
     (E, R) => True
     (L, L) => True
-    (L, R) => True
+    -- (L, R) => True  not affine!
     (R, R) => True
     _ => False
