@@ -303,7 +303,7 @@ inferTm Erased = throw CantInferErased
 mutual
   covering export
   inferPat : Evar -> List Evar -> Pat Evar n -> TC n (Ty n)
-  inferPat fq gs pat@(PV i) = do -- traceCtx pat "PV" $ do
+  inferPat fq gs pat@(PV i) = traceCtx pat "PV" $ do
     b <- lookup i
     [b.qv] ~>+ gs
     pure b.type

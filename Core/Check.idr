@@ -200,6 +200,11 @@ traceTm tm t (MkTC f) = MkTC $ \env, st => case env of
     let msg = show t ++ ": " ++ showTm ctx tm
       in f (MkE r gs ctx (msg :: bt)) st
 
+traceCtx : (Show tr, Pretty (Context Q n) b) => b -> tr -> TC n a -> TC n a
+traceCtx bv t (MkTC f) = MkTC $ \(MkE r gs ctx bt), st
+  => let msg = show t ++ ": " ++ (render "  " $ pretty ctx bv)
+      in f (MkE r gs ctx (msg :: bt)) st
+
 covering
 whnfTC : TT Q n -> TC n (TT Q n)
 whnfTC tm = do
@@ -301,10 +306,95 @@ mutual
   checkTm Type_ = pure Type_
   checkTm Erased = throw CantCheckErased
 
-checkDefinition : Definition Q -> TC Z ()
-checkDefinition d = pure ()  -- TODO
+mutual
+  covering export
+  checkPat : Q -> List Q -> Pat Q n -> TC n (Ty n)
+  checkPat fq gs pat@(PV i) = traceCtx pat "PV" $ do
+    b <- lookup i
+    [b.qv] ~>+ gs
+    pure b.type
 
-export
+  checkPat fq gs pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
+    cTy <- case ctor of
+      Forced cn => do
+        b <- lookupGlobal cn
+        pure b.type
+      Checked cn => do
+        b <- lookupGlobal cn
+
+        -- we don't construct the value so we don't place requirements on the quantity of the constructor
+        -- if the function is bound at least L
+        -- then we want to have the constructor bound at least L (but never require more)
+        [QQ L, fq] ~> [b.qv]
+
+        -- inspect the constructor tag once
+        -- guaranteed to be disjoint with other inspections
+        -- so we use a max-constraint
+        [QQ L] ~> gs
+
+        pure b.type
+
+    checkPatApp fq gs cTy args
+
+  checkPat fq gs pat@(PForced tm) = traceCtx pat "PFORCED" $
+    withQ (QQ I) $ checkTm tm
+
+  checkPat fq gs PWildcard =
+    throw CantInferWildcard
+
+  covering export
+  checkPatApp : Q -> List Q -> TT Q n -> List (Q, Pat Q n) -> TC n (Ty n)
+  checkPatApp fq gs fTy [] = pure fTy
+  checkPatApp fq gs fTy ((appQ, pat) :: pats) = do
+    patTy <- checkPat fq (appQ :: gs) pat
+    whnfTC fTy >>= \case
+      Pi b@(B piN piQ piTy) piRhs => do
+        patTy ~= piTy
+        eqQ appQ piQ
+        checkPatApp fq gs
+          (subst (substFZ $ patToTm pat) piRhs)
+          pats
+
+      _ => throw $ NotPi fTy
+
+covering
+checkBinding : Binding Q n -> TC n ()
+checkBinding (B n q ty) = do
+  tyTy <- withQ I $ checkTm ty
+  tyTy ~= Type_
+
+covering
+checkCtx : Context Q n -> TC Z ()
+checkCtx [] = pure ()
+checkCtx (b :: bs) = do
+  checkCtx bs
+  withCtx bs $ traceCtx b "BINDING" $ do
+    checkBinding b
+
+covering
+checkClause : {argn : Nat} -> Binding Q Z -> Clause Q argn -> TC Z ()
+checkClause fbnd (MkClause pi lhs rhs) = do
+  checkCtx pi
+  withCtx pi $ do
+    lhsTy <- checkPatApp fbnd.qv [] (weakenClosed fbnd.type) (toList lhs)
+    rhsTy <- checkTm rhs
+    traceTm lhsTy "CLAUSE-CONV" $ do
+      lhsTy ~= rhsTy
+
+covering
+checkBody : Binding Q Z -> Body Q -> TC Z ()
+checkBody bnd Postulate = pure ()
+checkBody bnd Constructor = pure ()
+checkBody bnd (Foreign code) = pure ()
+checkBody bnd (Clauses argn cs) = traverse_ (checkClause bnd) cs
+
+covering
+checkDefinition : Definition Q -> TC Z ()
+checkDefinition (MkDef bnd body) = do
+  checkBinding bnd
+  checkBody bnd body
+
+covering export
 checkGlobals : TC Z ()
 checkGlobals = do
   gs <- Globals.toList <$> getGlobals
