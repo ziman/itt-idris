@@ -12,7 +12,7 @@ constructor Nat : Type.
 
 constructor Z : Nat.
 
-constructor S : (n :ᴸ Nat) -> Nat.
+constructor S : (n :L Nat) -> Nat.
 
 constructor Vect : (n : Nat) -> Type.
 
@@ -26,7 +26,7 @@ length : (n : Nat) -> (xs : Vect n) -> Nat {
     length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
-main :ᴸ Nat {
+main :L Nat {
   main ~> length (S Z) (Cons Z True Nil)
 }
 
@@ -34,32 +34,32 @@ main :ᴸ Nat {
 # Evarified #
 #############
 
-constructor Bool :⁰ Type.
+constructor Bool :0 Type.
 
-constructor True :¹³ Bool.
+constructor True :13 Bool.
 
-constructor False :⁸ Bool.
+constructor False :8 Bool.
 
-constructor Nat :⁹ Type.
+constructor Nat :9 Type.
 
-constructor Z :¹⁶ Nat.
+constructor Z :16 Nat.
 
-constructor S :¹² (n :ᴸ Nat) -> Nat.
+constructor S :12 (n :L Nat) -> Nat.
 
-constructor Vect :¹⁴ (n :¹⁵ Nat) -> Type.
+constructor Vect :14 (n :15 Nat) -> Type.
 
-constructor Nil :¹⁰ Vect ¹¹ Z.
+constructor Nil :10 Vect Z.
 
-constructor Cons :¹ (n :² Nat) -> (x :³ Bool) -> (xs :⁴ Vect ⁵ n) -> Vect ⁶ (S ⁷ n).
+constructor Cons :1 (n :2 Nat) -> (x :3 Bool) -> (xs :4 Vect n) -> Vect (S n).
 
-length :¹⁷ (n :¹⁸ Nat) -> (xs :¹⁹ Vect ²⁰ n) -> Nat {
-  length ²¹ {Z} ²² Nil ~> Z
-  forall (xs :²³ Vect ²⁴ n)(x :²⁵ Bool)(n :²⁶ Nat).
-    length ²⁷ ({S} ²⁸ n) ²⁹ (Cons ³⁰ [n] ³¹ x ³² xs) ~> S ³³ (length ³⁵ n ³⁴ xs)
+length :17 (n :18 Nat) -> (xs :19 Vect n) -> Nat {
+  length {Z} Nil ~> Z
+  forall (xs :23 Vect n)(x :25 Bool)(n :26 Nat).
+    length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
-main :ᴸ Nat {
-  main ~> length ³⁷ (S ³⁸ Z) ³⁶ (Cons ⁴¹ Z ⁴⁰ True ³⁹ Nil)
+main :L Nat {
+  main ~> length (S Z) (Cons Z True Nil)
 }
 
 Running erasure inference...
@@ -251,10 +251,10 @@ Maxes:
 
 11 -> Z ~ Z
 24 -> n ~ n
-6 -> S ⁷ n ~ S ²⁸ n
+6 -> S n ~ S n
 24 -> n ~ n
 11 -> Z ~ Z
-6 -> S ⁷ Z ~ S ³⁸ Z
+6 -> S Z ~ S Z
 
   -> iteration 1
     -> No more equalities, fixed point reached.
@@ -309,32 +309,32 @@ Maxes:
 # Annotated program #
 #####################
 
-constructor Bool :ᴵ Type.
+constructor Bool :I Type.
 
-constructor True :ᴵ Bool.
+constructor True :I Bool.
 
-constructor False :ᴵ Bool.
+constructor False :I Bool.
 
-constructor Nat :ᴵ Type.
+constructor Nat :I Type.
 
-constructor Z :ᴸ Nat.
+constructor Z :L Nat.
 
-constructor S :ᴸ (n :ᴸ Nat) -> Nat.
+constructor S :L (n :L Nat) -> Nat.
 
-constructor Vect :ᴵ (n :ᴵ Nat) -> Type.
+constructor Vect :I (n :I Nat) -> Type.
 
-constructor Nil :ᴸ Vect ᴵ Z.
+constructor Nil :L Vect Z.
 
-constructor Cons :ᴸ (n :ᴵ Nat) -> (x :ᴵ Bool) -> (xs :ᴸ Vect ᴵ n) -> Vect ᴵ (S ᴸ n).
+constructor Cons :L (n :I Nat) -> (x :I Bool) -> (xs :L Vect n) -> Vect (S n).
 
-length :ᴿ (n :ᴵ Nat) -> (xs :ᴸ Vect ᴵ n) -> Nat {
-  length ᴵ {Z} ᴸ Nil ~> Z
-  forall (xs :ᴸ Vect ᴵ n)(x :ᴵ Bool)(n :ᴵ Nat).
-    length ᴵ ({S} ᴸ n) ᴸ (Cons ᴵ [n] ᴵ x ᴸ xs) ~> S ᴸ (length ᴵ n ᴸ xs)
+length :R (n :I Nat) -> (xs :L Vect n) -> Nat {
+  length {Z} Nil ~> Z
+  forall (xs :L Vect n)(x :I Bool)(n :I Nat).
+    length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
-main :ᴸ Nat {
-  main ~> length ᴵ (S ᴸ Z) ᴸ (Cons ᴵ Z ᴵ True ᴸ Nil)
+main :L Nat {
+  main ~> length (S Z) (Cons Z True Nil)
 }
 
 ###############

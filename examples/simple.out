@@ -10,11 +10,11 @@ constructor False : Bool.
 
 constructor T : Type.
 
-constructor C : (pf :ᴵ Bool) -> T.
+constructor C : (pf :I Bool) -> T.
 
-postulate U : (t :ᴱ T) -> Type.
+postulate U : (t :E T) -> Type.
 
-postulate g : (x :ᴸ U (C True)) -> Bool.
+postulate g : (x :L U (C True)) -> Bool.
 
 postulate b : Bool.
 
@@ -30,7 +30,7 @@ id : (a : Type) -> (x : a) -> a {
     id a x ~> x
 }
 
-main :ᴸ Bool {
+main :L Bool {
   main ~> (\x : U (C False). g x) d
 }
 
@@ -38,36 +38,36 @@ main :ᴸ Bool {
 # Evarified #
 #############
 
-constructor Bool :⁰ Type.
+constructor Bool :0 Type.
 
-constructor True :⁴ Bool.
+constructor True :4 Bool.
 
-constructor False :² Bool.
+constructor False :2 Bool.
 
-constructor T :³ Type.
+constructor T :3 Type.
 
-constructor C :¹ (pf :ᴵ Bool) -> T.
+constructor C :1 (pf :I Bool) -> T.
 
-postulate U :⁵ (t :ᴱ T) -> Type.
+postulate U :5 (t :E T) -> Type.
 
-postulate g :¹⁰ (x :ᴸ U ¹¹ (C ¹² True)) -> Bool.
+postulate g :10 (x :L U (C True)) -> Bool.
 
-postulate b :⁶ Bool.
+postulate b :6 Bool.
 
-postulate d :⁷ U ⁸ (C ⁹ b).
+postulate d :7 U (C b).
 
-not :²⁵ (x :²⁶ Bool) -> Bool {
-  not ²⁷ True ~> False
-  not ²⁸ False ~> True
+not :25 (x :26 Bool) -> Bool {
+  not True ~> False
+  not False ~> True
 }
 
-id :¹³ (a :¹⁴ Type) -> (x :¹⁵ a) -> a {
-  forall (x :¹⁶ a)(a :¹⁷ Type).
-    id ¹⁸ a ¹⁹ x ~> x
+id :13 (a :14 Type) -> (x :15 a) -> a {
+  forall (x :16 a)(a :17 Type).
+    id a x ~> x
 }
 
-main :ᴸ Bool {
-  main ~> (\x :²¹ U ²² (C ²³ False). g ²⁴ x) ²⁰ d
+main :L Bool {
+  main ~> (\x :21 U (C False). g x) d
 }
 
 Running erasure inference...
@@ -196,12 +196,12 @@ Maxes:
 # Deferred equalities #
 #######################
 
-22 -> C ²³ False ~ C ¹² True
-8 -> C ⁹ b ~ C ²³ False
+22 -> C False ~ C True
+8 -> C b ~ C False
 
   -> iteration 1
-    C ²³ False ~ C ¹² True
-    C ⁹ b ~ C ²³ False
+    C False ~ C True
+    C b ~ C False
 
   -> iteration 2
     -> No more equalities, fixed point reached.
@@ -243,36 +243,36 @@ Maxes:
 # Annotated program #
 #####################
 
-constructor Bool :ᴵ Type.
+constructor Bool :I Type.
 
-constructor True :ᴸ Bool.
+constructor True :L Bool.
 
-constructor False :ᴸ Bool.
+constructor False :L Bool.
 
-constructor T :ᴵ Type.
+constructor T :I Type.
 
-constructor C :ᴵ (pf :ᴵ Bool) -> T.
+constructor C :I (pf :I Bool) -> T.
 
-postulate U :ᴵ (t :ᴱ T) -> Type.
+postulate U :I (t :E T) -> Type.
 
-postulate g :ᴸ (x :ᴸ U ᴱ (C ᴵ True)) -> Bool.
+postulate g :L (x :L U (C True)) -> Bool.
 
-postulate b :ᴵ Bool.
+postulate b :I Bool.
 
-postulate d :ᴸ U ᴱ (C ᴵ b).
+postulate d :L U (C b).
 
-not :ᴵ (x :ᴸ Bool) -> Bool {
-  not ᴸ True ~> False
-  not ᴸ False ~> True
+not :I (x :L Bool) -> Bool {
+  not True ~> False
+  not False ~> True
 }
 
-id :ᴵ (a :ᴵ Type) -> (x :ᴸ a) -> a {
-  forall (x :ᴸ a)(a :ᴵ Type).
-    id ᴵ a ᴸ x ~> x
+id :I (a :I Type) -> (x :L a) -> a {
+  forall (x :L a)(a :I Type).
+    id a x ~> x
 }
 
-main :ᴸ Bool {
-  main ~> (\x :ᴸ U ᴱ (C ᴵ False). g ᴸ x) ᴸ d
+main :L Bool {
+  main ~> (\x :L U (C False). g x) d
 }
 
 ###############
@@ -303,7 +303,7 @@ main : Bool {
 ################
 
 Unerased, reduced:
-g ᴸ d
+g d
 
 Erased, reduced:
 g d

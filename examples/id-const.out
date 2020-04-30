@@ -10,7 +10,7 @@ constructor False : Bool.
 
 constructor Pair : Type.
 
-constructor P : (x :ᴸ Bool) -> (y :ᴸ Bool) -> Pair.
+constructor P : (x :L Bool) -> (y :L Bool) -> Pair.
 
 not : (x : Bool) -> Bool {
   not True ~> False
@@ -32,7 +32,7 @@ apply : (f : (x : Bool) -> Bool) -> (y : Bool) -> Bool {
     apply f y ~> f y
 }
 
-main :ᴸ Pair {
+main :L Pair {
   main ~> P (apply not (true False)) (apply false (true False))
 }
 
@@ -40,38 +40,38 @@ main :ᴸ Pair {
 # Evarified #
 #############
 
-constructor Bool :⁰ Type.
+constructor Bool :0 Type.
 
-constructor True :⁴ Bool.
+constructor True :4 Bool.
 
-constructor False :¹ Bool.
+constructor False :1 Bool.
 
-constructor Pair :³ Type.
+constructor Pair :3 Type.
 
-constructor P :² (x :ᴸ Bool) -> (y :ᴸ Bool) -> Pair.
+constructor P :2 (x :L Bool) -> (y :L Bool) -> Pair.
 
-not :²⁷ (x :²⁸ Bool) -> Bool {
-  not ²⁹ True ~> False
-  not ³⁰ False ~> True
+not :27 (x :28 Bool) -> Bool {
+  not True ~> False
+  not False ~> True
 }
 
-false :¹⁵ (x :¹⁶ Bool) -> Bool {
-  forall (x :¹⁷ Bool).
-    false ¹⁸ x ~> False
+false :15 (x :16 Bool) -> Bool {
+  forall (x :17 Bool).
+    false x ~> False
 }
 
-true :³¹ (x :³² Bool) -> Bool {
-  forall (x :³³ Bool).
-    true ³⁴ x ~> True
+true :31 (x :32 Bool) -> Bool {
+  forall (x :33 Bool).
+    true x ~> True
 }
 
-apply :⁵ (f :⁶ (x :⁷ Bool) -> Bool) -> (y :⁸ Bool) -> Bool {
-  forall (y :⁹ Bool)(f :¹⁰ (x :¹¹ Bool) -> Bool).
-    apply ¹² f ¹³ y ~> f ¹⁴ y
+apply :5 (f :6 (x :7 Bool) -> Bool) -> (y :8 Bool) -> Bool {
+  forall (y :9 Bool)(f :10 (x :11 Bool) -> Bool).
+    apply f y ~> f y
 }
 
-main :ᴸ Pair {
-  main ~> P ²⁰ (apply ²² not ²¹ (true ²³ False)) ¹⁹ (apply ²⁵ false ²⁴ (true ²⁶ False))
+main :L Pair {
+  main ~> P (apply not (true False)) (apply false (true False))
 }
 
 Running erasure inference...
@@ -282,38 +282,38 @@ Maxes:
 # Annotated program #
 #####################
 
-constructor Bool :ᴵ Type.
+constructor Bool :I Type.
 
-constructor True :ᴿ Bool.
+constructor True :R Bool.
 
-constructor False :ᴿ Bool.
+constructor False :R Bool.
 
-constructor Pair :ᴵ Type.
+constructor Pair :I Type.
 
-constructor P :ᴸ (x :ᴸ Bool) -> (y :ᴸ Bool) -> Pair.
+constructor P :L (x :L Bool) -> (y :L Bool) -> Pair.
 
-not :ᴸ (x :ᴸ Bool) -> Bool {
-  not ᴸ True ~> False
-  not ᴸ False ~> True
+not :L (x :L Bool) -> Bool {
+  not True ~> False
+  not False ~> True
 }
 
-false :ᴸ (x :ᴸ Bool) -> Bool {
-  forall (x :ᴵ Bool).
-    false ᴸ x ~> False
+false :L (x :L Bool) -> Bool {
+  forall (x :I Bool).
+    false x ~> False
 }
 
-true :ᴿ (x :ᴵ Bool) -> Bool {
-  forall (x :ᴵ Bool).
-    true ᴵ x ~> True
+true :R (x :I Bool) -> Bool {
+  forall (x :I Bool).
+    true x ~> True
 }
 
-apply :ᴿ (f :ᴸ (x :ᴸ Bool) -> Bool) -> (y :ᴸ Bool) -> Bool {
-  forall (y :ᴸ Bool)(f :ᴸ (x :ᴸ Bool) -> Bool).
-    apply ᴸ f ᴸ y ~> f ᴸ y
+apply :R (f :L (x :L Bool) -> Bool) -> (y :L Bool) -> Bool {
+  forall (y :L Bool)(f :L (x :L Bool) -> Bool).
+    apply f y ~> f y
 }
 
-main :ᴸ Pair {
-  main ~> P ᴸ (apply ᴸ not ᴸ (true ᴵ False)) ᴸ (apply ᴸ false ᴸ (true ᴵ False))
+main :L Pair {
+  main ~> P (apply not (true False)) (apply false (true False))
 }
 
 ###############
@@ -360,7 +360,7 @@ main : Pair {
 ################
 
 Unerased, reduced:
-P ᴸ False ᴸ False
+P False False
 
 Erased, reduced:
 P False False
