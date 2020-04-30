@@ -30,8 +30,7 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
     ev (EV i) = SortedSet.insert i neutral
 
     eNumsC : Constr -> SortedSet ENum
-    eNumsC (CSum bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
-    eNumsC (CMax bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
+    eNumsC (MkC agg bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
 
 declVars : SmtType Q -> List ENum -> SmtM (SortedMap ENum (Smt Q))
 declVars smtQ [] = pure $ SortedMap.empty
@@ -63,10 +62,10 @@ model cs = do
   let prodSum = foldMap add (lit semi0) product
   let prodMax = foldMap max (lit semi0) product
 
-  for_ {b = ()} ccs.sums $ \c : Constraint.Sum =>
+  for_ {b = ()} ccs.sums $ \c =>
     assert $ prodSum c.inputs `leq` ev c.result
 
-  for_ {b = ()} ccs.maxes $ \c : Constraint.Max =>
+  for_ {b = ()} ccs.maxes $ \c =>
     assert $ prodMax c.inputs `leq` ev c.result
 
   minimise $ numberOf R

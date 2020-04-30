@@ -141,7 +141,7 @@ withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => case f (MkE gs globs (b :: ctx) bt) st of
     Left fail => Left fail
     Right (st', MkConstrs cs eqs, x)
-        => Right (st', MkConstrs (CSum bt (SortedSet.fromList [QQ I]) q :: cs) eqs, x)
+        => Right (st', MkConstrs (MkC Sum bt (SortedSet.fromList [QQ I]) q :: cs) eqs, x)
 
 withCtx : Context Evar n -> TC n a -> TC Z a
 withCtx [] tc = tc
@@ -153,17 +153,17 @@ withQ q (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
 
 useEvar : Evar -> TC n ()
 useEvar ev = MkTC $ \(MkE gs globs ctx bt), st
-    => Right (st, MkConstrs [CSum bt gs ev] [], ())
+    => Right (st, MkConstrs [MkC Sum bt gs ev] [], ())
 
 infix 3 ~>+
 (~>+) : List Evar -> List Evar -> TC n ()
 gs ~>+ qs = MkTC $ \(MkE gs' globs ctx bt), st =>
-  Right (st, MkConstrs [CSum bt (SortedSet.fromList gs) q | q <- qs] [], ())
+  Right (st, MkConstrs [MkC Sum bt (SortedSet.fromList gs) q | q <- qs] [], ())
 
 infix 3 ~>
 (~>) : List Evar -> List Evar -> TC n ()
 gs ~> qs = MkTC $ \(MkE gs' globs ctx bt), st =>
-  Right (st, MkConstrs [CMax bt (SortedSet.fromList gs) q | q <- qs] [], ())
+  Right (st, MkConstrs [MkC Max bt (SortedSet.fromList gs) q | q <- qs] [], ())
 
 eqEvar : Evar -> Evar -> TC n ()
 eqEvar (QQ p) (QQ q) =
