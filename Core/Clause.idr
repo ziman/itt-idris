@@ -31,7 +31,7 @@ ShowQ q => Pretty Name (Clause q argn) where
   pretty fn c =
     prettyPi c.pi $
       pretty () fn
-      <++> hsep [pretty c.pi pat | (q, pat) <- toList c.lhs]
+      <++> pretty c.pi (PCtorApp (Forced fn) (toList c.lhs))
       <++> text "~>"
       <++> pretty (PTT True NoParens, c.pi) c.rhs
 
