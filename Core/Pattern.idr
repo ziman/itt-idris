@@ -27,7 +27,9 @@ ShowQ q => Pretty (Context q n) (Pat q n) where
   pretty ctx (PV i) = text (lookup i ctx).name
   pretty ctx (PCtorApp ctor []) = pretty () ctor
   pretty ctx (PCtorApp ctor args) =
-    parens $ hsep (pretty () ctor :: map (pretty ctx . snd) args)
+    parens $ concat $
+      pretty () ctor
+        :: map (\(q, arg) => text (showApp q) <+> pretty ctx arg) args
   pretty ctx (PForced tm) = brackets $ pretty ctx tm
 
 mutual
