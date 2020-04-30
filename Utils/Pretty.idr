@@ -62,6 +62,10 @@ indent : Doc -> Doc
 indent = Indent
 
 export
+indentBlock : List Doc -> Doc
+indentBlock = indent . vcat
+
+export
 parens : Doc -> Doc
 parens d = text "(" <+> d <+> text ")"
 

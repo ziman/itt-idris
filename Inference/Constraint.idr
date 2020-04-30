@@ -6,6 +6,7 @@ import public Core.Context
 import public Inference.Evar
 import public Data.SortedSet
 import public Data.SortedMap
+import public Utils.Pretty
 
 %default total
 %undotted_record_projections off
@@ -56,11 +57,24 @@ record Equality where
   constructor MkEq
   v, w : Evar
 
+export
+Pretty () Equality where
+  pretty () c = pretty () c.v <++> text "~" <++> pretty () c.w
+
 public export
 record Sum where
   constructor MkSum
   result : Evar
   inputs : List (List Evar)
+
+export
+Pretty () Sum where
+  pretty () c =
+    pretty () c.result <++> text "≥ sum"
+    $$ indentBlock
+     [ text "product " <++> text (show evs)
+     | evs <- c.inputs
+     ]
 
 public export
 record Max where
@@ -68,12 +82,30 @@ record Max where
   result : Evar
   inputs : List Evar
 
+export
+Pretty () Max where
+  pretty () c =
+    pretty () c.result <++> text "≥ max" <++> text (show c.inputs)
+
 public export
 record CollectedConstrs where
   constructor MkCC
   equalities : List Equality
   sums : List Sum
   maxes : List Max
+
+export
+Pretty () CollectedConstrs where
+  pretty () ccs =
+    text "Equalities:"
+    $$ indent (vcat $ map (pretty ()) ccs.equalities)
+    $$ text ""
+    $$ text "Sums:"
+    $$ indent (vcat $ map (pretty ()) ccs.sums)
+    $$ text ""
+    $$ text "Maxes:"
+    $$ indent (vcat $ map (pretty ()) ccs.maxes)
+    $$ text ""
 
 export
 collect : List Constr -> CollectedConstrs

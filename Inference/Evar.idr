@@ -38,6 +38,10 @@ ShowQ Evar where
   showApp (EV i) = " -" ++ show i ++ "- "
 
 export
+Pretty () Evar where
+  pretty () = text . show
+
+export
 Eq Evar where
   (==) (QQ q) (QQ q') = q == q'
   (==) (EV i) (EV i') = i == i'

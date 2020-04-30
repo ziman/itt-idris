@@ -101,7 +101,7 @@ processModule raw = do
     Right (st, cs, ()) => pure cs
 
   banner "# Inferred constraints #"
-  log $ unlines $ map show cs.constrs
+  printP () $ collect cs.constrs
 
   banner "# Deferred equalities #"
   log $ unlines $ map show cs.deferredEqs
