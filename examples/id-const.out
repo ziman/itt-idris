@@ -75,6 +75,7 @@ main :L Pair {
 }
 
 Running erasure inference...
+
 ########################
 # Inferred constraints #
 ########################

@@ -98,7 +98,7 @@ processModule raw = do
   let evarified = evarify globalsQ raw
   prn evarified
 
-  log "Running erasure inference..."
+  log "Running erasure inference...\n"
   cs <- case inferGlobals.run (MkE SortedSet.empty evarified [] []) MkTCS of
     Left err => throw $ show err
     Right (st, cs, ()) => pure cs

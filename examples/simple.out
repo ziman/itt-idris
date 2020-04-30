@@ -71,6 +71,7 @@ main :L Bool {
 }
 
 Running erasure inference...
+
 ########################
 # Inferred constraints #
 ########################
