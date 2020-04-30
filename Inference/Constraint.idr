@@ -5,6 +5,7 @@ import public Core.TT.Pretty
 import public Core.Context
 import public Inference.Evar
 import public Data.SortedSet
+import public Data.SortedMap
 
 %default total
 %undotted_record_projections off
@@ -50,3 +51,46 @@ export
 Monoid Constrs where
   neutral = MkConstrs [] []
 
+public export
+record Equality where
+  constructor MkEq
+  v, w : Evar
+
+public export
+record Sum where
+  constructor MkSum
+  result : Evar
+  inputs : List (SortedSet Evar)
+
+public export
+record Max where
+  constructor MkMax
+  result : Evar
+  inputs : SortedSet Evar
+
+public export
+record CollectedConstrs where
+  constructor MkCC
+  equalities : List Equality
+  sums : SortedMap Evar (List (SortedSet Evar))
+  maxes : SortedMap Evar (SortedSet Evar)
+
+export
+collect : List Constr -> CollectedConstrs
+collect cs =
+  MkCC
+    (foldr addEq [] cs)
+    (foldr addSum empty cs)
+    (foldr addMax empty cs)
+  where
+    addEq : Constr -> List Equality -> List Equality
+    addEq (CEq v w) xs = MkEq v w :: xs
+    addEq _ xs = xs
+
+    addSum : Constr -> SortedMap Evar (List (SortedSet Evar)) -> SortedMap Evar (List (SortedSet Evar)) 
+    addSum (CSum bt gs v) cs = mergeWith (++) (insert v [gs] empty) cs
+    addSum _ cs = cs
+
+    addMax : Constr -> SortedMap Evar (SortedSet Evar) -> SortedMap Evar (SortedSet Evar)
+    addMax (CMax bt u v) cs = mergeWith union (insert v (insert u empty) empty) cs
+    addMax _ cs = cs
