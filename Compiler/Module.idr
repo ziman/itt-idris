@@ -128,7 +128,7 @@ processModule raw = do
   case checkGlobals.run (MkE L annotated [] []) MkTCS of
     Left err => throw $ show err
     Right (MkTCS, usage, ()) => do
-      log "\n** OK **\n"
+      log "** OK **\n"
 
   banner "# Erased #"
   let erased = eraseGlobals annotated
