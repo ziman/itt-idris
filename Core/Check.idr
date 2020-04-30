@@ -47,7 +47,7 @@ showEM : Context Q n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
     = "can't convert: " ++ showTm ctx x ++ " with " ++ showTm ctx y
 showEM ctx (QuantityMismatch dn dq inferredQ)
-    = "quantity mismatch in " ++ show dn ++ ": declared " ++ show dq ++ " /= inferred " ++ show inferredQ
+    = "quantity mismatch in " ++ show dn ++ ": annotated " ++ show dq ++ " /= inferred " ++ show inferredQ
 showEM ctx (AppQuantityMismatch fTy tm)
     = "quantity mismatch in application of (_ : " ++ showTm ctx fTy ++ "): " ++ showTm ctx tm
 showEM ctx (NotLeq p q)
@@ -219,6 +219,11 @@ traceCtx bv t (MkTC f) = MkTC $ \(MkE r gs ctx bt), st
   => let msg = show t ++ ": " ++ (render "  " $ pretty ctx bv)
       in f (MkE r gs ctx (msg :: bt)) st
 
+traceDoc : Show tr => Doc -> tr -> TC n a -> TC n a
+traceDoc doc t (MkTC f) = MkTC $ \(MkE r gs ctx bt), st
+  => let msg = render "  " (text (show t) <+> text ": " <++> doc)
+      in f (MkE r gs ctx (msg :: bt)) st
+
 covering
 whnfTC : TT Q n -> TC n (TT Q n)
 whnfTC tm = do
@@ -307,7 +312,7 @@ mutual
 
   checkTm tm@(App appQ f x) = traceTm tm "APP" $ do
     fTy <- whnfTC =<< checkTm f
-    xTy <- checkTm x
+    xTy <- withQ appQ $ checkTm x
     case fTy of
       Pi (B piN piQ piTy) piRhs =>
           if piQ /= appQ
@@ -392,7 +397,7 @@ checkCtx (b :: bs) = do
 
 covering
 checkClause : {argn : Nat} -> Binding Q Z -> Clause Q argn -> TC Z ()
-checkClause fbnd (MkClause pi lhs rhs) = do
+checkClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE" $ do
   checkCtx pi
   withCtx pi $ do
     -- we ignore lhsQ because we have enough function (cf. supplying R in Infer.inferClause)
