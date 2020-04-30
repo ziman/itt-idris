@@ -156,14 +156,14 @@ useEvar ev = MkTC $ \(MkE gs globs ctx bt), st
     => Right (st, MkConstrs [CSum bt gs ev] [], ())
 
 infix 3 ~>+
-(~>+) : List Evar -> Evar -> TC n ()
-gs ~>+ q = MkTC $ \(MkE gs' globs ctx bt), st =>
-  Right (st, MkConstrs [CSum bt (SortedSet.fromList gs) q] [], ())
+(~>+) : List Evar -> List Evar -> TC n ()
+gs ~>+ qs = MkTC $ \(MkE gs' globs ctx bt), st =>
+  Right (st, MkConstrs [CSum bt (SortedSet.fromList gs) q | q <- qs] [], ())
 
 infix 3 ~>
-(~>) : Evar -> Evar -> TC n ()
-(~>) p q = MkTC $ \(MkE gs globs ctx bt), st
-    => Right (st, MkConstrs [CMax bt p q] [], ())
+(~>) : List Evar -> List Evar -> TC n ()
+gs ~> qs = MkTC $ \(MkE gs' globs ctx bt), st =>
+  Right (st, MkConstrs [CMax bt (SortedSet.fromList gs) q | q <- qs] [], ())
 
 eqEvar : Evar -> Evar -> TC n ()
 eqEvar (QQ p) (QQ q) =
@@ -171,8 +171,8 @@ eqEvar (QQ p) (QQ q) =
     then pure ()
     else throw $ QuantityMismatch p q
 eqEvar p q = do
-  p ~> q
-  q ~> p
+  [p] ~> [q]
+  [q] ~> [p]
 
 lookup : Fin n -> TC n (Binding Evar n)
 lookup i = lookup i <$> getCtx
@@ -303,39 +303,47 @@ inferTm Erased = throw CantInferErased
 
 mutual
   covering export
-  inferPat : Evar -> Evar -> Pat Evar n -> TC n (Ty n)
-  inferPat fq q pat@(PV i) = traceCtx pat "PV" $ do
+  inferPat : Evar -> List Evar -> Pat Evar n -> TC n (Ty n)
+  inferPat fq gs pat@(PV i) = do -- traceCtx pat "PV" $ do
     b <- lookup i
-    b.qv ~> q  -- you can't refer to the same subpattern multiple times
+    [b.qv] ~>+ gs
     pure b.type
 
-  inferPat fq q pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
+  inferPat fq gs pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
     cTy <- case ctor of
       Forced cn => do
         b <- lookupGlobal cn
         pure b.type
       Checked cn => do
         b <- lookupGlobal cn
-        fq ~> b.qv  -- this probably should be additive but it doesn't matter, does it
-        QQ L ~> q   -- inspect the subterm
+
+        -- we don't construct the value so we don't place requirements on the quantity of the constructor
+        -- if the function is bound at least L
+        -- then we want to have the constructor bound at least L (but never require more)
+        [QQ L, fq] ~> [b.qv]
+
+        -- inspect the constructor tag once
+        -- guaranteed to be disjoint with other inspections
+        -- so we use a max-constraint
+        [QQ L] ~> gs
+
         pure b.type
 
-    inferPatApp fq q cTy args
+    inferPatApp fq gs cTy args
 
-  inferPat fq q pat@(PForced tm) = traceCtx pat "PFORCED" $
+  inferPat fq gs pat@(PForced tm) = traceCtx pat "PFORCED" $
     withQ (QQ I) $ inferTm tm
 
   covering export
-  inferPatApp : Evar -> Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
-  inferPatApp fq q fTy [] = pure fTy
-  inferPatApp fq q fTy ((appQ, pat) :: pats) = do
-    patTy <- inferPat fq appQ pat
+  inferPatApp : Evar -> List Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
+  inferPatApp fq gs fTy [] = pure fTy
+  inferPatApp fq gs fTy ((appQ, pat) :: pats) = do
+    patTy <- inferPat fq (appQ :: gs) pat
     whnfTC fTy >>= \case
       Pi b@(B piN piQ piTy) piRhs => do
         patTy ~= piTy
         eqEvar appQ piQ
-        appQ ~> q  -- this is a subpattern -> inspection inherits using max (not sum)
-        inferPatApp fq q
+        inferPatApp fq gs
           (subst (substFZ $ patToTm pat) piRhs)
           pats
 
@@ -360,7 +368,7 @@ inferClause : Binding Evar Z -> {argn : Nat} -> Clause Evar argn -> TC Z ()
 inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE" $ do
   inferCtx pi
   withCtx pi $ do
-    lhsTy <- inferPatApp fbnd.qv (QQ R) (weakenClosed fbnd.type) (toList lhs)
+    lhsTy <- inferPatApp fbnd.qv [] (weakenClosed fbnd.type) (toList lhs)
     rhsTy <- inferTm rhs
     traceTm lhsTy "CLAUSE-CONV" $ do
       lhsTy ~= rhsTy

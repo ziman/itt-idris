@@ -18,12 +18,12 @@ Backtrace = List String
 public export
 data Constr : Type where
   CSum : (bt : Backtrace) -> (gs : SortedSet Evar) -> (v : Evar) -> Constr
-  CMax : (bt : Backtrace) -> (u : Evar) -> (v : Evar) -> Constr
+  CMax : (bt : Backtrace) -> (gs : SortedSet Evar) -> (v : Evar) -> Constr
 
 export
 Show Constr where
   show (CSum bt gs v) = show (SortedSet.toList {k=Evar} gs) ++ " ~>+ " ++ show v
-  show (CMax bt u v) = show u ++ " ~> " ++ show v
+  show (CMax bt gs v) = show (SortedSet.toList {k=Evar} gs) ++ " ~> " ++ show v
 
 public export
 data DeferredEq : Type where
@@ -69,12 +69,16 @@ public export
 record Max where
   constructor MkMax
   result : Evar
-  inputs : List Evar
+  inputs : List (List Evar)
 
 export
 Pretty () Max where
   pretty () c =
-    pretty () c.result <++> text "≥ max" <++> text (show c.inputs)
+    pretty () c.result <++> text "≥ max"
+    $$ indentBlock
+     [ text "product " <++> text (show evs)
+     | evs <- c.inputs
+     ]
 
 public export
 record CollectedConstrs where
@@ -106,9 +110,9 @@ collect cs =
     toSum : (Evar, List (SortedSet Evar)) -> Sum
     toSum (result, inputs) = MkSum result (map toList inputs)
 
-    addMax : Constr -> SortedMap Evar (SortedSet Evar) -> SortedMap Evar (SortedSet Evar)
-    addMax (CMax bt u v) cs = mergeWith union (insert v (insert u empty) empty) cs
+    addMax : Constr -> SortedMap Evar (List (SortedSet Evar)) -> SortedMap Evar (List (SortedSet Evar)) 
+    addMax (CMax bt gs v) cs = mergeWith (++) (insert v [gs] empty) cs
     addMax _ cs = cs
 
-    toMax : (Evar, SortedSet Evar) -> Max
-    toMax (result, inputs) = MkMax result (toList inputs)
+    toMax : (Evar, List (SortedSet Evar)) -> Max
+    toMax (result, inputs) = MkMax result (map toList inputs)
