@@ -4,9 +4,10 @@ import Data.Vect
 
 %default total
 
-infixl 4 .+.
-infixl 5 .*.
+infixl 5 .+.
+infixl 6 .*.
 infix  3 .<=.
+infix  4 .\/.
 public export
 interface OrdSemiring a where
   semi0 : a

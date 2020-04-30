@@ -5,6 +5,7 @@ import Core.Normalise
 import Core.TT.Pretty
 import Utils.Pretty
 import Utils.Misc
+import Core.Quantity
 import Utils.OrdSemiring
 
 import Data.Fin
@@ -31,6 +32,7 @@ Ty = TT Q
 public export
 data ErrorMessage : Nat -> Type where
   CantConvert : TT Q n -> TT Q n -> ErrorMessage n
+  NotLeq : (p, q : Q) -> ErrorMessage n
   QuantityMismatch : (dn : String) -> (dq : Q) -> (inferredQ : Q) -> ErrorMessage n
   AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
@@ -48,6 +50,8 @@ showEM ctx (QuantityMismatch dn dq inferredQ)
     = "quantity mismatch in " ++ show dn ++ ": declared " ++ show dq ++ " /= inferred " ++ show inferredQ
 showEM ctx (AppQuantityMismatch fTy tm)
     = "quantity mismatch in application of (_ : " ++ showTm ctx fTy ++ "): " ++ showTm ctx tm
+showEM ctx (NotLeq p q)
+    = "required " ++ show p ++ " ≤ " ++ show q
 showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
 showEM ctx (WHNFError e)
@@ -162,6 +166,10 @@ withBnd b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
            then Right (st', MkUsage ug us, x)
            else Left (MkF bt _ ctx $ QuantityMismatch n q q')
 
+withCtx : Context Q n -> TC n a -> TC Z a
+withCtx [] tc = tc
+withCtx (b :: bs) tc = withCtx bs $ withBnd b tc
+
 withTele : Telescope Q n pn -> TC (pn + n) a -> TC n a
 withTele [] x = x
 withTele (b :: bs) x = withTele bs $ withBnd b x
@@ -181,8 +189,14 @@ useGlobal : Name -> TC n ()
 useGlobal n = MkTC $ \env, st =>
   Right (st, MkUsage (insert n semi1 empty) (localUsage0 env.context), ())
 
-lookup : Fin n -> TC n (Ty n)
-lookup i = .type . lookup i <$> getCtx
+(<=) : Q -> Q -> TC n ()
+p <= q =
+  if p <= q
+    then pure ()
+    else throw $ NotLeq p q
+
+lookup : Fin n -> TC n (Binding Q n)
+lookup i = lookup i <$> getCtx
 
 lookupGlobal : Name -> TC n (Binding Q n)
 lookupGlobal n =
@@ -271,8 +285,9 @@ mutual
     pure $ b.type
 
   checkTm tm@(V i) = traceTm tm "VAR" $ do
+    b <- lookup i
     use i
-    lookup i
+    pure b.type
 
   checkTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
     tyTy <- withQ I $ checkTm ty
@@ -307,53 +322,57 @@ mutual
   checkTm Erased = throw CantCheckErased
 
 mutual
+  -- (how many times we inspect, type)
   covering export
-  checkPat : Q -> List Q -> Pat Q n -> TC n (Ty n)
-  checkPat fq gs pat@(PV i) = traceCtx pat "PV" $ do
+  checkPat : Q -> Pat Q n -> TC n (Q, Ty n)
+  checkPat fq pat@(PV i) = traceCtx pat "PV" $ do
     b <- lookup i
-    [b.qv] ~>+ gs
-    pure b.type
+    pure (b.qv, b.type)
 
-  checkPat fq gs pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
-    cTy <- case ctor of
+  checkPat fq pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
+    (cq, cTy) <- case the PCtor ctor of
       Forced cn => do
         b <- lookupGlobal cn
-        pure b.type
+        pure (I, b.type)
       Checked cn => do
         b <- lookupGlobal cn
 
         -- we don't construct the value so we don't place requirements on the quantity of the constructor
         -- if the function is bound at least L
         -- then we want to have the constructor bound at least L (but never require more)
-        [QQ L, fq] ~> [b.qv]
+        (L .*. fq) <= b.qv
 
-        -- inspect the constructor tag once
-        -- guaranteed to be disjoint with other inspections
-        -- so we use a max-constraint
-        [QQ L] ~> gs
+        -- L because we inspect the constructor tag exactly once
+        pure (L, b.type)
 
-        pure b.type
+    (argsQ, argsTy) <- checkPatApp fq cTy args
+    pure (cq .\/. argsQ, argsTy)
 
-    checkPatApp fq gs cTy args
+  checkPat fq pat@(PForced tm) = traceCtx pat "PFORCED" $ do
+    tmTy <- withQ I $ checkTm tm
+    pure (I, tmTy)  -- no usage here
 
-  checkPat fq gs pat@(PForced tm) = traceCtx pat "PFORCED" $
-    withQ (QQ I) $ checkTm tm
-
-  checkPat fq gs PWildcard =
-    throw CantInferWildcard
+  checkPat fq PWildcard =
+    throw CantCheckWildcard
 
   covering export
-  checkPatApp : Q -> List Q -> TT Q n -> List (Q, Pat Q n) -> TC n (Ty n)
-  checkPatApp fq gs fTy [] = pure fTy
-  checkPatApp fq gs fTy ((appQ, pat) :: pats) = do
-    patTy <- checkPat fq (appQ :: gs) pat
+  checkPatApp : Q -> TT Q n -> List (Q, Pat Q n) -> TC n (Q, Ty n)
+  checkPatApp fq fTy [] = pure (I, fTy)  -- no usage here
+  checkPatApp fq fTy ((appQ, pat) :: pats) = do
+    (patQ, patTy) <- checkPat fq pat
+    patQ <= appQ  -- we have enough term to feed this pattern
+
     whnfTC fTy >>= \case
       Pi b@(B piN piQ piTy) piRhs => do
         patTy ~= piTy
-        eqQ appQ piQ
-        checkPatApp fq gs
-          (subst (substFZ $ patToTm pat) piRhs)
-          pats
+        appQ <= piQ
+        piQ <= appQ
+        (patsQ, patsTy) <-
+          checkPatApp fq
+            (subst (substFZ $ patToTm pat) piRhs)
+            pats
+
+        pure (patQ .\/. patsQ, patsTy)
 
       _ => throw $ NotPi fTy
 
@@ -376,7 +395,8 @@ checkClause : {argn : Nat} -> Binding Q Z -> Clause Q argn -> TC Z ()
 checkClause fbnd (MkClause pi lhs rhs) = do
   checkCtx pi
   withCtx pi $ do
-    lhsTy <- checkPatApp fbnd.qv [] (weakenClosed fbnd.type) (toList lhs)
+    -- we ignore lhsQ because we have enough function (cf. supplying R in Infer.inferClause)
+    (_, lhsTy) <- checkPatApp fbnd.qv (weakenClosed fbnd.type) (toList lhs)
     rhsTy <- checkTm rhs
     traceTm lhsTy "CLAUSE-CONV" $ do
       lhsTy ~= rhsTy
