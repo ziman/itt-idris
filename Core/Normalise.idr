@@ -128,6 +128,13 @@ matchClauses args (c :: cs) =
     Mismatch => matchClauses args cs
     Stuck => Nothing
 
+covering
+mapArgs :
+    (TT q n -> Either EvalError (TT q n))
+    -> List (q, TT q n)
+    -> Either EvalError (List (q, TT q n))
+mapArgs nf = traverse (\(q', tm) => nf tm >>= \tmNF => Right (q', tmNF))
+
 covering export
 whnf : Globals q -> TT q n -> Either EvalError (TT q n)
 whnf gs (P n) =
@@ -150,9 +157,9 @@ whnf gs (App q f x) =
           Just (Clauses argn cs) => case maybeTake argn args of
               Just (fargs, rest) => case matchClauses (snd <$> fargs) cs of
                   Just fx => whnf gs $ mkApp fx rest
-                  Nothing => pure $ App q fWHNF x  -- stuck
-              Nothing => pure $ App q fWHNF x  -- underapplied
-          _ => pure $ App q fWHNF x  -- not a pattern matching function
+                  Nothing => mkApp (P n) <$> mapArgs (whnf gs) args  -- stuck
+              Nothing => mkApp (P n) <$> mapArgs (whnf gs) args  -- underapplied
+          _ => mkApp (P n) <$> mapArgs (whnf gs) args  -- not a pattern matching function
 whnf gs Type_ = pure Type_
 whnf gs Erased = pure Erased
 
@@ -183,9 +190,6 @@ nf gs (App q f x) =
                 fargsNF <- traverse (nf gs . snd) fargs
                 case matchClauses fargsNF cs of
                   Just fx => nf gs $ mkApp fx rest
-                  Nothing => mkApp (P n) <$> nfArgs gs args  -- stuck
-              Nothing => mkApp (P n) <$> nfArgs gs args  -- underapplied
-          _ => mkApp (P n) <$> nfArgs gs args  -- not a pattern matching function
-  where
-    nfArgs : {0 q : Type} -> Globals q -> List (q, TT q n) -> Either EvalError (List (q, TT q n))
-    nfArgs gs = traverse (\(q', tm) => nf gs tm >>= \tmNF => Right (q', tmNF))
+                  Nothing => mkApp (P n) <$> mapArgs (nf gs) args  -- stuck
+              Nothing => mkApp (P n) <$> mapArgs (nf gs) args  -- underapplied
+          _ => mkApp (P n) <$> mapArgs (nf gs) args  -- not a pattern matching function
