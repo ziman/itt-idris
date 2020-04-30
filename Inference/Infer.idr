@@ -323,7 +323,7 @@ mutual
     inferPatApp fq q cTy args
 
   inferPat fq q pat@(PForced tm) = traceCtx pat "PFORCED" $
-    inferTm tm
+    withQ (QQ I) $ inferTm tm
 
   covering export
   inferPatApp : Evar -> Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
@@ -335,7 +335,7 @@ mutual
         patTy ~= piTy
         eqEvar appQ piQ
         appQ ~> q  -- this is a subpattern -> inspection inherits using max (not sum)
-        inferPatApp fq appQ
+        inferPatApp fq q
           (subst (substFZ $ patToTm pat) piRhs)
           pats
 
@@ -361,7 +361,7 @@ inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE"
   inferCtx pi
   withCtx pi $ do
     lhsTy <- inferPatApp fbnd.qv (QQ R) (weakenClosed fbnd.type) (toList lhs)
-    rhsTy <- withQ fbnd.qv $ inferTm rhs
+    rhsTy <- inferTm rhs
     traceTm lhsTy "CLAUSE-CONV" $ do
       lhsTy ~= rhsTy
 
