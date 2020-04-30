@@ -31,11 +31,11 @@ Show Evar where
 
 export
 ShowQ Evar where
-  showCol (QQ q) = ":" ++ show q
-  showCol (EV i) = ":" ++ show i
+  showCol (QQ q) = ":" ++ showSup q
+  showCol (EV i) = ":" ++ showSup i
 
-  showApp (QQ q) = " -" ++ show q ++ "- "
-  showApp (EV i) = " -" ++ show i ++ "- "
+  showApp (QQ q) = " " ++ showSup q ++ " "
+  showApp (EV i) = " " ++ showSup i ++ " "
 
 export
 Pretty () Evar where

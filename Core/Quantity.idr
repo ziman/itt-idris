@@ -21,11 +21,30 @@ Show Q where
   show L = "L"
   show R = "R"
 
-showU : Q -> String
-showU I = "ᴵ"
-showU E = "ᴱ"
-showU L = "ᴸ"
-showU R = "ᴿ"
+export
+super : String -> String
+super = pack . map sup . unpack
+  where
+    sup : Char -> Char
+    sup '0' = '⁰'
+    sup '1' = '¹'
+    sup '2' = '²'
+    sup '3' = '³'
+    sup '4' = '⁴'
+    sup '5' = '⁵'
+    sup '6' = '⁶'
+    sup '7' = '⁷'
+    sup '8' = '⁸'
+    sup '9' = '⁹'
+    sup 'I' = 'ᴵ'
+    sup 'E' = 'ᴱ'
+    sup 'L' = 'ᴸ'
+    sup 'R' = 'ᴿ'
+    sup c = c
+
+export
+showSup : Show a => a -> String
+showSup = super . show
 
 export
 ShowQ () where
@@ -34,8 +53,8 @@ ShowQ () where
 
 export
 ShowQ Q where
-  showCol q = ":" ++ showU q
-  showApp q = " " ++ showU q ++ " "
+  showCol q = ":" ++ showSup q
+  showApp q = " " ++ showSup q ++ " "
 
 export
 ShowQ (Maybe Q) where
