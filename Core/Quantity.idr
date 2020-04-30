@@ -21,6 +21,12 @@ Show Q where
   show L = "L"
   show R = "R"
 
+showU : Q -> String
+showU I = "ᴵ"
+showU E = "ᴱ"
+showU L = "ᴸ"
+showU R = "ᴿ"
+
 export
 ShowQ () where
   showCol () = ":"
@@ -28,8 +34,8 @@ ShowQ () where
 
 export
 ShowQ Q where
-  showCol q = ":" ++ show q
-  showApp q = " -" ++ show q ++ "- "
+  showCol q = ":" ++ showU q
+  showApp q = " " ++ showU q ++ " "
 
 export
 ShowQ (Maybe Q) where
