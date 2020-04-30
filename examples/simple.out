@@ -2,72 +2,206 @@
 # Desugared #
 #############
 
-\T : Type.
- \C : (pf :I Bool) -> T.
-  \U : (t :E T) -> Type.
-   \g : (x :L U (C True)) -> Bool.
-    \b : Bool.
-     \d : U (C b).
-      (\x : U (C False). g x) d
+constructor Bool : Type.
+
+constructor True : Bool.
+
+constructor False : Bool.
+
+constructor T : Type.
+
+constructor C : (pf :ᴵ Bool) -> T.
+
+postulate U : (t :ᴱ T) -> Type.
+
+postulate g : (x :ᴸ U (C True)) -> Bool.
+
+postulate b : Bool.
+
+postulate d : U (C b).
+
+not : (x : Bool) -> Bool {
+  not True ~> False
+  not False ~> True
+}
+
+id : (a : Type) -> (x : a) -> a {
+  forall (x : a)(a : Type).
+    id a x ~> x
+}
+
+main :ᴸ Bool {
+  main ~> (\x : U (C False). g x) d
+}
+
 #############
 # Evarified #
 #############
 
-\T :0 Type.
- \C :1 (pf :I Bool) -> T.
-  \U :2 (t :E T) -> Type.
-   \g :3 (x :L U -4- (C -5- True)) -> Bool.
-    \b :6 Bool.
-     \d :7 U -8- (C -9- b).
-      (\x :11 U -12- (C -13- False). g -14- x) -10- d
+constructor Bool :⁰ Type.
+
+constructor True :⁴ Bool.
+
+constructor False :² Bool.
+
+constructor T :³ Type.
+
+constructor C :¹ (pf :ᴵ Bool) -> T.
+
+postulate U :⁵ (t :ᴱ T) -> Type.
+
+postulate g :¹⁰ (x :ᴸ U ¹¹ (C ¹² True)) -> Bool.
+
+postulate b :⁶ Bool.
+
+postulate d :⁷ U ⁸ (C ⁹ b).
+
+not :²⁵ (x :²⁶ Bool) -> Bool {
+  not ²⁷ True ~> False
+  not ²⁸ False ~> True
+}
+
+id :¹³ (a :¹⁴ Type) -> (x :¹⁵ a) -> a {
+  forall (x :¹⁶ a)(a :¹⁷ Type).
+    id ¹⁸ a ¹⁹ x ~> x
+}
+
+main :ᴸ Bool {
+  main ~> (\x :²¹ U ²² (C ²³ False). g ²⁴ x) ²⁰ d
+}
+
 Running erasure inference...
 ########################
 # Inferred constraints #
 ########################
 
-[I] -> 0
-[I] -> I
-[I] -> 0
-[I] -> 1
-[I] -> 0
-[I] -> E
-[I] -> 2
-[I] -> 2
-[I] -> 1
-5 ~ I
-4 ~ E
-[I] -> L
-[I] -> 3
-[I] -> 6
-[I] -> 2
-[I] -> 1
-[I] -> 6
-9 ~ I
-8 ~ E
-[I] -> 7
-[I] -> 2
-[I] -> 1
-13 ~ I
-12 ~ E
-[I] -> 11
-[] -> 3
-[] -> 11
-12 ~ 4
-14 ~ L
-[] -> 7
-8 ~ 12
-10 ~ 11
+Sums:
+  I ≥ Sum
+    product  [I]
+  E ≥ Sum
+    product  [I]
+  L ≥ Sum
+    product  [I]
+  0 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  1 ≥ Sum
+    product  [I, 11]
+    product  [I, 8]
+    product  [I, 22]
+  2 ≥ Sum
+    product  []
+    product  [I, 22, 23]
+  3 ≥ Sum
+    product  [I]
+    product  [I]
+  4 ≥ Sum
+    product  [I, 11, 12]
+    product  []
+  5 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+  6 ≥ Sum
+    product  [I, 8, 9]
+  7 ≥ Sum
+    product  [20]
+  10 ≥ Sum
+    product  []
+  14 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+  15 ≥ Sum
+    product  [I]
+  16 ≥ Sum
+    product  [I]
+    product  []
+  17 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+  18 ≥ Sum
+    product  [17]
+  19 ≥ Sum
+    product  [16]
+  21 ≥ Sum
+    product  [I]
+    product  [24]
+  26 ≥ Sum
+    product  [I]
+
+Maxes:
+  I ≥ Max
+    product  [12]
+    product  [9]
+    product  [23]
+  E ≥ Max
+    product  [11]
+    product  [8]
+    product  [22]
+  L ≥ Max
+    product  [24]
+  2 ≥ Max
+    product  [L, 25]
+  4 ≥ Max
+    product  [L, 25]
+  8 ≥ Max
+    product  [E]
+    product  [22]
+  9 ≥ Max
+    product  [I]
+  11 ≥ Max
+    product  [E]
+    product  [22]
+  12 ≥ Max
+    product  [I]
+  14 ≥ Max
+    product  [18]
+  15 ≥ Max
+    product  [19]
+  18 ≥ Max
+    product  [14]
+  19 ≥ Max
+    product  [15]
+  20 ≥ Max
+    product  [21]
+  21 ≥ Max
+    product  [20]
+  22 ≥ Max
+    product  [E]
+    product  [11]
+    product  [8]
+  23 ≥ Max
+    product  [I]
+  24 ≥ Max
+    product  [L]
+  26 ≥ Max
+    product  [27]
+    product  [28]
+  27 ≥ Max
+    product  [L]
+    product  [26]
+  28 ≥ Max
+    product  [L]
+    product  [26]
 
 #######################
 # Deferred equalities #
 #######################
 
-12 -> C -13- False ~ C -5- True
-8 -> C -9- b ~ C -13- False
+22 -> C ²³ False ~ C ¹² True
+8 -> C ⁹ b ~ C ²³ False
 
   -> iteration 1
-    C -13- False ~ C -5- True
-    C -9- b ~ C -13- False
+    C ²³ False ~ C ¹² True
+    C ⁹ b ~ C ²³ False
 
   -> iteration 2
     -> No more equalities, fixed point reached.
@@ -78,60 +212,66 @@ Running erasure inference...
 
   0 -> I
   1 -> I
-  2 -> I
-  3 -> L
-  4 -> E
+  2 -> L
+  3 -> I
+  4 -> L
   5 -> I
   6 -> I
   7 -> L
   8 -> E
   9 -> I
   10 -> L
-  11 -> L
-  12 -> E
-  13 -> I
-  14 -> L
+  11 -> E
+  12 -> I
+  14 -> I
+  15 -> L
+  16 -> L
+  17 -> I
+  18 -> I
+  19 -> L
+  20 -> L
+  21 -> L
+  22 -> E
+  23 -> I
+  24 -> L
+  25 -> I
+  26 -> L
+  27 -> L
+  28 -> L
 
 #####################
 # Annotated program #
 #####################
 
-\T :I Type.
- \C :I (pf :I Bool) -> T.
-  \U :I (t :E T) -> Type.
-   \g :L (x :L U -E- (C -I- True)) -> Bool.
-    \b :I Bool.
-     \d :L U -E- (C -I- b).
-      (\x :L U -E- (C -I- False). g -L- x) -L- d
-###############
-# Final check #
-###############
+constructor Bool :ᴵ Type.
 
-(T :I Type) -> (C :I (pf :I Bool) -> T) -> (U :I (t :E T) -> Type) -> (g :L (x :L U -E- (C -I- True)) -> Bool) -> (b :I Bool) -> (d :L U -E- (C -I- b)) -> Bool
+constructor True :ᴸ Bool.
 
-** OK **
+constructor False :ᴸ Bool.
 
-##########
-# Erased #
-##########
+constructor T :ᴵ Type.
 
-\g.
- \d.
-  (\x. g x) d
-########
-# WHNF #
-########
+constructor C :ᴵ (pf :ᴵ Bool) -> T.
 
-Unerased, reduced:
-\T :I Type.
- \C :I (pf :I Bool) -> T.
-  \U :I (t :E T) -> Type.
-   \g :L (x :L U -E- (C -I- True)) -> Bool.
-    \b :I Bool.
-     \d :L U -E- (C -I- b).
-      (\x :L U -E- (C -I- False). g -L- x) -L- d
+postulate U :ᴵ (t :ᴱ T) -> Type.
 
-Erased, reduced:
-\g.
- \d.
-  (\x. g x) d
+postulate g :ᴸ (x :ᴸ U ᴱ (C ᴵ True)) -> Bool.
+
+postulate b :ᴵ Bool.
+
+postulate d :ᴸ U ᴱ (C ᴵ b).
+
+not :ᴵ (x :ᴸ Bool) -> Bool {
+  not ᴸ True ~> False
+  not ᴸ False ~> True
+}
+
+id :ᴵ (a :ᴵ Type) -> (x :ᴸ a) -> a {
+  forall (x :ᴸ a)(a :ᴵ Type).
+    id ᴵ a ᴸ x ~> x
+}
+
+main :ᴸ Bool {
+  main ~> (\x :ᴸ U ᴱ (C ᴵ False). g ᴸ x) ᴸ d
+}
+

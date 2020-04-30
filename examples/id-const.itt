@@ -1,0 +1,36 @@
+data Bool : Type {
+  True : Bool,
+  False : Bool
+}
+
+data Pair : Type {
+  P : (x :L Bool) -> (y :L Bool) -> Pair
+}
+
+not : (x : Bool) -> Bool {
+  not True ~> False,
+  not False ~> True
+}
+
+false : (x : Bool) -> Bool {
+  forall (x : Bool).
+    false x ~> False
+}
+
+true : (x : Bool) -> Bool {
+  forall (x : Bool).
+    true x ~> True
+}
+
+apply : (f : (x : Bool) -> Bool) -> (y : Bool) -> Bool {
+  forall (f : (x : Bool) -> Bool) (y : Bool).
+    apply f y ~> f y
+}
+
+main :L Pair {
+  main ~> P
+    (apply not   (true False))
+    (apply false (true False))
+}
+
+-- vim: ft=ttstar

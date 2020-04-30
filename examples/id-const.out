@@ -1,0 +1,318 @@
+#############
+# Desugared #
+#############
+
+constructor Bool : Type.
+
+constructor True : Bool.
+
+constructor False : Bool.
+
+constructor Pair : Type.
+
+constructor P : (x :ᴸ Bool) -> (y :ᴸ Bool) -> Pair.
+
+not : (x : Bool) -> Bool {
+  not True ~> False
+  not False ~> True
+}
+
+false : (x : Bool) -> Bool {
+  forall (x : Bool).
+    false x ~> False
+}
+
+true : (x : Bool) -> Bool {
+  forall (x : Bool).
+    true x ~> True
+}
+
+apply : (f : (x : Bool) -> Bool) -> (y : Bool) -> Bool {
+  forall (y : Bool)(f : (x : Bool) -> Bool).
+    apply f y ~> f y
+}
+
+main :ᴸ Pair {
+  main ~> P (apply not (true False)) (apply false (true False))
+}
+
+#############
+# Evarified #
+#############
+
+constructor Bool :⁰ Type.
+
+constructor True :⁴ Bool.
+
+constructor False :¹ Bool.
+
+constructor Pair :³ Type.
+
+constructor P :² (x :ᴸ Bool) -> (y :ᴸ Bool) -> Pair.
+
+not :²⁷ (x :²⁸ Bool) -> Bool {
+  not ²⁹ True ~> False
+  not ³⁰ False ~> True
+}
+
+false :¹⁵ (x :¹⁶ Bool) -> Bool {
+  forall (x :¹⁷ Bool).
+    false ¹⁸ x ~> False
+}
+
+true :³¹ (x :³² Bool) -> Bool {
+  forall (x :³³ Bool).
+    true ³⁴ x ~> True
+}
+
+apply :⁵ (f :⁶ (x :⁷ Bool) -> Bool) -> (y :⁸ Bool) -> Bool {
+  forall (y :⁹ Bool)(f :¹⁰ (x :¹¹ Bool) -> Bool).
+    apply ¹² f ¹³ y ~> f ¹⁴ y
+}
+
+main :ᴸ Pair {
+  main ~> P ²⁰ (apply ²² not ²¹ (true ²³ False)) ¹⁹ (apply ²⁵ false ²⁴ (true ²⁶ False))
+}
+
+Running erasure inference...
+########################
+# Inferred constraints #
+########################
+
+Sums:
+  L ≥ Sum
+    product  [I]
+    product  [I]
+  0 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  1 ≥ Sum
+    product  []
+    product  []
+    product  [20, 21, 23]
+    product  [19, 24, 26]
+  2 ≥ Sum
+    product  []
+  3 ≥ Sum
+    product  [I]
+    product  [I]
+  4 ≥ Sum
+    product  []
+    product  []
+  5 ≥ Sum
+    product  [20]
+    product  [19]
+  6 ≥ Sum
+    product  [I]
+  7 ≥ Sum
+    product  [I]
+  8 ≥ Sum
+    product  [I]
+  9 ≥ Sum
+    product  [I]
+    product  [14]
+  10 ≥ Sum
+    product  [I]
+    product  [I]
+    product  []
+  11 ≥ Sum
+    product  [I]
+    product  [I]
+  12 ≥ Sum
+    product  [10]
+  13 ≥ Sum
+    product  [9]
+  15 ≥ Sum
+    product  [19, 25]
+  16 ≥ Sum
+    product  [I]
+    product  [I]
+  17 ≥ Sum
+    product  [I]
+  18 ≥ Sum
+    product  [17]
+  27 ≥ Sum
+    product  [20, 22]
+  28 ≥ Sum
+    product  [I]
+    product  [I]
+  31 ≥ Sum
+    product  [20, 21]
+    product  [19, 24]
+  32 ≥ Sum
+    product  [I]
+  33 ≥ Sum
+    product  [I]
+  34 ≥ Sum
+    product  [33]
+
+Maxes:
+  L ≥ Max
+    product  [20]
+    product  [19]
+  1 ≥ Max
+    product  [L, 27]
+  4 ≥ Max
+    product  [L, 27]
+  6 ≥ Max
+    product  [12]
+    product  [22]
+    product  [25]
+  7 ≥ Max
+    product  [11]
+    product  [28]
+    product  [16]
+  8 ≥ Max
+    product  [13]
+    product  [21]
+    product  [24]
+  11 ≥ Max
+    product  [7]
+    product  [14]
+  12 ≥ Max
+    product  [6]
+  13 ≥ Max
+    product  [8]
+  14 ≥ Max
+    product  [11]
+  16 ≥ Max
+    product  [18]
+    product  [7]
+  18 ≥ Max
+    product  [16]
+  19 ≥ Max
+    product  [L]
+  20 ≥ Max
+    product  [L]
+  21 ≥ Max
+    product  [8]
+  22 ≥ Max
+    product  [6]
+  23 ≥ Max
+    product  [32]
+  24 ≥ Max
+    product  [8]
+  25 ≥ Max
+    product  [6]
+  26 ≥ Max
+    product  [32]
+  28 ≥ Max
+    product  [29]
+    product  [30]
+    product  [7]
+  29 ≥ Max
+    product  [L]
+    product  [28]
+  30 ≥ Max
+    product  [L]
+    product  [28]
+  32 ≥ Max
+    product  [34]
+    product  [23]
+    product  [26]
+  34 ≥ Max
+    product  [32]
+
+#######################
+# Deferred equalities #
+#######################
+
+
+  -> iteration 1
+    -> No more equalities, fixed point reached.
+
+###################
+# Final valuation #
+###################
+
+  0 -> I
+  1 -> R
+  2 -> L
+  3 -> I
+  4 -> R
+  5 -> R
+  6 -> L
+  7 -> L
+  8 -> L
+  9 -> L
+  10 -> L
+  11 -> L
+  12 -> L
+  13 -> L
+  14 -> L
+  15 -> L
+  16 -> L
+  17 -> I
+  18 -> L
+  19 -> L
+  20 -> L
+  21 -> L
+  22 -> L
+  23 -> I
+  24 -> L
+  25 -> L
+  26 -> I
+  27 -> L
+  28 -> L
+  29 -> L
+  30 -> L
+  31 -> R
+  32 -> I
+  33 -> I
+  34 -> I
+
+#####################
+# Annotated program #
+#####################
+
+constructor Bool :ᴵ Type.
+
+constructor True :ᴿ Bool.
+
+constructor False :ᴿ Bool.
+
+constructor Pair :ᴵ Type.
+
+constructor P :ᴸ (x :ᴸ Bool) -> (y :ᴸ Bool) -> Pair.
+
+not :ᴸ (x :ᴸ Bool) -> Bool {
+  not ᴸ True ~> False
+  not ᴸ False ~> True
+}
+
+false :ᴸ (x :ᴸ Bool) -> Bool {
+  forall (x :ᴵ Bool).
+    false ᴸ x ~> False
+}
+
+true :ᴿ (x :ᴵ Bool) -> Bool {
+  forall (x :ᴵ Bool).
+    true ᴵ x ~> True
+}
+
+apply :ᴿ (f :ᴸ (x :ᴸ Bool) -> Bool) -> (y :ᴸ Bool) -> Bool {
+  forall (y :ᴸ Bool)(f :ᴸ (x :ᴸ Bool) -> Bool).
+    apply ᴸ f ᴸ y ~> f ᴸ y
+}
+
+main :ᴸ Pair {
+  main ~> P ᴸ (apply ᴸ not ᴸ (true ᴵ False)) ᴸ (apply ᴸ false ᴸ (true ᴵ False))
+}
+
