@@ -57,6 +57,7 @@ export
 OrdSemiring Q where
   semi0 = I
   semi1 = L
+  top = R
 
   (.+.) p q = case (p, q) of
     (I, q) => q
@@ -75,6 +76,16 @@ OrdSemiring Q where
     (q, R) => q
     (E, L) => E
     (L, E) => E
+    (E, E) => E
+    (L, L) => L
+
+  (.\/.) p q = case (p, q) of
+    (I, q) => q
+    (q, I) => q
+    (R, q) => R
+    (q, R) => R
+    (E, L) => L
+    (L, E) => L
     (E, E) => E
     (L, L) => L
 

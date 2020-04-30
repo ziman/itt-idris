@@ -30,7 +30,6 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
     ev (EV i) = SortedSet.insert i neutral
 
     eNumsC : Constr -> SortedSet ENum
-    eNumsC (CEq v w) = ev v <+> ev w
     eNumsC (CSum bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
     eNumsC (CMax bt g v) = concat $ the (List _) [ev v, ev g]
 
@@ -56,19 +55,18 @@ model cs = do
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
   mul <- defineEnumFun2 "mul" smtQ smtQ smtQ (.*.)
+  max <- defineEnumFun2 "max" smtQ smtQ smtQ (.\/.)
   leq <- defineEnumFun2 "leq" smtQ smtQ smtBool (.<=.)
 
   let product = foldMap mul (lit semi1) ev
+  let maximum = foldMap max (lit top)   ev
   let prodSum = foldMap add (lit semi0) product
 
-  for_ {b = ()} ccs.equalities $ \c =>
-    assertEq (ev c.v) (ev c.w)
-
-  for_ {b = ()} ccs.sums $ \c =>
+  for_ {b = ()} ccs.sums $ \c : Constraint.Sum =>
     assert $ prodSum c.inputs `leq` ev c.result
 
-  for_ {b = ()} ccs.maxes $ \c =>
-    assert $ product c.inputs `leq` ev c.result
+  for_ {b = ()} ccs.maxes $ \c : Constraint.Max =>
+    assert $ maximum c.inputs `leq` ev c.result
 
   minimise $ numberOf R
   minimise $ numberOf L

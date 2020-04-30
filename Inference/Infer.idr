@@ -170,7 +170,9 @@ eqEvar (QQ p) (QQ q) =
   if p == q
     then pure ()
     else throw $ QuantityMismatch p q
-eqEvar p q = MkTC $ \env, st => Right (st, MkConstrs [CEq p q] [], ())
+eqEvar p q = do
+  p ~> q
+  q ~> p
 
 lookup : Fin n -> TC n (Binding Evar n)
 lookup i = lookup i <$> getCtx

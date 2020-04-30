@@ -17,13 +17,11 @@ Backtrace = List String
 
 public export
 data Constr : Type where
-  CEq : (v, w : Evar) -> Constr
   CSum : (bt : Backtrace) -> (gs : SortedSet Evar) -> (v : Evar) -> Constr
   CMax : (bt : Backtrace) -> (u : Evar) -> (v : Evar) -> Constr
 
 export
 Show Constr where
-  show (CEq v w) = show v ++ " ~ " ++ show w
   show (CSum bt gs v) = show (SortedSet.toList {k=Evar} gs) ++ " ~>+ " ++ show v
   show (CMax bt u v) = show u ++ " ~> " ++ show v
 
@@ -51,15 +49,6 @@ Semigroup Constrs where
 export
 Monoid Constrs where
   neutral = MkConstrs [] []
-
-public export
-record Equality where
-  constructor MkEq
-  v, w : Evar
-
-export
-Pretty () Equality where
-  pretty () c = pretty () c.v <++> text "~" <++> pretty () c.w
 
 public export
 record Sum where
@@ -90,17 +79,13 @@ Pretty () Max where
 public export
 record CollectedConstrs where
   constructor MkCC
-  equalities : List Equality
   sums : List Sum
   maxes : List Max
 
 export
 Pretty () CollectedConstrs where
   pretty () ccs =
-    text "Equalities:"
-    $$ indent (vcat $ map (pretty ()) ccs.equalities)
-    $$ text ""
-    $$ text "Sums:"
+    text "Sums:"
     $$ indent (vcat $ map (pretty ()) ccs.sums)
     $$ text ""
     $$ text "Maxes:"
@@ -111,14 +96,9 @@ export
 collect : List Constr -> CollectedConstrs
 collect cs =
   MkCC
-    (foldr addEq [] cs)
     (map toSum . toList $ foldr addSum empty cs)
     (map toMax . toList $ foldr addMax empty cs)
   where
-    addEq : Constr -> List Equality -> List Equality
-    addEq (CEq v w) xs = MkEq v w :: xs
-    addEq _ xs = xs
-
     addSum : Constr -> SortedMap Evar (List (SortedSet Evar)) -> SortedMap Evar (List (SortedSet Evar)) 
     addSum (CSum bt gs v) cs = mergeWith (++) (insert v [gs] empty) cs
     addSum _ cs = cs
