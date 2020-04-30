@@ -39,3 +39,30 @@ export
 clauseQ : Traversal (Clause q argn) (Clause q' argn) q q'
 clauseQ f (MkClause pi lhs rhs) =
   [| MkClause (contextQ f pi) (traverse (qpatQ f) lhs) (ttQ f rhs) |]
+
+public export
+record RawClause (q : Type) where
+  constructor MkRC
+  {pn : Nat}
+  pi : Context q pn
+  lhs : List (q, Pat q pn)
+  rhs : TT q pn
+
+checkVect : (n : Nat) -> List a -> Maybe (Vect n a)
+checkVect Z [] = Just []
+checkVect (S n) (x :: xs) = (x ::) <$> checkVect n xs
+checkVect _ _ = Nothing
+
+checkClause : (argn : Nat) -> RawClause q -> Maybe (Clause q argn)
+checkClause argn rc =
+  checkVect argn rc.lhs <&>
+    \lhs => MkClause rc.pi lhs rc.rhs
+
+export
+fromRaw : List (RawClause q) -> Maybe (argn ** List (Clause q argn))
+fromRaw [] = Nothing
+fromRaw (c :: cs) =
+  let argn = length c.lhs
+    in case traverse (checkClause argn) (c :: cs) of
+      Nothing => Nothing
+      Just cs' => Just (argn ** cs')

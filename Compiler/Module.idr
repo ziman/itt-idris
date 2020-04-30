@@ -3,11 +3,14 @@ module Compiler.Module
 import Core.Check
 import Core.Erase
 import Core.Normalise
+import Core.TT.Pretty
+import Core.Quantity
 import public Core.TT
 import public Compiler.Monad
 
 import Inference.Evar
-import public Inference.Infer
+import Inference.Infer
+import Inference.Constraint
 import Inference.SmtModel
 
 import Data.List
@@ -127,16 +130,19 @@ processModule raw = do
     Right (MkTCS, usage, ()) => do
       log "\n** OK **\n"
 
-  {-
   banner "# Erased #"
-  let erased = erase [] annotated
+  let erased = eraseGlobals annotated
   prn erased
-  
-  banner "# WHNF #"
+
+  banner "# WHNF of `main` #"
+
   log . render " "
     $ text "Unerased, reduced:"
-    $$ pretty () (whnf annotated)
+    $$ case whnf annotated (P (UN "main")) of
+        Left e => text $ show e
+        Right nf => pretty () (the (TT Q Z) nf)
     $$ text ""
     $$ text "Erased, reduced:"
-    $$ pretty () (whnf erased)
-  -}
+    $$ case whnf erased (P (UN "main")) of
+        Left e => text $ show e
+        Right nf => pretty () (the (TT () Z) nf)

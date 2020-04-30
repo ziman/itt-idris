@@ -57,6 +57,10 @@ lookup : Name -> Globals q -> Maybe (Definition q)
 lookup n gs = lookup n gs.definitions
 
 export
+map : (Definition q -> Definition q') -> Globals q -> Globals q'
+map f (MkGlobals ds ord) = MkGlobals (f <$> ds) ord
+
+export
 toList : Globals q -> List (Definition q)
 toList gs with (gs.ordering)
   toList gs | []      = []
@@ -65,8 +69,8 @@ toList gs with (gs.ordering)
       Just d  => d :: toList gs | ns
 
 export
-toGlobals : List (Definition q) -> Globals q
-toGlobals ds =
+fromList : List (Definition q) -> Globals q
+fromList ds =
   MkGlobals
     (SortedMap.fromList [(UN d.binding.name, d) | d <- ds])
     [UN d.binding.name | d <- ds]

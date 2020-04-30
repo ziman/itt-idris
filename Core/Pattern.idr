@@ -16,6 +16,7 @@ data Pat : (q : Type) -> (n : Nat) -> Type where
   PV : (pv : Fin n) -> Pat q n
   PCtorApp : PCtor -> List (q, Pat q n) -> Pat q n
   PForced : TT q n -> Pat q n
+  PWildcard : Pat q n
 
 export
 ShowQ q => Pretty () PCtor where
@@ -31,6 +32,7 @@ ShowQ q => Pretty (Context q n) (Pat q n) where
       pretty () ctor
         :: [text (showApp q) <+> pretty ctx arg | (q, arg) <- args]
   pretty ctx (PForced tm) = brackets $ pretty ctx tm
+  pretty ctx PWildcard = text "_"
 
 mutual
   export
@@ -42,6 +44,7 @@ mutual
   patQ f (PV i) = pure $ PV i
   patQ f (PCtorApp cn args) = PCtorApp cn <$> traverse (qpatQ f) args
   patQ f (PForced tm) = PForced <$> ttQ f tm
+  patQ f PWildcard = pure PWildcard
 
 export
 patToTm : Pat q n -> TT q n
@@ -51,6 +54,7 @@ patToTm (PCtorApp (Forced cn) args) =
 patToTm (PCtorApp (Checked cn) args) =
   mkApp (P cn) [(q, patToTm arg) | (q, arg) <- args]
 patToTm (PForced tm) = tm
+patToTm PWildcard = Erased
 
 export
 showPat : ShowQ q => Context q n -> Pat q n -> String

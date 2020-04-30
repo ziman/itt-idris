@@ -35,6 +35,7 @@ data ErrorMessage : Nat -> Type where
   AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
   CantCheckErased : ErrorMessage n
+  CantCheckWildcard : ErrorMessage n
   NotImplemented : ErrorMessage n
   WHNFError : EvalError -> ErrorMessage n
   UnknownGlobal : Name -> ErrorMessage n
@@ -55,6 +56,8 @@ showEM ctx (UnknownGlobal n)
     = "unknown global: " ++ show n
 showEM ctx CantCheckErased
     = "can't check erased terms"
+showEM ctx CantCheckWildcard
+    = "can't check wildcard patterns"
 showEM ctx NotImplemented
     = "not implemented yet"
 showEM ctx (Debug doc)
@@ -298,6 +301,11 @@ mutual
   checkTm Type_ = pure Type_
   checkTm Erased = throw CantCheckErased
 
+checkDefinition : Definition Q -> TC Z ()
+checkDefinition d = pure ()  -- TODO
+
 export
 checkGlobals : TC Z ()
-checkGlobals = ?rhs
+checkGlobals = do
+  gs <- Globals.toList <$> getGlobals
+  traverse_ checkDefinition gs

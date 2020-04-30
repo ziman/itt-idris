@@ -105,6 +105,7 @@ mutual
             else Mismatch
       (V _, _) => Stuck
       _ => Mismatch
+  matchPat s PWildcard _ = Match s
 
   matchPats : Subst q n pn -> Vect argn (Pat q pn) -> Vect argn (TT q n) -> Outcome (Subst q n pn)
   matchPats s [] [] = Match s
@@ -129,7 +130,12 @@ matchClauses args (c :: cs) =
 
 covering export
 whnf : Globals q -> TT q n -> Either EvalError (TT q n)
-whnf gs (P n) = pure $ P n
+whnf gs (P n) =
+  case .body <$> lookup n gs of
+    -- constant pattern matching functions
+    Just (Clauses Z [MkClause [] lhs rhs]) =>
+      whnf gs $ weakenClosed rhs
+    _ => pure $ P n
 whnf gs (V i) = pure $ V i
 whnf gs (Lam b rhs) = pure $ Lam b rhs
 whnf gs (Pi  b rhs) = pure $ Pi b rhs

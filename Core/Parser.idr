@@ -331,45 +331,20 @@ names : Context q n -> Vect n String
 names [] = []
 names (b :: bs) = b.name :: names bs
 
-record RawClause where
-  constructor MkRC
-  {pn : Nat}
-  pi : Context (Maybe Q) pn
-  lhs : List (Pat (Maybe Q) pn)
-  rhs : TT (Maybe Q) pn
-
-rawClause : String -> Rule RawClause
+rawClause : String -> Rule (RawClause (Maybe Q))
 rawClause fn = do
   pnpvs <- option (Z ** []) $
     kwd "forall" *> context [] [] <* token Dot
   cont pnpvs
  where
-  cont : (pn ** Context (Maybe Q) pn) -> Rule RawClause
+  cont : (pn ** Context (Maybe Q) pn) -> Rule (RawClause (Maybe Q))
   cont (pn ** pvs) = do
     let pns = names pvs
     token (Ident fn)
-    pats <- many (patAtom pns)
+    pats <- many (patAtom pns <&> \p => (Nothing, p))
     token SquigArrow
     rhs <- term pns
     pure $ MkRC pvs pats rhs
-
-checkVect : (n : Nat) -> List a -> Maybe (Vect n a)
-checkVect Z [] = Just []
-checkVect (S n) (x :: xs) = (x ::) <$> checkVect n xs
-checkVect _ _ = Nothing
-
-checkClause : (argn : Nat) -> RawClause -> Maybe (Clause (Maybe Q) argn)
-checkClause argn rc =
-  checkVect argn rc.lhs <&>
-    \lhs => MkClause rc.pi (lhs <&> \p => (Nothing, p)) rc.rhs
-
-checkClauses : List RawClause -> Maybe (argn ** List (Clause (Maybe Q) argn))
-checkClauses [] = Nothing
-checkClauses (c :: cs) =
-  let argn = length c.lhs
-    in case traverse (checkClause argn) (c :: cs) of
-      Nothing => Nothing
-      Just cs' => Just (argn ** cs')
 
 clauseFun : Rule (List (Definition (Maybe Q)))
 clauseFun = do
@@ -380,9 +355,10 @@ clauseFun = do
   token BraceR
   cont bnd rcs -- for some reason inference fails here
  where
-  cont : Binding (Maybe Q) Z -> List RawClause -> Grammar (TokenData Token) False (List (Definition (Maybe Q)))
+  cont : Binding (Maybe Q) Z -> List (RawClause (Maybe Q))
+    -> Grammar (TokenData Token) False (List (Definition (Maybe Q)))
   cont bnd rcs =
-    case checkClauses rcs of
+    case fromRaw rcs of
       Nothing => fail "ill-formed clauses"
       Just (argn ** cs) => pure [MkDef bnd (Clauses argn cs)]
 
@@ -393,7 +369,7 @@ definition =
   <|> clauseFun
 
 globals : Grammar (TokenData Token) False (Globals (Maybe Q))
-globals = toGlobals . concat <$> many definition
+globals = fromList . concat <$> many definition
 
 export
 parse : String -> Either ParseError (Globals (Maybe Q))

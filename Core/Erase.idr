@@ -2,6 +2,8 @@ module Core.Erase
 
 import public Core.TT
 import public Core.Context
+import public Core.Pattern
+import public Core.Globals
 import Data.List
 
 %default total
@@ -25,24 +27,78 @@ eraseVar (B n q ty :: ds) (FS i) with (eraseVar ds i)
   eraseVar (B n L ty :: ds) (FS i) | ev = FS <$> ev
   eraseVar (B n R ty :: ds) (FS i) | ev = FS <$> ev
 
--- erase for runtime
+-- eraseTm for runtime
 export
-erase : (ctx : Context Q n) -> (tm : TT Q n) -> TT () (eraseN ctx)
-erase ctx (P n) = P n
-erase ctx (V i) = case eraseVar ctx i of
+eraseTm : (ctx : Context Q n) -> (tm : TT Q n) -> TT () (eraseN ctx)
+eraseTm ctx (P n) = P n
+eraseTm ctx (V i) = case eraseVar ctx i of
   Nothing => Erased  -- should be unreachable if erasure's correct
   Just j => V j
-erase ctx (Lam (B n I ty) rhs) = erase (B n I ty::ctx) rhs
-erase ctx (Lam (B n E ty) rhs) = erase (B n E ty::ctx) rhs
-erase ctx (Lam (B n L ty) rhs) = Lam (B n () Erased) $ erase (B n L ty::ctx) rhs
-erase ctx (Lam (B n R ty) rhs) = Lam (B n () Erased) $ erase (B n R ty::ctx) rhs
-erase ctx (Pi (B n I ty) rhs) = erase (B n I ty::ctx) rhs
-erase ctx (Pi (B n E ty) rhs) = erase (B n E ty::ctx) rhs
-erase ctx (Pi (B n L ty) rhs) = Pi (B n () Erased) $ erase (B n L ty::ctx) rhs
-erase ctx (Pi (B n R ty) rhs) = Pi (B n () Erased) $ erase (B n R ty::ctx) rhs
-erase ctx (App I f x) = erase ctx f
-erase ctx (App E f x) = erase ctx f
-erase ctx (App L f x) = App () (erase ctx f) (erase ctx x)
-erase ctx (App R f x) = App () (erase ctx f) (erase ctx x)
-erase ctx Type_ = Type_
-erase ctx Erased = Erased
+eraseTm ctx (Lam (B n I ty) rhs) = eraseTm (B n I ty::ctx) rhs
+eraseTm ctx (Lam (B n E ty) rhs) = eraseTm (B n E ty::ctx) rhs
+eraseTm ctx (Lam (B n L ty) rhs) = Lam (B n () Erased) $ eraseTm (B n L ty::ctx) rhs
+eraseTm ctx (Lam (B n R ty) rhs) = Lam (B n () Erased) $ eraseTm (B n R ty::ctx) rhs
+eraseTm ctx (Pi (B n I ty) rhs) = eraseTm (B n I ty::ctx) rhs
+eraseTm ctx (Pi (B n E ty) rhs) = eraseTm (B n E ty::ctx) rhs
+eraseTm ctx (Pi (B n L ty) rhs) = Pi (B n () Erased) $ eraseTm (B n L ty::ctx) rhs
+eraseTm ctx (Pi (B n R ty) rhs) = Pi (B n () Erased) $ eraseTm (B n R ty::ctx) rhs
+eraseTm ctx (App I f x) = eraseTm ctx f
+eraseTm ctx (App E f x) = eraseTm ctx f
+eraseTm ctx (App L f x) = App () (eraseTm ctx f) (eraseTm ctx x)
+eraseTm ctx (App R f x) = App () (eraseTm ctx f) (eraseTm ctx x)
+eraseTm ctx Type_ = Type_
+eraseTm ctx Erased = Erased
+
+mutual
+  eraseArgs : (ctx : Context Q n) -> List (Q, Pat Q n) -> List ((), Pat () (eraseN ctx))
+  eraseArgs ctx [] = []
+  eraseArgs ctx ((I, _) :: args) = eraseArgs ctx args
+  eraseArgs ctx ((E, _) :: args) = eraseArgs ctx args
+  eraseArgs ctx ((L, arg) :: args) = ((), erasePat ctx arg) :: eraseArgs ctx args
+  eraseArgs ctx ((R, arg) :: args) = ((), erasePat ctx arg) :: eraseArgs ctx args
+
+  erasePat : (ctx : Context Q n) -> (pat : Pat Q n) -> Pat () (eraseN ctx)
+  erasePat ctx (PV i) =
+    case eraseVar ctx i of
+      Nothing => PWildcard
+      Just j => PV j
+  erasePat ctx (PCtorApp ctor args) = PCtorApp ctor $ eraseArgs ctx args
+  erasePat ctx (PForced tm) = PForced $ eraseTm ctx tm
+  erasePat ctx PWildcard = PWildcard
+
+eraseCtx : (ctx : Context Q n) -> Context () (eraseN ctx)
+eraseCtx [] = []
+eraseCtx (B n I ty :: ds) = eraseCtx ds
+eraseCtx (B n E ty :: ds) = eraseCtx ds
+eraseCtx (B n L ty :: ds) = B n () Erased :: eraseCtx ds
+eraseCtx (B n R ty :: ds) = B n () Erased :: eraseCtx ds
+
+eraseClause : Clause Q argn -> RawClause ()
+eraseClause (MkClause pi lhs rhs) =
+  MkRC
+    (eraseCtx pi)
+    (eraseArgs pi $ toList lhs)
+    (eraseTm pi rhs)
+
+eraseBody : Body Q -> Body ()
+eraseBody Postulate = Postulate
+eraseBody Constructor = Constructor
+eraseBody (Foreign code) = Foreign code
+eraseBody (Clauses argn cs) =
+  case fromRaw $ map eraseClause cs of
+    Nothing => Clauses Z []  -- should never happen
+    Just (argn' ** cs) => Clauses argn' cs
+
+eraseDefs : List (Definition Q) -> List (Definition ())
+eraseDefs [] = []
+eraseDefs ((MkDef (B n I ty) body) :: ds) = eraseDefs ds
+eraseDefs ((MkDef (B n E ty) body) :: ds) = eraseDefs ds
+eraseDefs ((MkDef (B n _ ty) body) :: ds) =
+  MkDef
+    (B n () $ eraseTm [] ty)
+    (eraseBody body)
+  :: eraseDefs ds
+
+export
+eraseGlobals : (gs : Globals Q) -> Globals ()
+eraseGlobals = fromList . eraseDefs . toList

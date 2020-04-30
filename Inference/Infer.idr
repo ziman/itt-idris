@@ -39,6 +39,7 @@ data ErrorMessage : Nat -> Type where
   CantConvert : TT Evar n -> TT Evar n -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
   CantInferErased : ErrorMessage n
+  CantInferWildcard : ErrorMessage n
   NotImplemented : ErrorMessage n
   QuantityMismatch : Q -> Q -> ErrorMessage n
   WhnfError : EvalError -> ErrorMessage n
@@ -52,6 +53,8 @@ showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
 showEM ctx CantInferErased
     = "can't infer types for erased terms"
+showEM ctx CantInferWildcard
+    = "can't infer types for pattern wildcards"
 showEM ctx NotImplemented
     = "WIP: not implemented yet"
 showEM ctx (QuantityMismatch q q')
@@ -329,6 +332,9 @@ mutual
 
   inferPat fq gs pat@(PForced tm) = traceCtx pat "PFORCED" $
     withQ (QQ I) $ inferTm tm
+
+  inferPat fq gs PWildcard =
+    throw CantInferWildcard
 
   covering export
   inferPatApp : Evar -> List Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
