@@ -26,7 +26,7 @@ not : (x : Bool) -> Bool {
 }
 
 id : (a : Type) -> (x : a) -> a {
-  forall (x : a)(a : Type).
+  forall (x : a) (a : Type).
     id a x ~> x
 }
 
@@ -62,7 +62,7 @@ not :25 (x :26 Bool) -> Bool {
 }
 
 id :13 (a :14 Type) -> (x :15 a) -> a {
-  forall (x :16 a)(a :17 Type).
+  forall (x :16 a) (a :17 Type).
     id a x ~> x
 }
 
@@ -267,7 +267,7 @@ not :I (x :L Bool) -> Bool {
 }
 
 id :I (a :I Type) -> (x :L a) -> a {
-  forall (x :L a)(a :I Type).
+  forall (x :L a) (a :I Type).
     id a x ~> x
 }
 

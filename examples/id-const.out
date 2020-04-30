@@ -28,7 +28,7 @@ true : (x : Bool) -> Bool {
 }
 
 apply : (f : (x : Bool) -> Bool) -> (y : Bool) -> Bool {
-  forall (y : Bool)(f : (x : Bool) -> Bool).
+  forall (y : Bool) (f : (x : Bool) -> Bool).
     apply f y ~> f y
 }
 
@@ -66,7 +66,7 @@ true :31 (x :32 Bool) -> Bool {
 }
 
 apply :5 (f :6 (x :7 Bool) -> Bool) -> (y :8 Bool) -> Bool {
-  forall (y :9 Bool)(f :10 (x :11 Bool) -> Bool).
+  forall (y :9 Bool) (f :10 (x :11 Bool) -> Bool).
     apply f y ~> f y
 }
 
@@ -308,7 +308,7 @@ true :R (x :I Bool) -> Bool {
 }
 
 apply :R (f :L (x :L Bool) -> Bool) -> (y :L Bool) -> Bool {
-  forall (y :L Bool)(f :L (x :L Bool) -> Bool).
+  forall (y :L Bool) (f :L (x :L Bool) -> Bool).
     apply f y ~> f y
 }
 
@@ -346,7 +346,7 @@ true : Bool {
 }
 
 apply : (f) -> (y) -> Bool {
-  forall (y)(f).
+  forall (y) (f).
     apply f y ~> f y
 }
 
