@@ -223,7 +223,7 @@ covering
 whnfTC : TT Q n -> TC n (TT Q n)
 whnfTC tm = do
   gs <- getGlobals
-  case whnf gs tm of
+  case red WHNF gs tm of
     Left e => throw $ WHNFError e
     Right tm' => pure tm'
 

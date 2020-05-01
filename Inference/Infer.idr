@@ -208,7 +208,7 @@ deferEq g x y = MkTC $ \(MkE gs globs ctx bt), st
 whnfTC : Term n -> TC n (Term n)
 whnfTC tm = do
   gs <- getGlobals
-  case whnf gs tm of
+  case red WHNF gs tm of
     Left e => throw $ WhnfError e
     Right tm' => pure tm'
 

@@ -138,11 +138,11 @@ processModule raw = do
 
   log . render " "
     $ text "Unerased, reduced:"
-    $$ case nf annotated (P (UN "main")) of
+    $$ case red NF annotated (P (UN "main")) of
         Left e => text $ show e
         Right mnf => pretty () (the (TT Q Z) mnf)
     $$ text ""
     $$ text "Erased, reduced:"
-    $$ case nf erased (P (UN "main")) of
+    $$ case red NF erased (P (UN "main")) of
         Left e => text $ show e
         Right mnf => pretty () (the (TT () Z) mnf)

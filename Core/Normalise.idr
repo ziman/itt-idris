@@ -147,67 +147,52 @@ mapArgs :
     -> Either EvalError (List (q, TT q n))
 mapArgs nf = traverse (\(q', tm) => nf tm >>= \tmNF => Right (q', tmNF))
 
-covering export
-whnf : Globals q -> TT q n -> Either EvalError (TT q n)
-whnf gs (P n) =
-  case .body <$> lookup n gs of
-    -- constant pattern matching functions
-    Just (Clauses Z [MkClause [] [] rhs]) =>
-      whnf gs $ weakenClosed rhs
-    _ => pure $ P n
-whnf gs (V i) = pure $ V i
-whnf gs (Lam b rhs) = pure $ Lam b rhs
-whnf gs (Pi  b rhs) = pure $ Pi b rhs
-whnf gs (App q f x) =
-  whnf gs f >>= \case
-    Lam b rhs => do
-      xWHNF <- whnf gs x
-      whnf gs $ subst (substFZ xWHNF) rhs
-    fWHNF => case unApply' q fWHNF x of
-      (P n, args) => case .body <$> lookup n gs of
-          Nothing => Left $ UnknownGlobal n
-          Just (Clauses argn cs) => case maybeTake argn args of
-              Just (fargs, rest) => do
-                fargsWHNF <- traverse (whnf gs . snd) fargs
-                case matchClauses fargsWHNF cs of
-                  Match fx => whnf gs $ mkApp fx rest
-                  Mismatch => Left $ NoMatchingClause n
-                  Stuck => mkApp (P n) <$> mapArgs (whnf gs) args
-                  Error e => Left e
-              Nothing => mkApp (P n) <$> mapArgs (whnf gs) args  -- underapplied
-          _ => mkApp (P n) <$> mapArgs (whnf gs) args  -- not a pattern matching function
-whnf gs Type_ = pure Type_
-whnf gs Erased = pure Erased
+public export
+data Form = NF | WHNF
 
-covering export
-nf : Globals q -> TT q n -> Either EvalError (TT q n)
-nf gs (P n) =
-  case .body <$> lookup n gs of
-    Just (Clauses Z [MkClause [] [] rhs]) =>
-      nf gs $ weakenClosed rhs
-    _ => pure $ P n
-nf gs (V i) = pure $ V i
-nf gs (Lam (B n q ty) rhs) = do
-  b' <- B n q <$> nf gs ty
-  Lam b' <$> nf gs rhs
-nf gs (Pi (B n q ty) rhs) = do
-  b' <- B n q <$> nf gs ty
-  Pi b' <$> nf gs rhs
-nf gs (App q f x) =
-  whnf gs f >>= \case
-    Lam b rhs => do
-      xNF <- nf gs x
-      nf gs $ subst (substFZ xNF) rhs
-    fWHNF => case unApply' q fWHNF x of
-      (P n, args) => case .body <$> lookup n gs of
+operandForm : Form
+operandForm = NF
+
+mutual
+  covering export
+  red : Form -> Globals q -> TT q n -> Either EvalError (TT q n)
+  red rf gs (P n) =
+    case .body <$> lookup n gs of
+      -- constant pattern matching functions
+      Just (Clauses Z [MkClause [] [] rhs]) =>
+        red rf gs $ weakenClosed rhs
+      _ => pure $ P n
+  red rf gs (V i) = pure $ V i
+  red WHNF gs (Lam b rhs) = pure $ Lam b rhs
+  red   NF gs (Lam (B n q ty) rhs) = do
+    tyNF <- red NF gs ty
+    Lam (B n q tyNF) <$> red NF gs rhs
+  red WHNF gs (Pi b rhs) = pure $ Pi b rhs
+  red   NF gs (Pi (B n q ty) rhs) = do
+    tyNF <- red NF gs ty
+    Pi (B n q tyNF) <$> red NF gs rhs
+  red rf gs (App q f x) =
+    red WHNF gs f >>= \case
+      Lam b rhs => do
+        xNF <- red operandForm gs x
+        red rf gs $ subst (substFZ xNF) rhs
+      fWHNF => case unApply' q fWHNF x of
+        (P n, args) => case .body <$> lookup n gs of
           Nothing => Left $ UnknownGlobal n
           Just (Clauses argn cs) => case maybeTake argn args of
-              Just (fargs, rest) => do
-                fargsNF <- traverse (nf gs . snd) fargs
-                case matchClauses fargsNF cs of
-                  Match fx => nf gs $ mkApp fx rest
-                  Mismatch => Left $ NoMatchingClause n
-                  Stuck => mkApp (P n) <$> mapArgs (nf gs) args
-                  Error e => Left e
-              Nothing => mkApp (P n) <$> mapArgs (nf gs) args  -- underapplied
-          _ => mkApp (P n) <$> mapArgs (nf gs) args  -- not a pattern matching function
+            Just (fargs, rest) => do
+              fargsRed <- traverse (red operandForm gs . snd) fargs
+              case matchClauses fargsRed cs of
+                Match fx => red rf gs $ mkApp fx rest
+                Mismatch => Left $ NoMatchingClause n
+                Stuck => stuckTm rf gs n args
+                Error e => Left e
+            Nothing => stuckTm rf gs n args -- underapplied
+          _ => stuckTm rf gs n args -- not a pattern matching function
+  red rf gs Type_ = pure Type_
+  red rf gs Erased = pure Erased
+
+  covering
+  stuckTm : Form -> Globals q -> Name -> List (q, TT q n) -> Either EvalError (TT q n)
+  stuckTm WHNF gs n args = pure $ mkApp (P n) args
+  stuckTm   NF gs n args = mkApp (P n) <$> mapArgs (red NF gs) args
