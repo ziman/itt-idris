@@ -39,10 +39,10 @@ when inferring annotations.
 
 Build
 ```
-$ idris2 -p contrib Main.idr -o itt
+$ make
 ```
 
-Run
+Run (will build if out of date).
 ```
-$ build/exec/itt examples/simple.itt
+$ ./itt examples/simple.itt
 ```
