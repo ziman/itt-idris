@@ -20,6 +20,7 @@ length : (n : Nat) -> (xs : Vect n) -> Nat {
 }
 
 main :L Nat {
-  main ~>
-    length (S Z) (Cons Z True Nil)
+  forall (n : Nat).
+    main ~>
+      length (S Z) (Cons Z True Nil)
 }
