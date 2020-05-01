@@ -370,3 +370,8 @@ main : Nat {
 # NF of `main` #
 ################
 
+Unerased, reduced:
+constructor arity mismatch
+
+Erased, reduced:
+S Z

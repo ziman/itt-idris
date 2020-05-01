@@ -16,6 +16,7 @@ data EvalError
   | UnmatchedPatVar
   | OvermatchedPatVar
   | ConstructorArityMismatch
+  | NoMatchingClause Name
 
 export
 Show EvalError where
@@ -23,6 +24,7 @@ Show EvalError where
   show UnmatchedPatVar = "unmatched patvar"
   show OvermatchedPatVar = "overmatched patvar"
   show ConstructorArityMismatch = "constructor arity mismatch"
+  show (NoMatchingClause n) = "no matching clause in " ++ show n
 
 export
 substFZ : TT q n -> Fin (S n) -> TT q n
@@ -120,13 +122,14 @@ matchClause clause args =
       Nothing => Error UnmatchedPatVar
       Just vs => Match $ subst (\i => lookup i vs) clause.rhs
 
-matchClauses : Vect argn (TT q n) -> List (Clause q argn) -> Maybe (TT q n)
-matchClauses args [] = Nothing
+matchClauses : Vect argn (TT q n) -> List (Clause q argn) -> Outcome (TT q n)
+matchClauses args [] = Mismatch
 matchClauses args (c :: cs) =
   case matchClause c args of
-    Match tm => Just tm
+    Match tm => Match tm
     Mismatch => matchClauses args cs
-    Stuck => Nothing
+    Stuck => Stuck
+    Error e => Error e
 
 covering
 mapArgs :
@@ -155,9 +158,13 @@ whnf gs (App q f x) =
       (P n, args) => case .body <$> lookup n gs of
           Nothing => Left $ UnknownGlobal n
           Just (Clauses argn cs) => case maybeTake argn args of
-              Just (fargs, rest) => case matchClauses (snd <$> fargs) cs of
-                  Just fx => whnf gs $ mkApp fx rest
-                  Nothing => mkApp (P n) <$> mapArgs (whnf gs) args  -- stuck
+              Just (fargs, rest) => do
+                fargsWHNF <- traverse (whnf gs . snd) fargs
+                case matchClauses fargsWHNF cs of
+                  Match fx => whnf gs $ mkApp fx rest
+                  Mismatch => Left $ NoMatchingClause n
+                  Stuck => mkApp (P n) <$> mapArgs (whnf gs) args
+                  Error e => Left e
               Nothing => mkApp (P n) <$> mapArgs (whnf gs) args  -- underapplied
           _ => mkApp (P n) <$> mapArgs (whnf gs) args  -- not a pattern matching function
 whnf gs Type_ = pure Type_
@@ -189,7 +196,9 @@ nf gs (App q f x) =
               Just (fargs, rest) => do
                 fargsNF <- traverse (nf gs . snd) fargs
                 case matchClauses fargsNF cs of
-                  Just fx => nf gs $ mkApp fx rest
-                  Nothing => mkApp (P n) <$> mapArgs (nf gs) args  -- stuck
+                  Match fx => nf gs $ mkApp fx rest
+                  Mismatch => Left $ NoMatchingClause n
+                  Stuck => mkApp (P n) <$> mapArgs (nf gs) args
+                  Error e => Left e
               Nothing => mkApp (P n) <$> mapArgs (nf gs) args  -- underapplied
           _ => mkApp (P n) <$> mapArgs (nf gs) args  -- not a pattern matching function
