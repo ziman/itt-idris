@@ -14,7 +14,7 @@ syn keyword ttData data
 syn keyword ttKeyword forall
 syn keyword ttBody postulate foreign constructor
 
-syn match ttOperator  "\~>\|->"
+syn match ttOperator  "\~>\|->\|\\\|="
 syn match ttDelimiter "[.,}{)(]\|\[\|\]"
 syn match ttForcedCtor "{\i\+}"
 
@@ -31,7 +31,7 @@ syn region ttString start=+"+ skip=+\\\\\|\\"+ end=+"+ contains=@Spell
 
 highlight link ttData    Type
 highlight link ttKeyword Keyword
-highlight link ttBody    Keyword
+highlight link ttBody    PreProc
 highlight link ttDelimiter Delimiter
 highlight link ttBoundName Identifier
 highlight link ttColon     Delimiter

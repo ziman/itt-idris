@@ -57,5 +57,3 @@ main :L Bool {
 -- in order to expose the effect of irrelevance.
 -- 
 -- All other annotations are inferred automatically.
-
--- vim: ft=ttstar
