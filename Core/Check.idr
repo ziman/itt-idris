@@ -330,6 +330,7 @@ mutual
     pure (b.qv, b.type)
 
   checkPat fq pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
+    -- TODO: check that cn is really a constructor, not a pattern matching function/postulate or such
     (cq, cTy) <- case the PCtor ctor of
       Forced cn => do
         b <- lookupGlobal cn

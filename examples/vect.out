@@ -371,7 +371,7 @@ main : Nat {
 ################
 
 Unerased, reduced:
-constructor arity mismatch
+S Z
 
 Erased, reduced:
 S Z

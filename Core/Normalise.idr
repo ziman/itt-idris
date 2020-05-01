@@ -15,7 +15,7 @@ data EvalError
   = UnknownGlobal Name
   | UnmatchedPatVar
   | OvermatchedPatVar
-  | ConstructorArityMismatch
+  | ConstructorArityMismatch PCtor Name
   | NoMatchingClause Name
 
 export
@@ -23,7 +23,8 @@ Show EvalError where
   show (UnknownGlobal n) = "unknown global: " ++ show n
   show UnmatchedPatVar = "unmatched patvar"
   show OvermatchedPatVar = "overmatched patvar"
-  show ConstructorArityMismatch = "constructor arity mismatch"
+  show (ConstructorArityMismatch (Forced cn) n) = "constructor arity mismatch (forced): " ++ show (cn, n)
+  show (ConstructorArityMismatch (Checked cn) n) = "constructor arity mismatch (checked): " ++ show (cn, n)
   show (NoMatchingClause n) = "no matching clause in " ++ show n
 
 export
@@ -98,13 +99,21 @@ mutual
   matchPat s (PCtorApp ctor ps) tm =
     case unApply tm of
       (P cn, args) =>
-          if ctorMatches ctor cn
-            then case zipMatch (snd <$> ps) (snd <$> args) of
-              Just psArgs =>
-                let psa = fromList psArgs
-                  in matchPats s (fst <$> psa) (snd <$> psa)
-              Nothing => Error ConstructorArityMismatch
-            else Mismatch
+        -- TODO: check that cn is actually a constructor
+        -- if not, we should be stuck!
+        if ctorMatches ctor cn
+          then case zipMatch (snd <$> ps) (snd <$> args) of
+            Just psArgs =>
+              let psa = fromList psArgs
+                in matchPats s (fst <$> psa) (snd <$> psa)
+
+            -- this happens when we're matching a forced constructor:
+            -- wrong arity means this match is actually ill-typed
+            -- which means that some other pattern must mismatch (we just haven't gotten there yet)
+            -- because the clause is assumed to be forced-pattern-consistent
+            -- so let's just conclude mismatch
+            Nothing => Mismatch
+          else Mismatch
       (V _, _) => Stuck
       _ => Mismatch
   matchPat s PWildcard _ = Match s
