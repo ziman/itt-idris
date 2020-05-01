@@ -115,6 +115,9 @@ OrdSemiring Q where
     (E, E) => E
     (L, L) => L
 
+  -- this is dodgy
+  -- is L .\/. R still R in a non-affine system?
+  -- i suspect that the rules will have to be reformulated without the use of .\/.
   (.\/.) p q = case (p, q) of
     (I, q) => q
     (q, I) => q

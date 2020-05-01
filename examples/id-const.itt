@@ -32,5 +32,3 @@ main :L Pair {
     (apply not   (true False))
     (apply false (true False))
 }
-
--- vim: ft=ttstar

@@ -23,5 +23,3 @@ main :L Nat {
   main ~>
     length (S Z) (Cons Z True Nil)
 }
-
--- vim: ft=ttstar
