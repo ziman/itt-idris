@@ -37,7 +37,7 @@ when inferring annotations.
 
 ## Usage
 
-Run (will automatically build if out of date).
 ```
 $ ./itt examples/simple.itt
 ```
+(Will automatically build if out of date.)

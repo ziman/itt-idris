@@ -40,7 +40,7 @@ main = (procArgs . drop 1 <$> getArgs) >>= \case
   Right argF =>
     let cfg = argF defaultConfig
       in case cfg.fnameInput of
-          Nothing => putStrLn help
+          Nothing => putStr help
           Just fname => do
             Right src <- readFile fname
               | Left err => printLn err

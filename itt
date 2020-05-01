@@ -1,4 +1,4 @@
 #!/bin/bash
 
-make 'build/exec/itt' || exit 1
-exec 'build/exec/itt' "$@"
+make -s -C "$(dirname "$0")" 'build/exec/itt' || exit 1
+exec "$(dirname "$0")/build/exec/itt" "$@"
