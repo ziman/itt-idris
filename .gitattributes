@@ -1,0 +1,5 @@
+*.tt	linguist-language=Idris
+*.out	linguist-language=Idris
+examples/*.itt	linguist-language=Idris
+examples/*.out	linguist-language=Idris
+examples/*.html  -diff
