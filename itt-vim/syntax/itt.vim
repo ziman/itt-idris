@@ -33,9 +33,9 @@ highlight link ttData    Type
 highlight link ttKeyword Keyword
 highlight link ttBody    Keyword
 highlight link ttDelimiter Delimiter
-highlight link ttColon   Delimiter
 highlight link ttBoundName Identifier
-highlight link ttForcedCtor PreProc
+highlight link ttColon     PreProc
+highlight link ttForcedCtor Delimiter
 highlight link ttNumber Number
 highlight link ttLineComment Comment
 highlight link ttBlockComment Comment
