@@ -22,3 +22,9 @@ export
 mkApp : TT q n -> List (q, TT q n) -> TT q n
 mkApp f [] = f
 mkApp f ((q, x) :: xs) = mkApp (App q f x) xs
+
+export
+hasTypeTarget : TT q n -> Bool
+hasTypeTarget (Pi b rhs) = hasTypeTarget rhs
+hasTypeTarget Type_ = True
+hasTypeTarget _ = False

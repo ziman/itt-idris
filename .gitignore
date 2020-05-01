@@ -1,4 +1,4 @@
 *.ibc
-/itt
+*.ttc
 /main
 /build/

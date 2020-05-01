@@ -14,11 +14,11 @@ constructor Z : Nat.
 
 constructor S : (n :L Nat) -> Nat.
 
-constructor Vect : (n : Nat) -> Type.
+constructor Vect : (n :E Nat) -> Type.
 
 constructor Nil : Vect Z.
 
-constructor Cons : (n : Nat) -> (x : Bool) -> (xs : Vect n) -> Vect (S n).
+constructor Cons : (n :I Nat) -> (x :L Bool) -> (xs :L Vect n) -> Vect (S n).
 
 length : (n : Nat) -> (xs : Vect n) -> Nat {
   length {Z} Nil ~> Z
@@ -36,25 +36,25 @@ main :L Nat {
 
 constructor Bool :0 Type.
 
-constructor True :13 Bool.
+constructor True :10 Bool.
 
-constructor False :8 Bool.
+constructor False :5 Bool.
 
-constructor Nat :9 Type.
+constructor Nat :6 Type.
 
-constructor Z :16 Nat.
+constructor Z :12 Nat.
 
-constructor S :12 (n :L Nat) -> Nat.
+constructor S :9 (n :L Nat) -> Nat.
 
-constructor Vect :14 (n :15 Nat) -> Type.
+constructor Vect :11 (n :E Nat) -> Type.
 
-constructor Nil :10 Vect Z.
+constructor Nil :7 Vect Z.
 
-constructor Cons :1 (n :2 Nat) -> (x :3 Bool) -> (xs :4 Vect n) -> Vect (S n).
+constructor Cons :1 (n :I Nat) -> (x :L Bool) -> (xs :L Vect n) -> Vect (S n).
 
-length :17 (n :18 Nat) -> (xs :19 Vect n) -> Nat {
+length :13 (n :14 Nat) -> (xs :15 Vect n) -> Nat {
   length {Z} Nil ~> Z
-  forall (xs :23 Vect n) (x :25 Bool) (n :26 Nat).
+  forall (xs :19 Vect n) (x :21 Bool) (n :22 Nat).
     length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
@@ -69,7 +69,15 @@ Running erasure inference...
 ########################
 
 Sums:
+  I ≥ Sum
+    product  [I]
+    product  [I, 2]
+    product  [I, 3, 4]
+  E ≥ Sum
+    product  [I]
   L ≥ Sum
+    product  [I]
+    product  [I]
     product  [I]
   0 ≥ Sum
     product  [I]
@@ -77,187 +85,187 @@ Sums:
     product  [I]
     product  [I]
   1 ≥ Sum
-    product  [36]
-  2 ≥ Sum
+    product  [32]
+  6 ≥ Sum
     product  [I]
-    product  [I, 5]
-    product  [I, 6, 7]
-  3 ≥ Sum
     product  [I]
-  4 ≥ Sum
     product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  7 ≥ Sum
+    product  [32, 35]
   9 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-  10 ≥ Sum
-    product  [36, 39]
-  12 ≥ Sum
-    product  [I, 6]
+    product  [I, 3]
     product  []
-    product  [37]
+    product  [33]
+  10 ≥ Sum
+    product  [32, 36]
+  11 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  12 ≥ Sum
+    product  [I, 8]
+    product  []
+    product  [33, 34]
+    product  [32, 37]
   13 ≥ Sum
-    product  [36, 40]
+    product  [29]
+    product  []
   14 ≥ Sum
     product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
+    product  [I, 16]
   15 ≥ Sum
     product  [I]
-  16 ≥ Sum
-    product  [I, 11]
-    product  []
-    product  [37, 38]
-    product  [36, 41]
-  17 ≥ Sum
-    product  [33]
-    product  []
-  18 ≥ Sum
-    product  [I]
-    product  [I, 20]
   19 ≥ Sum
     product  [I]
+    product  [29, 30]
+  21 ≥ Sum
+    product  [I]
+    product  [I]
+  22 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 20]
+    product  [I]
+    product  [I]
+    product  [29, 31]
   23 ≥ Sum
-    product  [I]
-    product  [33, 34]
+    product  [22]
+  24 ≥ Sum
+    product  [22]
   25 ≥ Sum
-    product  [I]
-    product  [I]
-  26 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 24]
-    product  [I]
-    product  [I]
-    product  [33, 35]
+    product  [21]
+    product  [19]
   27 ≥ Sum
-    product  [26]
+    product  [21]
   28 ≥ Sum
-    product  [26]
-  29 ≥ Sum
-    product  [25]
-    product  [23]
-  31 ≥ Sum
-    product  [25]
-  32 ≥ Sum
-    product  [23]
+    product  [19]
 
 Maxes:
-  L ≥ Max
-    product  [7]
-    product  [28]
-    product  [33]
-    product  [38]
-  1 ≥ Max
-    product  [L, 17]
-  2 ≥ Max
-    product  [30]
-    product  [41]
-  3 ≥ Max
-    product  [31]
-    product  [40]
-  4 ≥ Max
-    product  [32]
-    product  [39]
-  5 ≥ Max
-    product  [15]
-    product  [24]
-    product  [11]
-  6 ≥ Max
-    product  [15]
-    product  [20]
-    product  [20]
-  7 ≥ Max
-    product  [L]
-  10 ≥ Max
-    product  [L, 17]
-  11 ≥ Max
-    product  [15]
-    product  [20]
-    product  [5]
-  15 ≥ Max
-    product  [11]
-    product  [5]
-    product  [6]
-    product  [20]
-    product  [24]
-  18 ≥ Max
-    product  [21]
-    product  [27]
-    product  [35]
+  I ≥ Max
+    product  [26]
     product  [37]
-  19 ≥ Max
-    product  [22]
+  E ≥ Max
+    product  [8]
+    product  [2]
+    product  [3]
+    product  [16]
+    product  [20]
+  L ≥ Max
+    product  [4]
+    product  [24]
+    product  [27]
+    product  [28]
     product  [29]
     product  [34]
     product  [36]
-  20 ≥ Max
-    product  [15]
-    product  [11]
-    product  [6]
-    product  [24]
-    product  [6]
-  21 ≥ Max
-    product  [18]
-  22 ≥ Max
-    product  [L]
-    product  [19]
-  24 ≥ Max
-    product  [15]
-    product  [5]
+    product  [35]
+  1 ≥ Max
+    product  [L, 13]
+  2 ≥ Max
+    product  [E]
     product  [20]
-  27 ≥ Max
+    product  [8]
+  3 ≥ Max
+    product  [E]
+    product  [16]
+    product  [16]
+  4 ≥ Max
+    product  [L]
+  7 ≥ Max
+    product  [L, 13]
+  8 ≥ Max
+    product  [E]
+    product  [16]
+    product  [2]
+  14 ≥ Max
+    product  [17]
+    product  [23]
+    product  [31]
+    product  [33]
+  15 ≥ Max
     product  [18]
+    product  [25]
+    product  [30]
+    product  [32]
+  16 ≥ Max
+    product  [E]
+    product  [8]
+    product  [3]
+    product  [20]
+    product  [3]
+  17 ≥ Max
+    product  [14]
+  18 ≥ Max
+    product  [L]
+    product  [15]
+  20 ≥ Max
+    product  [E]
+    product  [2]
+    product  [16]
+  23 ≥ Max
+    product  [14]
+  24 ≥ Max
+    product  [L]
+  25 ≥ Max
+    product  [L]
+    product  [15]
+  26 ≥ Max
+    product  [I]
+  27 ≥ Max
+    product  [L]
   28 ≥ Max
     product  [L]
   29 ≥ Max
     product  [L]
-    product  [19]
   30 ≥ Max
-    product  [2]
+    product  [15]
   31 ≥ Max
-    product  [3]
+    product  [14]
   32 ≥ Max
-    product  [4]
+    product  [15]
   33 ≥ Max
-    product  [L]
+    product  [14]
   34 ≥ Max
-    product  [19]
-  35 ≥ Max
-    product  [18]
-  36 ≥ Max
-    product  [19]
-  37 ≥ Max
-    product  [18]
-  38 ≥ Max
     product  [L]
-  39 ≥ Max
-    product  [4]
-  40 ≥ Max
-    product  [3]
-  41 ≥ Max
-    product  [2]
+  35 ≥ Max
+    product  [L]
+  36 ≥ Max
+    product  [L]
+  37 ≥ Max
+    product  [I]
 
 #######################
 # Deferred equalities #
 #######################
 
-11 -> Z ~ Z
-24 -> n ~ n
-6 -> S n ~ S n
-24 -> n ~ n
-11 -> Z ~ Z
-6 -> S Z ~ S Z
+8 -> Z ~ Z
+20 -> n ~ n
+3 -> S n ~ S n
+20 -> n ~ n
+8 -> Z ~ Z
+3 -> S Z ~ S Z
 
   -> iteration 1
+    Z ~ Z
+    n ~ n
+    S n ~ S n
+    n ~ n
+    Z ~ Z
+    S Z ~ S Z
+
+  -> iteration 2
+    n ~ n
+    Z ~ Z
+
+  -> iteration 3
     -> No more equalities, fixed point reached.
 
 ###################
@@ -266,45 +274,41 @@ Maxes:
 
   0 -> I
   1 -> L
-  2 -> I
-  3 -> I
+  2 -> E
+  3 -> E
   4 -> L
-  5 -> I
   6 -> I
   7 -> L
-  9 -> I
+  8 -> E
+  9 -> L
   10 -> L
   11 -> I
   12 -> L
-  13 -> I
+  13 -> R
   14 -> I
-  15 -> I
-  16 -> L
-  17 -> R
-  18 -> I
+  15 -> L
+  16 -> E
+  17 -> I
+  18 -> L
   19 -> L
-  20 -> I
+  20 -> E
   21 -> I
-  22 -> L
-  23 -> L
-  24 -> I
-  25 -> I
+  22 -> I
+  23 -> I
+  24 -> L
+  25 -> L
   26 -> I
-  27 -> I
+  27 -> L
   28 -> L
   29 -> L
-  30 -> I
+  30 -> L
   31 -> I
   32 -> L
-  33 -> L
+  33 -> I
   34 -> L
-  35 -> I
+  35 -> L
   36 -> L
   37 -> I
-  38 -> L
-  39 -> L
-  40 -> I
-  41 -> I
 
 #####################
 # Annotated program #
@@ -312,7 +316,7 @@ Maxes:
 
 constructor Bool :I Type.
 
-constructor True :I Bool.
+constructor True :L Bool.
 
 constructor False :I Bool.
 
@@ -322,11 +326,11 @@ constructor Z :L Nat.
 
 constructor S :L (n :L Nat) -> Nat.
 
-constructor Vect :I (n :I Nat) -> Type.
+constructor Vect :I (n :E Nat) -> Type.
 
 constructor Nil :L Vect Z.
 
-constructor Cons :L (n :I Nat) -> (x :I Bool) -> (xs :L Vect n) -> Vect (S n).
+constructor Cons :L (n :I Nat) -> (x :L Bool) -> (xs :L Vect n) -> Vect (S n).
 
 length :R (n :I Nat) -> (xs :L Vect n) -> Nat {
   length {Z} Nil ~> Z
@@ -348,22 +352,24 @@ main :L Nat {
 # Erased #
 ##########
 
+constructor True : Bool.
+
 constructor Z : Nat.
 
 constructor S : (n) -> Nat.
 
 constructor Nil : Vect.
 
-constructor Cons : (xs) -> Vect.
+constructor Cons : (x) -> (xs) -> Vect.
 
 length : (xs) -> Nat {
   length Nil ~> Z
   forall (xs).
-    length (Cons xs) ~> S (length xs)
+    length (Cons _ xs) ~> S (length xs)
 }
 
 main : Nat {
-  main ~> length (Cons Nil)
+  main ~> length (Cons True Nil)
 }
 
 ################

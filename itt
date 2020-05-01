@@ -1,0 +1,4 @@
+#!/bin/bash
+
+make 'build/exec/itt' || exit 1
+exec 'build/exec/itt' "$@"

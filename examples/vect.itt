@@ -10,7 +10,7 @@ data Nat : Type {
 
 data Vect : (n : Nat) -> Type {
   Nil : Vect Z,
-  Cons : (n : Nat) -> (x : Bool) -> (xs : Vect n) -> Vect (S n)
+  Cons : (n :I Nat) -> (x : Bool) -> (xs : Vect n) -> Vect (S n)
 }
 
 length : (n : Nat) -> (xs : Vect n) -> Nat {

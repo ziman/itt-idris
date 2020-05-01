@@ -1,2 +1,2 @@
-itt: $(shell find -name \*.idr)
-	idris -p contrib Main.idr --optimise-nat-like-types -o itt
+build/exec/itt: $(shell find -name \*.idr)
+	idris2 -p contrib Main.idr -o itt
