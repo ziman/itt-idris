@@ -205,19 +205,6 @@ colon = terminal "colon" $ \t => case tok t of
   Colon mq => Just mq
   _ => Nothing
 
-record Scruts (n : Nat) where
-  constructor MkScruts
-  s_pn : Nat
-  s_pvs : Telescope (Maybe Q) n s_pn
-  s_ss  : Vect s_pn (Term n)
-  s_pns : Vect s_pn String
-
-record Tele (npn : Nat) where
-  constructor MkTele
-  t_s : Nat
-  t_tele : Telescope (Maybe Q) npn t_s
-  t_names : Vect t_s String
-
 mutual
   binding : Vect n String -> Rule (Binding (Maybe Q) n)
   binding ns = B <$> ident <*> colon <*> term ns
@@ -314,12 +301,6 @@ dataDecl = do
   bnds <- sepBy (token Comma) (binding [])
   token BraceR
   pure [MkDef b Constructor | b <- bnd :: bnds]
-
-telescope : {k : Nat} -> Vect (k + b) String -> Telescope (Maybe Q) b k
-    -> Grammar (TokenData Token) False (n ** Telescope (Maybe Q) b n)
-telescope {k} ns t = option (k ** t) $ do
-  b <- parens $ binding ns
-  telescope (b.name :: ns) (b :: t)
 
 context : {k : Nat} -> Vect k String -> Context (Maybe Q) k
     -> Grammar (TokenData Token) False (n ** Context (Maybe Q) n)

@@ -19,12 +19,6 @@ lookup : Fin n -> Context q n -> Binding q n
 lookup  FZ    (b ::  _ ) = renameB FS b
 lookup (FS k) (_ :: ctx) = renameB FS $ lookup k ctx
 
-infixr 7 ++.
-export
-(++) : Telescope q n s -> Context q n -> Context q (s + n)
-[] ++ ctx = ctx
-(b :: bs) ++ ctx = b :: (bs ++ ctx)
-
 export
 contextQ : Traversal (Context q n) (Context q' n) q q'
 contextQ f Nil = pure Nil

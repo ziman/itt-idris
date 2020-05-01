@@ -52,31 +52,6 @@ mutual
       = text n <++> text (showCol dq) <++> pretty (PTT False NoParens, ctx) ty
 
   export
-  prettyTelescope : ShowQ q => Context q n -> Telescope q n pn -> Telescope q (pn + n) s -> List Doc
-  prettyTelescope ctx pvs [] = []
-  prettyTelescope ctx pvs (B n q ty :: bs) =
-    parens (
-      text n <++> text ":" <++> pretty (PTT False NoParens, bs ++ pvs ++ ctx) ty
-    ) :: prettyTelescope ctx pvs bs
-
-  prettyScrut : ShowQ q => Context q n -> Binding q (pv + n) -> Telescope q n pv -> TT q n -> Doc
-  prettyScrut ctx (B n q Erased) pvs tm =
-    text n
-    <++> text "="
-    <++> pretty (PTT False NoParens, ctx) tm
-
-  prettyScrut ctx (B n q ty) pvs tm =
-    text n
-    <++> text ":"
-    <++> pretty (PTT False NoParens, pvs ++ ctx) ty
-    <++> text "="
-    <++> pretty (PTT False NoParens, ctx) tm
-
-  prettyScruts : ShowQ q => Context q n -> Telescope q n pn -> Vect pn (TT q n) -> List Doc
-  prettyScruts ctx [] [] = []
-  prettyScruts ctx (b::bs) (s::ss) = prettyScrut ctx b bs s :: prettyScruts ctx bs ss
-
-  export
   ShowQ q => Pretty (PrettyTT, Context q n) (TT q n) where
     pretty (PTT top nl, ctx) (P n) = pretty () n
     pretty (PTT top nl, ctx) (V i) = case lookup i ctx of

@@ -170,11 +170,6 @@ withCtx : Context Q n -> TC n a -> TC Z a
 withCtx [] tc = tc
 withCtx (b :: bs) tc = withCtx bs $ withBnd b tc
 
-withTele : Telescope Q n pn -> TC (pn + n) a -> TC n a
-withTele [] x = x
-withTele (b :: bs) x = withTele bs $ withBnd b x
--- todo: is this the right order?
-
 withQ : Q -> TC n a -> TC n a
 withQ q (MkTC f) = MkTC $ \env, st => f (record { quantity $= (.*. q) } env) st
 
