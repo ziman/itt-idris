@@ -1,3 +1,5 @@
+module Compiler.Main
+
 import Core.TT
 import Core.Parser
 import Core.TT.Pretty

@@ -1,2 +1,2 @@
 build/exec/itt: $(shell find -name \*.idr)
-	idris2 -p contrib Main.idr -o itt
+	idris2 -p contrib Compiler/Main.idr -o itt
