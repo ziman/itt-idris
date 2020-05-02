@@ -92,4 +92,4 @@ export
 ShowQ q => Pretty () (Context q n) where
   pretty () Nil = neutral
   pretty () [b] = parens (pretty (Context.Nil {q}) b)
-  pretty () (b :: bs) = parens (pretty bs b) <++> pretty () bs
+  pretty () (b :: bs) = pretty () bs <++> parens (pretty bs b)

@@ -339,7 +339,7 @@ mutual
   covering export
   inferPatApp : Evar -> List Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
   inferPatApp fq gs fTy [] = pure fTy
-  inferPatApp fq gs fTy ((appQ, pat) :: pats) = do
+  inferPatApp fq gs fTy ps@((appQ, pat) :: pats) = traceCtx (PCtorApp (Checked (UN "_")) ps) "PAT-APP" $ do
     patTy <- inferPat fq (appQ :: gs) pat
     whnfTC fTy >>= \case
       Pi b@(B piN piQ piTy) piRhs => do

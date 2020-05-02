@@ -33,7 +33,7 @@ not : (x : Bool) -> Bool {
 }
 
 id : (a : Type) -> (x : a) -> a {
-  forall (a : Type) (x : a).
+  forall (a : Type) (x : a)
     id a x ~> x
 }
 

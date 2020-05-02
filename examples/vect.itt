@@ -8,18 +8,16 @@ data Nat : Type {
   S : (n :L Nat) -> Nat
 }
 
-data Vect : (n : Nat) -> Type {
+data Vect : Nat -> Type {
   Nil : Vect Z,
-  Cons : (n :I Nat) -> (x : Bool) -> (xs : Vect n) -> Vect (S n)
+  Cons : (n :I Nat) -> Bool -> Vect n -> Vect (S n)
 }
 
-length : (n : Nat) -> (xs : Vect n) -> Nat {
+length : (n : Nat) -> Vect n -> Nat {
   length {Z} Nil ~> Z,
-  forall (n : Nat) (x : Bool) (xs : Vect n).
+  forall (n : Nat) (x : Bool) (xs : Vect n)
     length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
-main :L Nat {
-  main ~>
-    length (S Z) (Cons Z True Nil)
-}
+main :L Nat ~>
+  length (S Z) (Cons Z True Nil).

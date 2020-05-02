@@ -35,6 +35,7 @@ data Token
   | Pipe
   | Colon (Maybe Q)
   | Keyword String
+  | Natural Nat
 
 Show Token where
   show (Ident s) = "identifier " ++ show s
@@ -55,6 +56,7 @@ Show Token where
   show Comment = "(comment)"
   show Underscore = "_"
   show Pipe = "|"
+  show (Natural n) = show n
   show (Colon mbQ) = "colon " ++ show mbQ
   show (Keyword kwd) = "keyword " ++ show kwd
 
@@ -80,6 +82,7 @@ Eq Token where
     (Underscore, Underscore) => True
     (Colon mq, Colon mq') => mq == mq'
     (Keyword x, Keyword y) => x == y
+    (Natural n, Natural n') => n == n'
     _ => False
 
 public export
@@ -117,6 +120,9 @@ lex src = case lex tokens src of
     parseColon ":R" = Colon (Just R)
     parseColon _ = Colon Nothing
 
+    natural : String -> Token
+    natural = Natural . fromInteger . cast {to = Integer}
+
     kwdOrIdent : String -> Token
     kwdOrIdent s =
         if s `elem` keywords
@@ -130,7 +136,9 @@ lex src = case lex tokens src of
 
     tokens : TokenMap Token
     tokens = 
-      [ (is '(',       const ParL)
+      [ (lineComment (exact "--"), const Comment)
+      , (blockComment (exact "{-") (exact "-}"), const Comment)
+      , (is '(',       const ParL)
       , (is ')',       const ParR)
       , (is '{',       const BraceL)
       , (is '}',       const BraceR)
@@ -138,6 +146,7 @@ lex src = case lex tokens src of
       , (is ']',       const SqBrR)
       , (is '_',       const Underscore)
       , (is '|',       const Pipe)
+      , (digits,       natural)
       , (ident,        kwdOrIdent)
       , (is '\\',      const Lam)
       , (exact "->" ,  const Arrow)
@@ -148,7 +157,6 @@ lex src = case lex tokens src of
       , (is '=',       const Equals)
       , (space,        const Space)
       , (colon,        parseColon)
-      , (lineComment (exact "--"), const Comment)
       ]
 
 Term : Nat -> Type
@@ -181,6 +189,11 @@ ident = terminal "identifier" $ \t => case tok t of
   Ident n => Just n
   _ => Nothing
 
+natural : Rule Nat
+natural = terminal "natural number" $ \t => case tok t of
+  Natural n => Just n
+  _ => Nothing
+
 varName : Vect n String -> Rule (Fin n)
 varName ns = do
     n <- ident
@@ -205,6 +218,13 @@ colon = terminal "colon" $ \t => case tok t of
   Colon mq => Just mq
   _ => Nothing
 
+natSugar : Rule (Term n)
+natSugar = toNat <$> natural
+  where
+    toNat : Nat -> Term n
+    toNat Z = P (UN "Z")
+    toNat (S n) = App Nothing (P (UN "S")) (toNat n)
+
 mutual
   binding : Vect n String -> Rule (Binding (Maybe Q) n)
   binding ns = B <$> ident <*> colon <*> term ns
@@ -219,7 +239,7 @@ mutual
 
   pi : Vect n String -> Rule (Term n)
   pi ns = do
-    b <- parens $ binding ns
+    b <- (parens $ binding ns) <|> (B "_" Nothing <$> app ns)
     token Arrow
     commit
     Pi b <$> term (b.name :: ns)
@@ -230,6 +250,7 @@ mutual
   atom : Vect n String -> Rule (Term n)
   atom ns = 
     var ns
+    <|> natSugar
     <|> ref ns
     <|> (kwd "Type" *> pure Type_)
     <|> pterm ns
@@ -315,7 +336,7 @@ names (b :: bs) = b.name :: names bs
 rawClause : String -> Rule (RawClause (Maybe Q))
 rawClause fn = do
   pnpvs <- option (Z ** []) $
-    kwd "forall" *> context [] [] <* token Dot
+    kwd "forall" *> context [] []
   cont pnpvs
  where
   cont : (pn ** Context (Maybe Q) pn) -> Rule (RawClause (Maybe Q))
@@ -327,13 +348,25 @@ rawClause fn = do
     rhs <- term pns
     pure $ MkRC pvs pats rhs
 
+someClauses : Binding (Maybe Q) Z -> Rule (List (RawClause (Maybe Q)))
+someClauses bnd =
+  token BraceL
+    *> commit
+    *> sepBy1 (token Comma) (rawClause bnd.name)
+    <* token BraceR
+
+constClause : Rule (List (RawClause (Maybe Q)))
+constClause = do
+  token SquigArrow
+  commit
+  rhs <- term []
+  token Dot
+  pure [MkRC [] [] rhs]
+
 clauseFun : Rule (List (Definition (Maybe Q)))
 clauseFun = do
   bnd <- binding []
-  token BraceL
-  commit
-  rcs <- sepBy1 (token Comma) (rawClause bnd.name)
-  token BraceR
+  rcs <- someClauses bnd <|> constClause
   cont bnd rcs -- for some reason inference fails here
  where
   cont : Binding (Maybe Q) Z -> List (RawClause (Maybe Q))

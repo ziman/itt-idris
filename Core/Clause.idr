@@ -23,7 +23,7 @@ record Clause (q : Type) (argn : Nat) where
 prettyPi : ShowQ q => Context q n -> Doc -> Doc
 prettyPi [] clause = clause
 prettyPi pi clause =
-  text "forall" <++> pretty () pi <+> text "."
+  text "forall" <++> pretty () pi
     $$ indent clause
 
 export

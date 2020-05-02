@@ -18,17 +18,17 @@ not : (x : Bool) -> Bool {
 }
 
 false : (x : Bool) -> Bool {
-  forall (x : Bool).
+  forall (x : Bool)
     false x ~> False
 }
 
 true : (x : Bool) -> Bool {
-  forall (x : Bool).
+  forall (x : Bool)
     true x ~> True
 }
 
 apply : (f : (x : Bool) -> Bool) -> (y : Bool) -> Bool {
-  forall (y : Bool) (f : (x : Bool) -> Bool).
+  forall (f : (x : Bool) -> Bool) (y : Bool)
     apply f y ~> f y
 }
 
@@ -56,17 +56,17 @@ not :27 (x :28 Bool) -> Bool {
 }
 
 false :15 (x :16 Bool) -> Bool {
-  forall (x :17 Bool).
+  forall (x :17 Bool)
     false x ~> False
 }
 
 true :31 (x :32 Bool) -> Bool {
-  forall (x :33 Bool).
+  forall (x :33 Bool)
     true x ~> True
 }
 
 apply :5 (f :6 (x :7 Bool) -> Bool) -> (y :8 Bool) -> Bool {
-  forall (y :9 Bool) (f :10 (x :11 Bool) -> Bool).
+  forall (f :10 (x :11 Bool) -> Bool) (y :9 Bool)
     apply f y ~> f y
 }
 
