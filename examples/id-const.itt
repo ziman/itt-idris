@@ -14,21 +14,20 @@ not : (x : Bool) -> Bool {
 
 false : (x : Bool) -> Bool {
   forall (x : Bool)
-    false x ~> False
+  false x ~> False
 }
 
 true : (x : Bool) -> Bool {
   forall (x : Bool)
-    true x ~> True
+  true x ~> True
 }
 
-apply : (f : (x : Bool) -> Bool) -> (y : Bool) -> Bool {
-  forall (f : (x : Bool) -> Bool) (y : Bool)
-    apply f y ~> f y
+apply : (f : Bool -> Bool) -> (y : Bool) -> Bool {
+  forall (f : Bool -> Bool) (y : Bool)
+  apply f y ~> f y
 }
 
-main :L Pair {
-  main ~> P
+main :L Pair ~>
+  P
     (apply not   (true False))
-    (apply false (true False))
-}
+    (apply false (true False)).

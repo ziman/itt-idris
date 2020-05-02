@@ -21,45 +21,52 @@ data TT : Nat -> Type {
 
 env : (m : Nat) -> (n : Nat) -> Vect m (TT n) -> Fin m -> TT n {
   forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n))
-    env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x,
+  env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x,
+
   forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m)
-    env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
+  env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
 extendMap : (m : Nat) -> (n : Nat) -> (Fin m -> Fin n) -> Fin (S m) -> Fin (S n) {
   forall (m : Nat) (n : Nat) (f : Fin m -> Fin n)
-    extendMap m n f (FZ [m]) ~> FZ n,
+  extendMap m n f (FZ [m]) ~> FZ n,
+
   forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (i : Fin m)
-    extendMap m n f (FS [m] i) ~> FS n (f i)
+  extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
 mapVars : (m : Nat) -> (n : Nat) -> (Fin m -> Fin n) -> TT m -> TT n {
   forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (i : Fin m)
-    mapVars m n f (V [m] i) ~> V n (f i),
+  mapVars m n f (V [m] i) ~> V n (f i),
+
   forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (x : TT (S m))
-    mapVars m n f (Lam [m] x)
-        ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x),
+  mapVars m n f (Lam [m] x)
+    ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x),
+
   forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (g : TT m) (x : TT m)
-    mapVars m n f (App [m] g x)
-        ~> App n (mapVars m n f g) (mapVars m n f x)
+  mapVars m n f (App [m] g x)
+    ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
 extendSubst : (m : Nat) -> (n : Nat) -> (Fin m -> TT n) -> Fin (S m) -> TT (S n) {
   forall (m : Nat) (n : Nat) (f : Fin m -> TT n)
-    extendSubst m n f (FZ [m]) ~> V (S n) (FZ n),
+  extendSubst m n f (FZ [m]) ~> V (S n) (FZ n),
+
   forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (i : Fin m)
-    extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
+  extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
 substVars : (m : Nat) -> (n : Nat) -> (Fin m -> TT n) -> TT m -> TT n {
   forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (i : Fin m)
-    substVars m n f (V [m] i) ~> f i,
+  substVars m n f (V [m] i) ~> f i,
+
   forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (x : TT (S m))
-    substVars m n f (Lam [m] x)
-        ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x),
+  substVars m n f (Lam [m] x)
+    ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x),
+
   forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (g : TT m) (x : TT m)
-    substVars m n f (App [m] g x)
-        ~> App n (substVars m n f g) (substVars m n f x)
+  substVars m n f (App [m] g x)
+    ~> App n (substVars m n f g) (substVars m n f x)
 }
 
 testTm : TT 1 ~>
@@ -78,25 +85,30 @@ example1 : TT 0
 
 substTop : (n : Nat) -> TT n -> Fin (S n) -> TT n {
   forall (n : Nat) (tm : TT n)
-    substTop n tm (FZ [n]) ~> tm,
+  substTop n tm (FZ [n]) ~> tm,
+
   forall (n : Nat) (tm : TT n) (i : Fin n)
-    substTop n tm (FS [n] i) ~> V n i
+  substTop n tm (FS [n] i) ~> V n i
 }
 
 redex : (m : Nat) -> TT m -> TT m -> TT m {
   forall (m : Nat) (y : TT (S m)) (x : TT m)
-    redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y),
+  redex m (Lam [m] y) x
+    ~> nf m (substVars (S m) m (substTop m (nf m x)) y),
+
   forall (m : Nat) (f' : TT m) (x : TT m)
-    redex m f' x ~> App m f' (nf m x)
+  redex m f' x ~> App m f' (nf m x)
 }
 
 nf : (m : Nat) -> TT m -> TT m {
   forall (m : Nat) (i : Fin m)
-    nf m (V [m] i) ~> V m i,
+  nf m (V [m] i) ~> V m i,
+
   forall (m : Nat) (x : TT (S m))
-    nf m (Lam [m] x) ~> Lam m (nf (S m) x),
+  nf m (Lam [m] x) ~> Lam m (nf (S m) x),
+
   forall (m : Nat) (f : TT m) (x : TT m)
-    nf m (App [m] f x) ~> redex m f x
+  nf m (App [m] f x) ~> redex m f x
 }
 
 example2 : TT 1 ~> nf 1 testTm.

@@ -34,7 +34,7 @@ not : (x : Bool) -> Bool {
 
 id : (a : Type) -> (x : a) -> a {
   forall (a : Type) (x : a)
-    id a x ~> x
+  id a x ~> x
 }
 
 -- Thanks to the irrelevance of C's argument, we *can* apply `g` to `d`
