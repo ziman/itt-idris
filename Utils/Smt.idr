@@ -267,6 +267,10 @@ export
 ifte : Smt Bool -> Smt a -> Smt a -> Smt a
 ifte (MkSmt b) (MkSmt t) (MkSmt e) = MkSmt $ L [A "ite", b, t, e]
 
+export
+not : Smt Bool -> Smt Bool
+not (MkSmt x) = MkSmt $ L [A "not", x]
+
 public export
 Prop : Type
 Prop = Smt Bool
