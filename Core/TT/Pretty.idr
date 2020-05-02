@@ -62,6 +62,9 @@ mutual
     pretty (PTT False nl, ctx) (Lam b rhs) = parensFrom NoAppParens nl $
       text "\\" <+> pretty ctx b <+> text "."
       <++> pretty (PTT True NoParens, b::ctx) rhs
+    pretty (PTT top nl, ctx) (Pi b@(B "_" q ty) rhs) = parensFrom NoAppParens nl $
+      pretty (PTT False NoAppParens, ctx) ty
+      <++> text "->" <++> pretty (PTT False NoParens, b::ctx) rhs
     pretty (PTT top nl, ctx) (Pi b rhs) = parensFrom NoAppParens nl $
       parens (pretty ctx b)
       <++> text "->" <++> pretty (PTT False NoParens, b::ctx) rhs

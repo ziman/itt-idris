@@ -8,62 +8,62 @@ constructor Z : Nat.
 
 constructor S : (n : Nat) -> Nat.
 
-constructor Fin : (_ : Nat) -> Type.
+constructor Fin : Nat -> Type.
 
 constructor FZ : (n : Nat) -> Fin (S n).
 
-constructor FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
+constructor FS : (n : Nat) -> Fin n -> Fin (S n).
 
-constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
+constructor Vect : Nat -> Type -> Type.
 
 constructor VN : (a : Type) -> Vect Z a.
 
-constructor VC : (n : Nat) -> (a : Type) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+constructor VC : (n : Nat) -> (a : Type) -> a -> Vect n a -> Vect (S n) a.
 
-constructor TT : (_ : Nat) -> Type.
+constructor TT : Nat -> Type.
 
-constructor V : (n : Nat) -> (_ : Fin n) -> TT n.
+constructor V : (n : Nat) -> Fin n -> TT n.
 
-constructor Lam : (n : Nat) -> (_ : TT (S n)) -> TT n.
+constructor Lam : (n : Nat) -> TT (S n) -> TT n.
 
-constructor App : (n : Nat) -> (_ : TT n) -> (_ : TT n) -> TT n.
+constructor App : (n : Nat) -> TT n -> TT n -> TT n.
 
-env : (m : Nat) -> (n : Nat) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
+env : (m : Nat) -> (n : Nat) -> Vect m (TT n) -> Fin m -> TT n {
   forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n))
     env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m)
     env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
-extendMap : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : Fin (S m)) -> Fin (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n)
+extendMap : (m : Nat) -> (n : Nat) -> (Fin m -> Fin n) -> Fin (S m) -> Fin (S n) {
+  forall (m : Nat) (n : Nat) (f : Fin m -> Fin n)
     extendMap m n f (FZ [m]) ~> FZ n
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (i : Fin m)
     extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
-mapVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
+mapVars : (m : Nat) -> (n : Nat) -> (Fin m -> Fin n) -> TT m -> TT n {
+  forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (i : Fin m)
     mapVars m n f (V [m] i) ~> V n (f i)
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m))
+  forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (x : TT (S m))
     mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m)
+  forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (g : TT m) (x : TT m)
     mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
-extendSubst : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : Fin (S m)) -> TT (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n)
+extendSubst : (m : Nat) -> (n : Nat) -> (Fin m -> TT n) -> Fin (S m) -> TT (S n) {
+  forall (m : Nat) (n : Nat) (f : Fin m -> TT n)
     extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (i : Fin m)
     extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
-substVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
+substVars : (m : Nat) -> (n : Nat) -> (Fin m -> TT n) -> TT m -> TT n {
+  forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (i : Fin m)
     substVars m n f (V [m] i) ~> f i
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m))
+  forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (x : TT (S m))
     substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m)
+  forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (g : TT m) (x : TT m)
     substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -75,21 +75,21 @@ example1 : TT Z {
   example1 ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
 }
 
-substTop : (n : Nat) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
+substTop : (n : Nat) -> TT n -> Fin (S n) -> TT n {
   forall (n : Nat) (tm : TT n)
     substTop n tm (FZ [n]) ~> tm
   forall (n : Nat) (tm : TT n) (i : Fin n)
     substTop n tm (FS [n] i) ~> V n i
 }
 
-redex : (m : Nat) -> (_ : TT m) -> (_ : TT m) -> TT m {
+redex : (m : Nat) -> TT m -> TT m -> TT m {
   forall (m : Nat) (y : TT (S m)) (x : TT m)
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
   forall (m : Nat) (f' : TT m) (x : TT m)
     redex m f' x ~> App m f' (nf m x)
 }
 
-nf : (m : Nat) -> (_ : TT m) -> TT m {
+nf : (m : Nat) -> TT m -> TT m {
   forall (m : Nat) (i : Fin m)
     nf m (V [m] i) ~> V m i
   forall (m : Nat) (x : TT (S m))
@@ -120,62 +120,62 @@ constructor Z :57 Nat.
 
 constructor S :31 (n :32 Nat) -> Nat.
 
-constructor Fin :17 (_ :18 Nat) -> Type.
+constructor Fin :17 Nat -> Type.
 
 constructor FZ :13 (n :14 Nat) -> Fin (S n).
 
-constructor FS :7 (n :8 Nat) -> (_ :9 Fin n) -> Fin (S n).
+constructor FS :7 (n :8 Nat) -> Fin n -> Fin (S n).
 
-constructor Vect :54 (_ :55 Nat) -> (_ :56 Type) -> Type.
+constructor Vect :54 Nat -> Type -> Type.
 
 constructor VN :50 (a :51 Type) -> Vect Z a.
 
-constructor VC :40 (n :41 Nat) -> (a :42 Type) -> (_ :43 a) -> (_ :44 Vect n a) -> Vect (S n) a.
+constructor VC :40 (n :41 Nat) -> (a :42 Type) -> a -> Vect n a -> Vect (S n) a.
 
-constructor TT :33 (_ :34 Nat) -> Type.
+constructor TT :33 Nat -> Type.
 
-constructor V :35 (n :36 Nat) -> (_ :37 Fin n) -> TT n.
+constructor V :35 (n :36 Nat) -> Fin n -> TT n.
 
-constructor Lam :19 (n :20 Nat) -> (_ :21 TT (S n)) -> TT n.
+constructor Lam :19 (n :20 Nat) -> TT (S n) -> TT n.
 
-constructor App :0 (n :1 Nat) -> (_ :2 TT n) -> (_ :4 TT n) -> TT n.
+constructor App :0 (n :1 Nat) -> TT n -> TT n -> TT n.
 
-env :58 (m :59 Nat) -> (n :60 Nat) -> (_ :61 Vect m (TT n)) -> (_ :65 Fin m) -> TT n {
+env :58 (m :59 Nat) -> (n :60 Nat) -> Vect m (TT n) -> Fin m -> TT n {
   forall (m :75 Nat) (n :74 Nat) (x :72 TT n) (xs :68 Vect m (TT n))
     env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   forall (m :96 Nat) (n :95 Nat) (x :93 TT n) (xs :89 Vect m (TT n)) (i :87 Fin m)
     env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
-extendMap :143 (m :144 Nat) -> (n :145 Nat) -> (_ :146 (_ :147 Fin m) -> Fin n) -> (_ :150 Fin (S m)) -> Fin (S n) {
-  forall (m :160 Nat) (n :159 Nat) (f :155 (_ :156 Fin m) -> Fin n)
+extendMap :143 (m :144 Nat) -> (n :145 Nat) -> (Fin m -> Fin n) -> Fin (S m) -> Fin (S n) {
+  forall (m :160 Nat) (n :159 Nat) (f :155 Fin m -> Fin n)
     extendMap m n f (FZ [m]) ~> FZ n
-  forall (m :174 Nat) (n :173 Nat) (f :169 (_ :170 Fin m) -> Fin n) (i :167 Fin m)
+  forall (m :174 Nat) (n :173 Nat) (f :169 Fin m -> Fin n) (i :167 Fin m)
     extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
-mapVars :235 (m :236 Nat) -> (n :237 Nat) -> (_ :238 (_ :239 Fin m) -> Fin n) -> (_ :242 TT m) -> TT n {
-  forall (m :252 Nat) (n :251 Nat) (f :247 (_ :248 Fin m) -> Fin n) (i :245 Fin m)
+mapVars :235 (m :236 Nat) -> (n :237 Nat) -> (Fin m -> Fin n) -> TT m -> TT n {
+  forall (m :252 Nat) (n :251 Nat) (f :247 Fin m -> Fin n) (i :245 Fin m)
     mapVars m n f (V [m] i) ~> V n (f i)
-  forall (m :270 Nat) (n :269 Nat) (f :265 (_ :266 Fin m) -> Fin n) (x :262 TT (S m))
+  forall (m :270 Nat) (n :269 Nat) (f :265 Fin m -> Fin n) (x :262 TT (S m))
     mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
-  forall (m :297 Nat) (n :296 Nat) (f :292 (_ :293 Fin m) -> Fin n) (g :290 TT m) (x :288 TT m)
+  forall (m :297 Nat) (n :296 Nat) (f :292 Fin m -> Fin n) (g :290 TT m) (x :288 TT m)
     mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
-extendSubst :184 (m :185 Nat) -> (n :186 Nat) -> (_ :187 (_ :188 Fin m) -> TT n) -> (_ :191 Fin (S m)) -> TT (S n) {
-  forall (m :201 Nat) (n :200 Nat) (f :196 (_ :197 Fin m) -> TT n)
+extendSubst :184 (m :185 Nat) -> (n :186 Nat) -> (Fin m -> TT n) -> Fin (S m) -> TT (S n) {
+  forall (m :201 Nat) (n :200 Nat) (f :196 Fin m -> TT n)
     extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
-  forall (m :218 Nat) (n :217 Nat) (f :213 (_ :214 Fin m) -> TT n) (i :211 Fin m)
+  forall (m :218 Nat) (n :217 Nat) (f :213 Fin m -> TT n) (i :211 Fin m)
     extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
-substVars :425 (m :426 Nat) -> (n :427 Nat) -> (_ :428 (_ :429 Fin m) -> TT n) -> (_ :432 TT m) -> TT n {
-  forall (m :442 Nat) (n :441 Nat) (f :437 (_ :438 Fin m) -> TT n) (i :435 Fin m)
+substVars :425 (m :426 Nat) -> (n :427 Nat) -> (Fin m -> TT n) -> TT m -> TT n {
+  forall (m :442 Nat) (n :441 Nat) (f :437 Fin m -> TT n) (i :435 Fin m)
     substVars m n f (V [m] i) ~> f i
-  forall (m :458 Nat) (n :457 Nat) (f :453 (_ :454 Fin m) -> TT n) (x :450 TT (S m))
+  forall (m :458 Nat) (n :457 Nat) (f :453 Fin m -> TT n) (x :450 TT (S m))
     substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
-  forall (m :485 Nat) (n :484 Nat) (f :480 (_ :481 Fin m) -> TT n) (g :478 TT m) (x :476 TT m)
+  forall (m :485 Nat) (n :484 Nat) (f :480 Fin m -> TT n) (g :478 TT m) (x :476 TT m)
     substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -187,21 +187,21 @@ example1 :113 TT Z {
   example1 ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
 }
 
-substTop :398 (n :399 Nat) -> (_ :400 TT n) -> (_ :402 Fin (S n)) -> TT n {
+substTop :398 (n :399 Nat) -> TT n -> Fin (S n) -> TT n {
   forall (n :408 Nat) (tm :406 TT n)
     substTop n tm (FZ [n]) ~> tm
   forall (n :417 Nat) (tm :415 TT n) (i :413 Fin n)
     substTop n tm (FS [n] i) ~> V n i
 }
 
-redex :356 (m :357 Nat) -> (_ :358 TT m) -> (_ :360 TT m) -> TT m {
+redex :356 (m :357 Nat) -> TT m -> TT m -> TT m {
   forall (m :368 Nat) (y :365 TT (S m)) (x :363 TT m)
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
   forall (m :389 Nat) (f' :387 TT m) (x :385 TT m)
     redex m f' x ~> App m f' (nf m x)
 }
 
-nf :316 (m :317 Nat) -> (_ :318 TT m) -> TT m {
+nf :316 (m :317 Nat) -> TT m -> TT m {
   forall (m :323 Nat) (i :321 Fin m)
     nf m (V [m] i) ~> V m i
   forall (m :333 Nat) (x :330 TT (S m))
@@ -233,12 +233,12 @@ Sums:
     product  [I]
     product  [I]
   0 ≥ Sum
-    product  []
-    product  []
-    product  []
-    product  [508, 511]
-    product  [507, 533]
-    product  []
+    product  [235]
+    product  [425]
+    product  [504]
+    product  [504, 508, 511]
+    product  [504, 507, 533]
+    product  [356]
   1 ≥ Sum
     product  [I]
     product  [I, 3]
@@ -249,10 +249,10 @@ Sums:
   4 ≥ Sum
     product  [I]
   7 ≥ Sum
-    product  []
-    product  [226]
-    product  [508, 511, 514, 525]
-    product  [507, 533, 537, 541]
+    product  [143]
+    product  [184, 226]
+    product  [504, 508, 511, 514, 525]
+    product  [504, 507, 533, 537, 541]
   8 ≥ Sum
     product  [I]
     product  [I, 10]
@@ -261,13 +261,13 @@ Sums:
     product  [I]
     product  [I]
   13 ≥ Sum
-    product  []
-    product  [207]
-    product  [508, 511, 515, 519]
-    product  [508, 511, 514, 525, 529]
-    product  [507, 533, 537, 541, 545]
-    product  [507, 533, 536, 549]
-    product  [116, 120, 125, 129, 131]
+    product  [143]
+    product  [184, 207]
+    product  [504, 508, 511, 515, 519]
+    product  [504, 508, 511, 514, 525, 529]
+    product  [504, 507, 533, 537, 541, 545]
+    product  [504, 507, 533, 536, 549]
+    product  [113, 116, 120, 125, 129, 131]
   14 ≥ Sum
     product  [I]
     product  [I, 15, 16]
@@ -312,12 +312,12 @@ Sums:
   18 ≥ Sum
     product  [I]
   19 ≥ Sum
-    product  []
-    product  []
-    product  [508]
-    product  [507]
-    product  [116, 120, 125]
-    product  []
+    product  [235]
+    product  [425]
+    product  [504, 508]
+    product  [504, 507]
+    product  [113, 116, 120, 125]
+    product  [316]
   20 ≥ Sum
     product  [I]
     product  [I, 22, 23]
@@ -382,7 +382,7 @@ Sums:
     product  [I]
     product  [I]
   26 ≥ Sum
-    product  []
+    product  [232]
   30 ≥ Sum
     product  [I]
     product  [I]
@@ -396,45 +396,45 @@ Sums:
     product  [I, 151]
     product  [I, 153]
     product  [I, 263]
-    product  [277, 282]
-    product  [277, 281]
+    product  [235, 277, 282]
+    product  [235, 277, 281]
     product  [I, 192]
     product  [I, 194]
-    product  [208]
-    product  [227]
+    product  [184, 208]
+    product  [184, 227]
     product  [I, 451]
-    product  [465, 470]
-    product  [465, 469]
+    product  [425, 465, 470]
+    product  [425, 465, 469]
     product  [I, 505]
-    product  [509]
-    product  [508, 512]
-    product  [508, 511, 516]
-    product  [508, 511, 516, 517]
-    product  [508, 511, 515, 520]
-    product  [508, 511, 515, 520, 521]
-    product  [508, 511, 515, 519, 523]
-    product  [508, 511, 514, 526]
-    product  [508, 511, 514, 526, 527]
-    product  [508, 511, 514, 525, 530]
-    product  [507, 534]
-    product  [507, 533, 538]
-    product  [507, 533, 538, 539]
-    product  [507, 533, 537, 542]
-    product  [507, 533, 537, 542, 543]
-    product  [507, 533, 537, 541, 546]
-    product  [507, 533, 536, 550]
-    product  [507, 533, 536, 550, 551]
-    product  [507, 533, 536, 549, 553]
-    product  [118]
-    product  [116, 122]
-    product  [116, 120, 125, 129, 132]
+    product  [504, 509]
+    product  [504, 508, 512]
+    product  [504, 508, 511, 516]
+    product  [504, 508, 511, 516, 517]
+    product  [504, 508, 511, 515, 520]
+    product  [504, 508, 511, 515, 520, 521]
+    product  [504, 508, 511, 515, 519, 523]
+    product  [504, 508, 511, 514, 526]
+    product  [504, 508, 511, 514, 526, 527]
+    product  [504, 508, 511, 514, 525, 530]
+    product  [504, 507, 534]
+    product  [504, 507, 533, 538]
+    product  [504, 507, 533, 538, 539]
+    product  [504, 507, 533, 537, 542]
+    product  [504, 507, 533, 537, 542, 543]
+    product  [504, 507, 533, 537, 541, 546]
+    product  [504, 507, 533, 536, 550]
+    product  [504, 507, 533, 536, 550, 551]
+    product  [504, 507, 533, 536, 549, 553]
+    product  [113, 118]
+    product  [113, 116, 122]
+    product  [113, 116, 120, 125, 129, 132]
     product  [I, 403]
     product  [I, 366]
-    product  [374, 379]
+    product  [356, 374, 379]
     product  [I, 331]
-    product  [338, 341]
+    product  [316, 338, 341]
     product  [I, 138]
-    product  [141]
+    product  [137, 141]
     product  [I, 28]
   32 ≥ Sum
     product  [I]
@@ -473,8 +473,8 @@ Sums:
     product  [I]
     product  [I]
     product  [I]
-    product  [116, 120, 126]
-    product  [116, 120, 124, 135]
+    product  [113, 116, 120, 126]
+    product  [113, 116, 120, 124, 135]
     product  [I]
     product  [I]
     product  [I]
@@ -497,15 +497,15 @@ Sums:
   34 ≥ Sum
     product  [I]
   35 ≥ Sum
-    product  []
-    product  []
-    product  [508, 511, 515]
-    product  [508, 511, 514]
-    product  [507, 533, 537]
-    product  [507, 533, 536]
-    product  [116, 120, 125, 129]
-    product  []
-    product  []
+    product  [235]
+    product  [184]
+    product  [504, 508, 511, 515]
+    product  [504, 508, 511, 514]
+    product  [504, 507, 533, 537]
+    product  [504, 507, 533, 536]
+    product  [113, 116, 120, 125, 129]
+    product  [398]
+    product  [316]
   36 ≥ Sum
     product  [I]
     product  [I, 38]
@@ -513,7 +513,7 @@ Sums:
   37 ≥ Sum
     product  [I]
   40 ≥ Sum
-    product  [116, 120]
+    product  [113, 116, 120]
   41 ≥ Sum
     product  [I]
     product  [I, 46]
@@ -528,7 +528,7 @@ Sums:
   44 ≥ Sum
     product  [I]
   50 ≥ Sum
-    product  [116, 120, 124]
+    product  [113, 116, 120, 124]
   51 ≥ Sum
     product  [I]
     product  [I, 52]
@@ -546,39 +546,39 @@ Sums:
   57 ≥ Sum
     product  [I, 53]
     product  [I, 505, 506]
-    product  [509, 510]
-    product  [508, 512, 513]
-    product  [508, 511, 516, 517, 518]
-    product  [508, 511, 515, 520, 521, 522]
-    product  [508, 511, 515, 519, 523, 524]
-    product  [508, 511, 514, 526, 527, 528]
-    product  [508, 511, 514, 525, 530, 531]
-    product  [508, 511, 514, 525, 529, 532]
-    product  [507, 534, 535]
-    product  [507, 533, 538, 539, 540]
-    product  [507, 533, 537, 542, 543, 544]
-    product  [507, 533, 537, 541, 546, 547]
-    product  [507, 533, 537, 541, 545, 548]
-    product  [507, 533, 536, 550, 551, 552]
-    product  [507, 533, 536, 549, 553, 554]
+    product  [504, 509, 510]
+    product  [504, 508, 512, 513]
+    product  [504, 508, 511, 516, 517, 518]
+    product  [504, 508, 511, 515, 520, 521, 522]
+    product  [504, 508, 511, 515, 519, 523, 524]
+    product  [504, 508, 511, 514, 526, 527, 528]
+    product  [504, 508, 511, 514, 525, 530, 531]
+    product  [504, 508, 511, 514, 525, 529, 532]
+    product  [504, 507, 534, 535]
+    product  [504, 507, 533, 538, 539, 540]
+    product  [504, 507, 533, 537, 542, 543, 544]
+    product  [504, 507, 533, 537, 541, 546, 547]
+    product  [504, 507, 533, 537, 541, 545, 548]
+    product  [504, 507, 533, 536, 550, 551, 552]
+    product  [504, 507, 533, 536, 549, 553, 554]
     product  [I, 114]
-    product  [118, 119]
-    product  [117]
-    product  [116, 122, 123]
-    product  [116, 121]
-    product  [116, 120, 127]
-    product  [116, 120, 126, 128]
-    product  [116, 120, 125, 130]
-    product  [116, 120, 125, 129, 132, 133]
-    product  [116, 120, 125, 129, 131, 134]
-    product  [116, 120, 124, 135, 136]
+    product  [113, 118, 119]
+    product  [113, 117]
+    product  [113, 116, 122, 123]
+    product  [113, 116, 121]
+    product  [113, 116, 120, 127]
+    product  [113, 116, 120, 126, 128]
+    product  [113, 116, 120, 125, 130]
+    product  [113, 116, 120, 125, 129, 132, 133]
+    product  [113, 116, 120, 125, 129, 131, 134]
+    product  [113, 116, 120, 124, 135, 136]
     product  [I, 138, 139]
-    product  [141, 142]
+    product  [137, 141, 142]
     product  [I, 27]
     product  [I, 28, 29]
   58 ≥ Sum
-    product  []
-    product  [116]
+    product  [58]
+    product  [113, 116]
   59 ≥ Sum
     product  [I]
     product  [I, 63]
@@ -597,7 +597,7 @@ Sums:
   72 ≥ Sum
     product  [I]
     product  [I]
-    product  []
+    product  [58]
   74 ≥ Sum
     product  [I]
     product  [I, 73]
@@ -628,11 +628,11 @@ Sums:
     product  [75]
   87 ≥ Sum
     product  [I]
-    product  [109]
+    product  [58, 109]
   89 ≥ Sum
     product  [I]
     product  [I]
-    product  [110]
+    product  [58, 110]
   93 ≥ Sum
     product  [I]
     product  [I]
@@ -645,7 +645,7 @@ Sums:
     product  [I]
     product  [I]
     product  [I, 103]
-    product  [111]
+    product  [58, 111]
   96 ≥ Sum
     product  [I]
     product  [I]
@@ -656,7 +656,7 @@ Sums:
     product  [I]
     product  [I, 98]
     product  [I]
-    product  [112]
+    product  [58, 112]
   99 ≥ Sum
     product  [95]
   100 ≥ Sum
@@ -674,11 +674,11 @@ Sums:
   108 ≥ Sum
     product  [87]
   113 ≥ Sum
-    product  [234]
+    product  [232, 234]
   137 ≥ Sum
-    product  [233]
+    product  [232, 233]
   143 ≥ Sum
-    product  [277, 280]
+    product  [235, 277, 280]
   144 ≥ Sum
     product  [I]
     product  [I, 148]
@@ -703,7 +703,7 @@ Sums:
     product  [I]
     product  [I, 158]
     product  [I]
-    product  [166]
+    product  [143, 166]
   160 ≥ Sum
     product  [I]
     product  [I]
@@ -718,11 +718,11 @@ Sums:
     product  [155]
   167 ≥ Sum
     product  [I]
-    product  [181, 183]
+    product  [143, 181, 183]
   169 ≥ Sum
     product  [I]
     product  [I]
-    product  [181]
+    product  [143, 181]
   170 ≥ Sum
     product  [I]
     product  [I]
@@ -731,7 +731,7 @@ Sums:
     product  [I, 172]
     product  [I]
     product  [I]
-    product  [182]
+    product  [143, 182]
   174 ≥ Sum
     product  [I]
     product  [I]
@@ -751,7 +751,7 @@ Sums:
   180 ≥ Sum
     product  [167]
   184 ≥ Sum
-    product  [465, 468]
+    product  [425, 465, 468]
   185 ≥ Sum
     product  [I]
     product  [I, 189]
@@ -776,8 +776,8 @@ Sums:
     product  [I]
     product  [I, 199]
     product  [I]
-    product  [208, 209]
-    product  [207, 210]
+    product  [184, 208, 209]
+    product  [184, 207, 210]
   201 ≥ Sum
     product  [I]
     product  [I]
@@ -792,11 +792,11 @@ Sums:
     product  [196]
   211 ≥ Sum
     product  [I]
-    product  [225, 231]
+    product  [184, 225, 231]
   213 ≥ Sum
     product  [I]
     product  [I]
-    product  [225]
+    product  [184, 225]
   214 ≥ Sum
     product  [I]
     product  [I]
@@ -805,9 +805,9 @@ Sums:
     product  [I, 216]
     product  [I]
     product  [I]
-    product  [228]
-    product  [227, 229]
-    product  [226, 230]
+    product  [184, 228]
+    product  [184, 227, 229]
+    product  [184, 226, 230]
   218 ≥ Sum
     product  [I]
     product  [I]
@@ -827,10 +827,10 @@ Sums:
   224 ≥ Sum
     product  [211]
   235 ≥ Sum
-    product  [277]
-    product  [306]
-    product  [305]
-    product  []
+    product  [235, 277]
+    product  [235, 306]
+    product  [235, 305]
+    product  [184]
   236 ≥ Sum
     product  [I]
     product  [I, 240]
@@ -847,11 +847,11 @@ Sums:
     product  [I]
   245 ≥ Sum
     product  [I]
-    product  [259, 261]
+    product  [235, 259, 261]
   247 ≥ Sum
     product  [I]
     product  [I]
-    product  [259]
+    product  [235, 259]
   248 ≥ Sum
     product  [I]
     product  [I]
@@ -860,7 +860,7 @@ Sums:
     product  [I, 250]
     product  [I]
     product  [I]
-    product  [260]
+    product  [235, 260]
   252 ≥ Sum
     product  [I]
     product  [I]
@@ -881,11 +881,11 @@ Sums:
     product  [245]
   262 ≥ Sum
     product  [I]
-    product  [277, 279]
+    product  [235, 277, 279]
   265 ≥ Sum
     product  [I]
     product  [I]
-    product  [277, 280, 285]
+    product  [235, 277, 280, 285]
   266 ≥ Sum
     product  [I]
     product  [I]
@@ -895,9 +895,9 @@ Sums:
     product  [I, 268]
     product  [I]
     product  [I]
-    product  [278]
-    product  [277, 281, 284]
-    product  [277, 280, 286]
+    product  [235, 278]
+    product  [235, 277, 281, 284]
+    product  [235, 277, 280, 286]
   270 ≥ Sum
     product  [I]
     product  [I]
@@ -906,8 +906,8 @@ Sums:
     product  [I, 263, 264]
     product  [I]
     product  [I]
-    product  [277, 282, 283]
-    product  [277, 280, 287]
+    product  [235, 277, 282, 283]
+    product  [235, 277, 280, 287]
   271 ≥ Sum
     product  [270]
   272 ≥ Sum
@@ -920,17 +920,17 @@ Sums:
     product  [262]
   288 ≥ Sum
     product  [I]
-    product  [305, 312]
+    product  [235, 305, 312]
   290 ≥ Sum
     product  [I]
     product  [I]
-    product  [306, 308]
+    product  [235, 306, 308]
   292 ≥ Sum
     product  [I]
     product  [I]
     product  [I]
-    product  [306, 309]
-    product  [305, 313]
+    product  [235, 306, 309]
+    product  [235, 305, 313]
   293 ≥ Sum
     product  [I]
     product  [I]
@@ -942,9 +942,9 @@ Sums:
     product  [I]
     product  [I]
     product  [I]
-    product  [307]
-    product  [306, 310]
-    product  [305, 314]
+    product  [235, 307]
+    product  [235, 306, 310]
+    product  [235, 305, 314]
   297 ≥ Sum
     product  [I]
     product  [I]
@@ -955,8 +955,8 @@ Sums:
     product  [I, 289]
     product  [I]
     product  [I]
-    product  [306, 311]
-    product  [305, 315]
+    product  [235, 306, 311]
+    product  [235, 305, 315]
   298 ≥ Sum
     product  [297]
   299 ≥ Sum
@@ -971,11 +971,11 @@ Sums:
   304 ≥ Sum
     product  [288]
   316 ≥ Sum
-    product  []
-    product  [374, 377, 381]
-    product  [393]
-    product  [338]
-    product  []
+    product  [356]
+    product  [356, 374, 377, 381]
+    product  [356, 393]
+    product  [316, 338]
+    product  [137]
   317 ≥ Sum
     product  [I]
     product  [I, 319]
@@ -984,13 +984,13 @@ Sums:
     product  [I]
   321 ≥ Sum
     product  [I]
-    product  [328]
+    product  [316, 328]
   323 ≥ Sum
     product  [I]
     product  [I, 322]
     product  [I]
     product  [I]
-    product  [329]
+    product  [316, 329]
   324 ≥ Sum
     product  [323]
   325 ≥ Sum
@@ -999,14 +999,14 @@ Sums:
     product  [321]
   330 ≥ Sum
     product  [I]
-    product  [338, 340]
+    product  [316, 338, 340]
   333 ≥ Sum
     product  [I]
     product  [I, 331, 332]
     product  [I]
     product  [I]
-    product  [339]
-    product  [338, 341, 342]
+    product  [316, 339]
+    product  [316, 338, 341, 342]
   334 ≥ Sum
     product  [333]
   335 ≥ Sum
@@ -1015,11 +1015,11 @@ Sums:
     product  [330]
   343 ≥ Sum
     product  [I]
-    product  [353]
+    product  [316, 353]
   345 ≥ Sum
     product  [I]
     product  [I]
-    product  [354]
+    product  [316, 354]
   347 ≥ Sum
     product  [I]
     product  [I, 346]
@@ -1027,7 +1027,7 @@ Sums:
     product  [I, 344]
     product  [I]
     product  [I]
-    product  [355]
+    product  [316, 355]
   348 ≥ Sum
     product  [347]
   349 ≥ Sum
@@ -1038,7 +1038,7 @@ Sums:
   352 ≥ Sum
     product  [343]
   356 ≥ Sum
-    product  []
+    product  [316]
   357 ≥ Sum
     product  [I]
     product  [I, 359]
@@ -1050,11 +1050,11 @@ Sums:
     product  [I]
   363 ≥ Sum
     product  [I]
-    product  [374, 377, 381, 383]
+    product  [356, 374, 377, 381, 383]
   365 ≥ Sum
     product  [I]
     product  [I]
-    product  [374, 376]
+    product  [356, 374, 376]
   368 ≥ Sum
     product  [I]
     product  [I, 366, 367]
@@ -1062,11 +1062,11 @@ Sums:
     product  [I, 364]
     product  [I]
     product  [I]
-    product  [375]
-    product  [374, 379, 380]
-    product  [374, 378]
-    product  [374, 377, 382]
-    product  [374, 377, 381, 384]
+    product  [356, 375]
+    product  [356, 374, 379, 380]
+    product  [356, 374, 378]
+    product  [356, 374, 377, 382]
+    product  [356, 374, 377, 381, 384]
   369 ≥ Sum
     product  [368]
   370 ≥ Sum
@@ -1077,19 +1077,19 @@ Sums:
     product  [363]
   385 ≥ Sum
     product  [I]
-    product  [393, 396]
+    product  [356, 393, 396]
   387 ≥ Sum
     product  [I]
     product  [I]
-    product  [394]
+    product  [356, 394]
   389 ≥ Sum
     product  [I]
     product  [I, 388]
     product  [I]
     product  [I, 386]
     product  [I]
-    product  [395]
-    product  [393, 397]
+    product  [356, 395]
+    product  [356, 393, 397]
   390 ≥ Sum
     product  [389]
   391 ≥ Sum
@@ -1097,7 +1097,7 @@ Sums:
   392 ≥ Sum
     product  [385]
   398 ≥ Sum
-    product  [374, 377]
+    product  [356, 374, 377]
   399 ≥ Sum
     product  [I]
     product  [I, 401]
@@ -1110,7 +1110,7 @@ Sums:
     product  [I]
   406 ≥ Sum
     product  [I]
-    product  []
+    product  [398]
   408 ≥ Sum
     product  [I]
     product  [I, 407]
@@ -1122,7 +1122,7 @@ Sums:
     product  [406]
   413 ≥ Sum
     product  [I]
-    product  [423]
+    product  [398, 423]
   415 ≥ Sum
     product  [I]
     product  [I]
@@ -1133,7 +1133,7 @@ Sums:
     product  [I, 414]
     product  [I]
     product  [I]
-    product  [424]
+    product  [398, 424]
   418 ≥ Sum
     product  [417]
   419 ≥ Sum
@@ -1143,11 +1143,11 @@ Sums:
   422 ≥ Sum
     product  [413]
   425 ≥ Sum
-    product  [465]
-    product  [494]
-    product  [493]
-    product  []
-    product  [374]
+    product  [425, 465]
+    product  [425, 494]
+    product  [425, 493]
+    product  [113]
+    product  [356, 374]
   426 ≥ Sum
     product  [I]
     product  [I, 430]
@@ -1164,11 +1164,11 @@ Sums:
     product  [I]
   435 ≥ Sum
     product  [I]
-    product  [449]
+    product  [425, 449]
   437 ≥ Sum
     product  [I]
     product  [I]
-    product  []
+    product  [425]
   438 ≥ Sum
     product  [I]
     product  [I]
@@ -1197,11 +1197,11 @@ Sums:
     product  [435]
   450 ≥ Sum
     product  [I]
-    product  [465, 467]
+    product  [425, 465, 467]
   453 ≥ Sum
     product  [I]
     product  [I]
-    product  [465, 468, 473]
+    product  [425, 465, 468, 473]
   454 ≥ Sum
     product  [I]
     product  [I]
@@ -1211,9 +1211,9 @@ Sums:
     product  [I, 456]
     product  [I]
     product  [I]
-    product  [466]
-    product  [465, 469, 472]
-    product  [465, 468, 474]
+    product  [425, 466]
+    product  [425, 465, 469, 472]
+    product  [425, 465, 468, 474]
   458 ≥ Sum
     product  [I]
     product  [I]
@@ -1222,8 +1222,8 @@ Sums:
     product  [I, 451, 452]
     product  [I]
     product  [I]
-    product  [465, 470, 471]
-    product  [465, 468, 475]
+    product  [425, 465, 470, 471]
+    product  [425, 465, 468, 475]
   459 ≥ Sum
     product  [458]
   460 ≥ Sum
@@ -1236,17 +1236,17 @@ Sums:
     product  [450]
   476 ≥ Sum
     product  [I]
-    product  [493, 500]
+    product  [425, 493, 500]
   478 ≥ Sum
     product  [I]
     product  [I]
-    product  [494, 496]
+    product  [425, 494, 496]
   480 ≥ Sum
     product  [I]
     product  [I]
     product  [I]
-    product  [494, 497]
-    product  [493, 501]
+    product  [425, 494, 497]
+    product  [425, 493, 501]
   481 ≥ Sum
     product  [I]
     product  [I]
@@ -1258,9 +1258,9 @@ Sums:
     product  [I]
     product  [I]
     product  [I]
-    product  [495]
-    product  [494, 498]
-    product  [493, 502]
+    product  [425, 495]
+    product  [425, 494, 498]
+    product  [425, 493, 502]
   485 ≥ Sum
     product  [I]
     product  [I]
@@ -1271,8 +1271,8 @@ Sums:
     product  [I, 477]
     product  [I]
     product  [I]
-    product  [494, 499]
-    product  [493, 503]
+    product  [425, 494, 499]
+    product  [425, 493, 503]
   486 ≥ Sum
     product  [485]
   487 ≥ Sum
@@ -1287,8 +1287,8 @@ Sums:
   492 ≥ Sum
     product  [476]
   504 ≥ Sum
-    product  [115]
-    product  [140]
+    product  [113, 115]
+    product  [137, 140]
 
 Maxes:
   L ≥ Max
@@ -3058,4 +3058,697 @@ Maxes:
 138 -> S Z ~ S Z
 
   -> iteration 1
-unsatisfiable
+    -> No more equalities, fixed point reached.
+
+###################
+# Final valuation #
+###################
+
+  0 -> I
+  1 -> I
+  2 -> I
+  3 -> I
+  4 -> I
+  5 -> I
+  6 -> I
+  7 -> I
+  8 -> I
+  9 -> L
+  10 -> I
+  11 -> I
+  12 -> I
+  13 -> I
+  14 -> I
+  15 -> I
+  16 -> I
+  17 -> I
+  18 -> I
+  19 -> I
+  20 -> I
+  21 -> I
+  22 -> I
+  23 -> I
+  24 -> I
+  25 -> I
+  26 -> I
+  27 -> I
+  28 -> I
+  29 -> I
+  30 -> I
+  31 -> I
+  32 -> I
+  33 -> I
+  34 -> I
+  35 -> I
+  36 -> I
+  37 -> I
+  38 -> I
+  39 -> I
+  40 -> I
+  41 -> I
+  42 -> I
+  43 -> I
+  44 -> I
+  45 -> I
+  46 -> I
+  47 -> I
+  48 -> I
+  49 -> I
+  50 -> I
+  51 -> I
+  52 -> I
+  53 -> I
+  54 -> I
+  55 -> I
+  56 -> I
+  57 -> I
+  58 -> I
+  59 -> I
+  60 -> I
+  61 -> L
+  62 -> I
+  63 -> I
+  64 -> I
+  65 -> L
+  66 -> I
+  67 -> I
+  68 -> I
+  69 -> I
+  70 -> I
+  71 -> I
+  72 -> I
+  73 -> I
+  74 -> I
+  75 -> I
+  76 -> I
+  77 -> I
+  78 -> I
+  79 -> L
+  80 -> I
+  81 -> I
+  82 -> I
+  83 -> I
+  84 -> I
+  85 -> L
+  86 -> I
+  87 -> I
+  88 -> I
+  89 -> I
+  90 -> I
+  91 -> I
+  92 -> I
+  93 -> I
+  94 -> I
+  95 -> I
+  96 -> I
+  97 -> I
+  98 -> I
+  99 -> I
+  100 -> L
+  101 -> I
+  102 -> I
+  103 -> I
+  104 -> I
+  105 -> I
+  106 -> L
+  107 -> I
+  108 -> L
+  109 -> L
+  110 -> L
+  111 -> I
+  112 -> I
+  113 -> I
+  114 -> I
+  115 -> L
+  116 -> I
+  117 -> I
+  118 -> I
+  119 -> I
+  120 -> L
+  121 -> I
+  122 -> I
+  123 -> I
+  124 -> I
+  125 -> I
+  126 -> I
+  127 -> I
+  128 -> I
+  129 -> I
+  130 -> I
+  131 -> I
+  132 -> I
+  133 -> I
+  134 -> I
+  135 -> I
+  136 -> I
+  137 -> I
+  138 -> I
+  139 -> I
+  140 -> L
+  141 -> I
+  142 -> I
+  143 -> I
+  144 -> I
+  145 -> I
+  146 -> I
+  147 -> L
+  148 -> I
+  149 -> I
+  150 -> L
+  151 -> I
+  152 -> I
+  153 -> I
+  154 -> I
+  155 -> I
+  156 -> L
+  157 -> I
+  158 -> I
+  159 -> I
+  160 -> I
+  161 -> I
+  162 -> I
+  163 -> I
+  164 -> L
+  165 -> I
+  166 -> I
+  167 -> I
+  168 -> I
+  169 -> I
+  170 -> L
+  171 -> I
+  172 -> I
+  173 -> I
+  174 -> I
+  175 -> I
+  176 -> I
+  177 -> I
+  178 -> L
+  179 -> I
+  180 -> L
+  181 -> L
+  182 -> I
+  183 -> L
+  184 -> I
+  185 -> I
+  186 -> I
+  187 -> I
+  188 -> L
+  189 -> I
+  190 -> I
+  191 -> L
+  192 -> I
+  193 -> I
+  194 -> I
+  195 -> I
+  196 -> I
+  197 -> L
+  198 -> I
+  199 -> I
+  200 -> I
+  201 -> I
+  202 -> I
+  203 -> I
+  204 -> I
+  205 -> L
+  206 -> I
+  207 -> I
+  208 -> I
+  209 -> I
+  210 -> I
+  211 -> I
+  212 -> I
+  213 -> I
+  214 -> L
+  215 -> I
+  216 -> I
+  217 -> I
+  218 -> I
+  219 -> I
+  220 -> I
+  221 -> I
+  222 -> L
+  223 -> I
+  224 -> L
+  225 -> L
+  226 -> I
+  227 -> I
+  228 -> I
+  229 -> I
+  230 -> I
+  231 -> L
+  232 -> I
+  233 -> L
+  234 -> L
+  235 -> I
+  236 -> I
+  237 -> I
+  238 -> I
+  239 -> L
+  240 -> I
+  241 -> I
+  242 -> L
+  243 -> I
+  244 -> I
+  245 -> I
+  246 -> I
+  247 -> I
+  248 -> L
+  249 -> I
+  250 -> I
+  251 -> I
+  252 -> I
+  253 -> I
+  254 -> I
+  255 -> I
+  256 -> L
+  257 -> I
+  258 -> I
+  259 -> I
+  260 -> I
+  261 -> L
+  262 -> I
+  263 -> I
+  264 -> I
+  265 -> I
+  266 -> L
+  267 -> I
+  268 -> I
+  269 -> I
+  270 -> I
+  271 -> I
+  272 -> I
+  273 -> I
+  274 -> L
+  275 -> I
+  276 -> I
+  277 -> I
+  278 -> I
+  279 -> L
+  280 -> I
+  281 -> I
+  282 -> I
+  283 -> I
+  284 -> I
+  285 -> I
+  286 -> I
+  287 -> I
+  288 -> I
+  289 -> I
+  290 -> I
+  291 -> I
+  292 -> I
+  293 -> L
+  294 -> I
+  295 -> I
+  296 -> I
+  297 -> I
+  298 -> I
+  299 -> I
+  300 -> I
+  301 -> L
+  302 -> I
+  303 -> I
+  304 -> I
+  305 -> I
+  306 -> I
+  307 -> I
+  308 -> L
+  309 -> I
+  310 -> I
+  311 -> I
+  312 -> L
+  313 -> I
+  314 -> I
+  315 -> I
+  316 -> I
+  317 -> I
+  318 -> L
+  319 -> I
+  320 -> I
+  321 -> I
+  322 -> I
+  323 -> I
+  324 -> I
+  325 -> L
+  326 -> I
+  327 -> I
+  328 -> I
+  329 -> I
+  330 -> I
+  331 -> I
+  332 -> I
+  333 -> I
+  334 -> I
+  335 -> L
+  336 -> I
+  337 -> I
+  338 -> I
+  339 -> I
+  340 -> L
+  341 -> I
+  342 -> I
+  343 -> I
+  344 -> I
+  345 -> I
+  346 -> I
+  347 -> I
+  348 -> I
+  349 -> L
+  350 -> I
+  351 -> I
+  352 -> I
+  353 -> I
+  354 -> L
+  355 -> I
+  356 -> I
+  357 -> I
+  358 -> L
+  359 -> I
+  360 -> I
+  361 -> I
+  362 -> I
+  363 -> I
+  364 -> I
+  365 -> I
+  366 -> I
+  367 -> I
+  368 -> I
+  369 -> I
+  370 -> L
+  371 -> I
+  372 -> I
+  373 -> I
+  374 -> L
+  375 -> I
+  376 -> L
+  377 -> I
+  378 -> I
+  379 -> I
+  380 -> I
+  381 -> I
+  382 -> I
+  383 -> L
+  384 -> I
+  385 -> I
+  386 -> I
+  387 -> I
+  388 -> I
+  389 -> I
+  390 -> I
+  391 -> L
+  392 -> I
+  393 -> I
+  394 -> I
+  395 -> I
+  396 -> L
+  397 -> I
+  398 -> I
+  399 -> I
+  400 -> I
+  401 -> I
+  402 -> L
+  403 -> I
+  404 -> I
+  405 -> I
+  406 -> I
+  407 -> I
+  408 -> I
+  409 -> I
+  410 -> I
+  411 -> L
+  412 -> I
+  413 -> I
+  414 -> I
+  415 -> I
+  416 -> I
+  417 -> I
+  418 -> I
+  419 -> I
+  420 -> L
+  421 -> I
+  422 -> L
+  423 -> I
+  424 -> I
+  425 -> I
+  426 -> I
+  427 -> I
+  428 -> I
+  429 -> L
+  430 -> I
+  431 -> I
+  432 -> L
+  433 -> I
+  434 -> I
+  435 -> I
+  436 -> I
+  437 -> I
+  438 -> L
+  439 -> I
+  440 -> I
+  441 -> I
+  442 -> I
+  443 -> I
+  444 -> I
+  445 -> I
+  446 -> L
+  447 -> I
+  448 -> I
+  449 -> L
+  450 -> I
+  451 -> I
+  452 -> I
+  453 -> I
+  454 -> L
+  455 -> I
+  456 -> I
+  457 -> I
+  458 -> I
+  459 -> I
+  460 -> I
+  461 -> I
+  462 -> L
+  463 -> I
+  464 -> I
+  465 -> I
+  466 -> I
+  467 -> L
+  468 -> I
+  469 -> I
+  470 -> I
+  471 -> I
+  472 -> I
+  473 -> I
+  474 -> I
+  475 -> I
+  476 -> I
+  477 -> I
+  478 -> I
+  479 -> I
+  480 -> I
+  481 -> L
+  482 -> I
+  483 -> I
+  484 -> I
+  485 -> I
+  486 -> I
+  487 -> I
+  488 -> I
+  489 -> L
+  490 -> I
+  491 -> I
+  492 -> I
+  493 -> I
+  494 -> I
+  495 -> I
+  496 -> L
+  497 -> I
+  498 -> I
+  499 -> I
+  500 -> L
+  501 -> I
+  502 -> I
+  503 -> I
+  504 -> I
+  505 -> I
+  506 -> I
+  507 -> I
+  508 -> I
+  509 -> I
+  510 -> I
+  511 -> I
+  512 -> I
+  513 -> I
+  514 -> I
+  515 -> I
+  516 -> I
+  517 -> I
+  518 -> I
+  519 -> I
+  520 -> I
+  521 -> I
+  522 -> I
+  523 -> I
+  524 -> I
+  525 -> I
+  526 -> I
+  527 -> I
+  528 -> I
+  529 -> L
+  530 -> I
+  531 -> I
+  532 -> I
+  533 -> I
+  534 -> I
+  535 -> I
+  536 -> I
+  537 -> I
+  538 -> I
+  539 -> I
+  540 -> I
+  541 -> I
+  542 -> I
+  543 -> I
+  544 -> I
+  545 -> L
+  546 -> I
+  547 -> I
+  548 -> I
+  549 -> I
+  550 -> I
+  551 -> I
+  552 -> I
+  553 -> I
+  554 -> I
+
+#####################
+# Annotated program #
+#####################
+
+constructor Nat :I Type.
+
+constructor Z :I Nat.
+
+constructor S :I (n :I Nat) -> Nat.
+
+constructor Fin :I Nat -> Type.
+
+constructor FZ :I (n :I Nat) -> Fin (S n).
+
+constructor FS :I (n :I Nat) -> Fin n -> Fin (S n).
+
+constructor Vect :I Nat -> Type -> Type.
+
+constructor VN :I (a :I Type) -> Vect Z a.
+
+constructor VC :I (n :I Nat) -> (a :I Type) -> a -> Vect n a -> Vect (S n) a.
+
+constructor TT :I Nat -> Type.
+
+constructor V :I (n :I Nat) -> Fin n -> TT n.
+
+constructor Lam :I (n :I Nat) -> TT (S n) -> TT n.
+
+constructor App :I (n :I Nat) -> TT n -> TT n -> TT n.
+
+env :I (m :I Nat) -> (n :I Nat) -> Vect m (TT n) -> Fin m -> TT n {
+  forall (m :I Nat) (n :I Nat) (x :I TT n) (xs :I Vect m (TT n))
+    env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
+  forall (m :I Nat) (n :I Nat) (x :I TT n) (xs :I Vect m (TT n)) (i :I Fin m)
+    env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
+}
+
+extendMap :I (m :I Nat) -> (n :I Nat) -> (Fin m -> Fin n) -> Fin (S m) -> Fin (S n) {
+  forall (m :I Nat) (n :I Nat) (f :I Fin m -> Fin n)
+    extendMap m n f (FZ [m]) ~> FZ n
+  forall (m :I Nat) (n :I Nat) (f :I Fin m -> Fin n) (i :I Fin m)
+    extendMap m n f (FS [m] i) ~> FS n (f i)
+}
+
+mapVars :I (m :I Nat) -> (n :I Nat) -> (Fin m -> Fin n) -> TT m -> TT n {
+  forall (m :I Nat) (n :I Nat) (f :I Fin m -> Fin n) (i :I Fin m)
+    mapVars m n f (V [m] i) ~> V n (f i)
+  forall (m :I Nat) (n :I Nat) (f :I Fin m -> Fin n) (x :I TT (S m))
+    mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
+  forall (m :I Nat) (n :I Nat) (f :I Fin m -> Fin n) (g :I TT m) (x :I TT m)
+    mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
+}
+
+extendSubst :I (m :I Nat) -> (n :I Nat) -> (Fin m -> TT n) -> Fin (S m) -> TT (S n) {
+  forall (m :I Nat) (n :I Nat) (f :I Fin m -> TT n)
+    extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
+  forall (m :I Nat) (n :I Nat) (f :I Fin m -> TT n) (i :I Fin m)
+    extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
+}
+
+substVars :I (m :I Nat) -> (n :I Nat) -> (Fin m -> TT n) -> TT m -> TT n {
+  forall (m :I Nat) (n :I Nat) (f :I Fin m -> TT n) (i :I Fin m)
+    substVars m n f (V [m] i) ~> f i
+  forall (m :I Nat) (n :I Nat) (f :I Fin m -> TT n) (x :I TT (S m))
+    substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
+  forall (m :I Nat) (n :I Nat) (f :I Fin m -> TT n) (g :I TT m) (x :I TT m)
+    substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
+}
+
+testTm :I TT (S Z) {
+  testTm ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
+}
+
+example1 :I TT Z {
+  example1 ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
+}
+
+substTop :I (n :I Nat) -> TT n -> Fin (S n) -> TT n {
+  forall (n :I Nat) (tm :I TT n)
+    substTop n tm (FZ [n]) ~> tm
+  forall (n :I Nat) (tm :I TT n) (i :I Fin n)
+    substTop n tm (FS [n] i) ~> V n i
+}
+
+redex :I (m :I Nat) -> TT m -> TT m -> TT m {
+  forall (m :I Nat) (y :I TT (S m)) (x :I TT m)
+    redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+  forall (m :I Nat) (f' :I TT m) (x :I TT m)
+    redex m f' x ~> App m f' (nf m x)
+}
+
+nf :I (m :I Nat) -> TT m -> TT m {
+  forall (m :I Nat) (i :I Fin m)
+    nf m (V [m] i) ~> V m i
+  forall (m :I Nat) (x :I TT (S m))
+    nf m (Lam [m] x) ~> Lam m (nf (S m) x)
+  forall (m :I Nat) (f :I TT m) (x :I TT m)
+    nf m (App [m] f x) ~> redex m f x
+}
+
+example2 :I TT (S Z) {
+  example2 ~> nf (S Z) testTm
+}
+
+constructor Result :I Type.
+
+constructor R :I (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+
+main :I Result {
+  main ~> R example1 example2
+}
+
+###############
+# Final check #
+###############
+
+** OK **
+
+##########
+# Erased #
+##########
+
+
+################
+# NF of `main` #
+################
+
+Unerased, reduced:
+R (App Z (Lam Z (App (S Z) (V (S Z) (FZ Z)) (Lam (S Z) (V (S (S Z)) (FZ (S Z)))))) (Lam Z (App (S Z) (Lam (S Z) (V (S (S Z)) (FZ (S Z)))) (V (S Z) (FZ Z))))) (App (S Z) (V (S Z) (FZ Z)) (V (S Z) (FZ Z)))
+
+Erased, reduced:
+main

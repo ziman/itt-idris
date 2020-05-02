@@ -14,13 +14,13 @@ constructor Z : Nat.
 
 constructor S : (n :L Nat) -> Nat.
 
-constructor Vect : (_ : Nat) -> Type.
+constructor Vect : Nat -> Type.
 
 constructor Nil : Vect Z.
 
-constructor Cons : (n :I Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
+constructor Cons : (n :I Nat) -> Bool -> Vect n -> Vect (S n).
 
-length : (n : Nat) -> (_ : Vect n) -> Nat {
+length : (n : Nat) -> Vect n -> Nat {
   length {Z} Nil ~> Z
   forall (n : Nat) (x : Bool) (xs : Vect n)
     length ({S} n) (Cons [n] x xs) ~> S (length n xs)
@@ -46,13 +46,13 @@ constructor Z :15 Nat.
 
 constructor S :11 (n :L Nat) -> Nat.
 
-constructor Vect :13 (_ :14 Nat) -> Type.
+constructor Vect :13 Nat -> Type.
 
 constructor Nil :9 Vect Z.
 
-constructor Cons :1 (n :I Nat) -> (_ :2 Bool) -> (_ :3 Vect n) -> Vect (S n).
+constructor Cons :1 (n :I Nat) -> Bool -> Vect n -> Vect (S n).
 
-length :16 (n :17 Nat) -> (_ :18 Vect n) -> Nat {
+length :16 (n :17 Nat) -> Vect n -> Nat {
   length {Z} Nil ~> Z
   forall (n :25 Nat) (x :24 Bool) (xs :22 Vect n)
     length ({S} n) (Cons [n] x xs) ~> S (length n xs)
@@ -81,7 +81,7 @@ Sums:
     product  [I]
     product  [I]
   1 ≥ Sum
-    product  [35]
+    product  [L, 35]
   2 ≥ Sum
     product  [I]
   3 ≥ Sum
@@ -97,13 +97,13 @@ Sums:
     product  [I]
     product  [I]
   9 ≥ Sum
-    product  [35, 38]
+    product  [L, 35, 38]
   11 ≥ Sum
     product  [I, 5]
-    product  []
-    product  [36]
+    product  [16]
+    product  [L, 36]
   12 ≥ Sum
-    product  [35, 39]
+    product  [L, 35, 39]
   13 ≥ Sum
     product  [I]
     product  [I]
@@ -114,12 +114,12 @@ Sums:
     product  [I]
   15 ≥ Sum
     product  [I, 10]
-    product  []
-    product  [36, 37]
-    product  [35, 40]
+    product  [16]
+    product  [L, 36, 37]
+    product  [L, 35, 40]
   16 ≥ Sum
-    product  [32]
-    product  []
+    product  [16, 32]
+    product  [L]
   17 ≥ Sum
     product  [I]
     product  [I, 19]
@@ -127,7 +127,7 @@ Sums:
     product  [I]
   22 ≥ Sum
     product  [I]
-    product  [32, 33]
+    product  [16, 32, 33]
   24 ≥ Sum
     product  [I]
     product  [I]
@@ -137,7 +137,7 @@ Sums:
     product  [I, 23]
     product  [I]
     product  [I]
-    product  [32, 34]
+    product  [16, 32, 34]
   26 ≥ Sum
     product  [25]
   27 ≥ Sum
@@ -270,11 +270,11 @@ Maxes:
   8 -> I
   9 -> L
   10 -> I
-  11 -> L
+  11 -> R
   12 -> I
   13 -> I
   14 -> I
-  15 -> L
+  15 -> R
   16 -> R
   17 -> I
   18 -> L
@@ -313,17 +313,17 @@ constructor False :I Bool.
 
 constructor Nat :I Type.
 
-constructor Z :L Nat.
+constructor Z :R Nat.
 
-constructor S :L (n :L Nat) -> Nat.
+constructor S :R (n :L Nat) -> Nat.
 
-constructor Vect :I (_ :I Nat) -> Type.
+constructor Vect :I Nat -> Type.
 
 constructor Nil :L Vect Z.
 
-constructor Cons :L (n :I Nat) -> (_ :I Bool) -> (_ :L Vect n) -> Vect (S n).
+constructor Cons :L (n :I Nat) -> Bool -> Vect n -> Vect (S n).
 
-length :R (n :I Nat) -> (_ :L Vect n) -> Nat {
+length :R (n :I Nat) -> Vect n -> Nat {
   length {Z} Nil ~> Z
   forall (n :I Nat) (x :I Bool) (xs :L Vect n)
     length ({S} n) (Cons [n] x xs) ~> S (length n xs)
@@ -349,9 +349,9 @@ constructor S : (n) -> Nat.
 
 constructor Nil : Vect.
 
-constructor Cons : (_) -> Vect.
+constructor Cons : _ -> Vect.
 
-length : (_) -> Nat {
+length : _ -> Nat {
   length Nil ~> Z
   forall (xs)
     length (Cons xs) ~> S (length xs)

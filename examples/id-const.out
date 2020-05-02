@@ -105,21 +105,21 @@ Sums:
     product  [I]
     product  [I]
   1 ≥ Sum
-    product  []
-    product  []
-    product  [20, 21, 23]
-    product  [19, 24, 26]
+    product  [27]
+    product  [15]
+    product  [L, 20, 21, 23]
+    product  [L, 19, 24, 26]
   2 ≥ Sum
-    product  []
+    product  [L]
   3 ≥ Sum
     product  [I]
     product  [I]
   4 ≥ Sum
-    product  []
-    product  []
+    product  [27]
+    product  [31]
   5 ≥ Sum
-    product  [20]
-    product  [19]
+    product  [L, 20]
+    product  [L, 19]
   6 ≥ Sum
     product  [I]
   7 ≥ Sum
@@ -128,11 +128,11 @@ Sums:
     product  [I]
   9 ≥ Sum
     product  [I]
-    product  [14]
+    product  [5, 14]
   10 ≥ Sum
     product  [I]
     product  [I]
-    product  []
+    product  [5]
   11 ≥ Sum
     product  [I]
     product  [I]
@@ -141,7 +141,7 @@ Sums:
   13 ≥ Sum
     product  [9]
   15 ≥ Sum
-    product  [19, 25]
+    product  [L, 19, 25]
   16 ≥ Sum
     product  [I]
     product  [I]
@@ -150,13 +150,13 @@ Sums:
   18 ≥ Sum
     product  [17]
   27 ≥ Sum
-    product  [20, 22]
+    product  [L, 20, 22]
   28 ≥ Sum
     product  [I]
     product  [I]
   31 ≥ Sum
-    product  [20, 21]
-    product  [19, 24]
+    product  [L, 20, 21]
+    product  [L, 19, 24]
   32 ≥ Sum
     product  [I]
   33 ≥ Sum
