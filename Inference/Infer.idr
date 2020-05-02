@@ -377,7 +377,7 @@ inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE"
   inferCtx pi
   withCtx pi $ do
     lhsTy <- inferPatApp fbnd.qv [] (weakenClosed fbnd.type) (toList lhs)
-    rhsTy <- withQ fbnd.qv $ inferTm rhs
+    rhsTy <- inferTm rhs  -- we always need to construct one of RHS per call
     traceTm lhsTy "CLAUSE-CONV" $ do
       lhsTy ~= rhsTy
 

@@ -118,6 +118,7 @@ record Smt (ty : Type) where
 
 record SmtState where
   constructor MkSmtState
+  assertCounter : Int
 
 export
 record SmtM (a : Type) where
@@ -126,7 +127,7 @@ record SmtM (a : Type) where
 
 export
 runSmtM : SmtM a -> Either SmtError (String, a)
-runSmtM (MkSmtM f) = case f MkSmtState of
+runSmtM (MkSmtM f) = case f (MkSmtState 0) of
   Left err => Left err
   Right (st, ss, x) => Right (unlines $ map show ss, x)
 
@@ -173,6 +174,11 @@ put st = MkSmtM $ \_ => Right (st, neutral, ())
 
 modify : (SmtState -> SmtState) -> SmtM ()
 modify f = MkSmtM $ \st => Right (f st, neutral, ())
+
+freshAssertNr : SmtM Int
+freshAssertNr = do
+  modify $ record { assertCounter $= (+1) }
+  (.assertCounter) <$> get
 
 throw : SmtError -> SmtM a
 throw err = MkSmtM $ \_ => Left err
@@ -286,7 +292,9 @@ lit = MkSmt . smtShow
 
 export
 assert : Smt Bool -> SmtM ()
-assert (MkSmt x) = tellL [A "assert", x]
+assert (MkSmt x) = do
+  i <- freshAssertNr
+  tellL [A "assert", L [A "!", x, A ":named", A $ "a" ++ show i]]
 
 export
 assertEq : (SmtValue a, SmtValue b)
@@ -415,4 +423,15 @@ solve @{asv} {as} model =
             >>= \varMap => decode asv varMap vars
   where
     model' : SmtM (FList Smt as)
-    model' = model <* tell [L [A "check-sat"], L [A "get-model"]]
+    model' = do
+      tell
+        -- [ L [A "set-logic", A "QF_UFLIA"]  -- explicit logic does not work well with z3
+        [ L [A "set-option", A ":produce-unsat-cores", A "true"]
+        ]
+      vs <- model
+      tell
+        [ L [A "check-sat"]
+        , L [A "get-model"]
+        , L [A "get-unsat-core"]
+        ]
+      pure vs
