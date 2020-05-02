@@ -22,12 +22,13 @@ postulate d : U (C b).
 
 not : (x : Bool) -> Bool {
   not True ~> False
+  
   not False ~> True
 }
 
 id : (a : Type) -> (x : a) -> a {
   forall (a : Type) (x : a)
-    id a x ~> x
+  id a x ~> x
 }
 
 main :L Bool {
@@ -58,12 +59,13 @@ postulate d :7 U (C b).
 
 not :25 (x :26 Bool) -> Bool {
   not True ~> False
+  
   not False ~> True
 }
 
 id :13 (a :14 Type) -> (x :15 a) -> a {
   forall (a :17 Type) (x :16 a)
-    id a x ~> x
+  id a x ~> x
 }
 
 main :L Bool {

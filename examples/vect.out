@@ -22,8 +22,9 @@ constructor Cons : (n :I Nat) -> Bool -> Vect n -> Vect (S n).
 
 length : (n : Nat) -> Vect n -> Nat {
   length {Z} Nil ~> Z
+  
   forall (n : Nat) (x : Bool) (xs : Vect n)
-    length ({S} n) (Cons [n] x xs) ~> S (length n xs)
+  length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
 main :L Nat {
@@ -54,8 +55,9 @@ constructor Cons :1 (n :I Nat) -> Bool -> Vect n -> Vect (S n).
 
 length :16 (n :17 Nat) -> Vect n -> Nat {
   length {Z} Nil ~> Z
+  
   forall (n :25 Nat) (x :24 Bool) (xs :22 Vect n)
-    length ({S} n) (Cons [n] x xs) ~> S (length n xs)
+  length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
 main :L Nat {

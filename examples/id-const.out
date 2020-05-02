@@ -14,22 +14,23 @@ constructor P : (x :L Bool) -> (y :L Bool) -> Pair.
 
 not : (x : Bool) -> Bool {
   not True ~> False
+  
   not False ~> True
 }
 
 false : (x : Bool) -> Bool {
   forall (x : Bool)
-    false x ~> False
+  false x ~> False
 }
 
 true : (x : Bool) -> Bool {
   forall (x : Bool)
-    true x ~> True
+  true x ~> True
 }
 
 apply : (f : Bool -> Bool) -> (y : Bool) -> Bool {
   forall (f : Bool -> Bool) (y : Bool)
-    apply f y ~> f y
+  apply f y ~> f y
 }
 
 main :L Pair {
@@ -52,22 +53,23 @@ constructor P :2 (x :L Bool) -> (y :L Bool) -> Pair.
 
 not :27 (x :28 Bool) -> Bool {
   not True ~> False
+  
   not False ~> True
 }
 
 false :15 (x :16 Bool) -> Bool {
   forall (x :17 Bool)
-    false x ~> False
+  false x ~> False
 }
 
 true :31 (x :32 Bool) -> Bool {
   forall (x :33 Bool)
-    true x ~> True
+  true x ~> True
 }
 
 apply :5 (f :6 Bool -> Bool) -> (y :8 Bool) -> Bool {
   forall (f :10 Bool -> Bool) (y :9 Bool)
-    apply f y ~> f y
+  apply f y ~> f y
 }
 
 main :L Pair {

@@ -4,6 +4,7 @@ import public Core.TT
 import public Core.TT.Lens
 import public Core.TT.Pretty
 import public Core.Clause
+import Data.List
 import Data.SortedMap
 
 %default total
@@ -43,7 +44,7 @@ ShowQ q => Pretty () (Definition q) where
 
   pretty () (MkDef b (Clauses argn cs)) =
     pretty (Context.Nil {q}) b <++> text "{"
-    $$ indent (vcat (map (pretty (UN b.name)) cs))
+    $$ indent (vcat (intersperse (text "") $ map (pretty (UN b.name)) cs))
     $$ text "}"
 
 export

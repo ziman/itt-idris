@@ -24,7 +24,7 @@ prettyPi : ShowQ q => Context q n -> Doc -> Doc
 prettyPi [] clause = clause
 prettyPi pi clause =
   text "forall" <++> pretty () pi
-    $$ indent clause
+  $$ clause
 
 export
 ShowQ q => Pretty Name (Clause q argn) where
