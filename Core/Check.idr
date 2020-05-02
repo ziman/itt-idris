@@ -51,7 +51,7 @@ showEM ctx (QuantityMismatch dn dq inferredQ)
 showEM ctx (AppQuantityMismatch fTy tm)
     = "quantity mismatch in application of (_ : " ++ showTm ctx fTy ++ "): " ++ showTm ctx tm
 showEM ctx (NotLeq p q)
-    = "required " ++ show p ++ " ≤ " ++ show q
+    = "rules require that " ++ show p ++ " ≤ " ++ show q
 showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
 showEM ctx (WHNFError e)
@@ -341,7 +341,7 @@ mutual
         -- we don't construct the value so we don't place requirements on the quantity of the constructor
         -- if the function is bound at least L
         -- then we want to have the constructor bound at least L (but never require more)
-        (L .*. fq) <= b.qv
+        -- (L .*. fq) <= b.qv
 
         -- L because we inspect the constructor tag exactly once
         pure (L, b.type)
@@ -393,7 +393,7 @@ checkCtx (b :: bs) = do
 
 covering
 checkClause : {argn : Nat} -> Binding Q Z -> Clause Q argn -> TC Z ()
-checkClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE" $ do
+checkClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN fbnd.name) c) "CLAUSE" $ do
   checkCtx pi
   withCtx pi $ do
     -- we ignore lhsQ because we have enough function (cf. supplying R in Infer.inferClause)
@@ -411,7 +411,7 @@ checkBody bnd (Clauses argn cs) = traverse_ (checkClause bnd) cs
 
 covering
 checkDefinition : Definition Q -> TC Z ()
-checkDefinition (MkDef bnd body) = do
+checkDefinition d@(MkDef bnd body) = traceDoc (pretty () d) "DEF" $ do
   checkBinding bnd
   checkBody bnd body
 

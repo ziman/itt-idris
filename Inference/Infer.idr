@@ -386,7 +386,7 @@ inferCtx (b :: bs) = do
 
 covering export
 inferClause : Binding Evar Z -> {argn : Nat} -> Clause Evar argn -> TC Z ()
-inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE" $ do
+inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN fbnd.name) c) "CLAUSE" $ do
   inferCtx pi
   withCtx pi $ do
     -- we start with [], which means we have one/L term matching the LHS
