@@ -1,0 +1,128 @@
+#############
+# Desugared #
+#############
+
+constructor Bool : Type.
+
+constructor True : Bool.
+
+constructor False : Bool.
+
+and : Bool -> Bool -> Bool {
+  and True True ~> True
+  
+  and True False ~> False
+  
+  and False True ~> False
+  
+  and False False ~> False
+}
+
+constructor T : Type.
+
+constructor C : (x :L Bool) -> T.
+
+#############
+# Evarified #
+#############
+
+constructor Bool :0 Type.
+
+constructor True :4 Bool.
+
+constructor False :2 Bool.
+
+and :5 Bool -> Bool -> Bool {
+  and True True ~> True
+  
+  and True False ~> False
+  
+  and False True ~> False
+  
+  and False False ~> False
+}
+
+constructor T :3 Type.
+
+constructor C :1 (x :L Bool) -> T.
+
+Running erasure inference...
+
+########################
+# Inferred constraints #
+########################
+
+Sums:
+  L ≥ Sum
+    product  [I]
+  0 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  2 ≥ Sum
+    product  []
+    product  []
+    product  []
+  3 ≥ Sum
+    product  [I]
+  4 ≥ Sum
+    product  []
+  6 ≥ Sum
+    product  [I]
+  7 ≥ Sum
+    product  [I]
+
+Maxes:
+  6 ≥ Max
+    product  [8]
+    product  [10]
+    product  [12]
+    product  [14]
+  7 ≥ Max
+    product  [9]
+    product  [11]
+    product  [13]
+    product  [15]
+  8 ≥ Max
+    product  [L]
+    product  [6]
+  9 ≥ Max
+    product  [L]
+    product  [7]
+  10 ≥ Max
+    product  [L]
+    product  [6]
+  11 ≥ Max
+    product  [L]
+    product  [7]
+  12 ≥ Max
+    product  [L]
+    product  [6]
+  13 ≥ Max
+    product  [L]
+    product  [7]
+  14 ≥ Max
+    product  [L]
+    product  [6]
+  15 ≥ Max
+    product  [L]
+    product  [7]
+
+#######################
+# Deferred equalities #
+#######################
+
+
+  -> iteration 1
+
+######################
+# Unsatisfiable core #
+######################
+
+L ≥ Sum
+  product  [I]
+
+error: inconsistent constraints

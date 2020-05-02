@@ -1,0 +1,43 @@
+data Bool : Type {
+  True : Bool,
+  False : Bool
+}
+
+and : Bool -> Bool -> Bool {
+  and True True ~> True,
+  and True False ~> False,
+  and False True ~> False,
+  and False False ~> False
+}
+
+data T : Type {
+  C : (x :L Bool) -> T
+}
+
+{-
+fI : (x :I T) -> Bool {
+  forall (x :I Bool)
+  fI (C x) ~> True
+}
+-}
+
+{-
+fE : (x :E T) -> Bool {
+  forall (x :E Bool)
+  fE (C x) ~> True
+}
+-}
+
+{-
+fL : (x :L T) -> Bool {
+  forall (x :L Bool)
+  fL (C x) ~> x
+}
+-}
+
+{-
+fR : (x :R T) -> Bool {
+  forall (x :R Bool)
+  fR (C x) ~> and x x
+}
+-}
