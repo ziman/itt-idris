@@ -54,5 +54,5 @@ main = (procArgs . drop 1 <$> getArgs) >>= \case
                       then applyDefaultCtorQuantities
                       else id
                 (processModule $ trans gs).run >>= \case
-                  Left err => putStrLn err
+                  Left err => putStrLn $ "error: " ++ err
                   Right () => pure ()

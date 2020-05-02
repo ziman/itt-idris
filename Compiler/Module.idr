@@ -53,9 +53,14 @@ iterConstrs :
     -> ITT (SortedMap ENum Q)
 iterConstrs i gs (MkConstrs cs eqs) st = do
   log $ "  -> iteration " ++ show i 
-  solution <- liftIO $ SmtModel.solve cs
-  vals <- case solution of
-    Left err => throw err
+  vals <- liftIO (SmtModel.solve cs) >>= \case
+    Left (Unsatisfiable core) => do
+      log ""
+      banner "# Unsatisfiable core #"
+      log . render "  " $ vcat [pretty () c | c <- core]
+      log ""
+      throw "inconsistent constraints"
+    Left (OtherError err) => throw err
     Right vals => pure vals
 
   case newlyReachableEqs vals eqs of

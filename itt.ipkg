@@ -1,5 +1,0 @@
-package itt
-sourcedir = "."
-executable = itt
-opts = "-p contrib"
-main = Main

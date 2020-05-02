@@ -10,6 +10,23 @@ import Data.SortedSet
 
 %default total
 
+public export
+AssertionLabel : Type
+AssertionLabel = Either (Collected Sum) (Collected Max)
+
+export
+Pretty () AssertionLabel where
+  pretty () (Left cs) = pretty () cs
+  pretty () (Right cm) = pretty () cm
+
+Show AssertionLabel where
+  show _ = "(impossible)"
+
+public export
+data Error
+  = Unsatisfiable (List AssertionLabel)
+  | OtherError String
+
 SmtValue Q where
   smtShow = A . show
   smtRead (A "I") = Just I
@@ -32,7 +49,7 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
     eNumsC : Constr -> SortedSet ENum
     eNumsC (MkC agg bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
 
-declVars : SmtType Q -> List ENum -> SmtM (SortedMap ENum (Smt Q))
+declVars : SmtType Q -> List ENum -> SmtM AssertionLabel (SortedMap ENum (Smt Q))
 declVars smtQ [] = pure $ SortedMap.empty
 declVars smtQ (n::ns) = SortedMap.insert n <$> declVar ("ev" ++ show n) smtQ <*> declVars smtQ ns
 
@@ -42,9 +59,9 @@ evSmt vs (EV i) = case SortedMap.lookup i vs of
   Just v  => v
   Nothing => smtError "cannot-happen"
 
-model : List Constr -> SmtM (FList Smt [(ENum, Q)])
+model : List Constr -> SmtM AssertionLabel (FList Smt [(ENum, Q)])
 model cs = do
-  smtQ <- the (SmtM (SmtType Q)) $ declEnum "Q"
+  smtQ <- the (SmtM AssertionLabel (SmtType Q)) $ declEnum "Q"
   ens <- declVars smtQ (SortedSet.toList $ eNums cs)
   let ev = evSmt ens
   let numberOf = \q : Q => sum
@@ -63,10 +80,12 @@ model cs = do
   let prodMax = foldMap max (lit semi0) product
 
   for_ ccs.sums $ \c =>
-    assert $ prodSum c.inputs `leq` ev c.result
+    assert (Just $ Left c) $
+      prodSum c.inputs `leq` ev c.result
 
   for_ ccs.maxes $ \c =>
-    assert $ prodMax c.inputs `leq` ev c.result
+    assert (Just $ Right c) $
+      prodMax c.inputs `leq` ev c.result
 
   minimise $ numberOf R
   minimise $ numberOf L
@@ -84,9 +103,10 @@ model cs = do
   ccs = collect cs
 
 export
-solve : List Constr -> IO (Either String (SortedMap ENum Q))
+solve : List Constr -> IO (Either Error (SortedMap ENum Q))
 solve cs = do
   sol <- Smt.solve $ model cs
   pure $ case sol of
-    Left err => Left $ show err
+    Left (Smt.Unsatisfiable core) => Left (Unsatisfiable core)
+    Left e => Left (OtherError $ show e)
     Right [vars] => Right $ SortedMap.fromList vars

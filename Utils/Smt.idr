@@ -18,24 +18,30 @@ data SExp : Type where
   A : String -> SExp     -- atom
   L : List SExp -> SExp  -- list
 
-public export
 record AssertionNr where
   constructor MkAN
   number : Int
+
+Eq AssertionNr where
+  MkAN x == MkAN y = x == y
+
+Ord AssertionNr where
+  compare (MkAN x) (MkAN y) = compare x y
 
 Show AssertionNr where
   show (MkAN i) = show i
 
 public export
-data SmtError : Type where
-  Unsatisfiable : (core : List AssertionNr) -> SmtError
-  FileIOError : FileError -> SmtError
-  LexError : Int -> Int -> String -> SmtError
-  SmtParseError : Int -> Int -> String -> SmtError
-  StrangeSmtOutput : List SExp -> SmtError
-  NotVariable : SExp -> SmtError
-  NotInModel : String -> SmtError
-  CouldNotParse : SExp -> SmtError
+data SmtError : Type -> Type where
+  Unsatisfiable : (core : List al) -> SmtError al
+  FileIOError : FileError -> SmtError al
+  LexError : Int -> Int -> String -> SmtError al
+  SmtParseError : Int -> Int -> String -> SmtError al
+  StrangeSmtOutput : List SExp -> SmtError al
+  NotVariable : SExp -> SmtError al
+  NotInModel : String -> SmtError al
+  CouldNotParse : SExp -> SmtError al
+  Impossible : String -> SmtError al
 
 Show SExp where
   show = show'
@@ -51,7 +57,7 @@ Show SExp where
         showL (x :: xs) = show' x ++ " " ++ showL xs
 
 export
-Show SmtError where
+Show al => Show (SmtError al) where
   show (Unsatisfiable core) = "unsatisfiable: " ++ show core
   show (FileIOError err) = show err
   show (LexError row col rest) = "could not lex at " ++ show (row, col) ++ ": " ++ rest
@@ -60,10 +66,11 @@ Show SmtError where
   show (NotVariable ss) = "not a variable: " ++ show ss
   show (NotInModel v) = "variable not found in model: " ++ show v
   show (CouldNotParse ss) = "could not parse model value: " ++ show ss
+  show (Impossible msg) = "impossible: " ++ show msg
 
 data SToken = ParL | ParR | Atom String | Space
 
-lexSExp : String -> Either SmtError (List (TokenData SToken))
+lexSExp : String -> Either (SmtError al) (List (TokenData SToken))
 lexSExp src = case lex tokens src of
     (ts, (_, _, "")) => Right $ filter notSpace ts
     (_, (row, col, rest)) => Left $ LexError row col rest
@@ -84,7 +91,7 @@ lexSExp src = case lex tokens src of
       , (pred isSpace, const Space)
       ]
 
-parseSExps : String -> Either SmtError (List SExp)
+parseSExps : String -> Either (SmtError al) (List SExp)
 parseSExps src = case lexSExp src of
     Left err => Left err
     Right ts => case parse (many sexp) ts of
@@ -124,29 +131,30 @@ record Smt (ty : Type) where
   constructor MkSmt
   sexp : SExp
 
-record SmtState where
+record SmtState (al : Type) where
   constructor MkSmtState
   assertionCounter : Int
+  assertionLabels : SortedMap AssertionNr al
 
 export
-record SmtM (a : Type) where
+record SmtM (al : Type) (a : Type) where
   constructor MkSmtM
-  runSmtM' : SmtState -> Either SmtError (SmtState, List SExp, a)
+  runSmtM' : SmtState al -> Either (SmtError al) (SmtState al, List SExp, a)
 
 export
-runSmtM : SmtM a -> Either SmtError (String, a)
-runSmtM (MkSmtM f) = case f (MkSmtState 0) of
+runSmtM : SmtM al a -> Either (SmtError al) (String, SortedMap AssertionNr al, a)
+runSmtM (MkSmtM f) = case f (MkSmtState 0 empty) of
   Left err => Left err
-  Right (st, ss, x) => Right (unlines $ map show ss, x)
+  Right (st, ss, x) => Right (unlines $ map show ss, st.assertionLabels, x)
 
 export
-Functor SmtM where
+Functor (SmtM al) where
   map f (MkSmtM g) = MkSmtM $ \st => case g st of
     Left err => Left err
     Right (st', ss, x) => Right (st', ss, f x)
 
 export
-Applicative SmtM where
+Applicative (SmtM al) where
   pure x = MkSmtM $ \st => Right (st, neutral, x)
   (<*>) (MkSmtM f) (MkSmtM g) = MkSmtM $ \st =>
     case f st of
@@ -156,39 +164,43 @@ Applicative SmtM where
         Right (st'', ss'', x'') => Right (st'', ss' <+> ss'', f' x'')
 
 export
-Monad SmtM where
+Monad (SmtM al) where
   (>>=) (MkSmtM f) g = MkSmtM $ \st => case f st of
     Left err => Left err
     Right (st', ss', x') => case (g x').runSmtM' st' of
       Left err => Left err
       Right (st'', ss'', x'') => Right (st'', ss' <+> ss'', x'')
 
-tell : List SExp -> SmtM ()
+tell : List SExp -> SmtM al ()
 tell ss = MkSmtM $ \st => Right (st, ss, ())
 
-tellL : List SExp -> SmtM ()
+tellL : List SExp -> SmtM al ()
 tellL xs = tell [L xs]
 
-mitm : SmtM a -> SmtM (List SExp, a)
+mitm : SmtM al a -> SmtM al (List SExp, a)
 mitm (MkSmtM f) = MkSmtM $ \st => case f st of
   Left err => Left err
   Right (st', ss, x) => Right (st', neutral, (ss, x))
 
-get : SmtM SmtState
+get : SmtM al (SmtState al)
 get = MkSmtM $ \st => Right (st, neutral, st)
 
-put : SmtState -> SmtM ()
+put : SmtState al -> SmtM al ()
 put st = MkSmtM $ \_ => Right (st, neutral, ())
 
-modify : (SmtState -> SmtState) -> SmtM ()
+modify : (SmtState al -> SmtState al) -> SmtM al ()
 modify f = MkSmtM $ \st => Right (f st, neutral, ())
 
-freshAssertionNr : SmtM AssertionNr
-freshAssertionNr = do
-  modify $ record { assertionCounter $= (+1) }
-  MkAN . .assertionCounter <$> get
+freshAssertionNr : al -> SmtM al AssertionNr
+freshAssertionNr label = do
+  nr <- MkAN . .assertionCounter <$> get
+  modify $ record
+    { assertionCounter $= (+1)
+    , assertionLabels  $= insert nr label
+    }
+  pure nr
 
-throw : SmtError -> SmtM a
+throw : SmtError al -> SmtM al a
 throw err = MkSmtM $ \_ => Left err
 
 public export
@@ -278,7 +290,7 @@ smtBool : SmtType Bool
 smtBool = MkSmtType (A "Bool")
 
 export
-declEnum : (SmtValue a, SmtEnum a) => (n : String) -> SmtM (SmtType a)
+declEnum : (SmtValue a, SmtEnum a) => (n : String) -> SmtM al (SmtType a)
 declEnum {a} n = do
   tellL
       [ A "declare-datatypes"
@@ -307,17 +319,17 @@ lit : SmtValue a => a -> Smt a
 lit = MkSmt . smtShow
 
 export
-assert : Smt Bool -> SmtM AssertionNr
-assert (MkSmt x) = do
-  nr <- freshAssertionNr
+assert : Maybe al -> Smt Bool -> SmtM al ()
+assert Nothing (MkSmt x) = tellL [A "assert", x]
+assert (Just label) (MkSmt x) = do
+  nr <- freshAssertionNr label
   tellL [A "assert", L [A "!", x, A ":named", smtShow nr]]
-  pure nr
 
 export
 assertEq : (SmtValue a, SmtValue b)
-    => Smt a -> Smt b
-    -> SmtM AssertionNr
-assertEq x y = assert $ x .== y
+    => Maybe al -> Smt a -> Smt b
+    -> SmtM al ()
+assertEq mbLabel x y = assert mbLabel $ x .== y
 
 export
 smtError : String -> Smt a
@@ -327,7 +339,7 @@ export
 declFun2 : (SmtValue a, SmtValue b, SmtValue c)
     => (n : String)
     -> SmtType a -> SmtType b -> SmtType c
-    -> SmtM (Smt a -> Smt b -> Smt c)
+    -> SmtM al (Smt a -> Smt b -> Smt c)
 declFun2 n ta tb tc = do
   tell
     [ L
@@ -348,26 +360,26 @@ defineEnumFun2
   => (n : String)
   -> SmtType a -> SmtType b -> SmtType c
   -> (a -> b -> c)
-  -> SmtM (Smt a -> Smt b -> Smt c)
+  -> SmtM al (Smt a -> Smt b -> Smt c)
 defineEnumFun2 n ta tb tc f = do
   g <- declFun2 n ta tb tc
   for_ smtEnumValues $ \x =>
     for_ smtEnumValues $ \y =>
-      assertEq (g (lit x) (lit y)) (lit $ f x y)
+      assertEq Nothing (g (lit x) (lit y)) (lit $ f x y)
   pure g
 
 export
-declVar : (n : String) -> (ty : SmtType a) -> SmtM (Smt a)
+declVar : (n : String) -> (ty : SmtType a) -> SmtM al (Smt a)
 declVar n (MkSmtType ty) = do
   tell [L [A "declare-const", A n, ty]]
   pure $ MkSmt (A n)
 
 export
-maximise : Smt a -> SmtM ()
+maximise : Smt a -> SmtM al ()
 maximise (MkSmt s) = tellL [A "maximize", s]
 
 export
-minimise : Smt a -> SmtM ()
+minimise : Smt a -> SmtM al ()
 minimise (MkSmt s) = tellL [A "minimize", s]
 
 public export
@@ -375,7 +387,7 @@ data FList : (Type -> Type) -> List (Type, Type) -> Type where
   Nil : FList f []
   (::) : List (tag, f a) -> FList f as -> FList f ((tag, a) :: as)
 
-parseSol : List SExp -> Either SmtError (SortedMap String SExp)
+parseSol : List SExp -> Either (SmtError AssertionNr) (SortedMap String SExp)
 parseSol ss@[A "unsat", _, L core] =
   case the (Maybe $ List AssertionNr) (traverse smtRead core) of
     Just nrs => Left $ Unsatisfiable nrs
@@ -400,7 +412,7 @@ AllSmtValue [] = ()
 AllSmtValue [(tag, a)] = SmtValue a
 AllSmtValue ((tag, a) :: as) = (SmtValue a, AllSmtValue as)
 
-decodeVar : SortedMap String SExp -> SmtValue a -> (tag, Smt a) -> Either SmtError (tag, a)
+decodeVar : SortedMap String SExp -> SmtValue a -> (tag, Smt a) -> Either (SmtError al) (tag, a)
 decodeVar varMap sv (tag, MkSmt (L xs)) = Left $ NotVariable (L xs)
 decodeVar varMap sv (tag, MkSmt (A v)) =
   case SortedMap.lookup v varMap of
@@ -409,7 +421,7 @@ decodeVar varMap sv (tag, MkSmt (A v)) =
     Nothing => Left $ CouldNotParse s
     Just val => Right (tag, val)
 
-decode : AllSmtValue as -> SortedMap String SExp -> FList Smt as -> Either SmtError (FList Prelude.id as)
+decode : AllSmtValue as -> SortedMap String SExp -> FList Smt as -> Either (SmtError al) (FList Prelude.id as)
 decode _ varMap [] = Right []
 decode {as = [(tag, a)]} sv varMap [vs] = do
     vs' <- traverse (decodeVar varMap sv) vs
@@ -426,23 +438,37 @@ uglyWriteFile fname content = do
   whatever <- fPutStr f content
   closeFile f
 
+decodeUnsatCore : SortedMap AssertionNr al -> Either (SmtError AssertionNr) a -> Either (SmtError al) a
+decodeUnsatCore als (Right x) = Right x
+decodeUnsatCore als (Left (Unsatisfiable core)) =
+  case traverse (\nr => lookup nr als) core of
+    Just labels => Left $ Unsatisfiable labels
+    Nothing => Left $ Impossible "assertion label not found"
+decodeUnsatCore als (Left (FileIOError x)) = Left $ FileIOError x
+decodeUnsatCore als (Left (LexError x y z)) = Left $ LexError x y z
+decodeUnsatCore als (Left (SmtParseError x y z)) = Left $ SmtParseError x y z
+decodeUnsatCore als (Left (StrangeSmtOutput xs)) = Left $ StrangeSmtOutput xs
+decodeUnsatCore als (Left (NotVariable x)) = Left $ NotVariable x
+decodeUnsatCore als (Left (NotInModel x)) = Left $ NotInModel x
+decodeUnsatCore als (Left (CouldNotParse x)) = Left $ CouldNotParse x
+
 export
-solve : AllSmtValue as => SmtM (FList Smt as) -> IO (Either SmtError (FList Prelude.id as))
+solve : AllSmtValue as => SmtM al (FList Smt as) -> IO (Either (SmtError al) (FList Prelude.id as))
 solve @{asv} {as} model =
     case runSmtM model' of
       Left err => pure $ Left err
-      Right (src, vars) => do
+      Right (src, als, vars) => do
         -- WARNING: this is really horrible
         uglyWriteFile "/tmp/model.smt" src
         retVal <- system "z3 -in -smt2 < /tmp/model.smt > /tmp/solution.smt"
         Right sol <- readFile "/tmp/solution.smt"
             | Left err => pure (Left (FileIOError err))
 
-        pure $ parseSExps sol
-            >>= parseSol
+        pure $
+            decodeUnsatCore als (parseSExps sol >>= parseSol)
             >>= \varMap => decode asv varMap vars
   where
-    model' : SmtM (FList Smt as)
+    model' : SmtM al (FList Smt as)
     model' = do
       tell
         -- [ L [A "set-logic", A "QF_UFLIA"]  -- explicit logic does not work well with z3
