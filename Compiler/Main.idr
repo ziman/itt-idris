@@ -8,7 +8,6 @@ import Core.Normalise
 import Compiler.Config
 import Compiler.Monad
 import Compiler.Module
-import Transformation.DefaultCtorQuantities
 
 import System
 import System.File
@@ -29,12 +28,16 @@ procArgs ("--disable-L" :: args) =
   (record { disableL = True } .) <$> procArgs args
 procArgs ("--default-constructor-quantities" :: args) =
   (record { defaultConstructorQuantities = True } .) <$> procArgs args
+procArgs ("--prune-clauses" :: args) =
+  (record { pruneClauses = True } .) <$> procArgs args
 procArgs (arg :: _) = Left arg
 
 help : String
 help = unlines
   [ "Usage: ./itt [options] fname.itt"
   , "  --default-constructor-quantities    E for type ctors, L for data ctors"
+  , "  --disable-L                         solver will fill only IER"
+  , "  --prune-clauses                     drop clauses checking erased ctors"
   ]
 
 covering
@@ -52,9 +55,6 @@ main = (procArgs . drop 1 <$> getArgs) >>= \case
             case Parser.parse src of
               Left err => printLn err
               Right gs => do
-                let trans = if cfg.defaultConstructorQuantities
-                      then applyDefaultCtorQuantities
-                      else id
-                (processModule cfg $ trans gs).run >>= \case
+                (processModule cfg gs).run >>= \case
                   Left err => putStrLn $ "error: " ++ err
                   Right () => pure ()

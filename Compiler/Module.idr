@@ -14,6 +14,9 @@ import Inference.Infer
 import Inference.Constraint
 import Inference.SmtModel
 
+import Transformation.PruneClauses
+import Transformation.DefaultCtorQuantities
+
 import Data.List
 import Data.Strings
 import Data.SortedSet
@@ -101,8 +104,13 @@ processModule cfg raw = do
   banner "# Desugared #"
   printP () raw
 
+  let rawCQ =
+        if cfg.defaultConstructorQuantities
+          then applyDefaultCtorQuantities raw
+          else raw
+
   banner "# Evarified #"
-  let evarified = evarify globalsQ raw
+  let evarified = evarify globalsQ rawCQ
   prn evarified
 
   log "Running erasure inference...\n"
@@ -138,7 +146,10 @@ processModule cfg raw = do
       log "** OK **\n"
 
   banner "# Erased #"
-  let erased = eraseGlobals annotated
+  let erased = eraseGlobals $
+        if cfg.pruneClauses
+          then PruneClauses.pruneGlobals annotated
+          else annotated
   prn erased
 
   banner "# NF of `main` #"

@@ -12,8 +12,8 @@ byDefault q tm = tm
 fixup : Definition (Maybe Q) -> Definition (Maybe Q)
 fixup (MkDef (B n q ty) Constructor) =
   if hasTypeTarget ty
-    then MkDef (B n q (byDefault E ty)) Constructor
-    else MkDef (B n q (byDefault L ty)) Constructor
+    then MkDef (B n (Just E) (byDefault E ty)) Constructor
+    else MkDef (B n (Just R) (byDefault L ty)) Constructor
 fixup d = d
 
 public export
