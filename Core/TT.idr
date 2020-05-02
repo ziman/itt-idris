@@ -55,3 +55,19 @@ mutual
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Type_ : TT q n
     Erased : TT q n
+
+mutual
+  export
+  Eq q => Eq (Binding q n) where
+    B n q ty == B n' q' ty' = (n == n') && (q == q') && (ty == ty')
+
+  export
+  Eq q => Eq (TT q n) where
+    P m == P n = m == n
+    V i == V j = i == j
+    Lam b rhs == Lam b' rhs' = (b == b') && (rhs == rhs')
+    Pi b rhs == Pi b' rhs' = (b == b') && (rhs == rhs')
+    App q f x == App q' f' x' = (q == q') && (f == f') && (x == x')
+    Type_ == Type_ = True
+    Erased == Erased = True
+    _ == _ = False

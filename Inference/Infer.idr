@@ -202,8 +202,14 @@ traceCtx bv t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
       in f (MkE gs globs ctx (msg :: bt)) st
 
 deferEq : Evar -> Term n -> Term n -> TC n ()
-deferEq g x y = MkTC $ \(MkE gs globs ctx bt), st
-  => Right (st, MkConstrs [] [DeferEq g bt ctx x y], ())
+deferEq g x y =
+  -- heuristic:
+  -- do a quick syntactic check first
+  -- and if that succeeds, we needn't worry about equalities
+  if x == y
+    then pure ()
+    else MkTC $ \(MkE gs globs ctx bt), st
+          => Right (st, MkConstrs [] [DeferEq g bt ctx x y], ())
 
 whnfTC : Term n -> TC n (Term n)
 whnfTC tm = do
