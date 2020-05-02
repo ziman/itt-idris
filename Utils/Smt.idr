@@ -19,8 +19,16 @@ data SExp : Type where
   L : List SExp -> SExp  -- list
 
 public export
+record AssertionNr where
+  constructor MkAN
+  number : Int
+
+Show AssertionNr where
+  show (MkAN i) = show i
+
+public export
 data SmtError : Type where
-  Unsatisfiable : String -> SmtError
+  Unsatisfiable : (core : List AssertionNr) -> SmtError
   FileIOError : FileError -> SmtError
   LexError : Int -> Int -> String -> SmtError
   SmtParseError : Int -> Int -> String -> SmtError
@@ -118,7 +126,7 @@ record Smt (ty : Type) where
 
 record SmtState where
   constructor MkSmtState
-  assertCounter : Int
+  assertionCounter : Int
 
 export
 record SmtM (a : Type) where
@@ -175,10 +183,10 @@ put st = MkSmtM $ \_ => Right (st, neutral, ())
 modify : (SmtState -> SmtState) -> SmtM ()
 modify f = MkSmtM $ \st => Right (f st, neutral, ())
 
-freshAssertNr : SmtM Int
-freshAssertNr = do
-  modify $ record { assertCounter $= (+1) }
-  (.assertCounter) <$> get
+freshAssertionNr : SmtM AssertionNr
+freshAssertionNr = do
+  modify $ record { assertionCounter $= (+1) }
+  MkAN . .assertionCounter <$> get
 
 throw : SmtError -> SmtM a
 throw err = MkSmtM $ \_ => Left err
@@ -216,6 +224,14 @@ SmtValue Integer where
 export
 SmtEnum Bool where
   smtEnumValues = [False, True]
+
+SmtValue AssertionNr where
+  smtShow (MkAN i) = A ("a" ++ show i)
+  smtRead (A s) =
+    case strUncons s of
+      Just ('a', is) => Just $ MkAN (cast is)
+      _ => Nothing
+  smtRead _ = Nothing
 
 binop : String -> Smt a -> Smt b -> Smt c
 binop op (MkSmt x) (MkSmt y) = MkSmt $ L [A op, x, y]
@@ -291,15 +307,16 @@ lit : SmtValue a => a -> Smt a
 lit = MkSmt . smtShow
 
 export
-assert : Smt Bool -> SmtM ()
+assert : Smt Bool -> SmtM AssertionNr
 assert (MkSmt x) = do
-  i <- freshAssertNr
-  tellL [A "assert", L [A "!", x, A ":named", A $ "a" ++ show i]]
+  nr <- freshAssertionNr
+  tellL [A "assert", L [A "!", x, A ":named", smtShow nr]]
+  pure nr
 
 export
 assertEq : (SmtValue a, SmtValue b)
     => Smt a -> Smt b
-    -> SmtM ()
+    -> SmtM AssertionNr
 assertEq x y = assert $ x .== y
 
 export
@@ -359,7 +376,10 @@ data FList : (Type -> Type) -> List (Type, Type) -> Type where
   (::) : List (tag, f a) -> FList f as -> FList f ((tag, a) :: as)
 
 parseSol : List SExp -> Either SmtError (SortedMap String SExp)
-parseSol [A "unsat", _, core] = Left $ Unsatisfiable (show core)
+parseSol ss@[A "unsat", _, L core] =
+  case the (Maybe $ List AssertionNr) (traverse smtRead core) of
+    Just nrs => Left $ Unsatisfiable nrs
+    Nothing => Left $ StrangeSmtOutput ss
 parseSol [A "sat", L (A "model" :: ms), _] = Right varMap
   where
     parseVar : SExp -> SortedMap String SExp

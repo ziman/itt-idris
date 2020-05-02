@@ -105,21 +105,21 @@ Sums:
     product  [I]
     product  [I]
   1 ≥ Sum
-    product  [27]
-    product  [15]
-    product  [L, 20, 21, 23]
-    product  [L, 19, 24, 26]
+    product  []
+    product  []
+    product  [20, 21, 23]
+    product  [19, 24, 26]
   2 ≥ Sum
-    product  [L]
+    product  []
   3 ≥ Sum
     product  [I]
     product  [I]
   4 ≥ Sum
-    product  [27]
-    product  [31]
+    product  []
+    product  []
   5 ≥ Sum
-    product  [L, 20]
-    product  [L, 19]
+    product  [20]
+    product  [19]
   6 ≥ Sum
     product  [I]
   7 ≥ Sum
@@ -128,11 +128,11 @@ Sums:
     product  [I]
   9 ≥ Sum
     product  [I]
-    product  [5, 14]
+    product  [14]
   10 ≥ Sum
     product  [I]
     product  [I]
-    product  [5]
+    product  []
   11 ≥ Sum
     product  [I]
     product  [I]
@@ -141,7 +141,7 @@ Sums:
   13 ≥ Sum
     product  [9]
   15 ≥ Sum
-    product  [L, 19, 25]
+    product  [19, 25]
   16 ≥ Sum
     product  [I]
     product  [I]
@@ -150,13 +150,13 @@ Sums:
   18 ≥ Sum
     product  [17]
   27 ≥ Sum
-    product  [L, 20, 22]
+    product  [20, 22]
   28 ≥ Sum
     product  [I]
     product  [I]
   31 ≥ Sum
-    product  [L, 20, 21]
-    product  [L, 19, 24]
+    product  [20, 21]
+    product  [19, 24]
   32 ≥ Sum
     product  [I]
   33 ≥ Sum
@@ -237,4 +237,4 @@ Maxes:
 
 
   -> iteration 1
-unsatisfiable
+unsatisfiable: "(a3 a11 a27 a33 a34 a35 a36 a37 a38 a39 a40 a41 a42 a43 a44 a45 a46 a47 a48 a55 a57 a58 a60 a61 a62 a63 a70 a76 a78 a84 a92 a93 a97 a103 a105)"

@@ -95,26 +95,26 @@ Sums:
   1 ≥ Sum
     product  [I, 11]
     product  [I, 8]
-    product  [I, L, 22]
+    product  [I, 22]
   2 ≥ Sum
-    product  [25]
-    product  [I, L, 22, 23]
+    product  []
+    product  [I, 22, 23]
   3 ≥ Sum
     product  [I]
     product  [I]
   4 ≥ Sum
     product  [I, 11, 12]
-    product  [25]
+    product  []
   5 ≥ Sum
     product  [I]
     product  [I]
-    product  [I, L]
+    product  [I]
   6 ≥ Sum
     product  [I, 8, 9]
   7 ≥ Sum
-    product  [L, 20]
+    product  [20]
   10 ≥ Sum
-    product  [L]
+    product  []
   14 ≥ Sum
     product  [I]
     product  [I]
@@ -123,7 +123,7 @@ Sums:
     product  [I]
   16 ≥ Sum
     product  [I]
-    product  [13]
+    product  []
   17 ≥ Sum
     product  [I]
     product  [I]
@@ -134,7 +134,7 @@ Sums:
     product  [16]
   21 ≥ Sum
     product  [I]
-    product  [L, 24]
+    product  [24]
   26 ≥ Sum
     product  [I]
 
@@ -213,9 +213,9 @@ Maxes:
 
   0 -> I
   1 -> I
-  2 -> I
+  2 -> L
   3 -> I
-  4 -> I
+  4 -> L
   5 -> I
   6 -> I
   7 -> L
@@ -224,13 +224,12 @@ Maxes:
   10 -> L
   11 -> E
   12 -> I
-  13 -> I
   14 -> I
-  15 -> I
-  16 -> I
+  15 -> L
+  16 -> L
   17 -> I
   18 -> I
-  19 -> I
+  19 -> L
   20 -> L
   21 -> L
   22 -> E
@@ -247,9 +246,9 @@ Maxes:
 
 constructor Bool :I Type.
 
-constructor True :I Bool.
+constructor True :L Bool.
 
-constructor False :I Bool.
+constructor False :L Bool.
 
 constructor T :I Type.
 
@@ -268,8 +267,8 @@ not :I (x :L Bool) -> Bool {
   not False ~> True
 }
 
-id :I (a :I Type) -> (x :I a) -> a {
-  forall (a :I Type) (x :I a)
+id :I (a :I Type) -> (x :L a) -> a {
+  forall (a :I Type) (x :L a)
     id a x ~> x
 }
 
@@ -286,6 +285,10 @@ main :L Bool {
 ##########
 # Erased #
 ##########
+
+constructor True : Bool.
+
+constructor False : Bool.
 
 postulate g : (x) -> Bool.
 

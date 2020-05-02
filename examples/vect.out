@@ -81,7 +81,7 @@ Sums:
     product  [I]
     product  [I]
   1 ≥ Sum
-    product  [L, 35]
+    product  [35]
   2 ≥ Sum
     product  [I]
   3 ≥ Sum
@@ -97,13 +97,13 @@ Sums:
     product  [I]
     product  [I]
   9 ≥ Sum
-    product  [L, 35, 38]
+    product  [35, 38]
   11 ≥ Sum
     product  [I, 5]
-    product  [16]
-    product  [L, 36]
+    product  []
+    product  [36]
   12 ≥ Sum
-    product  [L, 35, 39]
+    product  [35, 39]
   13 ≥ Sum
     product  [I]
     product  [I]
@@ -114,12 +114,12 @@ Sums:
     product  [I]
   15 ≥ Sum
     product  [I, 10]
-    product  [16]
-    product  [L, 36, 37]
-    product  [L, 35, 40]
+    product  []
+    product  [36, 37]
+    product  [35, 40]
   16 ≥ Sum
-    product  [16, 32]
-    product  [L]
+    product  [32]
+    product  []
   17 ≥ Sum
     product  [I]
     product  [I, 19]
@@ -127,7 +127,7 @@ Sums:
     product  [I]
   22 ≥ Sum
     product  [I]
-    product  [16, 32, 33]
+    product  [32, 33]
   24 ≥ Sum
     product  [I]
     product  [I]
@@ -137,7 +137,7 @@ Sums:
     product  [I, 23]
     product  [I]
     product  [I]
-    product  [16, 32, 34]
+    product  [32, 34]
   26 ≥ Sum
     product  [25]
   27 ≥ Sum
@@ -270,11 +270,11 @@ Maxes:
   8 -> I
   9 -> L
   10 -> I
-  11 -> R
+  11 -> L
   12 -> I
   13 -> I
   14 -> I
-  15 -> R
+  15 -> L
   16 -> R
   17 -> I
   18 -> L
@@ -313,9 +313,9 @@ constructor False :I Bool.
 
 constructor Nat :I Type.
 
-constructor Z :R Nat.
+constructor Z :L Nat.
 
-constructor S :R (n :L Nat) -> Nat.
+constructor S :L (n :L Nat) -> Nat.
 
 constructor Vect :I Nat -> Type.
 

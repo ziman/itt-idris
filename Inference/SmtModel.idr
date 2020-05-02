@@ -62,10 +62,10 @@ model cs = do
   let prodSum = foldMap add (lit semi0) product
   let prodMax = foldMap max (lit semi0) product
 
-  for_ {b = ()} ccs.sums $ \c =>
+  for_ ccs.sums $ \c =>
     assert $ prodSum c.inputs `leq` ev c.result
 
-  for_ {b = ()} ccs.maxes $ \c =>
+  for_ ccs.maxes $ \c =>
     assert $ prodMax c.inputs `leq` ev c.result
 
   minimise $ numberOf R
