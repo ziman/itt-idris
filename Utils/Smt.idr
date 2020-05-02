@@ -20,7 +20,7 @@ data SExp : Type where
 
 public export
 data SmtError : Type where
-  Unsatisfiable : SmtError
+  Unsatisfiable : String -> SmtError
   FileIOError : FileError -> SmtError
   LexError : Int -> Int -> String -> SmtError
   SmtParseError : Int -> Int -> String -> SmtError
@@ -44,7 +44,7 @@ Show SExp where
 
 export
 Show SmtError where
-  show Unsatisfiable = "unsatisfiable"
+  show (Unsatisfiable core) = "unsatisfiable: " ++ show core
   show (FileIOError err) = show err
   show (LexError row col rest) = "could not lex at " ++ show (row, col) ++ ": " ++ rest
   show (SmtParseError row col msg) = "parse error at " ++ show (row, col) ++ ": " ++ msg
@@ -359,8 +359,8 @@ data FList : (Type -> Type) -> List (Type, Type) -> Type where
   (::) : List (tag, f a) -> FList f as -> FList f ((tag, a) :: as)
 
 parseSol : List SExp -> Either SmtError (SortedMap String SExp)
-parseSol (A "unsat" :: _) = Left Unsatisfiable
-parseSol [A "sat", L (A "model" :: ms)] = Right varMap
+parseSol [A "unsat", _, core] = Left $ Unsatisfiable (show core)
+parseSol [A "sat", L (A "model" :: ms), _] = Right varMap
   where
     parseVar : SExp -> SortedMap String SExp
     parseVar (L [A "define-fun", A n, L [], ty, val]) =
