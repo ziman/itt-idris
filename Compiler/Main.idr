@@ -25,6 +25,8 @@ procArgs : List String -> Either String (Config -> Config)
 procArgs [] = Right id
 procArgs [fname] =
   Right (record { fnameInput = Just fname })
+procArgs ("--disable-L" :: args) =
+  (record { disableL = True } .) <$> procArgs args
 procArgs ("--default-constructor-quantities" :: args) =
   (record { defaultConstructorQuantities = True } .) <$> procArgs args
 procArgs (arg :: _) = Left arg
@@ -53,6 +55,6 @@ main = (procArgs . drop 1 <$> getArgs) >>= \case
                 let trans = if cfg.defaultConstructorQuantities
                       then applyDefaultCtorQuantities
                       else id
-                (processModule $ trans gs).run >>= \case
+                (processModule cfg $ trans gs).run >>= \case
                   Left err => putStrLn $ "error: " ++ err
                   Right () => pure ()

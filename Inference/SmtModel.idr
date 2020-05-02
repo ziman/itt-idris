@@ -59,8 +59,9 @@ evSmt vs (EV i) = case SortedMap.lookup i vs of
   Just v  => v
   Nothing => smtError "cannot-happen"
 
-model : List Constr -> SmtM AssertionLabel (FList Smt [(ENum, Q)])
-model cs = do
+model : Bool -> List Constr -> SmtM AssertionLabel (FList Smt [(ENum, Q)])
+model disableL cs = do
+  -- TODO: respect disableL
   smtQ <- the (SmtM AssertionLabel (SmtType Q)) $ declEnum "Q"
   ens <- declVars smtQ (SortedSet.toList $ eNums cs)
   let ev = evSmt ens
@@ -71,21 +72,19 @@ model cs = do
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
   mul <- defineEnumFun2 "mul" smtQ smtQ smtQ (.*.)
-  max <- defineEnumFun2 "max" smtQ smtQ smtQ (.\/.)
   leq <- defineEnumFun2 "leq" smtQ smtQ smtBool (.<=.)
 
   let product = foldMap mul (lit semi1) ev
-  let maximum = foldMap max (lit top)   ev
   let prodSum = foldMap add (lit semi0) product
-  let prodMax = foldMap max (lit semi0) product
 
   for_ ccs.sums $ \c =>
     assert (Just $ Left c) $
       prodSum c.inputs `leq` ev c.result
 
   for_ ccs.maxes $ \c =>
-    assert (Just $ Right c) $
-      prodMax c.inputs `leq` ev c.result
+    for_ c.inputs $ \gs =>
+      assert (Just $ Right c) $
+        product gs `leq` ev c.result
 
   minimise $ numberOf R
   minimise $ numberOf L
@@ -103,9 +102,9 @@ model cs = do
   ccs = collect cs
 
 export
-solve : List Constr -> IO (Either Error (SortedMap ENum Q))
-solve cs = do
-  sol <- Smt.solve $ model cs
+solve : Bool -> List Constr -> IO (Either Error (SortedMap ENum Q))
+solve disableL cs = do
+  sol <- Smt.solve $ model disableL cs
   pure $ case sol of
     Left (Smt.Unsatisfiable core) => Left (Unsatisfiable core)
     Left e => Left (OtherError $ show e)

@@ -7,6 +7,7 @@ import Core.TT.Pretty
 import Core.Quantity
 import public Core.TT
 import public Compiler.Monad
+import public Compiler.Config
 
 import Inference.Evar
 import Inference.Infer
@@ -46,14 +47,15 @@ newlyReachableEqs vs (eq@(DeferEq g _ _ _ _) :: eqs) =
 
 covering
 iterConstrs :
-    Int
+    Config
+    -> Int
     -> Globals Evar
     -> Constrs
     -> Inference.Infer.TCState
     -> ITT (SortedMap ENum Q)
-iterConstrs i gs (MkConstrs cs eqs) st = do
+iterConstrs cfg i gs (MkConstrs cs eqs) st = do
   log $ "  -> iteration " ++ show i 
-  vals <- liftIO (SmtModel.solve cs) >>= \case
+  vals <- liftIO (SmtModel.solve cfg.disableL cs) >>= \case
     Left (Unsatisfiable core) => do
       log ""
       banner "# Unsatisfiable core #"
@@ -81,7 +83,7 @@ iterConstrs i gs (MkConstrs cs eqs) st = do
           -- and eqs' (eqs from this iteration)
           -- we drop eqs we have already reached and checked
           -- otherwise we'd loop forever in checking them again and again
-          iterConstrs (i+1) gs
+          iterConstrs cfg (i+1) gs
             (MkConstrs (cs <+> cs') (waitingEqs <+> eqs'))
             st'
 
@@ -94,8 +96,8 @@ substQ vs (EV i) = SortedMap.lookup i vs <|> Just I
 -- this function thus never returns Nothing
 
 covering export
-processModule : Globals (Maybe Q) -> ITT ()
-processModule raw = do
+processModule : Config -> Globals (Maybe Q) -> ITT ()
+processModule cfg raw = do
   banner "# Desugared #"
   printP () raw
 
@@ -114,7 +116,7 @@ processModule raw = do
   banner "# Deferred equalities #"
   log $ unlines $ map show cs.deferredEqs
 
-  vals <- iterConstrs 1 evarified cs MkTCS
+  vals <- iterConstrs cfg 1 evarified cs MkTCS
 
   banner "# Final valuation #"
   log $ unlines
