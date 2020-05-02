@@ -146,3 +146,7 @@ render' ind (Columns sep ds)
 export
 render : String -> Doc -> String
 render ind = concat . intersperse "\n" . render' ind
+
+export
+Show Doc where
+  show = render "  "

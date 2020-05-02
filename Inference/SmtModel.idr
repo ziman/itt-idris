@@ -11,20 +11,8 @@ import Data.SortedSet
 %default total
 
 public export
-AssertionLabel : Type
-AssertionLabel = Either (Collected Sum) (Collected Max)
-
-export
-Pretty () AssertionLabel where
-  pretty () (Left cs) = pretty () cs
-  pretty () (Right cm) = pretty () cm
-
-Show AssertionLabel where
-  show _ = "(impossible)"
-
-public export
 data Error
-  = Unsatisfiable (List AssertionLabel)
+  = Unsatisfiable (List Doc)
   | OtherError String
 
 SmtValue Q where
@@ -49,7 +37,7 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
     eNumsC : Constr -> SortedSet ENum
     eNumsC (MkC agg bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
 
-declVars : SmtType Q -> List ENum -> SmtM AssertionLabel (SortedMap ENum (Smt Q))
+declVars : SmtType Q -> List ENum -> SmtM Doc (SortedMap ENum (Smt Q))
 declVars smtQ [] = pure $ SortedMap.empty
 declVars smtQ (n::ns) = SortedMap.insert n <$> declVar ("ev" ++ show n) smtQ <*> declVars smtQ ns
 
@@ -59,16 +47,20 @@ evSmt vs (EV i) = case SortedMap.lookup i vs of
   Just v  => v
   Nothing => smtError "cannot-happen"
 
-model : Bool -> List Constr -> SmtM AssertionLabel (FList Smt [(ENum, Q)])
+model : Bool -> List Constr -> SmtM Doc (FList Smt [(ENum, Q)])
 model disableL cs = do
-  -- TODO: respect disableL
-  smtQ <- the (SmtM AssertionLabel (SmtType Q)) $ declEnum "Q"
+  smtQ <- the (SmtM Doc (SmtType Q)) $ declEnum "Q"
   ens <- declVars smtQ (SortedSet.toList $ eNums cs)
   let ev = evSmt ens
   let numberOf = \q : Q => sum
         [ ifte {a=Int} (v .== lit q) 1 0
         | (i, v) <- SortedMap.toList ens
         ]
+
+  when disableL $ do
+    for_ (toList ens) $ \(en, qv) => do
+      assert (Just . text $ "linearity for " ++ show en) $
+        not (qv .== lit Quantity.L)
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
   mul <- defineEnumFun2 "mul" smtQ smtQ smtQ (.*.)
@@ -78,12 +70,12 @@ model disableL cs = do
   let prodSum = foldMap add (lit semi0) product
 
   for_ ccs.sums $ \c =>
-    assert (Just $ Left c) $
+    assert (Just $ pretty () c) $
       prodSum c.inputs `leq` ev c.result
 
   for_ ccs.maxes $ \c =>
     for_ c.inputs $ \gs =>
-      assert (Just $ Right c) $
+      assert (Just $ pretty () c) $
         product gs `leq` ev c.result
 
   minimise $ numberOf R

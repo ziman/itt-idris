@@ -62,7 +62,7 @@ iterConstrs cfg i gs (MkConstrs cs eqs) st = do
     Left (Unsatisfiable core) => do
       log ""
       banner "# Unsatisfiable core #"
-      log . render "  " $ vcat [pretty () c | c <- core]
+      log . render "  " $ vcat core
       log ""
       throw "inconsistent constraints"
     Left (OtherError err) => throw err
