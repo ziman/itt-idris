@@ -128,10 +128,6 @@ Sums:
     product  [I]
     product  [I]
     product  [I]
-  18 ≥ Sum
-    product  [17]
-  19 ≥ Sum
-    product  [16]
   21 ≥ Sum
     product  [I]
     product  [24]
@@ -149,10 +145,6 @@ Maxes:
     product  [22]
   L ≥ Max
     product  [24]
-  2 ≥ Max
-    product  [L, 25]
-  4 ≥ Max
-    product  [L, 25]
   8 ≥ Max
     product  [E]
     product  [22]
@@ -167,9 +159,15 @@ Maxes:
     product  [18]
   15 ≥ Max
     product  [19]
+  16 ≥ Max
+    product  [19]
+  17 ≥ Max
+    product  [18]
   18 ≥ Max
+    product  [17]
     product  [14]
   19 ≥ Max
+    product  [16]
     product  [15]
   20 ≥ Max
     product  [21]
@@ -201,109 +199,12 @@ Maxes:
 8 -> C b ~ C False
 
   -> iteration 1
-    C False ~ C True
-    C b ~ C False
 
-  -> iteration 2
-    -> No more equalities, fixed point reached.
+######################
+# Unsatisfiable core #
+######################
 
-###################
-# Final valuation #
-###################
+L ≥ Sum
+  product  [I]
 
-  0 -> I
-  1 -> I
-  2 -> L
-  3 -> I
-  4 -> L
-  5 -> I
-  6 -> I
-  7 -> L
-  8 -> E
-  9 -> I
-  10 -> L
-  11 -> E
-  12 -> I
-  14 -> I
-  15 -> L
-  16 -> L
-  17 -> I
-  18 -> I
-  19 -> L
-  20 -> L
-  21 -> L
-  22 -> E
-  23 -> I
-  24 -> L
-  25 -> I
-  26 -> L
-  27 -> L
-  28 -> L
-
-#####################
-# Annotated program #
-#####################
-
-constructor Bool :I Type.
-
-constructor True :L Bool.
-
-constructor False :L Bool.
-
-constructor T :I Type.
-
-constructor C :I (pf :I Bool) -> T.
-
-postulate U :I (t :E T) -> Type.
-
-postulate g :L (x :L U (C True)) -> Bool.
-
-postulate b :I Bool.
-
-postulate d :L U (C b).
-
-not :I (x :L Bool) -> Bool {
-  not True ~> False
-  not False ~> True
-}
-
-id :I (a :I Type) -> (x :L a) -> a {
-  forall (a :I Type) (x :L a)
-    id a x ~> x
-}
-
-main :L Bool {
-  main ~> (\x :L U (C False). g x) d
-}
-
-###############
-# Final check #
-###############
-
-** OK **
-
-##########
-# Erased #
-##########
-
-constructor True : Bool.
-
-constructor False : Bool.
-
-postulate g : (x) -> Bool.
-
-postulate d : U.
-
-main : Bool {
-  main ~> (\x. g x) d
-}
-
-################
-# NF of `main` #
-################
-
-Unerased, reduced:
-g d
-
-Erased, reduced:
-g d
+error: inconsistent constraints

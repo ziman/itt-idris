@@ -114,7 +114,7 @@ nf : (m : Nat) -> TT m -> TT m {
 example2 : TT 1 ~> nf 1 testTm.
 
 data Result : Type {
-  R : (x :L TT 0) -> (y :L TT 1) -> Result
+  R : (x :R TT 0) -> (y :R TT 1) -> Result
 }
 
-main :L Result ~> R example1 example2.
+main :R Result ~> R example1 example2.

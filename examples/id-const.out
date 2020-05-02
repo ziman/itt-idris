@@ -27,8 +27,8 @@ true : (x : Bool) -> Bool {
     true x ~> True
 }
 
-apply : (f : (x : Bool) -> Bool) -> (y : Bool) -> Bool {
-  forall (f : (x : Bool) -> Bool) (y : Bool)
+apply : (f : Bool -> Bool) -> (y : Bool) -> Bool {
+  forall (f : Bool -> Bool) (y : Bool)
     apply f y ~> f y
 }
 
@@ -65,8 +65,8 @@ true :31 (x :32 Bool) -> Bool {
     true x ~> True
 }
 
-apply :5 (f :6 (x :7 Bool) -> Bool) -> (y :8 Bool) -> Bool {
-  forall (f :10 (x :11 Bool) -> Bool) (y :9 Bool)
+apply :5 (f :6 Bool -> Bool) -> (y :8 Bool) -> Bool {
+  forall (f :10 Bool -> Bool) (y :9 Bool)
     apply f y ~> f y
 }
 
@@ -136,10 +136,6 @@ Sums:
   11 ≥ Sum
     product  [I]
     product  [I]
-  12 ≥ Sum
-    product  [10]
-  13 ≥ Sum
-    product  [9]
   15 ≥ Sum
     product  [19, 25]
   16 ≥ Sum
@@ -147,8 +143,6 @@ Sums:
     product  [I]
   17 ≥ Sum
     product  [I]
-  18 ≥ Sum
-    product  [17]
   27 ≥ Sum
     product  [20, 22]
   28 ≥ Sum
@@ -161,17 +155,11 @@ Sums:
     product  [I]
   33 ≥ Sum
     product  [I]
-  34 ≥ Sum
-    product  [33]
 
 Maxes:
   L ≥ Max
     product  [20]
     product  [19]
-  1 ≥ Max
-    product  [L, 27]
-  4 ≥ Max
-    product  [L, 27]
   6 ≥ Max
     product  [12]
     product  [22]
@@ -184,19 +172,28 @@ Maxes:
     product  [13]
     product  [21]
     product  [24]
+  9 ≥ Max
+    product  [13]
+  10 ≥ Max
+    product  [12]
   11 ≥ Max
     product  [7]
     product  [14]
   12 ≥ Max
+    product  [10]
     product  [6]
   13 ≥ Max
+    product  [9]
     product  [8]
   14 ≥ Max
     product  [11]
   16 ≥ Max
     product  [18]
     product  [7]
+  17 ≥ Max
+    product  [18]
   18 ≥ Max
+    product  [17]
     product  [16]
   19 ≥ Max
     product  [L]
@@ -228,7 +225,10 @@ Maxes:
     product  [34]
     product  [23]
     product  [26]
+  33 ≥ Max
+    product  [34]
   34 ≥ Max
+    product  [33]
     product  [32]
 
 #######################
@@ -237,4 +237,13 @@ Maxes:
 
 
   -> iteration 1
-unsatisfiable: "(a3 a11 a27 a33 a34 a35 a36 a37 a38 a39 a40 a41 a42 a43 a44 a45 a46 a47 a48 a55 a57 a58 a60 a61 a62 a63 a70 a76 a78 a84 a92 a93 a97 a103 a105)"
+
+######################
+# Unsatisfiable core #
+######################
+
+L ≥ Sum
+  product  [I]
+  product  [I]
+
+error: inconsistent constraints

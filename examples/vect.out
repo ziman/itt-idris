@@ -138,17 +138,6 @@ Sums:
     product  [I]
     product  [I]
     product  [32, 34]
-  26 ≥ Sum
-    product  [25]
-  27 ≥ Sum
-    product  [25]
-  28 ≥ Sum
-    product  [24]
-    product  [22]
-  30 ≥ Sum
-    product  [24]
-  31 ≥ Sum
-    product  [22]
 
 Maxes:
   I ≥ Max
@@ -159,8 +148,6 @@ Maxes:
     product  [27]
     product  [32]
     product  [37]
-  1 ≥ Max
-    product  [L, 16]
   2 ≥ Max
     product  [30]
     product  [39]
@@ -177,8 +164,6 @@ Maxes:
     product  [19]
   6 ≥ Max
     product  [L]
-  9 ≥ Max
-    product  [L, 16]
   10 ≥ Max
     product  [14]
     product  [19]
@@ -206,26 +191,40 @@ Maxes:
     product  [23]
     product  [5]
   20 ≥ Max
+    product  [I]
     product  [17]
   21 ≥ Max
     product  [L]
     product  [18]
+  22 ≥ Max
+    product  [28, 31]
   23 ≥ Max
     product  [14]
     product  [4]
     product  [19]
+  24 ≥ Max
+    product  [28, 30]
+  25 ≥ Max
+    product  [26, 27]
   26 ≥ Max
+    product  [I]
+    product  [25]
     product  [17]
   27 ≥ Max
+    product  [25]
     product  [L]
   28 ≥ Max
     product  [L]
+    product  [24]
+    product  [22]
     product  [18]
   29 ≥ Max
     product  [I]
   30 ≥ Max
+    product  [24]
     product  [2]
   31 ≥ Max
+    product  [22]
     product  [3]
   32 ≥ Max
     product  [L]
@@ -254,119 +253,12 @@ Maxes:
 5 -> S Z ~ S Z
 
   -> iteration 1
-    -> No more equalities, fixed point reached.
 
-###################
-# Final valuation #
-###################
+######################
+# Unsatisfiable core #
+######################
 
-  0 -> I
-  1 -> L
-  2 -> I
-  3 -> L
-  4 -> I
-  5 -> I
-  6 -> L
-  8 -> I
-  9 -> L
-  10 -> I
-  11 -> L
-  12 -> I
-  13 -> I
-  14 -> I
-  15 -> L
-  16 -> R
-  17 -> I
-  18 -> L
-  19 -> I
-  20 -> I
-  21 -> L
-  22 -> L
-  23 -> I
-  24 -> I
-  25 -> I
-  26 -> I
-  27 -> L
-  28 -> L
-  29 -> I
-  30 -> I
-  31 -> L
-  32 -> L
-  33 -> L
-  34 -> I
-  35 -> L
-  36 -> I
-  37 -> L
-  38 -> L
-  39 -> I
-  40 -> I
+L ≥ Sum
+  product  [I]
 
-#####################
-# Annotated program #
-#####################
-
-constructor Bool :I Type.
-
-constructor True :I Bool.
-
-constructor False :I Bool.
-
-constructor Nat :I Type.
-
-constructor Z :L Nat.
-
-constructor S :L (n :L Nat) -> Nat.
-
-constructor Vect :I Nat -> Type.
-
-constructor Nil :L Vect Z.
-
-constructor Cons :L (n :I Nat) -> Bool -> Vect n -> Vect (S n).
-
-length :R (n :I Nat) -> Vect n -> Nat {
-  length {Z} Nil ~> Z
-  forall (n :I Nat) (x :I Bool) (xs :L Vect n)
-    length ({S} n) (Cons [n] x xs) ~> S (length n xs)
-}
-
-main :L Nat {
-  main ~> length (S Z) (Cons Z True Nil)
-}
-
-###############
-# Final check #
-###############
-
-** OK **
-
-##########
-# Erased #
-##########
-
-constructor Z : Nat.
-
-constructor S : (n) -> Nat.
-
-constructor Nil : Vect.
-
-constructor Cons : _ -> Vect.
-
-length : _ -> Nat {
-  length Nil ~> Z
-  forall (xs)
-    length (Cons xs) ~> S (length xs)
-}
-
-main : Nat {
-  main ~> length (Cons Nil)
-}
-
-################
-# NF of `main` #
-################
-
-Unerased, reduced:
-S Z
-
-Erased, reduced:
-S Z
+error: inconsistent constraints
