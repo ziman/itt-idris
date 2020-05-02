@@ -1,0 +1,3061 @@
+#############
+# Desugared #
+#############
+
+constructor Nat : Type.
+
+constructor Z : Nat.
+
+constructor S : (n : Nat) -> Nat.
+
+constructor Fin : (_ : Nat) -> Type.
+
+constructor FZ : (n : Nat) -> Fin (S n).
+
+constructor FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
+
+constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
+
+constructor VN : (a : Type) -> Vect Z a.
+
+constructor VC : (n : Nat) -> (a : Type) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+
+constructor TT : (_ : Nat) -> Type.
+
+constructor V : (n : Nat) -> (_ : Fin n) -> TT n.
+
+constructor Lam : (n : Nat) -> (_ : TT (S n)) -> TT n.
+
+constructor App : (n : Nat) -> (_ : TT n) -> (_ : TT n) -> TT n.
+
+env : (m : Nat) -> (n : Nat) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
+  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n))
+    env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
+  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m)
+    env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
+}
+
+extendMap : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : Fin (S m)) -> Fin (S n) {
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n)
+    extendMap m n f (FZ [m]) ~> FZ n
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
+    extendMap m n f (FS [m] i) ~> FS n (f i)
+}
+
+mapVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : TT m) -> TT n {
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
+    mapVars m n f (V [m] i) ~> V n (f i)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m))
+    mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m)
+    mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
+}
+
+extendSubst : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : Fin (S m)) -> TT (S n) {
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n)
+    extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
+    extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
+}
+
+substVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : TT m) -> TT n {
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
+    substVars m n f (V [m] i) ~> f i
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m))
+    substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m)
+    substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
+}
+
+testTm : TT (S Z) {
+  testTm ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
+}
+
+example1 : TT Z {
+  example1 ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
+}
+
+substTop : (n : Nat) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
+  forall (n : Nat) (tm : TT n)
+    substTop n tm (FZ [n]) ~> tm
+  forall (n : Nat) (tm : TT n) (i : Fin n)
+    substTop n tm (FS [n] i) ~> V n i
+}
+
+redex : (m : Nat) -> (_ : TT m) -> (_ : TT m) -> TT m {
+  forall (m : Nat) (y : TT (S m)) (x : TT m)
+    redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+  forall (m : Nat) (f' : TT m) (x : TT m)
+    redex m f' x ~> App m f' (nf m x)
+}
+
+nf : (m : Nat) -> (_ : TT m) -> TT m {
+  forall (m : Nat) (i : Fin m)
+    nf m (V [m] i) ~> V m i
+  forall (m : Nat) (x : TT (S m))
+    nf m (Lam [m] x) ~> Lam m (nf (S m) x)
+  forall (m : Nat) (f : TT m) (x : TT m)
+    nf m (App [m] f x) ~> redex m f x
+}
+
+example2 : TT (S Z) {
+  example2 ~> nf (S Z) testTm
+}
+
+constructor Result : Type.
+
+constructor R : (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+
+main : Result {
+  main ~> R example1 example2
+}
+
+#############
+# Evarified #
+#############
+
+constructor Nat :25 Type.
+
+constructor Z :57 Nat.
+
+constructor S :31 (n :32 Nat) -> Nat.
+
+constructor Fin :17 (_ :18 Nat) -> Type.
+
+constructor FZ :13 (n :14 Nat) -> Fin (S n).
+
+constructor FS :7 (n :8 Nat) -> (_ :9 Fin n) -> Fin (S n).
+
+constructor Vect :54 (_ :55 Nat) -> (_ :56 Type) -> Type.
+
+constructor VN :50 (a :51 Type) -> Vect Z a.
+
+constructor VC :40 (n :41 Nat) -> (a :42 Type) -> (_ :43 a) -> (_ :44 Vect n a) -> Vect (S n) a.
+
+constructor TT :33 (_ :34 Nat) -> Type.
+
+constructor V :35 (n :36 Nat) -> (_ :37 Fin n) -> TT n.
+
+constructor Lam :19 (n :20 Nat) -> (_ :21 TT (S n)) -> TT n.
+
+constructor App :0 (n :1 Nat) -> (_ :2 TT n) -> (_ :4 TT n) -> TT n.
+
+env :58 (m :59 Nat) -> (n :60 Nat) -> (_ :61 Vect m (TT n)) -> (_ :65 Fin m) -> TT n {
+  forall (m :75 Nat) (n :74 Nat) (x :72 TT n) (xs :68 Vect m (TT n))
+    env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
+  forall (m :96 Nat) (n :95 Nat) (x :93 TT n) (xs :89 Vect m (TT n)) (i :87 Fin m)
+    env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
+}
+
+extendMap :143 (m :144 Nat) -> (n :145 Nat) -> (_ :146 (_ :147 Fin m) -> Fin n) -> (_ :150 Fin (S m)) -> Fin (S n) {
+  forall (m :160 Nat) (n :159 Nat) (f :155 (_ :156 Fin m) -> Fin n)
+    extendMap m n f (FZ [m]) ~> FZ n
+  forall (m :174 Nat) (n :173 Nat) (f :169 (_ :170 Fin m) -> Fin n) (i :167 Fin m)
+    extendMap m n f (FS [m] i) ~> FS n (f i)
+}
+
+mapVars :235 (m :236 Nat) -> (n :237 Nat) -> (_ :238 (_ :239 Fin m) -> Fin n) -> (_ :242 TT m) -> TT n {
+  forall (m :252 Nat) (n :251 Nat) (f :247 (_ :248 Fin m) -> Fin n) (i :245 Fin m)
+    mapVars m n f (V [m] i) ~> V n (f i)
+  forall (m :270 Nat) (n :269 Nat) (f :265 (_ :266 Fin m) -> Fin n) (x :262 TT (S m))
+    mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
+  forall (m :297 Nat) (n :296 Nat) (f :292 (_ :293 Fin m) -> Fin n) (g :290 TT m) (x :288 TT m)
+    mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
+}
+
+extendSubst :184 (m :185 Nat) -> (n :186 Nat) -> (_ :187 (_ :188 Fin m) -> TT n) -> (_ :191 Fin (S m)) -> TT (S n) {
+  forall (m :201 Nat) (n :200 Nat) (f :196 (_ :197 Fin m) -> TT n)
+    extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
+  forall (m :218 Nat) (n :217 Nat) (f :213 (_ :214 Fin m) -> TT n) (i :211 Fin m)
+    extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
+}
+
+substVars :425 (m :426 Nat) -> (n :427 Nat) -> (_ :428 (_ :429 Fin m) -> TT n) -> (_ :432 TT m) -> TT n {
+  forall (m :442 Nat) (n :441 Nat) (f :437 (_ :438 Fin m) -> TT n) (i :435 Fin m)
+    substVars m n f (V [m] i) ~> f i
+  forall (m :458 Nat) (n :457 Nat) (f :453 (_ :454 Fin m) -> TT n) (x :450 TT (S m))
+    substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
+  forall (m :485 Nat) (n :484 Nat) (f :480 (_ :481 Fin m) -> TT n) (g :478 TT m) (x :476 TT m)
+    substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
+}
+
+testTm :504 TT (S Z) {
+  testTm ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
+}
+
+example1 :113 TT Z {
+  example1 ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
+}
+
+substTop :398 (n :399 Nat) -> (_ :400 TT n) -> (_ :402 Fin (S n)) -> TT n {
+  forall (n :408 Nat) (tm :406 TT n)
+    substTop n tm (FZ [n]) ~> tm
+  forall (n :417 Nat) (tm :415 TT n) (i :413 Fin n)
+    substTop n tm (FS [n] i) ~> V n i
+}
+
+redex :356 (m :357 Nat) -> (_ :358 TT m) -> (_ :360 TT m) -> TT m {
+  forall (m :368 Nat) (y :365 TT (S m)) (x :363 TT m)
+    redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+  forall (m :389 Nat) (f' :387 TT m) (x :385 TT m)
+    redex m f' x ~> App m f' (nf m x)
+}
+
+nf :316 (m :317 Nat) -> (_ :318 TT m) -> TT m {
+  forall (m :323 Nat) (i :321 Fin m)
+    nf m (V [m] i) ~> V m i
+  forall (m :333 Nat) (x :330 TT (S m))
+    nf m (Lam [m] x) ~> Lam m (nf (S m) x)
+  forall (m :347 Nat) (f :345 TT m) (x :343 TT m)
+    nf m (App [m] f x) ~> redex m f x
+}
+
+example2 :137 TT (S Z) {
+  example2 ~> nf (S Z) testTm
+}
+
+constructor Result :30 Type.
+
+constructor R :26 (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+
+main :232 Result {
+  main ~> R example1 example2
+}
+
+Running erasure inference...
+
+########################
+# Inferred constraints #
+########################
+
+Sums:
+  L ≥ Sum
+    product  [I]
+    product  [I]
+  0 ≥ Sum
+    product  []
+    product  []
+    product  []
+    product  [508, 511]
+    product  [507, 533]
+    product  []
+  1 ≥ Sum
+    product  [I]
+    product  [I, 3]
+    product  [I, 5]
+    product  [I, 6]
+  2 ≥ Sum
+    product  [I]
+  4 ≥ Sum
+    product  [I]
+  7 ≥ Sum
+    product  []
+    product  [226]
+    product  [508, 511, 514, 525]
+    product  [507, 533, 537, 541]
+  8 ≥ Sum
+    product  [I]
+    product  [I, 10]
+    product  [I, 11, 12]
+  9 ≥ Sum
+    product  [I]
+    product  [I]
+  13 ≥ Sum
+    product  []
+    product  [207]
+    product  [508, 511, 515, 519]
+    product  [508, 511, 514, 525, 529]
+    product  [507, 533, 537, 541, 545]
+    product  [507, 533, 536, 549]
+    product  [116, 120, 125, 129, 131]
+  14 ≥ Sum
+    product  [I]
+    product  [I, 15, 16]
+  17 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  18 ≥ Sum
+    product  [I]
+  19 ≥ Sum
+    product  []
+    product  []
+    product  [508]
+    product  [507]
+    product  [116, 120, 125]
+    product  []
+  20 ≥ Sum
+    product  [I]
+    product  [I, 22, 23]
+    product  [I, 24]
+  21 ≥ Sum
+    product  [I]
+  25 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  26 ≥ Sum
+    product  []
+  30 ≥ Sum
+    product  [I]
+    product  [I]
+  31 ≥ Sum
+    product  [I, 15]
+    product  [I, 11]
+    product  [I, 48]
+    product  [I, 22]
+    product  [I]
+    product  [I]
+    product  [I, 151]
+    product  [I, 153]
+    product  [I, 263]
+    product  [277, 282]
+    product  [277, 281]
+    product  [I, 192]
+    product  [I, 194]
+    product  [208]
+    product  [227]
+    product  [I, 451]
+    product  [465, 470]
+    product  [465, 469]
+    product  [I, 505]
+    product  [509]
+    product  [508, 512]
+    product  [508, 511, 516]
+    product  [508, 511, 516, 517]
+    product  [508, 511, 515, 520]
+    product  [508, 511, 515, 520, 521]
+    product  [508, 511, 515, 519, 523]
+    product  [508, 511, 514, 526]
+    product  [508, 511, 514, 526, 527]
+    product  [508, 511, 514, 525, 530]
+    product  [507, 534]
+    product  [507, 533, 538]
+    product  [507, 533, 538, 539]
+    product  [507, 533, 537, 542]
+    product  [507, 533, 537, 542, 543]
+    product  [507, 533, 537, 541, 546]
+    product  [507, 533, 536, 550]
+    product  [507, 533, 536, 550, 551]
+    product  [507, 533, 536, 549, 553]
+    product  [118]
+    product  [116, 122]
+    product  [116, 120, 125, 129, 132]
+    product  [I, 403]
+    product  [I, 366]
+    product  [374, 379]
+    product  [I, 331]
+    product  [338, 341]
+    product  [I, 138]
+    product  [141]
+    product  [I, 28]
+  32 ≥ Sum
+    product  [I]
+  33 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I, 62]
+    product  [I]
+    product  [I]
+    product  [I, 69]
+    product  [I]
+    product  [I]
+    product  [I, 90]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [116, 120, 126]
+    product  [116, 120, 124, 135]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  34 ≥ Sum
+    product  [I]
+  35 ≥ Sum
+    product  []
+    product  []
+    product  [508, 511, 515]
+    product  [508, 511, 514]
+    product  [507, 533, 537]
+    product  [507, 533, 536]
+    product  [116, 120, 125, 129]
+    product  []
+    product  []
+  36 ≥ Sum
+    product  [I]
+    product  [I, 38]
+    product  [I, 39]
+  37 ≥ Sum
+    product  [I]
+  40 ≥ Sum
+    product  [116, 120]
+  41 ≥ Sum
+    product  [I]
+    product  [I, 46]
+    product  [I, 48, 49]
+  42 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 45]
+    product  [I, 47]
+  43 ≥ Sum
+    product  [I]
+  44 ≥ Sum
+    product  [I]
+  50 ≥ Sum
+    product  [116, 120, 124]
+  51 ≥ Sum
+    product  [I]
+    product  [I, 52]
+  54 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  55 ≥ Sum
+    product  [I]
+  56 ≥ Sum
+    product  [I]
+  57 ≥ Sum
+    product  [I, 53]
+    product  [I, 505, 506]
+    product  [509, 510]
+    product  [508, 512, 513]
+    product  [508, 511, 516, 517, 518]
+    product  [508, 511, 515, 520, 521, 522]
+    product  [508, 511, 515, 519, 523, 524]
+    product  [508, 511, 514, 526, 527, 528]
+    product  [508, 511, 514, 525, 530, 531]
+    product  [508, 511, 514, 525, 529, 532]
+    product  [507, 534, 535]
+    product  [507, 533, 538, 539, 540]
+    product  [507, 533, 537, 542, 543, 544]
+    product  [507, 533, 537, 541, 546, 547]
+    product  [507, 533, 537, 541, 545, 548]
+    product  [507, 533, 536, 550, 551, 552]
+    product  [507, 533, 536, 549, 553, 554]
+    product  [I, 114]
+    product  [118, 119]
+    product  [117]
+    product  [116, 122, 123]
+    product  [116, 121]
+    product  [116, 120, 127]
+    product  [116, 120, 126, 128]
+    product  [116, 120, 125, 130]
+    product  [116, 120, 125, 129, 132, 133]
+    product  [116, 120, 125, 129, 131, 134]
+    product  [116, 120, 124, 135, 136]
+    product  [I, 138, 139]
+    product  [141, 142]
+    product  [I, 27]
+    product  [I, 28, 29]
+  58 ≥ Sum
+    product  []
+    product  [116]
+  59 ≥ Sum
+    product  [I]
+    product  [I, 63]
+    product  [I, 66]
+  60 ≥ Sum
+    product  [I]
+    product  [I, 62, 64]
+    product  [I, 67]
+  61 ≥ Sum
+    product  [I]
+  65 ≥ Sum
+    product  [I]
+    product  [I]
+  68 ≥ Sum
+    product  [I]
+  72 ≥ Sum
+    product  [I]
+    product  [I]
+    product  []
+  74 ≥ Sum
+    product  [I]
+    product  [I, 73]
+    product  [I]
+    product  [I, 69, 71]
+    product  [I]
+    product  [I, 82]
+  75 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I, 70]
+    product  [I]
+    product  [I, 77]
+    product  [I]
+  78 ≥ Sum
+    product  [74]
+  79 ≥ Sum
+    product  [72]
+    product  [68]
+  83 ≥ Sum
+    product  [72]
+  84 ≥ Sum
+    product  [68]
+  85 ≥ Sum
+    product  [75]
+  86 ≥ Sum
+    product  [75]
+  87 ≥ Sum
+    product  [I]
+    product  [109]
+  89 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [110]
+  93 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+  95 ≥ Sum
+    product  [I]
+    product  [I, 94]
+    product  [I]
+    product  [I, 90, 92]
+    product  [I]
+    product  [I]
+    product  [I, 103]
+    product  [111]
+  96 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I, 91]
+    product  [I]
+    product  [I, 88]
+    product  [I]
+    product  [I, 98]
+    product  [I]
+    product  [112]
+  99 ≥ Sum
+    product  [95]
+  100 ≥ Sum
+    product  [93]
+    product  [89]
+  104 ≥ Sum
+    product  [93]
+  105 ≥ Sum
+    product  [89]
+  106 ≥ Sum
+    product  [96]
+    product  [87]
+  107 ≥ Sum
+    product  [96]
+  108 ≥ Sum
+    product  [87]
+  113 ≥ Sum
+    product  [234]
+  137 ≥ Sum
+    product  [233]
+  143 ≥ Sum
+    product  [277, 280]
+  144 ≥ Sum
+    product  [I]
+    product  [I, 148]
+    product  [I, 151, 152]
+  145 ≥ Sum
+    product  [I]
+    product  [I, 149]
+    product  [I, 153, 154]
+  146 ≥ Sum
+    product  [I]
+  147 ≥ Sum
+    product  [I]
+  150 ≥ Sum
+    product  [I]
+    product  [I]
+  155 ≥ Sum
+    product  [I]
+  156 ≥ Sum
+    product  [I]
+    product  [I]
+  159 ≥ Sum
+    product  [I]
+    product  [I, 158]
+    product  [I]
+    product  [166]
+  160 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 157]
+    product  [I]
+    product  [I]
+  161 ≥ Sum
+    product  [160]
+  162 ≥ Sum
+    product  [159]
+  163 ≥ Sum
+    product  [155]
+  167 ≥ Sum
+    product  [I]
+    product  [181, 183]
+  169 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [181]
+  170 ≥ Sum
+    product  [I]
+    product  [I]
+  173 ≥ Sum
+    product  [I]
+    product  [I, 172]
+    product  [I]
+    product  [I]
+    product  [182]
+  174 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 171]
+    product  [I]
+    product  [I, 168]
+    product  [I]
+    product  [I]
+  175 ≥ Sum
+    product  [174]
+  176 ≥ Sum
+    product  [173]
+  177 ≥ Sum
+    product  [169]
+  178 ≥ Sum
+    product  [167]
+  180 ≥ Sum
+    product  [167]
+  184 ≥ Sum
+    product  [465, 468]
+  185 ≥ Sum
+    product  [I]
+    product  [I, 189]
+    product  [I, 192, 193]
+  186 ≥ Sum
+    product  [I]
+    product  [I, 190]
+    product  [I, 194, 195]
+  187 ≥ Sum
+    product  [I]
+  188 ≥ Sum
+    product  [I]
+  191 ≥ Sum
+    product  [I]
+    product  [I]
+  196 ≥ Sum
+    product  [I]
+  197 ≥ Sum
+    product  [I]
+    product  [I]
+  200 ≥ Sum
+    product  [I]
+    product  [I, 199]
+    product  [I]
+    product  [208, 209]
+    product  [207, 210]
+  201 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 198]
+    product  [I]
+    product  [I]
+  202 ≥ Sum
+    product  [201]
+  203 ≥ Sum
+    product  [200]
+  204 ≥ Sum
+    product  [196]
+  211 ≥ Sum
+    product  [I]
+    product  [225, 231]
+  213 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [225]
+  214 ≥ Sum
+    product  [I]
+    product  [I]
+  217 ≥ Sum
+    product  [I]
+    product  [I, 216]
+    product  [I]
+    product  [I]
+    product  [228]
+    product  [227, 229]
+    product  [226, 230]
+  218 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 215]
+    product  [I]
+    product  [I, 212]
+    product  [I]
+    product  [I]
+  219 ≥ Sum
+    product  [218]
+  220 ≥ Sum
+    product  [217]
+  221 ≥ Sum
+    product  [213]
+  222 ≥ Sum
+    product  [211]
+  224 ≥ Sum
+    product  [211]
+  235 ≥ Sum
+    product  [277]
+    product  [306]
+    product  [305]
+    product  []
+  236 ≥ Sum
+    product  [I]
+    product  [I, 240]
+    product  [I, 243]
+  237 ≥ Sum
+    product  [I]
+    product  [I, 241]
+    product  [I, 244]
+  238 ≥ Sum
+    product  [I]
+  239 ≥ Sum
+    product  [I]
+  242 ≥ Sum
+    product  [I]
+  245 ≥ Sum
+    product  [I]
+    product  [259, 261]
+  247 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [259]
+  248 ≥ Sum
+    product  [I]
+    product  [I]
+  251 ≥ Sum
+    product  [I]
+    product  [I, 250]
+    product  [I]
+    product  [I]
+    product  [260]
+  252 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 249]
+    product  [I]
+    product  [I, 246]
+    product  [I]
+    product  [I]
+  253 ≥ Sum
+    product  [252]
+  254 ≥ Sum
+    product  [251]
+  255 ≥ Sum
+    product  [247]
+  256 ≥ Sum
+    product  [245]
+  258 ≥ Sum
+    product  [245]
+  262 ≥ Sum
+    product  [I]
+    product  [277, 279]
+  265 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [277, 280, 285]
+  266 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+  269 ≥ Sum
+    product  [I]
+    product  [I, 268]
+    product  [I]
+    product  [I]
+    product  [278]
+    product  [277, 281, 284]
+    product  [277, 280, 286]
+  270 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 267]
+    product  [I]
+    product  [I, 263, 264]
+    product  [I]
+    product  [I]
+    product  [277, 282, 283]
+    product  [277, 280, 287]
+  271 ≥ Sum
+    product  [270]
+  272 ≥ Sum
+    product  [269]
+  273 ≥ Sum
+    product  [265]
+  274 ≥ Sum
+    product  [262]
+  276 ≥ Sum
+    product  [262]
+  288 ≥ Sum
+    product  [I]
+    product  [305, 312]
+  290 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [306, 308]
+  292 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [306, 309]
+    product  [305, 313]
+  293 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  296 ≥ Sum
+    product  [I]
+    product  [I, 295]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [307]
+    product  [306, 310]
+    product  [305, 314]
+  297 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 294]
+    product  [I]
+    product  [I, 291]
+    product  [I]
+    product  [I, 289]
+    product  [I]
+    product  [I]
+    product  [306, 311]
+    product  [305, 315]
+  298 ≥ Sum
+    product  [297]
+  299 ≥ Sum
+    product  [296]
+  300 ≥ Sum
+    product  [292]
+  301 ≥ Sum
+    product  [290]
+    product  [288]
+  303 ≥ Sum
+    product  [290]
+  304 ≥ Sum
+    product  [288]
+  316 ≥ Sum
+    product  []
+    product  [374, 377, 381]
+    product  [393]
+    product  [338]
+    product  []
+  317 ≥ Sum
+    product  [I]
+    product  [I, 319]
+    product  [I, 320]
+  318 ≥ Sum
+    product  [I]
+  321 ≥ Sum
+    product  [I]
+    product  [328]
+  323 ≥ Sum
+    product  [I]
+    product  [I, 322]
+    product  [I]
+    product  [I]
+    product  [329]
+  324 ≥ Sum
+    product  [323]
+  325 ≥ Sum
+    product  [321]
+  327 ≥ Sum
+    product  [321]
+  330 ≥ Sum
+    product  [I]
+    product  [338, 340]
+  333 ≥ Sum
+    product  [I]
+    product  [I, 331, 332]
+    product  [I]
+    product  [I]
+    product  [339]
+    product  [338, 341, 342]
+  334 ≥ Sum
+    product  [333]
+  335 ≥ Sum
+    product  [330]
+  337 ≥ Sum
+    product  [330]
+  343 ≥ Sum
+    product  [I]
+    product  [353]
+  345 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [354]
+  347 ≥ Sum
+    product  [I]
+    product  [I, 346]
+    product  [I]
+    product  [I, 344]
+    product  [I]
+    product  [I]
+    product  [355]
+  348 ≥ Sum
+    product  [347]
+  349 ≥ Sum
+    product  [345]
+    product  [343]
+  351 ≥ Sum
+    product  [345]
+  352 ≥ Sum
+    product  [343]
+  356 ≥ Sum
+    product  []
+  357 ≥ Sum
+    product  [I]
+    product  [I, 359]
+    product  [I, 361]
+    product  [I, 362]
+  358 ≥ Sum
+    product  [I]
+  360 ≥ Sum
+    product  [I]
+  363 ≥ Sum
+    product  [I]
+    product  [374, 377, 381, 383]
+  365 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [374, 376]
+  368 ≥ Sum
+    product  [I]
+    product  [I, 366, 367]
+    product  [I]
+    product  [I, 364]
+    product  [I]
+    product  [I]
+    product  [375]
+    product  [374, 379, 380]
+    product  [374, 378]
+    product  [374, 377, 382]
+    product  [374, 377, 381, 384]
+  369 ≥ Sum
+    product  [368]
+  370 ≥ Sum
+    product  [365]
+  372 ≥ Sum
+    product  [365]
+  373 ≥ Sum
+    product  [363]
+  385 ≥ Sum
+    product  [I]
+    product  [393, 396]
+  387 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [394]
+  389 ≥ Sum
+    product  [I]
+    product  [I, 388]
+    product  [I]
+    product  [I, 386]
+    product  [I]
+    product  [395]
+    product  [393, 397]
+  390 ≥ Sum
+    product  [389]
+  391 ≥ Sum
+    product  [387]
+  392 ≥ Sum
+    product  [385]
+  398 ≥ Sum
+    product  [374, 377]
+  399 ≥ Sum
+    product  [I]
+    product  [I, 401]
+    product  [I, 403, 404]
+    product  [I, 405]
+  400 ≥ Sum
+    product  [I]
+  402 ≥ Sum
+    product  [I]
+    product  [I]
+  406 ≥ Sum
+    product  [I]
+    product  []
+  408 ≥ Sum
+    product  [I]
+    product  [I, 407]
+    product  [I]
+    product  [I]
+  409 ≥ Sum
+    product  [408]
+  410 ≥ Sum
+    product  [406]
+  413 ≥ Sum
+    product  [I]
+    product  [423]
+  415 ≥ Sum
+    product  [I]
+    product  [I]
+  417 ≥ Sum
+    product  [I]
+    product  [I, 416]
+    product  [I]
+    product  [I, 414]
+    product  [I]
+    product  [I]
+    product  [424]
+  418 ≥ Sum
+    product  [417]
+  419 ≥ Sum
+    product  [415]
+  420 ≥ Sum
+    product  [413]
+  422 ≥ Sum
+    product  [413]
+  425 ≥ Sum
+    product  [465]
+    product  [494]
+    product  [493]
+    product  []
+    product  [374]
+  426 ≥ Sum
+    product  [I]
+    product  [I, 430]
+    product  [I, 433]
+  427 ≥ Sum
+    product  [I]
+    product  [I, 431]
+    product  [I, 434]
+  428 ≥ Sum
+    product  [I]
+  429 ≥ Sum
+    product  [I]
+  432 ≥ Sum
+    product  [I]
+  435 ≥ Sum
+    product  [I]
+    product  [449]
+  437 ≥ Sum
+    product  [I]
+    product  [I]
+    product  []
+  438 ≥ Sum
+    product  [I]
+    product  [I]
+  441 ≥ Sum
+    product  [I]
+    product  [I, 440]
+    product  [I]
+    product  [I]
+  442 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 439]
+    product  [I]
+    product  [I, 436]
+    product  [I]
+    product  [I]
+  443 ≥ Sum
+    product  [442]
+  444 ≥ Sum
+    product  [441]
+  445 ≥ Sum
+    product  [437]
+  446 ≥ Sum
+    product  [435]
+  448 ≥ Sum
+    product  [435]
+  450 ≥ Sum
+    product  [I]
+    product  [465, 467]
+  453 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [465, 468, 473]
+  454 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+  457 ≥ Sum
+    product  [I]
+    product  [I, 456]
+    product  [I]
+    product  [I]
+    product  [466]
+    product  [465, 469, 472]
+    product  [465, 468, 474]
+  458 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 455]
+    product  [I]
+    product  [I, 451, 452]
+    product  [I]
+    product  [I]
+    product  [465, 470, 471]
+    product  [465, 468, 475]
+  459 ≥ Sum
+    product  [458]
+  460 ≥ Sum
+    product  [457]
+  461 ≥ Sum
+    product  [453]
+  462 ≥ Sum
+    product  [450]
+  464 ≥ Sum
+    product  [450]
+  476 ≥ Sum
+    product  [I]
+    product  [493, 500]
+  478 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [494, 496]
+  480 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [494, 497]
+    product  [493, 501]
+  481 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [I]
+  484 ≥ Sum
+    product  [I]
+    product  [I, 483]
+    product  [I]
+    product  [I]
+    product  [I]
+    product  [495]
+    product  [494, 498]
+    product  [493, 502]
+  485 ≥ Sum
+    product  [I]
+    product  [I]
+    product  [I, 482]
+    product  [I]
+    product  [I, 479]
+    product  [I]
+    product  [I, 477]
+    product  [I]
+    product  [I]
+    product  [494, 499]
+    product  [493, 503]
+  486 ≥ Sum
+    product  [485]
+  487 ≥ Sum
+    product  [484]
+  488 ≥ Sum
+    product  [480]
+  489 ≥ Sum
+    product  [478]
+    product  [476]
+  491 ≥ Sum
+    product  [478]
+  492 ≥ Sum
+    product  [476]
+  504 ≥ Sum
+    product  [115]
+    product  [140]
+
+Maxes:
+  L ≥ Max
+    product  [234]
+    product  [233]
+  0 ≥ Max
+    product  [L, 235]
+    product  [L, 425]
+    product  [L, 316]
+  1 ≥ Max
+    product  [302]
+    product  [307]
+    product  [490]
+    product  [495]
+    product  [509]
+    product  [516]
+    product  [538]
+    product  [395]
+    product  [350]
+  2 ≥ Max
+    product  [303]
+    product  [306]
+    product  [491]
+    product  [494]
+    product  [515]
+    product  [508]
+    product  [537]
+    product  [394]
+    product  [351]
+  3 ≥ Max
+    product  [34]
+    product  [291]
+    product  [244]
+    product  [479]
+    product  [434]
+    product  [39]
+    product  [24]
+    product  [39]
+    product  [388]
+    product  [346]
+  4 ≥ Max
+    product  [304]
+    product  [305]
+    product  [492]
+    product  [493]
+    product  [514]
+    product  [536]
+    product  [507]
+    product  [393]
+    product  [352]
+  5 ≥ Max
+    product  [34]
+    product  [289]
+    product  [244]
+    product  [477]
+    product  [434]
+    product  [39]
+    product  [39]
+    product  [24]
+    product  [320]
+    product  [344]
+  6 ≥ Max
+    product  [34]
+    product  [243]
+    product  [244]
+    product  [433]
+    product  [434]
+    product  [22]
+    product  [22]
+    product  [505]
+    product  [362]
+    product  [319]
+  7 ≥ Max
+    product  [L, 58]
+    product  [L, 143]
+    product  [L, 184]
+    product  [L, 398]
+  8 ≥ Max
+    product  [107]
+    product  [179]
+    product  [182]
+    product  [223]
+    product  [230]
+    product  [530]
+    product  [546]
+    product  [421]
+  9 ≥ Max
+    product  [108]
+    product  [180]
+    product  [181]
+    product  [224]
+    product  [239]
+    product  [529]
+    product  [545]
+    product  [422]
+  10 ≥ Max
+    product  [18]
+    product  [88]
+    product  [168]
+    product  [172]
+    product  [212]
+    product  [240]
+    product  [15]
+    product  [15]
+    product  [414]
+  11 ≥ Max
+    product  [18]
+    product  [66]
+    product  [151]
+    product  [153]
+    product  [192]
+    product  [241]
+    product  [38]
+    product  [38]
+    product  [403]
+  12 ≥ Max
+    product  [32]
+  13 ≥ Max
+    product  [L, 58]
+    product  [L, 143]
+    product  [L, 184]
+    product  [L, 398]
+  14 ≥ Max
+    product  [86]
+    product  [165]
+    product  [166]
+    product  [206]
+    product  [210]
+    product  [523]
+    product  [532]
+    product  [548]
+    product  [553]
+    product  [134]
+    product  [412]
+  15 ≥ Max
+    product  [18]
+    product  [66]
+    product  [151]
+    product  [153]
+    product  [192]
+    product  [38]
+    product  [38]
+    product  [10]
+    product  [10]
+    product  [38]
+    product  [38]
+    product  [403]
+  16 ≥ Max
+    product  [32]
+  18 ≥ Max
+    product  [15]
+    product  [10]
+    product  [11]
+    product  [38]
+    product  [66]
+    product  [88]
+    product  [148]
+    product  [149]
+    product  [151]
+    product  [153]
+    product  [157]
+    product  [158]
+    product  [171]
+    product  [172]
+    product  [168]
+    product  [240]
+    product  [241]
+    product  [249]
+    product  [250]
+    product  [246]
+    product  [267]
+    product  [268]
+    product  [294]
+    product  [295]
+    product  [189]
+    product  [192]
+    product  [198]
+    product  [215]
+    product  [212]
+    product  [430]
+    product  [439]
+    product  [436]
+    product  [455]
+    product  [482]
+    product  [403]
+    product  [414]
+    product  [322]
+  19 ≥ Max
+    product  [L, 235]
+    product  [L, 425]
+    product  [L, 356]
+    product  [L, 316]
+  20 ≥ Max
+    product  [275]
+    product  [278]
+    product  [463]
+    product  [466]
+    product  [512]
+    product  [534]
+    product  [130]
+    product  [371]
+    product  [336]
+    product  [339]
+  21 ≥ Max
+    product  [276]
+    product  [277]
+    product  [464]
+    product  [465]
+    product  [511]
+    product  [533]
+    product  [129]
+    product  [372]
+    product  [337]
+    product  [338]
+  22 ≥ Max
+    product  [34]
+    product  [263]
+    product  [244]
+    product  [451]
+    product  [434]
+    product  [6]
+    product  [6]
+    product  [39]
+    product  [366]
+    product  [331]
+    product  [320]
+  23 ≥ Max
+    product  [32]
+  24 ≥ Max
+    product  [34]
+    product  [243]
+    product  [244]
+    product  [433]
+    product  [434]
+    product  [3]
+    product  [5]
+    product  [128]
+    product  [359]
+    product  [319]
+    product  [320]
+  27 ≥ Max
+    product  [34]
+    product  [114]
+  28 ≥ Max
+    product  [34]
+    product  [138]
+  29 ≥ Max
+    product  [32]
+  32 ≥ Max
+    product  [16]
+    product  [12]
+    product  [49]
+    product  [23]
+    product  [77]
+    product  [98]
+    product  [152]
+    product  [154]
+    product  [264]
+    product  [283]
+    product  [284]
+    product  [193]
+    product  [195]
+    product  [209]
+    product  [229]
+    product  [452]
+    product  [471]
+    product  [472]
+    product  [506]
+    product  [510]
+    product  [513]
+    product  [518]
+    product  [517]
+    product  [522]
+    product  [521]
+    product  [524]
+    product  [528]
+    product  [527]
+    product  [531]
+    product  [535]
+    product  [540]
+    product  [539]
+    product  [544]
+    product  [543]
+    product  [547]
+    product  [552]
+    product  [551]
+    product  [554]
+    product  [119]
+    product  [123]
+    product  [133]
+    product  [404]
+    product  [367]
+    product  [380]
+    product  [332]
+    product  [342]
+    product  [139]
+    product  [142]
+    product  [29]
+  34 ≥ Max
+    product  [39]
+    product  [22]
+    product  [24]
+    product  [3]
+    product  [5]
+    product  [6]
+    product  [64]
+    product  [67]
+    product  [73]
+    product  [71]
+    product  [82]
+    product  [94]
+    product  [92]
+    product  [103]
+    product  [243]
+    product  [244]
+    product  [263]
+    product  [291]
+    product  [289]
+    product  [190]
+    product  [194]
+    product  [199]
+    product  [216]
+    product  [431]
+    product  [433]
+    product  [434]
+    product  [440]
+    product  [456]
+    product  [451]
+    product  [483]
+    product  [479]
+    product  [477]
+    product  [505]
+    product  [114]
+    product  [128]
+    product  [136]
+    product  [401]
+    product  [405]
+    product  [407]
+    product  [416]
+    product  [359]
+    product  [361]
+    product  [362]
+    product  [366]
+    product  [364]
+    product  [388]
+    product  [386]
+    product  [319]
+    product  [320]
+    product  [331]
+    product  [346]
+    product  [344]
+    product  [138]
+    product  [27]
+    product  [28]
+  35 ≥ Max
+    product  [L, 235]
+    product  [L, 425]
+    product  [L, 316]
+  36 ≥ Max
+    product  [257]
+    product  [260]
+    product  [208]
+    product  [447]
+    product  [520]
+    product  [526]
+    product  [542]
+    product  [550]
+    product  [132]
+    product  [424]
+    product  [326]
+    product  [329]
+  37 ≥ Max
+    product  [258]
+    product  [259]
+    product  [207]
+    product  [448]
+    product  [519]
+    product  [525]
+    product  [541]
+    product  [549]
+    product  [131]
+    product  [423]
+    product  [327]
+    product  [328]
+  38 ≥ Max
+    product  [18]
+    product  [246]
+    product  [250]
+    product  [15]
+    product  [436]
+    product  [15]
+    product  [11]
+    product  [11]
+    product  [15]
+    product  [15]
+    product  [414]
+    product  [322]
+    product  [322]
+  39 ≥ Max
+    product  [34]
+    product  [243]
+    product  [244]
+    product  [194]
+    product  [433]
+    product  [3]
+    product  [5]
+    product  [3]
+    product  [5]
+    product  [22]
+    product  [405]
+    product  [319]
+    product  [320]
+  40 ≥ Max
+    product  [L, 58]
+    product  [L, 58]
+  41 ≥ Max
+    product  [80]
+    product  [101]
+    product  [127]
+  42 ≥ Max
+    product  [81]
+    product  [102]
+    product  [126]
+  43 ≥ Max
+    product  [83]
+    product  [104]
+    product  [125]
+  44 ≥ Max
+    product  [84]
+    product  [105]
+    product  [124]
+  45 ≥ Max
+    product  [56]
+    product  [69]
+    product  [90]
+    product  [52]
+  46 ≥ Max
+    product  [55]
+    product  [70]
+    product  [91]
+    product  [53]
+  47 ≥ Max
+    product  [56]
+    product  [62]
+    product  [62]
+    product  [62]
+  48 ≥ Max
+    product  [55]
+    product  [63]
+    product  [63]
+    product  [63]
+  49 ≥ Max
+    product  [32]
+  51 ≥ Max
+    product  [135]
+  52 ≥ Max
+    product  [56]
+    product  [45]
+  53 ≥ Max
+    product  [55]
+    product  [46]
+  55 ≥ Max
+    product  [53]
+    product  [46]
+    product  [48]
+    product  [63]
+    product  [70]
+    product  [91]
+  56 ≥ Max
+    product  [52]
+    product  [45]
+    product  [47]
+    product  [62]
+    product  [69]
+    product  [90]
+  59 ≥ Max
+    product  [76]
+    product  [97]
+    product  [112]
+    product  [122]
+  60 ≥ Max
+    product  [78]
+    product  [99]
+    product  [111]
+    product  [121]
+  61 ≥ Max
+    product  [79]
+    product  [100]
+    product  [110]
+    product  [120]
+  62 ≥ Max
+    product  [56]
+    product  [47]
+    product  [47]
+    product  [90]
+    product  [47]
+  63 ≥ Max
+    product  [55]
+    product  [48]
+    product  [48]
+    product  [91]
+    product  [48]
+  64 ≥ Max
+    product  [34]
+  65 ≥ Max
+    product  [85]
+    product  [106]
+    product  [109]
+    product  [429]
+  66 ≥ Max
+    product  [18]
+    product  [15]
+    product  [11]
+    product  [88]
+    product  [430]
+  67 ≥ Max
+    product  [34]
+    product  [73]
+    product  [67]
+    product  [67]
+    product  [431]
+  69 ≥ Max
+    product  [56]
+    product  [45]
+  70 ≥ Max
+    product  [55]
+    product  [46]
+  71 ≥ Max
+    product  [34]
+  73 ≥ Max
+    product  [34]
+    product  [82]
+    product  [67]
+  76 ≥ Max
+    product  [59]
+  77 ≥ Max
+    product  [32]
+  78 ≥ Max
+    product  [60]
+  79 ≥ Max
+    product  [L]
+    product  [61]
+  80 ≥ Max
+    product  [41]
+  81 ≥ Max
+    product  [42]
+  82 ≥ Max
+    product  [34]
+    product  [73]
+  83 ≥ Max
+    product  [43]
+  84 ≥ Max
+    product  [44]
+  85 ≥ Max
+    product  [L]
+    product  [65]
+  86 ≥ Max
+    product  [14]
+  88 ≥ Max
+    product  [18]
+    product  [10]
+    product  [66]
+  90 ≥ Max
+    product  [56]
+    product  [45]
+    product  [62]
+  91 ≥ Max
+    product  [55]
+    product  [46]
+    product  [63]
+  92 ≥ Max
+    product  [34]
+  94 ≥ Max
+    product  [34]
+    product  [103]
+  97 ≥ Max
+    product  [59]
+  98 ≥ Max
+    product  [32]
+  99 ≥ Max
+    product  [60]
+  100 ≥ Max
+    product  [L]
+    product  [61]
+  101 ≥ Max
+    product  [41]
+  102 ≥ Max
+    product  [42]
+  103 ≥ Max
+    product  [34]
+    product  [94]
+  104 ≥ Max
+    product  [43]
+  105 ≥ Max
+    product  [44]
+  106 ≥ Max
+    product  [L]
+    product  [65]
+  107 ≥ Max
+    product  [8]
+  108 ≥ Max
+    product  [9]
+  109 ≥ Max
+    product  [65]
+  110 ≥ Max
+    product  [61]
+  111 ≥ Max
+    product  [60]
+  112 ≥ Max
+    product  [59]
+  114 ≥ Max
+    product  [34]
+    product  [434]
+    product  [27]
+  115 ≥ Max
+    product  [432]
+  116 ≥ Max
+    product  [428]
+  117 ≥ Max
+    product  [427]
+  118 ≥ Max
+    product  [426]
+  119 ≥ Max
+    product  [32]
+  120 ≥ Max
+    product  [61]
+  121 ≥ Max
+    product  [60]
+  122 ≥ Max
+    product  [59]
+  123 ≥ Max
+    product  [32]
+  124 ≥ Max
+    product  [44]
+  125 ≥ Max
+    product  [43]
+  126 ≥ Max
+    product  [42]
+  127 ≥ Max
+    product  [41]
+  128 ≥ Max
+    product  [34]
+    product  [24]
+  129 ≥ Max
+    product  [21]
+  130 ≥ Max
+    product  [20]
+  131 ≥ Max
+    product  [37]
+  132 ≥ Max
+    product  [36]
+  133 ≥ Max
+    product  [32]
+  134 ≥ Max
+    product  [14]
+  135 ≥ Max
+    product  [51]
+  136 ≥ Max
+    product  [34]
+  138 ≥ Max
+    product  [34]
+    product  [320]
+    product  [28]
+  139 ≥ Max
+    product  [32]
+  140 ≥ Max
+    product  [318]
+  141 ≥ Max
+    product  [317]
+  142 ≥ Max
+    product  [32]
+  144 ≥ Max
+    product  [161]
+    product  [175]
+    product  [287]
+  145 ≥ Max
+    product  [162]
+    product  [176]
+    product  [286]
+  146 ≥ Max
+    product  [163]
+    product  [177]
+    product  [285]
+  147 ≥ Max
+    product  [156]
+    product  [170]
+    product  [266]
+  148 ≥ Max
+    product  [18]
+    product  [157]
+    product  [171]
+    product  [267]
+  149 ≥ Max
+    product  [18]
+    product  [158]
+    product  [172]
+    product  [268]
+  150 ≥ Max
+    product  [164]
+    product  [178]
+    product  [239]
+  151 ≥ Max
+    product  [18]
+    product  [15]
+    product  [11]
+    product  [240]
+  152 ≥ Max
+    product  [32]
+  153 ≥ Max
+    product  [18]
+    product  [15]
+    product  [11]
+    product  [241]
+  154 ≥ Max
+    product  [32]
+  156 ≥ Max
+    product  [147]
+  157 ≥ Max
+    product  [18]
+    product  [148]
+  158 ≥ Max
+    product  [18]
+    product  [149]
+  161 ≥ Max
+    product  [144]
+  162 ≥ Max
+    product  [145]
+  163 ≥ Max
+    product  [146]
+  164 ≥ Max
+    product  [L]
+    product  [150]
+  165 ≥ Max
+    product  [14]
+  166 ≥ Max
+    product  [14]
+  168 ≥ Max
+    product  [18]
+    product  [10]
+    product  [171]
+  170 ≥ Max
+    product  [147]
+    product  [183]
+  171 ≥ Max
+    product  [18]
+    product  [148]
+    product  [168]
+  172 ≥ Max
+    product  [18]
+    product  [149]
+    product  [10]
+  175 ≥ Max
+    product  [144]
+  176 ≥ Max
+    product  [145]
+  177 ≥ Max
+    product  [146]
+  178 ≥ Max
+    product  [L]
+    product  [150]
+  179 ≥ Max
+    product  [8]
+  180 ≥ Max
+    product  [9]
+  181 ≥ Max
+    product  [9]
+  182 ≥ Max
+    product  [8]
+  183 ≥ Max
+    product  [170]
+  185 ≥ Max
+    product  [202]
+    product  [219]
+    product  [475]
+  186 ≥ Max
+    product  [203]
+    product  [220]
+    product  [474]
+  187 ≥ Max
+    product  [204]
+    product  [221]
+    product  [473]
+  188 ≥ Max
+    product  [197]
+    product  [214]
+    product  [454]
+  189 ≥ Max
+    product  [18]
+    product  [198]
+    product  [215]
+    product  [455]
+  190 ≥ Max
+    product  [34]
+    product  [199]
+    product  [216]
+    product  [456]
+  191 ≥ Max
+    product  [205]
+    product  [222]
+    product  [429]
+  192 ≥ Max
+    product  [18]
+    product  [15]
+    product  [11]
+    product  [430]
+  193 ≥ Max
+    product  [32]
+  194 ≥ Max
+    product  [34]
+    product  [39]
+    product  [244]
+    product  [431]
+  195 ≥ Max
+    product  [32]
+  197 ≥ Max
+    product  [188]
+  198 ≥ Max
+    product  [18]
+    product  [189]
+  199 ≥ Max
+    product  [34]
+    product  [190]
+  202 ≥ Max
+    product  [185]
+  203 ≥ Max
+    product  [186]
+  204 ≥ Max
+    product  [187]
+  205 ≥ Max
+    product  [L]
+    product  [191]
+  206 ≥ Max
+    product  [14]
+  207 ≥ Max
+    product  [37]
+  208 ≥ Max
+    product  [36]
+  209 ≥ Max
+    product  [32]
+  210 ≥ Max
+    product  [14]
+  212 ≥ Max
+    product  [18]
+    product  [10]
+    product  [215]
+  214 ≥ Max
+    product  [188]
+    product  [231]
+  215 ≥ Max
+    product  [18]
+    product  [189]
+    product  [212]
+  216 ≥ Max
+    product  [34]
+    product  [190]
+    product  [243]
+  219 ≥ Max
+    product  [185]
+  220 ≥ Max
+    product  [186]
+  221 ≥ Max
+    product  [187]
+  222 ≥ Max
+    product  [L]
+    product  [191]
+  223 ≥ Max
+    product  [8]
+  224 ≥ Max
+    product  [9]
+  225 ≥ Max
+    product  [242]
+  226 ≥ Max
+    product  [238]
+  227 ≥ Max
+    product  [237]
+  228 ≥ Max
+    product  [236]
+  229 ≥ Max
+    product  [32]
+  230 ≥ Max
+    product  [8]
+  231 ≥ Max
+    product  [214]
+  233 ≥ Max
+    product  [L]
+  234 ≥ Max
+    product  [L]
+  236 ≥ Max
+    product  [253]
+    product  [271]
+    product  [282]
+    product  [298]
+    product  [311]
+    product  [315]
+    product  [228]
+  237 ≥ Max
+    product  [254]
+    product  [272]
+    product  [281]
+    product  [299]
+    product  [310]
+    product  [314]
+    product  [227]
+  238 ≥ Max
+    product  [255]
+    product  [273]
+    product  [280]
+    product  [300]
+    product  [309]
+    product  [313]
+    product  [226]
+  239 ≥ Max
+    product  [248]
+    product  [266]
+    product  [150]
+    product  [293]
+    product  [293]
+    product  [293]
+    product  [9]
+  240 ≥ Max
+    product  [18]
+    product  [249]
+    product  [267]
+    product  [151]
+    product  [294]
+    product  [294]
+    product  [294]
+    product  [10]
+  241 ≥ Max
+    product  [18]
+    product  [250]
+    product  [268]
+    product  [153]
+    product  [295]
+    product  [295]
+    product  [295]
+    product  [11]
+  242 ≥ Max
+    product  [256]
+    product  [274]
+    product  [279]
+    product  [301]
+    product  [308]
+    product  [312]
+    product  [225]
+  243 ≥ Max
+    product  [34]
+    product  [39]
+    product  [24]
+    product  [263]
+    product  [6]
+    product  [291]
+    product  [289]
+    product  [216]
+  244 ≥ Max
+    product  [34]
+    product  [39]
+    product  [22]
+    product  [24]
+    product  [3]
+    product  [5]
+    product  [6]
+    product  [194]
+  246 ≥ Max
+    product  [18]
+    product  [38]
+    product  [249]
+  248 ≥ Max
+    product  [239]
+    product  [261]
+  249 ≥ Max
+    product  [18]
+    product  [240]
+    product  [246]
+  250 ≥ Max
+    product  [18]
+    product  [241]
+    product  [38]
+  253 ≥ Max
+    product  [236]
+  254 ≥ Max
+    product  [237]
+  255 ≥ Max
+    product  [238]
+  256 ≥ Max
+    product  [L]
+    product  [242]
+  257 ≥ Max
+    product  [36]
+  258 ≥ Max
+    product  [37]
+  259 ≥ Max
+    product  [37]
+  260 ≥ Max
+    product  [36]
+  261 ≥ Max
+    product  [248]
+  263 ≥ Max
+    product  [34]
+    product  [22]
+    product  [243]
+  264 ≥ Max
+    product  [32]
+  266 ≥ Max
+    product  [239]
+    product  [147]
+  267 ≥ Max
+    product  [18]
+    product  [240]
+    product  [148]
+  268 ≥ Max
+    product  [18]
+    product  [241]
+    product  [149]
+  271 ≥ Max
+    product  [236]
+  272 ≥ Max
+    product  [237]
+  273 ≥ Max
+    product  [238]
+  274 ≥ Max
+    product  [L]
+    product  [242]
+  275 ≥ Max
+    product  [20]
+  276 ≥ Max
+    product  [21]
+  277 ≥ Max
+    product  [21]
+  278 ≥ Max
+    product  [20]
+  279 ≥ Max
+    product  [242]
+  280 ≥ Max
+    product  [238]
+  281 ≥ Max
+    product  [237]
+  282 ≥ Max
+    product  [236]
+  283 ≥ Max
+    product  [32]
+  284 ≥ Max
+    product  [32]
+  285 ≥ Max
+    product  [146]
+  286 ≥ Max
+    product  [145]
+  287 ≥ Max
+    product  [144]
+  289 ≥ Max
+    product  [34]
+    product  [5]
+    product  [243]
+  291 ≥ Max
+    product  [34]
+    product  [3]
+    product  [243]
+  293 ≥ Max
+    product  [239]
+    product  [239]
+    product  [239]
+  294 ≥ Max
+    product  [18]
+    product  [240]
+    product  [240]
+    product  [240]
+  295 ≥ Max
+    product  [18]
+    product  [241]
+    product  [241]
+    product  [241]
+  298 ≥ Max
+    product  [236]
+  299 ≥ Max
+    product  [237]
+  300 ≥ Max
+    product  [238]
+  301 ≥ Max
+    product  [L]
+    product  [242]
+  302 ≥ Max
+    product  [1]
+  303 ≥ Max
+    product  [2]
+  304 ≥ Max
+    product  [4]
+  305 ≥ Max
+    product  [4]
+  306 ≥ Max
+    product  [2]
+  307 ≥ Max
+    product  [1]
+  308 ≥ Max
+    product  [242]
+  309 ≥ Max
+    product  [238]
+  310 ≥ Max
+    product  [237]
+  311 ≥ Max
+    product  [236]
+  312 ≥ Max
+    product  [242]
+  313 ≥ Max
+    product  [238]
+  314 ≥ Max
+    product  [237]
+  315 ≥ Max
+    product  [236]
+  317 ≥ Max
+    product  [375]
+    product  [384]
+    product  [397]
+    product  [324]
+    product  [334]
+    product  [341]
+    product  [348]
+    product  [141]
+  318 ≥ Max
+    product  [383]
+    product  [374]
+    product  [396]
+    product  [325]
+    product  [335]
+    product  [340]
+    product  [349]
+    product  [140]
+  319 ≥ Max
+    product  [364]
+    product  [434]
+    product  [386]
+    product  [34]
+    product  [39]
+    product  [24]
+    product  [331]
+    product  [6]
+    product  [505]
+  320 ≥ Max
+    product  [401]
+    product  [362]
+    product  [5]
+    product  [34]
+    product  [39]
+    product  [22]
+    product  [24]
+    product  [362]
+    product  [138]
+  322 ≥ Max
+    product  [18]
+    product  [38]
+    product  [38]
+  324 ≥ Max
+    product  [317]
+  325 ≥ Max
+    product  [L]
+    product  [318]
+  326 ≥ Max
+    product  [36]
+  327 ≥ Max
+    product  [37]
+  328 ≥ Max
+    product  [37]
+  329 ≥ Max
+    product  [36]
+  331 ≥ Max
+    product  [34]
+    product  [22]
+    product  [319]
+  332 ≥ Max
+    product  [32]
+  334 ≥ Max
+    product  [317]
+  335 ≥ Max
+    product  [L]
+    product  [318]
+  336 ≥ Max
+    product  [20]
+  337 ≥ Max
+    product  [21]
+  338 ≥ Max
+    product  [21]
+  339 ≥ Max
+    product  [20]
+  340 ≥ Max
+    product  [318]
+  341 ≥ Max
+    product  [317]
+  342 ≥ Max
+    product  [32]
+  344 ≥ Max
+    product  [34]
+    product  [5]
+    product  [361]
+  346 ≥ Max
+    product  [34]
+    product  [3]
+    product  [359]
+  348 ≥ Max
+    product  [317]
+  349 ≥ Max
+    product  [L]
+    product  [318]
+  350 ≥ Max
+    product  [1]
+  351 ≥ Max
+    product  [2]
+  352 ≥ Max
+    product  [4]
+  353 ≥ Max
+    product  [360]
+  354 ≥ Max
+    product  [358]
+  355 ≥ Max
+    product  [357]
+  357 ≥ Max
+    product  [369]
+    product  [390]
+    product  [355]
+  358 ≥ Max
+    product  [370]
+    product  [391]
+    product  [354]
+  359 ≥ Max
+    product  [34]
+    product  [24]
+    product  [388]
+    product  [346]
+  360 ≥ Max
+    product  [373]
+    product  [392]
+    product  [353]
+  361 ≥ Max
+    product  [34]
+    product  [364]
+    product  [386]
+    product  [344]
+  362 ≥ Max
+    product  [34]
+    product  [320]
+    product  [6]
+    product  [320]
+  364 ≥ Max
+    product  [34]
+    product  [361]
+    product  [319]
+  366 ≥ Max
+    product  [34]
+    product  [22]
+    product  [433]
+  367 ≥ Max
+    product  [32]
+  369 ≥ Max
+    product  [357]
+  370 ≥ Max
+    product  [L]
+    product  [358]
+  371 ≥ Max
+    product  [20]
+  372 ≥ Max
+    product  [21]
+  373 ≥ Max
+    product  [360]
+  374 ≥ Max
+    product  [318]
+  375 ≥ Max
+    product  [317]
+  376 ≥ Max
+    product  [432]
+  377 ≥ Max
+    product  [428]
+  378 ≥ Max
+    product  [427]
+  379 ≥ Max
+    product  [426]
+  380 ≥ Max
+    product  [32]
+  381 ≥ Max
+    product  [400]
+  382 ≥ Max
+    product  [399]
+  383 ≥ Max
+    product  [318]
+  384 ≥ Max
+    product  [317]
+  386 ≥ Max
+    product  [34]
+    product  [361]
+    product  [319]
+  388 ≥ Max
+    product  [34]
+    product  [359]
+    product  [3]
+  390 ≥ Max
+    product  [357]
+  391 ≥ Max
+    product  [358]
+  392 ≥ Max
+    product  [360]
+  393 ≥ Max
+    product  [4]
+  394 ≥ Max
+    product  [2]
+  395 ≥ Max
+    product  [1]
+  396 ≥ Max
+    product  [318]
+  397 ≥ Max
+    product  [317]
+  399 ≥ Max
+    product  [409]
+    product  [418]
+    product  [382]
+  400 ≥ Max
+    product  [410]
+    product  [419]
+    product  [381]
+  401 ≥ Max
+    product  [34]
+    product  [407]
+    product  [416]
+    product  [320]
+  402 ≥ Max
+    product  [411]
+    product  [420]
+    product  [429]
+  403 ≥ Max
+    product  [18]
+    product  [15]
+    product  [11]
+    product  [430]
+  404 ≥ Max
+    product  [32]
+  405 ≥ Max
+    product  [34]
+    product  [407]
+    product  [39]
+    product  [431]
+  407 ≥ Max
+    product  [34]
+    product  [401]
+    product  [405]
+  409 ≥ Max
+    product  [399]
+  410 ≥ Max
+    product  [400]
+  411 ≥ Max
+    product  [L]
+    product  [402]
+  412 ≥ Max
+    product  [14]
+  414 ≥ Max
+    product  [18]
+    product  [10]
+    product  [38]
+  416 ≥ Max
+    product  [34]
+    product  [401]
+  418 ≥ Max
+    product  [399]
+  419 ≥ Max
+    product  [400]
+  420 ≥ Max
+    product  [L]
+    product  [402]
+  421 ≥ Max
+    product  [8]
+  422 ≥ Max
+    product  [9]
+  423 ≥ Max
+    product  [37]
+  424 ≥ Max
+    product  [36]
+  426 ≥ Max
+    product  [443]
+    product  [459]
+    product  [470]
+    product  [486]
+    product  [499]
+    product  [503]
+    product  [118]
+    product  [379]
+  427 ≥ Max
+    product  [444]
+    product  [460]
+    product  [469]
+    product  [487]
+    product  [498]
+    product  [502]
+    product  [117]
+    product  [378]
+  428 ≥ Max
+    product  [445]
+    product  [461]
+    product  [468]
+    product  [488]
+    product  [497]
+    product  [501]
+    product  [116]
+    product  [377]
+  429 ≥ Max
+    product  [438]
+    product  [454]
+    product  [191]
+    product  [481]
+    product  [481]
+    product  [481]
+    product  [65]
+    product  [402]
+  430 ≥ Max
+    product  [18]
+    product  [439]
+    product  [455]
+    product  [192]
+    product  [482]
+    product  [482]
+    product  [482]
+    product  [66]
+    product  [403]
+  431 ≥ Max
+    product  [34]
+    product  [440]
+    product  [456]
+    product  [194]
+    product  [483]
+    product  [483]
+    product  [483]
+    product  [67]
+    product  [405]
+  432 ≥ Max
+    product  [446]
+    product  [462]
+    product  [467]
+    product  [489]
+    product  [496]
+    product  [500]
+    product  [115]
+    product  [376]
+  433 ≥ Max
+    product  [34]
+    product  [39]
+    product  [24]
+    product  [451]
+    product  [6]
+    product  [479]
+    product  [477]
+    product  [505]
+    product  [366]
+  434 ≥ Max
+    product  [34]
+    product  [440]
+    product  [22]
+    product  [24]
+    product  [3]
+    product  [5]
+    product  [6]
+    product  [114]
+    product  [319]
+  436 ≥ Max
+    product  [18]
+    product  [38]
+    product  [439]
+  438 ≥ Max
+    product  [429]
+    product  [449]
+  439 ≥ Max
+    product  [18]
+    product  [430]
+    product  [436]
+  440 ≥ Max
+    product  [34]
+    product  [431]
+    product  [434]
+  443 ≥ Max
+    product  [426]
+  444 ≥ Max
+    product  [427]
+  445 ≥ Max
+    product  [428]
+  446 ≥ Max
+    product  [L]
+    product  [432]
+  447 ≥ Max
+    product  [36]
+  448 ≥ Max
+    product  [37]
+  449 ≥ Max
+    product  [438]
+  451 ≥ Max
+    product  [34]
+    product  [22]
+    product  [433]
+  452 ≥ Max
+    product  [32]
+  454 ≥ Max
+    product  [429]
+    product  [188]
+  455 ≥ Max
+    product  [18]
+    product  [430]
+    product  [189]
+  456 ≥ Max
+    product  [34]
+    product  [431]
+    product  [190]
+  459 ≥ Max
+    product  [426]
+  460 ≥ Max
+    product  [427]
+  461 ≥ Max
+    product  [428]
+  462 ≥ Max
+    product  [L]
+    product  [432]
+  463 ≥ Max
+    product  [20]
+  464 ≥ Max
+    product  [21]
+  465 ≥ Max
+    product  [21]
+  466 ≥ Max
+    product  [20]
+  467 ≥ Max
+    product  [432]
+  468 ≥ Max
+    product  [428]
+  469 ≥ Max
+    product  [427]
+  470 ≥ Max
+    product  [426]
+  471 ≥ Max
+    product  [32]
+  472 ≥ Max
+    product  [32]
+  473 ≥ Max
+    product  [187]
+  474 ≥ Max
+    product  [186]
+  475 ≥ Max
+    product  [185]
+  477 ≥ Max
+    product  [34]
+    product  [5]
+    product  [433]
+  479 ≥ Max
+    product  [34]
+    product  [3]
+    product  [433]
+  481 ≥ Max
+    product  [429]
+    product  [429]
+    product  [429]
+  482 ≥ Max
+    product  [18]
+    product  [430]
+    product  [430]
+    product  [430]
+  483 ≥ Max
+    product  [34]
+    product  [431]
+    product  [431]
+    product  [431]
+  486 ≥ Max
+    product  [426]
+  487 ≥ Max
+    product  [427]
+  488 ≥ Max
+    product  [428]
+  489 ≥ Max
+    product  [L]
+    product  [432]
+  490 ≥ Max
+    product  [1]
+  491 ≥ Max
+    product  [2]
+  492 ≥ Max
+    product  [4]
+  493 ≥ Max
+    product  [4]
+  494 ≥ Max
+    product  [2]
+  495 ≥ Max
+    product  [1]
+  496 ≥ Max
+    product  [432]
+  497 ≥ Max
+    product  [428]
+  498 ≥ Max
+    product  [427]
+  499 ≥ Max
+    product  [426]
+  500 ≥ Max
+    product  [432]
+  501 ≥ Max
+    product  [428]
+  502 ≥ Max
+    product  [427]
+  503 ≥ Max
+    product  [426]
+  505 ≥ Max
+    product  [34]
+    product  [6]
+    product  [433]
+    product  [319]
+  506 ≥ Max
+    product  [32]
+  507 ≥ Max
+    product  [4]
+  508 ≥ Max
+    product  [2]
+  509 ≥ Max
+    product  [1]
+  510 ≥ Max
+    product  [32]
+  511 ≥ Max
+    product  [21]
+  512 ≥ Max
+    product  [20]
+  513 ≥ Max
+    product  [32]
+  514 ≥ Max
+    product  [4]
+  515 ≥ Max
+    product  [2]
+  516 ≥ Max
+    product  [1]
+  517 ≥ Max
+    product  [32]
+  518 ≥ Max
+    product  [32]
+  519 ≥ Max
+    product  [37]
+  520 ≥ Max
+    product  [36]
+  521 ≥ Max
+    product  [32]
+  522 ≥ Max
+    product  [32]
+  523 ≥ Max
+    product  [14]
+  524 ≥ Max
+    product  [32]
+  525 ≥ Max
+    product  [37]
+  526 ≥ Max
+    product  [36]
+  527 ≥ Max
+    product  [32]
+  528 ≥ Max
+    product  [32]
+  529 ≥ Max
+    product  [9]
+  530 ≥ Max
+    product  [8]
+  531 ≥ Max
+    product  [32]
+  532 ≥ Max
+    product  [14]
+  533 ≥ Max
+    product  [21]
+  534 ≥ Max
+    product  [20]
+  535 ≥ Max
+    product  [32]
+  536 ≥ Max
+    product  [4]
+  537 ≥ Max
+    product  [2]
+  538 ≥ Max
+    product  [1]
+  539 ≥ Max
+    product  [32]
+  540 ≥ Max
+    product  [32]
+  541 ≥ Max
+    product  [37]
+  542 ≥ Max
+    product  [36]
+  543 ≥ Max
+    product  [32]
+  544 ≥ Max
+    product  [32]
+  545 ≥ Max
+    product  [9]
+  546 ≥ Max
+    product  [8]
+  547 ≥ Max
+    product  [32]
+  548 ≥ Max
+    product  [14]
+  549 ≥ Max
+    product  [37]
+  550 ≥ Max
+    product  [36]
+  551 ≥ Max
+    product  [32]
+  552 ≥ Max
+    product  [32]
+  553 ≥ Max
+    product  [14]
+  554 ≥ Max
+    product  [32]
+
+#######################
+# Deferred equalities #
+#######################
+
+69 -> TT n ~ TT n
+48 -> S m ~ S m
+47 -> TT n ~ TT n
+15 -> S m ~ S m
+90 -> TT n ~ TT n
+48 -> S m ~ S m
+47 -> TT n ~ TT n
+11 -> S m ~ S m
+90 -> TT n ~ TT n
+15 -> S m ~ S m
+153 -> S n ~ S n
+11 -> S m ~ S m
+153 -> S n ~ S n
+263 -> S m ~ S m
+151 -> S m ~ S m
+153 -> S n ~ S n
+263 -> S m ~ S m
+244 -> S n ~ S n
+15 -> S m ~ S m
+15 -> S n ~ S n
+194 -> S n ~ S n
+11 -> S m ~ S m
+11 -> S n ~ S n
+194 -> S n ~ S n
+451 -> S m ~ S m
+192 -> S m ~ S m
+194 -> S n ~ S n
+451 -> S m ~ S m
+434 -> S n ~ S n
+15 -> S (S Z) ~ S (S Z)
+39 -> S (S Z) ~ S (S Z)
+15 -> S Z ~ S Z
+11 -> S (S Z) ~ S (S Z)
+39 -> S (S Z) ~ S (S Z)
+6 -> S (S Z) ~ S (S Z)
+24 -> S Z ~ S Z
+15 -> S Z ~ S Z
+11 -> S (S Z) ~ S (S Z)
+39 -> S (S Z) ~ S (S Z)
+15 -> S (S Z) ~ S (S Z)
+39 -> S (S Z) ~ S (S Z)
+6 -> S (S Z) ~ S (S Z)
+24 -> S Z ~ S Z
+505 -> S Z ~ S Z
+15 -> S Z ~ S Z
+39 -> S Z ~ S Z
+52 -> TT Z ~ TT Z
+48 -> S Z ~ S Z
+47 -> TT Z ~ TT Z
+66 -> S Z ~ S Z
+505 -> S Z ~ S Z
+15 -> S n ~ S n
+11 -> S n ~ S n
+366 -> S m ~ S m
+403 -> S m ~ S m
+366 -> S m ~ S m
+331 -> S m ~ S m
+331 -> S m ~ S m
+320 -> S m ~ S m
+505 -> S Z ~ S Z
+138 -> S Z ~ S Z
+138 -> S Z ~ S Z
+
+  -> iteration 1
+unsatisfiable

@@ -250,11 +250,7 @@ Maxes:
 # Deferred equalities #
 #######################
 
-10 -> Z ~ Z
-23 -> n ~ n
 5 -> S n ~ S n
-23 -> n ~ n
-10 -> Z ~ Z
 5 -> S Z ~ S Z
 
   -> iteration 1
