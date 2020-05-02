@@ -128,13 +128,13 @@ OrdSemiring Q where
     (E, E) => E
     (L, L) => L
 
+  -- can we use a q-bound value p times?
   (.<=.) p q = case (p, q) of
-    (I, _) => True
+    (I, I) => True
+    (I, E) => True
     (E, E) => True
-    (E, R) => True
     (L, L) => True
-    -- (L, R) => True  not affine!
-    (R, R) => True
+    (_, R) => True
     _ => False
 
 export

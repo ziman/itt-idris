@@ -173,6 +173,11 @@ eqEvar p q = do
   [p] ~> [q]
   [q] ~> [p]
 
+eqProds : List Evar -> List Evar -> TC n ()
+eqProds ps qs = do
+  ps ~> qs
+  qs ~> ps
+
 lookup : Fin n -> TC n (Binding Evar n)
 lookup i = lookup i <$> getCtx
 
@@ -311,32 +316,35 @@ mutual
   inferPat : Evar -> List Evar -> Pat Evar n -> TC n (Ty n)
   inferPat fq gs pat@(PV i) = traceCtx pat "PV" $ do
     b <- lookup i
-    [b.qv] ~>+ gs
+    eqProds [b.qv] gs
     pure b.type
 
   inferPat fq gs pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
     cTy <- case ctor of
       Forced cn => do
         b <- lookupGlobal cn
+        -- no inspection here
+        -- so the guarding quantity must be okay with this (L won't be!)
+        [QQ I] ~> gs
         pure b.type
       Checked cn => do
         b <- lookupGlobal cn
 
         -- we don't construct the value so we don't place requirements on the quantity of the constructor
-        -- if the function is bound at least L
-        -- then we want to have the constructor bound at least L (but never require more)
-        [QQ L, fq] ~> [b.qv]
+        -- it could happen that the constructor is never constructed
+        -- in such cases, the whole pattern clause can be erased
 
         -- inspect the constructor tag once
-        -- guaranteed to be disjoint with other inspections
-        -- so we use a max-constraint
         [QQ L] ~> gs
 
         pure b.type
 
+    -- the remaining arguments use the same guards
+    -- because they're disjoint from tag inspection
     inferPatApp fq gs cTy args
 
   inferPat fq gs pat@(PForced tm) = traceCtx pat "PFORCED" $
+    -- just check type-correctness
     withQ (QQ I) $ inferTm tm
 
   inferPat fq gs PWildcard =
@@ -346,11 +354,16 @@ mutual
   inferPatApp : Evar -> List Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
   inferPatApp fq gs fTy [] = pure fTy
   inferPatApp fq gs fTy ps@((appQ, pat) :: pats) = traceCtx (PCtorApp (Checked (UN "_")) ps) "PAT-APP" $ do
+    -- if we have gs applications
+    -- then we will have (appQ :: gs) subpatterns available
     patTy <- inferPat fq (appQ :: gs) pat
     whnfTC fTy >>= \case
       Pi b@(B piN piQ piTy) piRhs => do
         patTy ~= piTy
         eqEvar appQ piQ
+
+        -- remaining args use the same guards
+        -- because they're disjoint
         inferPatApp fq gs
           (subst (substFZ $ patToTm pat) piRhs)
           pats
@@ -376,6 +389,7 @@ inferClause : Binding Evar Z -> {argn : Nat} -> Clause Evar argn -> TC Z ()
 inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN "_") c) "CLAUSE" $ do
   inferCtx pi
   withCtx pi $ do
+    -- we start with [], which means we have one/L term matching the LHS
     lhsTy <- inferPatApp fbnd.qv [] (weakenClosed fbnd.type) (toList lhs)
     rhsTy <- inferTm rhs  -- we always need to construct one of RHS per call
     traceTm lhsTy "CLAUSE-CONV" $ do

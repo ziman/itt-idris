@@ -73,6 +73,8 @@ eraseCtx (B n E ty :: ds) = eraseCtx ds
 eraseCtx (B n L ty :: ds) = B n () Erased :: eraseCtx ds
 eraseCtx (B n R ty :: ds) = B n () Erased :: eraseCtx ds
 
+-- TODO: erase whole clauses that check erased constructors
+
 eraseClause : Clause Q argn -> RawClause ()
 eraseClause (MkClause pi lhs rhs) =
   MkRC
