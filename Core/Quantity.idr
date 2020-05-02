@@ -136,3 +136,12 @@ OrdSemiring Q where
     -- (L, R) => True  not affine!
     (R, R) => True
     _ => False
+
+export
+isBinderUsageOk : (bndQ : Q) -> (usageQ : Q) -> Bool
+isBinderUsageOk I I = True
+isBinderUsageOk E I = True
+isBinderUsageOk E E = True
+isBinderUsageOk L L = True
+isBinderUsageOk R _ = True
+isBinderUsageOk _ _ = False

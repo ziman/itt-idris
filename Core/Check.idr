@@ -47,7 +47,7 @@ showEM : Context Q n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
     = "can't convert: " ++ showTm ctx x ++ " with " ++ showTm ctx y
 showEM ctx (QuantityMismatch dn dq inferredQ)
-    = "quantity mismatch in " ++ show dn ++ ": annotated " ++ show dq ++ " /= inferred " ++ show inferredQ
+    = "quantity mismatch in " ++ show dn ++ ": annotated " ++ show dq ++ ", inferred " ++ show inferredQ
 showEM ctx (AppQuantityMismatch fTy tm)
     = "quantity mismatch in application of (_ : " ++ showTm ctx fTy ++ "): " ++ showTm ctx tm
 showEM ctx (NotLeq p q)
@@ -162,7 +162,7 @@ withBnd b@(B n q ty) (MkTC f) = MkTC $ \env, st => case env of
   MkE r gs ctx bt => case f (MkE r gs (b :: ctx) bt) st of
     Left fail => Left fail
     Right (st', MkUsage ug (q' :: us), x) =>
-        if q' .<=. q
+        if isBinderUsageOk q q'
            then Right (st', MkUsage ug us, x)
            else Left (MkF bt _ ctx $ QuantityMismatch n q q')
 
@@ -299,7 +299,7 @@ mutual
     tyTy <- withQ I $ checkTm ty
     tyTy ~= Type_
 
-    withQ I $ withBnd b $ do
+    withQ I $ withBnd (B n I ty) $ do
       rhsTy <- checkTm rhs
       rhsTy ~= Type_
 
