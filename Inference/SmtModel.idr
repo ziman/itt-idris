@@ -35,8 +35,10 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
     ev (EV i) = SortedSet.insert i neutral
 
     eNumsC : Constr -> SortedSet ENum
-    eNumsC c = ?rhs
-    -- eNumsC (MkC agg bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
+    eNumsC (CProdSumLeq lhs rhs) = concatMap (concatMap ev) lhs <+> ev rhs
+    eNumsC (CProdEq lhs rhs) = concatMap ev lhs <+> ev rhs
+    eNumsC (CProdSumLeqProd lhs rhs) = concatMap (concatMap ev) lhs <+> concatMap ev rhs
+    eNumsC (CEq lhs rhs) = ev lhs <+> ev rhs
 
 declVars : SmtType Q -> List ENum -> SmtM Doc (SortedMap ENum (Smt Q))
 declVars smtQ [] = pure $ SortedMap.empty
