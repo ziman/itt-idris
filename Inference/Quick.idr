@@ -9,6 +9,8 @@ import public Compiler.Config
 import public Compiler.Monad
 import public Data.SortedMap
 
+import Data.List
+import Data.Maybe
 import Data.SortedSet
 
 %default total
@@ -42,43 +44,52 @@ QConstrs = SortedMap Int (SortedSet Evar, SortedSet Evar)  -- (guards, uses)
 Index : Type
 Index = SortedMap ENum (SortedSet Int)
 
-number : Int -> List a -> List (Int, a) -> List (Int, a)
-number _ [] acc = acc
-number i (x :: xs) acc = number (i+1) ((i,x) :: acc) xs
+number : Int -> List (Int, a) -> List a -> List (Int, a)
+number _ acc [] = acc
+number i acc (x :: xs) = number (i+1) ((i,x) :: acc) xs
 
 collect : List QConstr -> (QConstrs, Index)
 collect cs = (fromList numbered, foldl insertI empty numbered)
   where
-    insertC : QConstrs -> QConstr -> QConstrs
-    insertC qcs (lhs ~> rhs) = mergeWith (<+>) qcs (insert lhs (insert rhs empty) empty)
+    insertC : SortedMap (List Evar) (SortedSet Evar)
+      -> QConstr
+      -> SortedMap (List Evar) (SortedSet Evar)
+    insertC qcs (lhs ~> rhs) = mergeWith (<+>) qcs $
+      insert (sort lhs) (insert rhs empty) empty
 
     numbered : List (Int, (SortedSet Evar, SortedSet Evar))
-    numbered = number . toList . foldl insertC empty $ cs
+    numbered =
+      number 0 []
+      . map (\(gs,us) => (SortedSet.fromList gs, us))
+      . SortedMap.toList
+      $ foldl insertC empty cs
 
     insertI : Index -> (Int, (SortedSet Evar, SortedSet Evar)) -> Index
-    insertI idx (i, (gs, us)) =
-      mergeWith (<+>) idx $
-        fromList [(g, insert i empty) | g <- gs]
+    insertI idx (i, (gs, us)) with (SortedSet.toList gs)
+      insertI idx (i, (gs, us)) | [] = idx
+      insertI idx (i, (gs, us)) | EV j :: rest =
+        insertI (mergeWith (<+>) idx (insert j (insert i empty) empty)) (i, (gs, us)) | rest
+      insertI idx (i, (gs, us)) | QQ _ :: rest = insertI idx (i, (gs, us)) | rest
 
 est : SortedMap ENum Q -> Evar -> Q
 est vals (QQ q) = q
 est vals (EV i) = fromMaybe I $ lookup i vals
 
 eval : SortedMap ENum Q -> SortedSet Evar -> Q
-eval vals = foldl max I . map (est vals) . toList
+eval vals = foldl max I . map (est vals) . SortedSet.toList
 
 covering
 step : SortedMap ENum Q -> QConstrs -> Index -> List Int -> Either Error (SortedMap ENum Q)
 step vals cs idx todo = do
-    updates <- findUpdates empty todo
-    if null updates
-      then pure vals -- done
-      else
-        let nextTodo = toList $ concatMap (\i => lookup i idx) (keys updates)
-        step (mergeLeft updates vals) cs idx nextTodo
+  updates <- findUpdates empty todo
+  if null updates
+    then pure vals -- done
+    else
+      let nextTodo = SortedSet.toList $ concatMap (\i => fromMaybe empty $ lookup i idx) (keys updates)
+       in step (mergeLeft updates vals) cs idx nextTodo
   where
-    updateVals : SortedMap ENum Q -> Q -> List EVar -> Either Error (SortedMap ENum Q)
-    updateVals upds q [] = vals
+    updateVals : SortedMap ENum Q -> Q -> List Evar -> Either Error (SortedMap ENum Q)
+    updateVals upds q [] = pure upds
     updateVals upds q (QQ q' :: evs) =
       if q > q'
         then Left $ Mismatch q q'
@@ -92,12 +103,12 @@ step vals cs idx todo = do
             else updateVals upds q evs  -- already got at least as much, nothing to do
 
     findUpdates : SortedMap ENum Q -> List Int -> Either Error (SortedMap ENum Q)
-    findUpdates upds [] = upds
+    findUpdates upds [] = pure upds
     findUpdates upds (i :: is) =
       case lookup i cs of
-        Nothing => findUpdates us is  -- should never happen
+        Nothing => findUpdates upds is  -- should never happen
         Just (gs, us) => do
-          upds' <- updateVals upds (eval vals gs) (toList us)
+          upds' <- updateVals upds (eval vals gs) (SortedSet.toList us)
           findUpdates upds' is
 
 solveQuick : Config -> Globals Evar -> Constrs -> Either Error (SortedMap ENum Q)
