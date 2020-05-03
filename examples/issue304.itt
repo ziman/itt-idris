@@ -1,3 +1,5 @@
+-- https://github.com/edwinb/Idris2/issues/304
+
 data Nat : Type {
   Z : Nat,
   S : Nat -> Nat
