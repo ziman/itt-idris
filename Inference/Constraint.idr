@@ -16,30 +16,29 @@ Backtrace : Type
 Backtrace = List String
 
 public export
-data Aggregation = Sum | Max
+data Constr : Type where
+  CUse :
+    (pv : Evar)
+    -> (lhs : SortedSet Evar)
+    -> (rhs : List (SortedSet Evar))
+    -> Constr
+
+  CEq : (p, q : Evar) -> Constr
 
 export
-Show Aggregation where
-  show Sum = "Sum"
-  show Max = "Max"
+Pretty () Constr where
+  pretty () (CUse pv lhs rhs) =
+    text "product" <++> text (show . toList $ lhs) <++> text "≥ sum"
+    $$ indentBlock
+        [ text "product" <++> text (show . toList $ rhsTerm)
+        | rhsTerm <- rhs
+        ]
 
-export
-Eq Aggregation where
-  Sum == Sum = True
-  Max == Max = True
-  _ == _ = False
-
-public export
-record Constr where
-  constructor MkC
-  aggregation : Aggregation
-  backtrace : Backtrace
-  factors : SortedSet Evar
-  result : Evar
+  pretty () (CEq p q) = pretty () p <++> text "~" <++> pretty () q
 
 export
 Show Constr where
-  show (MkC agg bt gs v) = show v ++ " ≥ " ++ show agg ++ " " ++ show (toList gs)
+  show = render "  " . pretty ()
 
 public export
 data DeferredEq : Type where
@@ -65,50 +64,3 @@ Semigroup Constrs where
 export
 Monoid Constrs where
   neutral = MkConstrs [] []
-
-public export
-record Collected (agg : Aggregation) where
-  constructor MkCollected
-  result : Evar
-  inputs : List (List Evar)
-
-export
-{agg : Aggregation} -> Pretty () (Collected agg) where
-  pretty {agg} () c =
-    pretty () c.result <++> text "≥" <++> text (show agg)
-    $$ indentBlock
-     [ text "product " <++> text (show evs)
-     | evs <- c.inputs
-     ]
-
-public export
-record CollectedConstrs where
-  constructor MkCC
-  sums : List (Collected Sum)
-  maxes : List (Collected Max)
-
-export
-Pretty () CollectedConstrs where
-  pretty () ccs =
-    text "Sums:"
-    $$ indent (vcat $ map (pretty ()) ccs.sums)
-    $$ text ""
-    $$ text "Maxes:"
-    $$ indent (vcat $ map (pretty ()) ccs.maxes)
-    $$ text ""
-
-export
-collect : List Constr -> CollectedConstrs
-collect cs =
-  MkCC
-    (map collected . toList $ foldr (add Sum) empty cs)
-    (map collected . toList $ foldr (add Max) empty cs)
-  where
-    add : Aggregation -> Constr -> SortedMap Evar (List (SortedSet Evar)) -> SortedMap Evar (List (SortedSet Evar)) 
-    add agg (MkC agg' bt gs v) cs =
-      if agg == agg'
-        then mergeWith (++) (insert v [gs] empty) cs
-        else cs
-
-    collected : {agg : Aggregation} -> (Evar, List (SortedSet Evar)) -> Collected agg
-    collected (result, inputs) = MkCollected result (map toList inputs)
