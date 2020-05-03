@@ -113,9 +113,6 @@ record TCResult (lu : Type) (n : Nat) (a : Type) where
   globalUsage : SortedMap Name (List (List Evar))
   value : a
 
-Functor (TCResult lu n) where
-  map f = record { value $= f }
-
 public export
 record TC (lu : Type) (n : Nat) (a : Type) where
   constructor MkTC
@@ -137,7 +134,7 @@ export
 Functor (TC lu n) where
   map f (MkTC g) = MkTC $ \env, st => case g env st of
     Left fail => Left fail
-    Right result => Right (f <$> result)
+    Right result => Right $ record { value $= f } result
 
 export
 Applicative (TC lu n) where
@@ -366,8 +363,8 @@ mutual
 
 covering export
 resumeEq : DeferredEq -> TCC Z ()
-resumeEq (DeferEq t bt ctx x y) = MkTC $ \env, st =>
-  case x ~= y of
+resumeEq (DeferEq {n} t bt ctx x y) = MkTC $ \env, st =>
+  case the (TCC n ()) (x ~= y) of
     MkTC f => case f (MkE [] env.globals ctx bt) st of
       Left fail => Left fail
       Right (MkR st cs eqs lu gu x) => Right (MkR st cs eqs [] gu x)
