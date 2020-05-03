@@ -12,6 +12,7 @@ import public Compiler.Config
 import Inference.Evar
 import Inference.Infer
 import Inference.Solve
+import Inference.Quick
 import Inference.Constraint
 import Inference.SmtModel
 
