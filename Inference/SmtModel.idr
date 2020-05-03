@@ -77,7 +77,7 @@ model disableL cs = do
       CProdSumLeqProd lhs rhs => prodSum lhs `leq` product rhs
       CProdSumLeq lhs rhs => prodSum lhs `leq` ev rhs
       CProdEq lhs rhs => product lhs .== ev rhs
-      CEq lhs rhs => ev lhs `leq` ev rhs
+      CEq lhs rhs => ev lhs .== ev rhs
 
   minimise $ numberOf R
   minimise $ numberOf L
