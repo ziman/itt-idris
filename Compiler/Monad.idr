@@ -1,6 +1,7 @@
 module Compiler.Monad
 
-import Utils.Pretty
+import Data.List
+import public Utils.Pretty
 
 %default total
 %undotted_record_projections off
@@ -51,3 +52,10 @@ printP ctx = log . render "  " . pretty ctx
 export
 throw : String -> ITT a
 throw = MkITT . pure . Left
+
+export
+banner : String -> ITT ()
+banner s = log hrule *> log s *> log hrule *> log ""
+  where
+    hrule : String
+    hrule = pack $ List.replicate (length s) '#'
