@@ -263,6 +263,7 @@ irrelevant (MkTC f) = MkTC $ \env, st =>
     record
     { localUsage  = noLU env.context
     , globalUsage = empty
+    , constrs $= filter isCEq
     }
 
 infix 3 ~~

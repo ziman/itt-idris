@@ -60,6 +60,11 @@ export
 Show Constr where
   show = render "  " . pretty ()
 
+export
+isCEq : Constr -> Bool
+isCEq (CEq _ _) = True
+isCEq _ = False
+
 public export
 record DeferredEq where
   constructor DeferEq
