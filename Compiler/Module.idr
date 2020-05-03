@@ -57,7 +57,7 @@ processModule cfg raw = do
   log $ unlines $ map show cs.deferredEqs
 
   -- solve the constraints
-  vals <- Solve.solve cfg evarified cs
+  vals <- Quick.solve cfg evarified cs
 
   banner "# Final valuation #"
   log $ unlines

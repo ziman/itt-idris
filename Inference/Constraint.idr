@@ -65,6 +65,16 @@ isCEq : Constr -> Bool
 isCEq (CEq _ _) = True
 isCEq _ = False
 
+export
+constrQ : Traversal Constr Constr Evar Evar
+constrQ f (CProdSumLeq lhs rhs) =
+  CProdSumLeq <$> traverse (traverse f) lhs <*> f rhs
+constrQ f (CProdEq lhs rhs) =
+  CProdEq <$> traverse f lhs <*> f rhs
+constrQ f (CProdSumLeqProd lhs rhs) =
+  CProdSumLeqProd <$> traverse (traverse f) lhs <*> traverse f rhs
+constrQ f (CEq lhs rhs) = [| CEq (f lhs) (f rhs) |]
+
 public export
 record DeferredEq where
   constructor DeferEq
@@ -80,6 +90,11 @@ Show DeferredEq where
   show (DeferEq t bt ctx x y) =
     show t ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
+export
+deferredEqQ : Traversal DeferredEq DeferredEq Evar Evar
+deferredEqQ f (DeferEq t bt ctx lhs rhs) =
+  [| DeferEq (f t) (pure bt) (contextQ f ctx) (ttQ f lhs) (ttQ f rhs) |]
+
 public export
 record Constrs where
   constructor MkConstrs
@@ -94,6 +109,11 @@ Semigroup Constrs where
 export
 Monoid Constrs where
   neutral = MkConstrs [] []
+
+export
+constrsQ : Traversal Constrs Constrs Evar Evar
+constrsQ f (MkConstrs cs eqs) =
+  MkConstrs <$> traverse (constrQ f) cs <*> traverse (deferredEqQ f) eqs
 
 export
 toConstrs : Globals Evar -> SortedMap Name (List (List Evar)) -> Either Name (List Constr)

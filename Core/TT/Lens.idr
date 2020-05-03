@@ -83,5 +83,9 @@ weakenClosedBinding : Binding q Z -> Binding q n
 weakenClosedBinding (B n q ty) = B n q (weakenClosed ty)
 
 export
+mapQ : Traversal a b q q' -> (q -> q') -> a -> b
+mapQ f g = runIdentity . f (pure . g)
+
+export
 eraseQ : Traversal a b q () -> a -> b
-eraseQ f = runIdentity . f (pure . const ())
+eraseQ f = mapQ f (const ())

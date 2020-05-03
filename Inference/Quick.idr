@@ -1,34 +1,21 @@
 module Inference.Quick
 
 import public Core.TT
+import public Core.Globals
 import public Core.Quantity
+import public Inference.Evar
+import public Inference.Constraint
+import public Compiler.Config
+import public Compiler.Monad
+import public Data.SortedMap
 
--- Quick Quantities
-public export
-data QQ = I | E | R
+toQuick : Evar -> Evar
+toQuick (QQ L) = QQ R
+toQuick ev = ev
 
-export
-Show QQ where
-  show I = "I"
-  show E = "E"
-  show R = "R"
-
-export
-toQ : QQ -> Q
-toQ I = I
-toQ E = E
-toQ R = R
+solveQuick : Config -> Globals Evar -> Constrs -> ITT (SortedMap ENum Q)
+solveQuick cfg gs cs = ?rhs
 
 export
-fromQ : Q -> QQ
-fromQ I = I
-fromQ E = E
-fromQ L = R
-fromQ R = R
-
-export
-ShowQ QQ where
-  showCol = showCol . toQ
-  showApp = showApp . toQ
-
-
+solve : Config -> Globals Evar -> Constrs -> ITT (SortedMap ENum Q)
+solve cfg gs cs = solveQuick cfg (mapQ globalsQ toQuick gs) (mapQ constrsQ toQuick cs)
