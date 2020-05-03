@@ -31,21 +31,21 @@ ShowQ q => Pretty Name (Clause q argn) where
   pretty fn c =
     prettyPi c.pi $
       pretty () fn
-      <++> hsep (map (pretty c.pi) (toList c.lhs))
+      <++> hsep (map (pretty c.pi . eraseQ patQ) (toList c.lhs))
       <++> text "~>"
-      <++> pretty (PTT True NoParens, c.pi) c.rhs
+      <++> pretty (PTT True NoParens, c.pi) (eraseQ ttQ c.rhs)
 
 export
 clauseQ : Traversal (Clause q argn) (Clause q' argn) q q'
 clauseQ f (MkClause pi lhs rhs) =
-  [| (MkClause pi) (traverse (patQ f) lhs) (ttQ f rhs) |]
+  MkClause pi <$> traverse (patQ f) lhs <*> ttQ f rhs
 
 public export
 record RawClause (q : Type) where
   constructor MkRC
   {pn : Nat}
-  pi : Context q pn
-  lhs : List (q, Pat q pn)
+  pi : Context () pn
+  lhs : List (Pat q pn)
   rhs : TT q pn
 
 checkVect : (n : Nat) -> List a -> Maybe (Vect n a)

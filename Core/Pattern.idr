@@ -24,12 +24,11 @@ ShowQ q => Pretty () PCtor where
   pretty () (Forced n) = braces (pretty () n)
 
 export
-ShowQ q => Pretty (Context q' n) (Pat q n) where
+ShowQ q => Pretty (Context q n) (Pat q n) where
   pretty ctx (PV i) = text (lookup i ctx).name
   pretty ctx (PCtorApp ctor []) = pretty () ctor
   pretty ctx (PCtorApp ctor args) =
-    parens $ concat $
-      pretty () ctor <++> hsep [pretty ctx arg | arg <- args]
+    parens $ hsep (pretty () ctor :: map (pretty ctx) args)
   pretty ctx (PForced tm) = brackets $ pretty ctx tm
   pretty ctx PWildcard = text "_"
 
@@ -51,5 +50,5 @@ patToTm (PForced tm) = tm
 patToTm PWildcard = Erased
 
 export
-showPat : ShowQ q => Context q' n -> Pat q n -> String
+showPat : ShowQ q => Context q n -> Pat q n -> String
 showPat ctx = render "  " . pretty ctx

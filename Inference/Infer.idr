@@ -297,9 +297,6 @@ traceCtx bv t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => let msg = show t ++ ": " ++ (render "  " $ pretty ctx bv)
       in f (MkE gs globs ctx (msg :: bt)) st
 
-eraseQ : Context q n -> Context () n
-eraseQ = runIdentity . contextQ (pure . const ())
-
 deferEq : Evar -> Term n -> Term n -> TC cq lu n ()
 deferEq g x y =
   -- heuristic:

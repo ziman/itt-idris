@@ -1,27 +1,27 @@
 module Core.TT.Utils
 
 import public Core.TT
+import Data.List
 
 %default total
 %undotted_record_projections off
 
 export
-unApply' : q -> TT q n -> TT q n -> (TT q n, List (q, TT q n))
-unApply' q_ f x = go f [(q_,x)]
+unApply' : TT q n -> TT q n -> (TT q n, List (TT q n))
+unApply' f x = go f [x]
   where
-    go : TT q n -> List (q, TT q n) -> (TT q n, List (q, TT q n))
-    go (App q f x) args = go f ((q,x) :: args)
+    go : TT q n -> List (TT q n) -> (TT q n, List (TT q n))
+    go (App f x) args = go f (x :: args)
     go f args = (f, args)
 
 export
-unApply : TT q n -> (TT q n, List (q, TT q n))
-unApply (App q f x) = unApply' q f x
+unApply : TT q n -> (TT q n, List (TT q n))
+unApply (App f x) = unApply' f x
 unApply tm = (tm, [])
 
 export
-mkApp : TT q n -> List (q, TT q n) -> TT q n
-mkApp f [] = f
-mkApp f ((q, x) :: xs) = mkApp (App q f x) xs
+mkApp : TT q n -> List (TT q n) -> TT q n
+mkApp f = foldl App f
 
 export
 hasTypeTarget : TT q n -> Bool
