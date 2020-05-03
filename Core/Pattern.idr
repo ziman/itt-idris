@@ -28,16 +28,14 @@ ShowQ q => Pretty (Context q n) (Pat q n) where
   pretty ctx (PV i) = text (lookup i ctx).name
   pretty ctx (PCtorApp ctor []) = pretty () ctor
   pretty ctx (PCtorApp ctor args) =
-    parens $ concat $
-      pretty () ctor
-        :: [text (showApp q) <+> pretty ctx arg | (q, arg) <- args]
+    parens $ hsep (pretty () ctor :: map (pretty ctx . snd) args)
   pretty ctx (PForced tm) = brackets $ pretty ctx tm
   pretty ctx PWildcard = text "_"
 
 mutual
   export
   qpatQ : Traversal (q, Pat q n) (q', Pat q' n) q q'
-  qpatQ f (q, pat) = MkPair <$> f q <*> patQ f pat
+  qpatQ f (q, p) = [| MkPair (f q) (patQ f p) |]
 
   export
   patQ : Traversal (Pat q n) (Pat q' n) q q'
@@ -50,9 +48,9 @@ export
 patToTm : Pat q n -> TT q n
 patToTm (PV i) = V i
 patToTm (PCtorApp (Forced cn) args) =
-  mkApp (P cn) [(q, patToTm arg) | (q, arg) <- args]
+  mkApp (P cn) (map (\(q,p) => (q, patToTm p)) args)
 patToTm (PCtorApp (Checked cn) args) =
-  mkApp (P cn) [(q, patToTm arg) | (q, arg) <- args]
+  mkApp (P cn) (map (\(q,p) => (q, patToTm p)) args)
 patToTm (PForced tm) = tm
 patToTm PWildcard = Erased
 

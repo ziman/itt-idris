@@ -41,6 +41,10 @@ prn : Show a => a -> ITT ()
 prn = log . show
 
 export
+prd : Doc -> ITT ()
+prd = log . render "  "
+
+export
 printP : Pretty ctx a => ctx -> a -> ITT ()
 printP ctx = log . render "  " . pretty ctx
 

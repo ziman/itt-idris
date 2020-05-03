@@ -56,9 +56,9 @@ iterConstrs :
     -> Constrs
     -> Inference.Infer.TCState
     -> ITT (SortedMap ENum Q)
-iterConstrs cfg i gs (MkConstrs cs eqs) st = do
+iterConstrs cfg i gs cs st = do
   log $ "  -> iteration " ++ show i 
-  vals <- liftIO (SmtModel.solve cfg.disableL cs) >>= \case
+  vals <- liftIO (SmtModel.solve cfg.disableL cs.constrs) >>= \case
     Left (Unsatisfiable core) => do
       log ""
       banner "# Unsatisfiable core #"
@@ -68,7 +68,7 @@ iterConstrs cfg i gs (MkConstrs cs eqs) st = do
     Left (OtherError err) => throw err
     Right vals => pure vals
 
-  case newlyReachableEqs vals eqs of
+  case newlyReachableEqs vals cs.deferredEqs of
     ([], _) => do
       log $ "    -> No more equalities, fixed point reached.\n"
       pure vals
@@ -79,15 +79,16 @@ iterConstrs cfg i gs (MkConstrs cs eqs) st = do
         | DeferEq g bt ctx x y <- newEqs
         ]
 
-      case (traverse_ Infer.resumeEq newEqs).run (MkE SortedSet.empty gs [] []) st of
+      case (traverse_ Infer.resumeEq newEqs).run (MkE [] gs [] []) st of
         Left fail => throw $ show fail
-        Right (st', MkConstrs cs' eqs', ()) => do
+        Right (MkR st' cs' eqs' lu' gu' ()) => do
           -- we use waitingEqs (eqs from the previous iteration that have not been reached yet)
           -- and eqs' (eqs from this iteration)
           -- we drop eqs we have already reached and checked
           -- otherwise we'd loop forever in checking them again and again
           iterConstrs cfg (i+1) gs
-            (MkConstrs (cs <+> cs') (waitingEqs <+> eqs'))
+            -- prepend for efficiency
+            (MkConstrs (cs' ++ cs.constrs) (eqs' ++ waitingEqs))
             st'
 
 substQ : SortedMap ENum Q -> Evar -> Maybe Q
@@ -114,12 +115,15 @@ processModule cfg raw = do
   prn evarified
 
   log "Running erasure inference...\n"
-  cs <- case inferGlobals.run (MkE SortedSet.empty evarified [] []) MkTCS of
+  cs <- case inferGlobals.run (MkE [] evarified [] []) MkTCS of
     Left err => throw $ show err
-    Right (st, cs, ()) => pure cs
+    Right (MkR st cs eqs lu gu ()) =>
+      case toConstrs evarified gu of
+        Left n => throw $ "constraint for non-existent global: " ++ show n
+        Right gcs => pure $ MkConstrs (gcs ++ cs) eqs
 
   banner "# Inferred constraints #"
-  printP () $ collect cs.constrs
+  prd $ vcat (map (pretty ()) cs.constrs)
 
   banner "# Deferred equalities #"
   log $ unlines $ map show cs.deferredEqs
@@ -140,10 +144,12 @@ processModule cfg raw = do
   prn annotated
 
   banner "# Final check #"
+  {-
   case checkGlobals.run (MkE L annotated [] []) MkTCS of
     Left err => throw $ show err
     Right (MkTCS, usage, ()) => do
       log "** OK **\n"
+  -}
 
   banner "# Erased #"
   let erased = eraseGlobals $

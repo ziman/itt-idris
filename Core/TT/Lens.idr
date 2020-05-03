@@ -58,8 +58,7 @@ mutual
   ttVars g (V i) = g i
   ttVars g (Lam b rhs) = Lam <$> bindingVars g b <*> ttVars (skipFZ g) rhs
   ttVars g (Pi  b rhs) = Pi  <$> bindingVars g b <*> ttVars (skipFZ g) rhs
-  ttVars g (App q f x)
-    = App q <$> ttVars g f <*> ttVars g x
+  ttVars g (App q f x) = App q <$> ttVars g f <*> ttVars g x
   ttVars g Type_ = pure Type_
   ttVars g Erased = pure Erased
 
@@ -82,3 +81,7 @@ weakenClosed = rename tackFinL
 export
 weakenClosedBinding : Binding q Z -> Binding q n
 weakenClosedBinding (B n q ty) = B n q (weakenClosed ty)
+
+export
+eraseQ : Traversal a b q () -> a -> b
+eraseQ f = runIdentity . f (pure . const ())

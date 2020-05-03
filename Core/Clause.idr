@@ -31,7 +31,7 @@ ShowQ q => Pretty Name (Clause q argn) where
   pretty fn c =
     prettyPi c.pi $
       pretty () fn
-      <+> concat [text (showApp q) <+> pretty c.pi x | (q,x) <- toList c.lhs]
+      <++> hsep (map (pretty c.pi . snd) (toList c.lhs))
       <++> text "~>"
       <++> pretty (PTT True NoParens, c.pi) c.rhs
 

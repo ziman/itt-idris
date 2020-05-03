@@ -3,6 +3,7 @@ module Inference.Constraint
 import public Core.TT
 import public Core.TT.Pretty
 import public Core.Context
+import public Core.Globals
 import public Inference.Evar
 import public Data.SortedSet
 import public Data.SortedMap
@@ -16,40 +17,68 @@ Backtrace : Type
 Backtrace = List String
 
 public export
-data Aggregation = Sum | Max
+data Constr : Type where
+  CProdSumLeq :
+    (lhs : List (List Evar))
+    -> (rhs : Evar)
+    -> Constr
+
+  CProdEq :
+    (lhs : List Evar)
+    -> (rhs : Evar)
+    -> Constr
+
+  CProdSumLeqProd :
+    (lhs : List (List Evar))
+    -> (rhs : List Evar)
+    -> Constr
+
+  CEq : (lhs, rhs : Evar) -> Constr
 
 export
-Show Aggregation where
-  show Sum = "Sum"
-  show Max = "Max"
+Pretty () Constr where
+  pretty () (CProdSumLeq lhs rhs) =
+    text (show rhs) <++> text "≥ sum"
+    $$ indentBlock
+        [ text "product" <++> text (show term)
+        | term <- lhs
+        ]
 
-export
-Eq Aggregation where
-  Sum == Sum = True
-  Max == Max = True
-  _ == _ = False
+  pretty () (CProdSumLeqProd lhs rhs) =
+    text "product" <++> text (show rhs) <++> text "≥ sum"
+    $$ indentBlock
+        [ text "product" <++> text (show term)
+        | term <- lhs
+        ]
 
-public export
-record Constr where
-  constructor MkC
-  aggregation : Aggregation
-  backtrace : Backtrace
-  factors : SortedSet Evar
-  result : Evar
+  pretty () (CProdEq lhs rhs) =
+    text (show rhs) <++> text "~ product" <++> text (show lhs)
+
+  pretty () (CEq lhs rhs) = pretty () rhs <++> text "~" <++> pretty () lhs
 
 export
 Show Constr where
-  show (MkC agg bt gs v) = show v ++ " ≥ " ++ show agg ++ " " ++ show (toList gs)
+  show = render "  " . pretty ()
+
+export
+isCEq : Constr -> Bool
+isCEq (CEq _ _) = True
+isCEq _ = False
 
 public export
-data DeferredEq : Type where
-  DeferEq : (g : Evar) -> (bt : Backtrace)
-    -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> DeferredEq
+record DeferredEq where
+  constructor DeferEq
+  {0 n : Nat}
+  trigger : Evar
+  backtrace : Backtrace
+  context : Context Evar n
+  lhs : TT Evar n
+  rhs : TT Evar n
 
 export
 Show DeferredEq where
-  show (DeferEq g bt ctx x y) =
-    show g ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
+  show (DeferEq t bt ctx x y) =
+    show t ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
 public export
 record Constrs where
@@ -66,49 +95,12 @@ export
 Monoid Constrs where
   neutral = MkConstrs [] []
 
-public export
-record Collected (agg : Aggregation) where
-  constructor MkCollected
-  result : Evar
-  inputs : List (List Evar)
-
 export
-{agg : Aggregation} -> Pretty () (Collected agg) where
-  pretty {agg} () c =
-    pretty () c.result <++> text "≥" <++> text (show agg)
-    $$ indentBlock
-     [ text "product " <++> text (show evs)
-     | evs <- c.inputs
-     ]
-
-public export
-record CollectedConstrs where
-  constructor MkCC
-  sums : List (Collected Sum)
-  maxes : List (Collected Max)
-
-export
-Pretty () CollectedConstrs where
-  pretty () ccs =
-    text "Sums:"
-    $$ indent (vcat $ map (pretty ()) ccs.sums)
-    $$ text ""
-    $$ text "Maxes:"
-    $$ indent (vcat $ map (pretty ()) ccs.maxes)
-    $$ text ""
-
-export
-collect : List Constr -> CollectedConstrs
-collect cs =
-  MkCC
-    (map collected . toList $ foldr (add Sum) empty cs)
-    (map collected . toList $ foldr (add Max) empty cs)
+toConstrs : Globals Evar -> SortedMap Name (List (List Evar)) -> Either Name (List Constr)
+toConstrs gs = traverse toConstr . toList
   where
-    add : Aggregation -> Constr -> SortedMap Evar (List (SortedSet Evar)) -> SortedMap Evar (List (SortedSet Evar)) 
-    add agg (MkC agg' bt gs v) cs =
-      if agg == agg'
-        then mergeWith (++) (insert v [gs] empty) cs
-        else cs
-
-    collected : {agg : Aggregation} -> (Evar, List (SortedSet Evar)) -> Collected agg
-    collected (result, inputs) = MkCollected result (map toList inputs)
+    toConstr : (Name, List (List Evar)) -> Either Name Constr
+    toConstr (n, gss) =
+      case lookup n gs of
+        Just d => Right $ CProdSumLeq gss d.binding.qv
+        Nothing => Left n

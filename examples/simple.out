@@ -32,7 +32,7 @@ id : (a : Type) -> (x : a) -> a {
 }
 
 main :L Bool {
-  main ~> (\x : U (C False). g x) d
+  main  ~> (\x : U (C False). g x) d
 }
 
 #############
@@ -69,7 +69,7 @@ id :13 (a :14 Type) -> (x :15 a) -> a {
 }
 
 main :L Bool {
-  main ~> (\x :21 U (C False). g x) d
+  main  ~> (\x :21 U (C False). g x) d
 }
 
 Running erasure inference...
@@ -78,121 +78,39 @@ Running erasure inference...
 # Inferred constraints #
 ########################
 
-Sums:
-  I ≥ Sum
-    product  [I]
-  E ≥ Sum
-    product  [I]
-  L ≥ Sum
-    product  [I]
-  0 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-  1 ≥ Sum
-    product  [I, 11]
-    product  [I, 8]
-    product  [I, 22]
-  2 ≥ Sum
-    product  []
-    product  [I, 22, 23]
-  3 ≥ Sum
-    product  [I]
-    product  [I]
-  4 ≥ Sum
-    product  [I, 11, 12]
-    product  []
-  5 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-  6 ≥ Sum
-    product  [I, 8, 9]
-  7 ≥ Sum
-    product  [20]
-  10 ≥ Sum
-    product  []
-  14 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-  15 ≥ Sum
-    product  [I]
-  16 ≥ Sum
-    product  [I]
-    product  []
-  17 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-  21 ≥ Sum
-    product  [I]
-    product  [24]
-  26 ≥ Sum
-    product  [I]
-
-Maxes:
-  I ≥ Max
-    product  [12]
-    product  [9]
-    product  [23]
-  E ≥ Max
-    product  [11]
-    product  [8]
-    product  [22]
-  L ≥ Max
-    product  [24]
-  8 ≥ Max
-    product  [E]
-    product  [22]
-  9 ≥ Max
-    product  [I]
-  11 ≥ Max
-    product  [E]
-    product  [22]
-  12 ≥ Max
-    product  [I]
-  14 ≥ Max
-    product  [18]
-  15 ≥ Max
-    product  [19]
-  16 ≥ Max
-    product  [19]
-  17 ≥ Max
-    product  [18]
-  18 ≥ Max
-    product  [17]
-    product  [14]
-  19 ≥ Max
-    product  [16]
-    product  [15]
-  20 ≥ Max
-    product  [21]
-  21 ≥ Max
-    product  [20]
-  22 ≥ Max
-    product  [E]
-    product  [11]
-    product  [8]
-  23 ≥ Max
-    product  [I]
-  24 ≥ Max
-    product  [L]
-  26 ≥ Max
-    product  [27]
-    product  [28]
-  27 ≥ Max
-    product  [L]
-    product  [26]
-  28 ≥ Max
-    product  [L]
-    product  [26]
-
+2 ≥ sum
+  product []
+4 ≥ sum
+  product []
+7 ≥ sum
+  product [21]
+10 ≥ sum
+  product []
+E ~ 11
+I ~ 12
+E ~ 8
+I ~ 9
+26 ~ 27
+product [26] ≥ sum
+  product [L]
+26 ~ 28
+product [26] ≥ sum
+  product [L]
+17 ~ product [14]
+16 ~ product [15]
+14 ~ 18
+15 ~ 19
+17 ≥ sum
+16 ≥ sum
+  product []
+E ~ 22
+I ~ 23
+21 ≥ sum
+  product [L]
+L ~ 24
+11 ~ 22
+21 ~ 20
+22 ~ 8
 #######################
 # Deferred equalities #
 #######################
@@ -201,12 +119,98 @@ Maxes:
 8 -> C b ~ C False
 
   -> iteration 1
+    -> No more equalities, fixed point reached.
 
-######################
-# Unsatisfiable core #
-######################
+###################
+# Final valuation #
+###################
 
-L ≥ Sum
-  product  [I]
+  2 -> L
+  4 -> L
+  7 -> L
+  8 -> I
+  9 -> I
+  10 -> L
+  11 -> I
+  12 -> I
+  14 -> I
+  15 -> L
+  16 -> L
+  17 -> I
+  18 -> I
+  19 -> L
+  20 -> L
+  21 -> L
+  22 -> I
+  23 -> I
+  24 -> L
+  26 -> L
+  27 -> L
+  28 -> L
 
-error: inconsistent constraints
+#####################
+# Annotated program #
+#####################
+
+constructor Bool :I Type.
+
+constructor True :L Bool.
+
+constructor False :L Bool.
+
+constructor T :I Type.
+
+constructor C :I (pf :I Bool) -> T.
+
+postulate U :I (t :E T) -> Type.
+
+postulate g :L (x :L U (C True)) -> Bool.
+
+postulate b :I Bool.
+
+postulate d :L U (C b).
+
+not :I (x :L Bool) -> Bool {
+  not True ~> False
+  
+  not False ~> True
+}
+
+id :I (a :I Type) -> (x :L a) -> a {
+  forall (a :I Type) (x :L a)
+  id a x ~> x
+}
+
+main :L Bool {
+  main  ~> (\x :L U (C False). g x) d
+}
+
+###############
+# Final check #
+###############
+
+##########
+# Erased #
+##########
+
+constructor True : Bool.
+
+constructor False : Bool.
+
+postulate g : (x) -> Bool.
+
+postulate d : U.
+
+main : Bool {
+  main  ~> (\x. g x) d
+}
+
+################
+# NF of `main` #
+################
+
+Unerased, reduced:
+g d
+
+Erased, reduced:
+g d
