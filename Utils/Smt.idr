@@ -271,6 +271,14 @@ export
 not : Smt Bool -> Smt Bool
 not (MkSmt x) = MkSmt $ L [A "not", x]
 
+export
+max : (Ord a, SmtValue a) => Smt a -> Smt a -> Smt a
+max (MkSmt x) (MkSmt y) = MkSmt $ L [A "max", x, y]
+
+export
+min : (Ord a, SmtValue a) => Smt a -> Smt a -> Smt a
+min (MkSmt x) (MkSmt y) = MkSmt $ L [A "min", x, y]
+
 public export
 Prop : Type
 Prop = Smt Bool
@@ -312,6 +320,11 @@ infix 2 .<=
 export
 (.<=) : Pred2
 (.<=) = binop "<="
+
+infix 2 .>=
+export
+(.>=) : Pred2
+(.>=) = binop ">="
 
 infix 2 .<
 export

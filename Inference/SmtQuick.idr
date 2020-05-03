@@ -15,17 +15,16 @@ data Error
   = Unsatisfiable (List Doc)
   | OtherError String
 
-SmtValue Q where
-  smtShow L = A "R"
-  smtShow q = A (show q)
+toInt : Q -> Int
+toInt I = 0
+toInt E = 1
+toInt L = 2
+toInt R = 2
 
-  smtRead (A "I") = Just I
-  smtRead (A "E") = Just E
-  smtRead (A "R") = Just R
-  smtRead _ = Nothing
-
-SmtEnum Q where
-  smtEnumValues = [I, E, R]
+fromInt : Int -> Q
+fromInt 0 = I
+fromInt 1 = E
+fromInt _ = R
 
 eNums : List Constr -> SortedSet ENum
 eNums [] = neutral
@@ -41,37 +40,41 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
     eNumsC (CProdSumLeqProd lhs rhs) = concatMap (concatMap ev) lhs <+> concatMap ev rhs
     eNumsC (CEq lhs rhs) = ev lhs <+> ev rhs
 
-declVars : SmtType Q -> List ENum -> SmtM Doc (SortedMap ENum (Smt Q))
-declVars smtQ [] = pure $ SortedMap.empty
-declVars smtQ (n::ns) = SortedMap.insert n <$> declVar ("ev" ++ show n) smtQ <*> declVars smtQ ns
+litQ : Q -> Smt Int
+litQ = lit . toInt
 
-evSmt : SortedMap ENum (Smt Q) -> Evar -> Smt Q
-evSmt vs (QQ q) = lit q
+declVars : List ENum -> SmtM Doc (SortedMap ENum (Smt Int))
+declVars [] = pure $ SortedMap.empty
+declVars (n::ns) = do
+  v <- declVar ("ev" ++ show n) smtInt
+  assert (text $ show n ++ " >= I") (v .>= litQ I)
+  assert (text $ show n ++ " <= R") (v .<= litQ R)
+
+  vs <- declVars ns
+  pure (insert n v vs)
+
+evSmt : SortedMap ENum (Smt Int) -> Evar -> Smt Int
+evSmt vs (QQ q) = litQ q
 evSmt vs (EV i) = case SortedMap.lookup i vs of
   Just v  => v
   Nothing => smtError "cannot-happen"
 
-model : List Constr -> SmtM Doc (FList Smt [(ENum, Q)])
+model : List Constr -> SmtM Doc (FList Smt [(ENum, Int)])
 model cs = do
-  smtQ <- the (SmtM Doc (SmtType Q)) $ declEnum "Q"
-  ens <- declVars smtQ (SortedSet.toList $ eNums cs)
+  ens <- declVars (SortedSet.toList $ eNums cs)
   let ev = evSmt ens
   let numberOf = \q : Q => sum
-        [ ifte {a=Int} (v .== lit q) 1 0
+        [ ifte {a=Int} (v .== litQ q) 1 0
         | (i, v) <- SortedMap.toList ens
         ]
 
-  add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
-  mul <- defineEnumFun2 "mul" smtQ smtQ smtQ (.*.)
-  leq <- defineEnumFun2 "leq" smtQ smtQ smtBool (.<=.)
-
-  let product = foldMap mul (lit semi1) ev
-  let prodSum = foldMap add (lit semi0) product
+  let product = foldMap min (litQ R) ev
+  let prodSum = foldMap max (litQ I) product
 
   for_ cs $ \c =>
     assert (pretty () c) $ case c of
-      CProdSumLeqProd lhs rhs => prodSum lhs `leq` product rhs
-      CProdSumLeq lhs rhs => prodSum lhs `leq` ev rhs
+      CProdSumLeqProd lhs rhs => prodSum lhs .<= product rhs
+      CProdSumLeq lhs rhs => prodSum lhs .<= ev rhs
       CProdEq lhs rhs => product lhs .== ev rhs
       CEq lhs rhs => ev lhs .== ev rhs
 
@@ -93,4 +96,4 @@ solve cs = do
   pure $ case sol of
     Left (Smt.Unsatisfiable core) => Left (Unsatisfiable core)
     Left e => Left (OtherError $ show e)
-    Right [vars] => Right $ SortedMap.fromList vars
+    Right [vars] => Right $ SortedMap.fromList $ map (\(k,v) => (k, fromInt v)) vars
