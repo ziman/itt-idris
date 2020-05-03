@@ -19,17 +19,17 @@ public export
 data Constr : Type where
   CUse :
     (lhs : List Evar)
-    -> (rhs : List (SortedSet Evar))
+    -> (rhs : List (List Evar))
     -> Constr
 
   CEq : (p, q : Evar) -> Constr
 
 export
 Pretty () Constr where
-  pretty () (CUse pv lhs rhs) =
-    text "product" <++> text (show . toList $ lhs) <++> text "≥ sum"
+  pretty () (CUse lhs rhs) =
+    text "product" <++> text (show lhs) <++> text "≥ sum"
     $$ indentBlock
-        [ text "product" <++> text (show . toList $ rhsTerm)
+        [ text "product" <++> text (show rhsTerm)
         | rhsTerm <- rhs
         ]
 
@@ -42,7 +42,7 @@ Show Constr where
 public export
 data DeferredEq : Type where
   DeferEq : (g : Evar) -> (bt : Backtrace)
-    -> (ctx : Context () n) -> (x, y : TT Evar n) -> DeferredEq
+    -> (ctx : Context () n) -> (x, y : TT () n) -> DeferredEq
 
 export
 Show DeferredEq where
