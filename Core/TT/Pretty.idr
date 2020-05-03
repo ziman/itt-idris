@@ -45,14 +45,14 @@ parensFrom required actual =
 
 mutual
   export
-  ShowQ q => Pretty (Context q n) (Binding q n) where
+  ShowQ q => Pretty (Context q' n) (Binding q n) where
     pretty ctx (B n dq Erased)
       = text n
     pretty ctx (B n dq ty)
       = text n <++> text (showCol dq) <++> pretty (PTT False NoParens, ctx) ty
 
   export
-  ShowQ q => Pretty (PrettyTT, Context q n) (TT q n) where
+  ShowQ q => Pretty (PrettyTT, Context q' n) (TT q n) where
     pretty (PTT top nl, ctx) (P n) = pretty () n
     pretty (PTT top nl, ctx) (V i) = case lookup i ctx of
       B n q' ty => text n
@@ -76,7 +76,7 @@ mutual
     pretty (PTT top nl, ctx) Erased = text "_"
 
 export
-ShowQ q => Pretty (Context q n) (TT q n) where
+ShowQ q => Pretty (Context q' n) (TT q n) where
   pretty ctx = pretty (PTT False NoAppParens, ctx)
 
 export
@@ -88,7 +88,7 @@ ShowQ q => Show (TT q Z) where
   show = render " " . pretty ()
 
 export
-showTm : ShowQ q => Context q n -> TT q n -> String
+showTm : ShowQ q => Context q' n -> TT q n -> String
 showTm ctx tm = render "  " $ pretty (PTT False NoAppParens, ctx) tm
 
 export

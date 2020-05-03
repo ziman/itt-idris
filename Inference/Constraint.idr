@@ -18,8 +18,7 @@ Backtrace = List String
 public export
 data Constr : Type where
   CUse :
-    (pv : Evar)
-    -> (lhs : SortedSet Evar)
+    (lhs : List Evar)
     -> (rhs : List (SortedSet Evar))
     -> Constr
 
@@ -43,7 +42,7 @@ Show Constr where
 public export
 data DeferredEq : Type where
   DeferEq : (g : Evar) -> (bt : Backtrace)
-    -> (ctx : Context Evar n) -> (x, y : TT Evar n) -> DeferredEq
+    -> (ctx : Context () n) -> (x, y : TT Evar n) -> DeferredEq
 
 export
 Show DeferredEq where

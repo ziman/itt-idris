@@ -52,7 +52,7 @@ mutual
     V : (i : Fin n) -> TT q n
     Lam : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
     Pi  : (b : Binding q n) -> (rhs : TT q (S n)) -> TT q n
-    App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
+    App : (f : TT q n) -> (x : TT q n) -> TT q n
     Type_ : TT q n
     Erased : TT q n
 
@@ -67,7 +67,7 @@ mutual
     V i == V j = i == j
     Lam b rhs == Lam b' rhs' = (b == b') && (rhs == rhs')
     Pi b rhs == Pi b' rhs' = (b == b') && (rhs == rhs')
-    App q f x == App q' f' x' = (q == q') && (f == f') && (x == x')
+    App f x == App f' x' = (f == f') && (x == x')
     Type_ == Type_ = True
     Erased == Erased = True
     _ == _ = False

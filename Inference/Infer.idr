@@ -44,6 +44,8 @@ data ErrorMessage : Nat -> Type where
   QuantityMismatch : Q -> Q -> ErrorMessage n
   WhnfError : EvalError -> ErrorMessage n
   UnknownGlobal : Name -> ErrorMessage n
+  OverconstrainedBinding : Fin n -> ErrorMessage n
+  UnderconstrainedBinding : Fin n -> ErrorMessage n
   Debug : Doc -> ErrorMessage n
 
 showEM : Context Evar n -> ErrorMessage n -> String
@@ -63,6 +65,10 @@ showEM ctx (UnknownGlobal n)
     = "unknown global: " ++ show n
 showEM ctx (WhnfError e)
     = "reduction error: " ++ show e
+showEM ctx (OverconstrainedBinding i)
+    = "conflicting constraints for " ++ show (lookup i ctx).name
+showEM ctx (UnderconstrainedBinding i)
+    = "underconstrained binder: " ++ show (lookup i ctx).name
 showEM ctx (Debug doc)
     = render "  " (text ">>> DEBUG <<< " $$ indent doc)
 
@@ -70,8 +76,8 @@ public export
 record Failure where
   constructor MkF
   backtrace : Backtrace
-  0 n : Nat
-  context : Context Evar n
+  {0 n : Nat}
+  context : Context () n
   errorMessage : ErrorMessage n
 
 export
@@ -81,132 +87,220 @@ Show Failure where
     ++ showEM ctx msg
 
 public export
-record Env (n : Nat) where
+record Env (q : Type) (n : Nat) where
   constructor MkE
-  guards : Set Evar
+  guards : List Evar
   globals : Globals Evar
-  context : Context Evar n
+  context : Context q n
   backtrace : Backtrace
 
+mkLU : Maybe (lu, Fin n) -> Context Evar n -> Vect n (List lu)
+mkLU Nothing [] = []
+mkLU Nothing (_ :: bs) = [] :: mkLU Nothing bs
+mkLU (Just (lu,   FZ)) (_ :: bs) = [lu] :: mkLU Nothing bs
+mkLU (Just (lu, FS i)) (_ :: bs) = [] :: mkLU (Just (lu, i)) bs
+
+noLU : Context Evar n -> Vect n lu
+noLU = mkLU Nothing
+
 public export
-record TC (n : Nat) (a : Type) where
+record TCResult (lu : Type) (n : Nat) (a : Type) where
+  constructor MkR
+  state : TCState
+  constrs : List Constr
+  deferredEqs : List DeferredEq
+  localUsage : Vect n (List lu)
+  globalUsage : SortedMap Name BindingUse
+  value : a
+
+Functor (TCResult n) where
+  map f = record { value $= f }
+
+public export
+record TC (cq : Type) (lu : Type) (n : Nat) (a : Type) where
   constructor MkTC
-  run : Env n -> TCState -> Either Failure (TCState, Constrs, a)
+  run : Env cq n -> TCState -> Either Failure (TCResult lu n a)
+
+public export
+TCR : Nat -> Type -> Type
+TCR = TC (Evar, List Evar) (List Evar)
+
+public export
+TCL : Nat -> Type -> Type
+TCL = TC Evar Evar
+
+public export
+TCC : Nat -> Type -> Type
+TCC = TC () ()
 
 export
-Functor (TC n) where
+Functor (TC cq lu n) where
   map f (MkTC g) = MkTC $ \env, st => case g env st of
     Left fail => Left fail
-    Right (st', cs, x) => Right (st', cs, f x)
+    Right result => Right (f <$> result)
 
 export
-Applicative (TC n) where
-  pure x = MkTC $ \env, st => Right (st, neutral, x)
+Applicative (TC cq lu n) where
+  pure x = MkTC $ \env, st => Right (MkR st [] [] (noLU env.context) empty x)
   (<*>) (MkTC f) (MkTC g) = MkTC $ \env, st =>
     case f env st of
+      Left fail => Left fail
+      Right r' => case g env r'.state of
         Left fail => Left fail
-        Right (st', cs', f') => case g env st' of
-            Left fail => Left fail
-            Right (st'', cs'', x'') => Right (st'', cs' <+> cs'', f' x'')
+        Right r'' =>
+          Right
+            (MkR
+              r''.state
+              (r'.constrs <+> r''.constrs)
+              (r'.deferredEqs <+> r''.deferredEqs)
+              (zipWith (<+>) r'.localUsage r''.localUsage)
+              (mergeWith (<+>) r'.globalUsage r''.globalUsage)
+              (r'.value r''.value))
 
 export
-Monad (TC n) where
+Monad (TC cq lu n) where
   (>>=) (MkTC f) g = MkTC $ \env, st =>
     case f env st of
-        Left fail => Left fail
-        Right (st', cs, x) => case g x of
-            MkTC h => case h env st' of
-                Left fail => Left fail
-                Right (st'', cs'', x'') => Right (st'', cs <+> cs'', x'')
+      Left fail => Left fail
+      Right r' => case g r'.value of
+        MkTC h => case h env r'.state of
+          Left fail => Left fail
+          Right r'' =>
+            Right
+              (MkR
+                r''.state
+                (r'.constrs <+> r''.constrs)
+                (r'.deferredEqs <+> r''.deferredEqs)
+                (zipWith (<+>) r'.localUsage r''.localUsage)
+                (mergeWith (<+>) r'.globalUsage r''.globalUsage)
+                r''.value)
 
-getEnv : TC n (Env n)
-getEnv = MkTC $ \env, st => Right (st, neutral, env)
+getEnv : TC cq lu n (Env cq n)
+getEnv = MkTC $ \env, st => Right (MkR st [] [] (noLU env.context) empty env)
 
-getCtx : TC n (Context Evar n)
+getCtx : TC cq lu n (Context cq n)
 getCtx = .context <$> getEnv
 
-getGlobals : TC n (Globals Evar)
+getGlobals : TC cq lu n (Globals Evar)
 getGlobals = .globals <$> getEnv
 
-throw : ErrorMessage n -> TC n a
+throw : ErrorMessage n -> TC cq lu n a
 throw msg = MkTC $ \env, st
-    => Left (MkF env.backtrace _ env.context msg)
+    => Left (MkF env.backtrace env.context msg)
 
-throwDebug : Doc -> TC n a
+throwDebug : Doc -> TC cq lu n a
 throwDebug = throw . Debug
 
-withBnd : Binding Evar n -> TC (S n) a -> TC n a
-withBnd b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
-  => case f (MkE gs globs (b :: ctx) bt) st of
-    Left fail => Left fail
-    Right (st', MkConstrs cs eqs, x)
-        => Right (st', MkConstrs (MkC Sum bt (SortedSet.fromList [QQ I]) q :: cs) eqs, x)
+withBndR : Binding (List Evar) n -> TCR (S n) a -> TCR n a
+withBndR (B n pqs ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
+  case f (MkE gs globs (B n () ty :: ctx) bt) st of
+    Left fail
+      => Left fail
+    Right (MkR st' cs eqs (lu :: lus) gus x)
+      => Right (MkR st (CUse pqs lqs :: cs) eqs lus gus x)
 
-withCtx : Context Evar n -> TC n a -> TC Z a
+withCtxR : Context (List Evar) n -> TCR n a -> TCR Z a
+withCtxR [] tc = tc
+withCtxR (b :: bs) tc = withCtxR bs $ withBndR b tc
+
+withBndL : Binding () n -> TCL (S n) a -> TCL n (List Evar, a)
+withBndL (B n () ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
+  case f (MkE gs globs (B n () ty :: ctx) bt) st of
+    Left fail
+      => Left fail
+    Right (MkR st' cs eqs (lu :: lus) gus x)
+      => Right (MkR st cs qs lus gus (lu, x))
+
+withCtxL : Context () n -> TCL (S n) a -> TCL Z (Vect n (List Evar), a)
+withCtxL [] tc = (\x => ([], x)) <$> tc
+withCtxL (b :: bs) tc = do
+  (lus, (lu, x)) <- withCtxL bs $ withBndL b tc
+  pure (lu :: lus, x)
+
+withBnd : Binding cq n -> TC cq () (S n) a -> TC cq () n a
+withBnd b (MkTC f) = MkTC $ \env, st =>
+  f (record { context $= (b ::) } env) st
+
+withCtx : Context cq n -> TC cq () n a -> TC cq () Z a
 withCtx [] tc = tc
 withCtx (b :: bs) tc = withCtx bs $ withBnd b tc
 
-withQ : Evar -> TC n a -> TC n a
-withQ q (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
-    => f (MkE (SortedSet.insert q gs) globs ctx bt) st
+withGuard : Evar -> TC cq lu n a -> TC cq lu n a
+withGuard q (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
+    => f (MkE (q :: gs) globs ctx bt) st
 
-useEvar : Evar -> TC n ()
-useEvar ev = MkTC $ \(MkE gs globs ctx bt), st
-    => Right (st, MkConstrs [MkC Sum bt gs ev] [], ())
+use : Fin n -> TCR n ()
+use i = MkTC $ \env, st =>
+  Right (MkR st [] [] (mkLU (Just ([env.guards], i)) env.context) empty ())
 
-infix 3 ~>+
-(~>+) : List Evar -> List Evar -> TC n ()
-gs ~>+ qs = MkTC $ \(MkE gs' globs ctx bt), st =>
-  Right (st, MkConstrs [MkC Sum bt (SortedSet.fromList gs) q | q <- qs] [], ())
+provide : Fin n -> TCL n ()
+provide i = MkTC $ \env, st =>
+  Right (MkR st [] [] (mkLU (Just (env.guards, i)) env.context) empty ())
 
-infix 3 ~>
-(~>) : List Evar -> List Evar -> TC n ()
-gs ~> qs = MkTC $ \(MkE gs' globs ctx bt), st =>
-  Right (st, MkConstrs [MkC Max bt (SortedSet.fromList gs) q | q <- qs] [], ())
+useGlobal : Name -> TCR n ()
+useGlobal n = MkTC $ \env, st =>
+  Right (MkR st [] [] (noLU env.context) (insert n (MkBU Nothing [env.guards]) empty) ())
 
-eqEvar : Evar -> Evar -> TC n ()
-eqEvar (QQ p) (QQ q) =
+useCtorTag : Q -> TCL n ()
+useCtorTag q = MkTC $ \env, st =>
+  -- constructor tags are always linearly bound
+  -- (which means you can't force linearly bound patterns)
+  --
+  -- consider a linearly bound bool pattern: there's no other variables
+  -- so you have to at least inspect the tag to satisfy linearity
+  --
+  -- Small trick: rhs = [[q]] ~= sum [product [q]] = sum [q] = q
+  -- So this constraint says that q uses must be allowable here:
+  --   product guards >= q
+  --
+  -- For forced patterns, q = I; for checking patterns, q = L
+  Right (MkR st [CUse [env.guards] [[q]]] [] (noLU env.context) empty ())
+
+irrelevant : TC cq lu n a -> TC cq lu' n a
+irrelevant (MkTC f) = MkTC $ \env, st =>
+  record { localUsage = noLU env.context } <$> f env st
+
+infix 3 ~
+(~) : Evar -> Evar -> TC cq lu n ()
+QQ p ~ QQ q =
   if p == q
     then pure ()
     else throw $ QuantityMismatch p q
-eqEvar p q = do
-  [p] ~> [q]
-  [q] ~> [p]
+p ~ q = MkTC $ \env, st =>
+  Right (MkR st [CEq p q] [] (noLU env.context) empty ())
 
-eqProds : List Evar -> List Evar -> TC n ()
-eqProds ps qs = do
-  ps ~> qs
-  qs ~> ps
-
-lookup : Fin n -> TC n (Binding Evar n)
+lookup : Fin n -> TC cq lu n (Binding cq n)
 lookup i = lookup i <$> getCtx
 
-lookupGlobal : Name -> TC n (Binding Evar n)
+lookupGlobal : Name -> TC cq lu n (Binding Evar n)
 lookupGlobal n =
   (lookup n <$> getGlobals) >>= \case
     Nothing => throw $ UnknownGlobal n
     Just d => pure $ weakenClosedBinding d.binding
 
-trace : Show tr => tr -> TC n a -> TC n a
+trace : Show tr => tr -> TC cq lu n a -> TC cq lu n a
 trace t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => f (MkE gs globs ctx (show t :: bt)) st
 
-traceDoc : Show tr => Doc -> tr -> TC n a -> TC n a
+traceDoc : Show tr => Doc -> tr -> TC cq lu n a -> TC cq lu n a
 traceDoc doc t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => let msg = render "  " (text (show t) <+> text ": " <++> doc)
       in f (MkE gs globs ctx (msg :: bt)) st
 
-traceTm : Show tr => Term n -> tr -> TC n a -> TC n a
+traceTm : Show tr => Term n -> tr -> TC cq lu n a -> TC cq lu n a
 traceTm tm t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => let msg = show t ++ ": " ++ showTm ctx tm
       in f (MkE gs globs ctx (msg :: bt)) st
 
-traceCtx : (Show tr, Pretty (Context Evar n) b) => b -> tr -> TC n a -> TC n a
+traceCtx : (Show tr, Pretty (Context Evar n) b) => b -> tr -> TC cq lu n a -> TC cq lu n a
 traceCtx bv t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => let msg = show t ++ ": " ++ (render "  " $ pretty ctx bv)
       in f (MkE gs globs ctx (msg :: bt)) st
 
-deferEq : Evar -> Term n -> Term n -> TC n ()
+eraseQ : Context q n -> Context () n
+eraseQ = runIdentity . contextQ (pure . const ())
+
+deferEq : Evar -> Term n -> Term n -> TC cq lu n ()
 deferEq g x y =
   -- heuristic:
   -- do a quick syntactic check first
@@ -214,9 +308,9 @@ deferEq g x y =
   if x == y
     then pure ()
     else MkTC $ \(MkE gs globs ctx bt), st
-          => Right (st, MkConstrs [] [DeferEq g bt ctx x y], ())
+          => Right (MkR st [] [DeferEq g bt (eraseQ ctx) x y] (noLU env.context) empty ())
 
-whnfTC : Term n -> TC n (Term n)
+whnfTC : Term n -> TC cq () n (Term n)
 whnfTC tm = do
   gs <- getGlobals
   case red WHNF gs tm of
@@ -226,14 +320,14 @@ whnfTC tm = do
 mutual
   infix 3 ~=
   covering export
-  (~=) : Term n -> Term n -> TC n ()
+  (~=) : Term n -> Term n -> TC cq lu n ()
   (~=) p q = do
     p' <- whnfTC p
     q' <- whnfTC q
-    conv p' q'
+    irrelevant $ conv p' q'
 
   covering
-  conv : Term n -> Term n -> TC n ()
+  conv : Term n -> Term n -> TC cq () n ()
   conv (P n) (P n') =
     if n == n'
       then pure ()
@@ -244,17 +338,17 @@ mutual
     False => throw $ CantConvert (V i) (V j)
 
   conv l@(Lam b@(B n q ty) rhs) r@(Lam b'@(B n' q' ty') rhs') = do
-    eqEvar q q'
+    q ~ q'
     ty ~= ty'
-    withBnd b $ rhs ~= rhs'
+    withBnd (B n q ty) $ rhs ~= rhs'
 
   conv l@(Pi b@(B n q ty) rhs) r@(Pi b'@(B n' q' ty') rhs') = do
-    eqEvar q q'
+    q ~ q'
     ty ~= ty'
-    withBnd b $ rhs ~= rhs'
+    withBnd (B n q ty) $ rhs ~= rhs'
 
   conv l@(App q f x) r@(App q' f' x') = do
-    eqEvar q q'
+    q ~ q'
     f ~= f'
     case q of
       QQ I => pure ()
@@ -264,46 +358,47 @@ mutual
   conv l r = throw $ CantConvert l r
 
 covering export
-resumeEq : DeferredEq -> TC n ()
+resumeEq : DeferredEq -> TC () () n ()
 resumeEq (DeferEq g bt ctx x y) = MkTC $ \env, st =>
   case x ~= y of
-    MkTC f => f (MkE SortedSet.empty env.globals ctx bt) st
+    MkTC f => f (MkE [] env.globals ctx bt) st
 
 covering export
-inferTm : Term n -> TC n (Ty n)
+inferTm : Term n -> TCR n (Ty n)
 inferTm tm@(P n) = traceTm tm "GLOB" $ do
   b <- lookupGlobal n
-  useEvar b.qv
+  useGlobal n
   pure $ b.type
 
 inferTm tm@(V i) = traceTm tm "VAR" $ do
   b <- lookup i
-  useEvar b.qv
+  use i
   pure $ b.type
 
 inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
-  tyTy <- withQ (QQ I) $ inferTm ty
+  tyTy <- irrelevant $ inferTm ty
   tyTy ~= Type_
 
-  Pi b <$> (withBnd b $ inferTm rhs)
+  Pi b <$> withBndR (B n [q] ty) $ inferTm rhs)
 
 inferTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
-  tyTy <- withQ (QQ I) $ inferTm ty
+  tyTy <- irrelevant $ inferTm ty
   tyTy ~= Type_
 
-  withBnd b $ do
-    rhsTy <- withQ (QQ I) $ inferTm rhs
+  withBndR (B n [q] ty) $ do
+    rhsTy <- irrelevant $ inferTm rhs
     rhsTy ~= Type_
 
   pure Type_
 
-inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
+inferTm tm@(App f x) = traceTm tm "APP" $ do
   fTy <- whnfTC =<< inferTm f
-  xTy <- withQ appQ $ inferTm x
   case fTy of
     Pi b@(B piN piQ piTy) piRhs => do
-      traceTm fTy "fTy" $ xTy ~= piTy
-      eqEvar appQ piQ
+      xTy <- withGuard piQ $ inferTm x
+      traceTm fTy "fTy" $
+        xTy ~= piTy
+
       pure $ subst (substFZ x) piRhs
 
     _ => throw $ NotPi fTy
@@ -313,71 +408,66 @@ inferTm Erased = throw CantInferErased
 
 mutual
   covering export
-  inferPat : Evar -> List Evar -> Pat Evar n -> TC n (Ty n)
-  inferPat fq gs pat@(PV i) = traceCtx pat "PV" $ do
+  inferPat : Evar -> Pat Evar n -> TCL n (Ty n)
+  inferPat fq pat@(PV i) = traceCtx pat "PV" $ do
     b <- lookup i
-    eqProds [b.qv] gs
+    provide i
     pure b.type
 
-  inferPat fq gs pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
+  inferPat fq pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
+    -- we don't construct the value so we don't place requirements on the quantity of the constructor
+    -- it could happen that the constructor is never constructed
+    -- in such cases, the whole pattern clause can be erased
     cTy <- case ctor of
       Forced cn => do
         b <- lookupGlobal cn
-        -- no inspection here
-        -- so the guarding quantity must be okay with this (L won't be!)
-        [QQ I] ~> gs
+        -- no inspection here so the guards must be okay with this (L won't be!)
+        useCtorTag I
         pure b.type
       Checked cn => do
         b <- lookupGlobal cn
-
-        -- we don't construct the value so we don't place requirements on the quantity of the constructor
-        -- it could happen that the constructor is never constructed
-        -- in such cases, the whole pattern clause can be erased
-
-        -- inspect the constructor tag once
-        [QQ L] ~> gs
-
+        -- inspect the constructor tag exactly once
+        useCtorTag L
         pure b.type
 
     -- the remaining arguments use the same guards
     -- because they're disjoint from tag inspection
-    inferPatApp fq gs cTy args
+    inferPatApp fq cTy args
 
-  inferPat fq gs pat@(PForced tm) = traceCtx pat "PFORCED" $
+  inferPat fq pat@(PForced tm) = traceCtx pat "PFORCED" $
     -- just check type-correctness
-    withQ (QQ I) $ inferTm tm
+    irrelevant $ inferTm tm
 
-  inferPat fq gs PWildcard =
+  inferPat fq PWildcard =
     throw CantInferWildcard
 
   covering export
-  inferPatApp : Evar -> List Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TC n (Ty n)
-  inferPatApp fq gs fTy [] = pure fTy
-  inferPatApp fq gs fTy ps@((appQ, pat) :: pats) = traceCtx (PCtorApp (Checked (UN "_")) ps) "PAT-APP" $ do
+  inferPatApp : Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TCL n (Ty n)
+  inferPatApp fq fTy [] = pure fTy
+  inferPatApp fq fTy ps@(pat :: pats) = traceCtx (PCtorApp (Checked (UN "_")) ps) "PAT-APP" $ do
     -- if we have gs applications
     -- then we will have (appQ :: gs) subpatterns available
-    patTy <- inferPat fq (appQ :: gs) pat
     whnfTC fTy >>= \case
       Pi b@(B piN piQ piTy) piRhs => do
+        patTy <- withGuard piQ $ inferPat fq pat
         patTy ~= piTy
-        eqEvar appQ piQ
 
         -- remaining args use the same guards
         -- because they're disjoint
-        inferPatApp fq gs
+        inferPatApp fq
           (subst (substFZ $ patToTm pat) piRhs)
           pats
 
       _ => throw $ NotPi fTy
 
 covering export
-inferBinding : Binding Evar n -> TC n ()
-inferBinding bnd@(B n q ty) = traceCtx bnd "BINDING" $ do
-  tyTy <- withQ (QQ I) $ inferTm ty
+inferBinding : Binding () n -> TCC n ()
+inferBinding bnd@(B n () ty) = traceCtx bnd "BINDING" $ do
+  tyTy <- irrelevant $ inferTm ty
   tyTy ~= Type_
 
 covering export
-inferCtx : Context Evar n -> TC Z ()
+inferCtx : Context () n -> TCC Z ()
 inferCtx [] = pure ()
 inferCtx (b :: bs) = do
   inferCtx bs
@@ -385,31 +475,39 @@ inferCtx (b :: bs) = do
     inferBinding b
 
 covering export
-inferClause : Binding Evar Z -> {argn : Nat} -> Clause Evar argn -> TC Z ()
+inferClause : Binding Evar Z -> {argn : Nat} -> Clause Evar argn -> TCC Z ()
 inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN fbnd.name) c) "CLAUSE" $ do
+  -- check the context
   inferCtx pi
-  withCtx pi $ do
-    -- we start with [], which means we have one/L term matching the LHS
-    lhsTy <- inferPatApp fbnd.qv [] (weakenClosed fbnd.type) (toList lhs)
-    rhsTy <- inferTm rhs  -- we always need to construct one of RHS per call
-    traceTm lhsTy "CLAUSE-CONV" $ do
-      lhsTy ~= rhsTy
+
+  -- check the LHS and get the provided quantities for patvars
+  (piQ, lhsTy) <- withCtxL pi $ traceCtx (PCtorApp (Checked (UN fbnd.name)) lhs) "CLAUSE-LHS" $
+    inferPatApp fbnd.qv (weakenClosed fbnd.type) (toList lhs)
+
+  -- with the provided quantities, check the RHS
+  rhsTy <- withCtxR piQ $ traceTm rhs "CLAUSE-RHS" $
+    inferTm rhs
+
+  -- check that the types match
+  -- this can be done in the plain old context
+  withCtx pi $ traceTm lhsTy "CLAUSE-CONV" $ do
+    lhsTy ~= rhsTy
 
 covering export
-inferBody : Binding Evar Z -> Body Evar -> TC Z ()
+inferBody : Binding Evar Z -> Body Evar -> TCC Z ()
 inferBody fbnd Postulate = pure ()
 inferBody fbnd Constructor = pure ()
 inferBody fbnd (Foreign _) = pure ()
 inferBody fbnd (Clauses argn cs) = traverse_ (inferClause fbnd) cs
 
 covering export
-inferDefinition : Definition Evar -> TC Z ()
+inferDefinition : Definition Evar -> TCC Z ()
 inferDefinition d@(MkDef bnd body) = traceDoc (pretty () d) "DEF" $ do
   inferBinding bnd
   inferBody bnd body
 
 covering export
-inferGlobals : TC Z ()
+inferGlobals : TCC Z ()
 inferGlobals = do
   gs <- Globals.toList <$> getGlobals
   traverse_ inferDefinition gs
