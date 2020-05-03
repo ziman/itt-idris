@@ -75,8 +75,12 @@ est : SortedMap ENum Q -> Evar -> Q
 est vals (QQ q) = q
 est vals (EV i) = fromMaybe I $ lookup i vals
 
+lToR : Q -> Q
+lToR L = R
+lToR q = q
+
 eval : SortedMap ENum Q -> SortedSet Evar -> Q
-eval vals = foldl max I . map (est vals) . SortedSet.toList
+eval vals = lToR . foldl max I . map (est vals) . SortedSet.toList
 
 covering
 step : SortedMap ENum Q -> QConstrs -> Index -> List Int -> Either Error (SortedMap ENum Q)
