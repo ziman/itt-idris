@@ -44,30 +44,28 @@ parensFrom required actual =
     else id
 
 mutual
-  export
-  ShowQ q => Pretty (Context q n) (Binding q n) where
-    pretty ctx (B n dq Erased)
-      = text n
-    pretty ctx (B n dq ty)
-      = text n <++> text (showCol dq) <++> pretty (PTT False NoParens, ctx) ty
+  prettyBnd : ShowQ q => Context () n -> Binding q n -> Doc
+  prettyBnd ctx (B n dq Erased) = text n
+  prettyBnd ctx (B n dq ty) =
+    text n <++> text (showCol dq) <++> pretty (PTT False NoParens, ctx) ty
 
   export
-  ShowQ q => Pretty (PrettyTT, Context q n) (TT q n) where
+  ShowQ q => Pretty (PrettyTT, Context () n) (TT q n) where
     pretty (PTT top nl, ctx) (P n) = pretty () n
     pretty (PTT top nl, ctx) (V i) = case lookup i ctx of
       B n q' ty => text n
-    pretty (PTT True nl,  ctx) (Lam b rhs) = parensFrom NoAppParens nl $
-      text "\\" <+> pretty ctx b <+> text "."
-      $$ indent (pretty (PTT True NoParens, b::ctx) rhs)
+    pretty (PTT True nl, ctx) (Lam b rhs) = parensFrom NoAppParens nl $
+      text "\\" <+> prettyBnd ctx b <+> text "."
+      $$ indent (pretty (PTT True NoParens, eraseQ bindingQ b :: ctx) rhs)
     pretty (PTT False nl, ctx) (Lam b rhs) = parensFrom NoAppParens nl $
-      text "\\" <+> pretty ctx b <+> text "."
-      <++> pretty (PTT True NoParens, b::ctx) rhs
+      text "\\" <+> prettyBnd ctx b <+> text "."
+      <++> pretty (PTT True NoParens, eraseQ bindingQ b :: ctx) rhs
     pretty (PTT top nl, ctx) (Pi b@(B "_" q ty) rhs) = parensFrom NoAppParens nl $
       pretty (PTT False NoAppParens, ctx) ty
-      <++> text "->" <++> pretty (PTT False NoParens, b::ctx) rhs
+      <++> text "->" <++> pretty (PTT False NoParens, eraseQ bindingQ b :: ctx) rhs
     pretty (PTT top nl, ctx) (Pi b rhs) = parensFrom NoAppParens nl $
-      parens (pretty ctx b)
-      <++> text "->" <++> pretty (PTT False NoParens, b::ctx) rhs
+      parens (prettyBnd ctx b)
+      <++> text "->" <++> pretty (PTT False NoParens, eraseQ bindingQ b :: ctx) rhs
     pretty (PTT top nl, ctx) (App f x) = parensFrom UseParens nl $
       pretty (PTT False NoAppParens, ctx) f 
       <++> pretty (PTT False UseParens, ctx) x
@@ -75,23 +73,27 @@ mutual
     pretty (PTT top nl, ctx) Erased = text "_"
 
 export
-ShowQ q => Pretty (Context q n) (TT q n) where
-  pretty ctx = pretty (PTT False NoAppParens, ctx)
+ShowQ q => Pretty (Context q' n) (Binding q n) where
+  pretty ctx = prettyBnd (eraseQ contextQ ctx)
+
+export
+ShowQ q => Pretty (Context q' n) (TT q n) where
+  pretty ctx = pretty (PTT False NoAppParens, eraseQ contextQ ctx)
 
 export
 ShowQ q => Pretty () (TT q Z) where
-  pretty {q} () = pretty (PTT True NoParens, the (Context q Z) [])
+  pretty {q} () = pretty (PTT True NoParens, the (Context () Z) [])
 
 export
 ShowQ q => Show (TT q Z) where
   show = render " " . pretty ()
 
 export
-showTm : ShowQ q => Context q n -> TT q n -> String
-showTm ctx tm = render "  " $ pretty (PTT False NoAppParens, ctx) tm
+showTm : ShowQ q => Context q' n -> TT q n -> String
+showTm ctx tm = render "  " $ pretty (PTT False NoAppParens, eraseQ contextQ ctx) tm
 
 export
 ShowQ q => Pretty () (Context q n) where
   pretty () Nil = neutral
-  pretty () [b] = parens (pretty (Context.Nil {q}) b)
+  pretty () [b] = parens (pretty (the (Context () Z) []) b)
   pretty () (b :: bs) = pretty () bs <++> parens (pretty bs b)

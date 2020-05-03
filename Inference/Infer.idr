@@ -37,7 +37,7 @@ record TCState where
 public export
 data ErrorMessage : Nat -> Type where
   CantConvert : TT Evar n -> TT Evar n -> ErrorMessage n
-  NotPi : Ty n -> ErrorMessage n
+  NotPi : TT () n -> ErrorMessage n
   CantInferErased : ErrorMessage n
   CantInferWildcard : ErrorMessage n
   NotImplemented : ErrorMessage n
@@ -48,9 +48,9 @@ data ErrorMessage : Nat -> Type where
   UnderconstrainedBinding : Fin n -> ErrorMessage n
   Debug : Doc -> ErrorMessage n
 
-showEM : Context Evar n -> ErrorMessage n -> String
+showEM : Context () n -> ErrorMessage n -> String
 showEM ctx (CantConvert x y)
-    = "can't convert: " ++ showTm ctx x ++ " with " ++ showTm ctx y
+    = "can't convert: " ++ showTm ctx (eraseQ ttQ x) ++ " with " ++ showTm ctx (eraseQ ttQ y)
 showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
 showEM ctx CantInferErased
@@ -73,18 +73,18 @@ showEM ctx (Debug doc)
     = render "  " (text ">>> DEBUG <<< " $$ indent doc)
 
 public export
-record Failure where
+record Failure cq where
   constructor MkF
   backtrace : Backtrace
   {0 n : Nat}
-  context : Context () n
+  context : Context cq n
   errorMessage : ErrorMessage n
 
 export
-Show Failure where
-  show (MkF bt _ ctx msg) = "With backtrace:\n"
+Show (Failure cq) where
+  show (MkF bt ctx msg) = "With backtrace:\n"
     ++ unlines (reverse $ map ("  " ++) bt)
-    ++ showEM ctx msg
+    ++ showEM (eraseQ contextQ ctx) msg
 
 public export
 record Env (q : Type) (n : Nat) where
@@ -94,13 +94,13 @@ record Env (q : Type) (n : Nat) where
   context : Context q n
   backtrace : Backtrace
 
-mkLU : Maybe (lu, Fin n) -> Context Evar n -> Vect n (List lu)
+mkLU : Maybe (List lu, Fin n) -> Context cq n -> Vect n (List lu)
 mkLU Nothing [] = []
 mkLU Nothing (_ :: bs) = [] :: mkLU Nothing bs
-mkLU (Just (lu,   FZ)) (_ :: bs) = [lu] :: mkLU Nothing bs
+mkLU (Just (lu,   FZ)) (_ :: bs) = lu :: mkLU Nothing bs
 mkLU (Just (lu, FS i)) (_ :: bs) = [] :: mkLU (Just (lu, i)) bs
 
-noLU : Context Evar n -> Vect n lu
+noLU : Context cq n -> Vect n (List lu)
 noLU = mkLU Nothing
 
 public export
@@ -110,24 +110,24 @@ record TCResult (lu : Type) (n : Nat) (a : Type) where
   constrs : List Constr
   deferredEqs : List DeferredEq
   localUsage : Vect n (List lu)
-  globalUsage : SortedMap Name BindingUse
+  globalUsage : SortedMap Name (List (List Evar))
   value : a
 
-Functor (TCResult n) where
+Functor (TCResult lu n) where
   map f = record { value $= f }
 
 public export
 record TC (cq : Type) (lu : Type) (n : Nat) (a : Type) where
   constructor MkTC
-  run : Env cq n -> TCState -> Either Failure (TCResult lu n a)
+  run : Env cq n -> TCState -> Either (Failure cq) (TCResult lu n a)
 
 public export
 TCR : Nat -> Type -> Type
-TCR = TC (Evar, List Evar) (List Evar)
+TCR = TC (List Evar) (List Evar)
 
 public export
 TCL : Nat -> Type -> Type
-TCL = TC Evar Evar
+TCL = TC () Evar
 
 public export
 TCC : Nat -> Type -> Type
@@ -192,12 +192,12 @@ throwDebug : Doc -> TC cq lu n a
 throwDebug = throw . Debug
 
 withBndR : Binding (List Evar) n -> TCR (S n) a -> TCR n a
-withBndR (B n pqs ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
-  case f (MkE gs globs (B n () ty :: ctx) bt) st of
+withBndR b@(B n pqs ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
+  case f (MkE gs globs (b :: ctx) bt) st of
     Left fail
       => Left fail
     Right (MkR st' cs eqs (lu :: lus) gus x)
-      => Right (MkR st (CUse pqs lqs :: cs) eqs lus gus x)
+      => Right (MkR st (CUse pqs lu :: cs) eqs lus gus x)
 
 withCtxR : Context (List Evar) n -> TCR n a -> TCR Z a
 withCtxR [] tc = tc
@@ -209,9 +209,9 @@ withBndL (B n () ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
     Left fail
       => Left fail
     Right (MkR st' cs eqs (lu :: lus) gus x)
-      => Right (MkR st cs qs lus gus (lu, x))
+      => Right (MkR st cs eqs lus gus (lu, x))
 
-withCtxL : Context () n -> TCL (S n) a -> TCL Z (Vect n (List Evar), a)
+withCtxL : Context () n -> TCL n a -> TCL Z (Vect n (List Evar), a)
 withCtxL [] tc = (\x => ([], x)) <$> tc
 withCtxL (b :: bs) tc = do
   (lus, (lu, x)) <- withCtxL bs $ withBndL b tc
@@ -219,7 +219,9 @@ withCtxL (b :: bs) tc = do
 
 withBnd : Binding cq n -> TC cq () (S n) a -> TC cq () n a
 withBnd b (MkTC f) = MkTC $ \env, st =>
-  f (record { context $= (b ::) } env) st
+  -- we can discard usage because we know that it's useless {lu = ()}
+  record { localUsage $= tail} <$>
+    f (record { context $= (b ::) } env) st
 
 withCtx : Context cq n -> TC cq () n a -> TC cq () Z a
 withCtx [] tc = tc
@@ -239,7 +241,7 @@ provide i = MkTC $ \env, st =>
 
 useGlobal : Name -> TCR n ()
 useGlobal n = MkTC $ \env, st =>
-  Right (MkR st [] [] (noLU env.context) (insert n (MkBU Nothing [env.guards]) empty) ())
+  Right (MkR st [] [] (noLU env.context) (insert n [env.guards] empty) ())
 
 useCtorTag : Q -> TCL n ()
 useCtorTag q = MkTC $ \env, st =>
@@ -254,19 +256,19 @@ useCtorTag q = MkTC $ \env, st =>
   --   product guards >= q
   --
   -- For forced patterns, q = I; for checking patterns, q = L
-  Right (MkR st [CUse [env.guards] [[q]]] [] (noLU env.context) empty ())
+  Right (MkR st [CUse env.guards [[QQ q]]] [] (noLU env.context) empty ())
 
 irrelevant : TC cq lu n a -> TC cq lu' n a
 irrelevant (MkTC f) = MkTC $ \env, st =>
   record { localUsage = noLU env.context } <$> f env st
 
-infix 3 ~
-(~) : Evar -> Evar -> TC cq lu n ()
-QQ p ~ QQ q =
+infix 3 ~~
+(~~) : Evar -> Evar -> TC cq lu n ()
+(~~) (QQ p) (QQ q) =
   if p == q
     then pure ()
     else throw $ QuantityMismatch p q
-p ~ q = MkTC $ \env, st =>
+(~~) p q = MkTC $ \env, st =>
   Right (MkR st [CEq p q] [] (noLU env.context) empty ())
 
 lookup : Fin n -> TC cq lu n (Binding cq n)
@@ -287,12 +289,12 @@ traceDoc doc t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => let msg = render "  " (text (show t) <+> text ": " <++> doc)
       in f (MkE gs globs ctx (msg :: bt)) st
 
-traceTm : Show tr => Term n -> tr -> TC cq lu n a -> TC cq lu n a
+traceTm : (Show tr, ShowQ q) => TT q n -> tr -> TC cq lu n a -> TC cq lu n a
 traceTm tm t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => let msg = show t ++ ": " ++ showTm ctx tm
       in f (MkE gs globs ctx (msg :: bt)) st
 
-traceCtx : (Show tr, Pretty (Context Evar n) b) => b -> tr -> TC cq lu n a -> TC cq lu n a
+traceCtx : (Show tr, Pretty (Context cq n) b) => b -> tr -> TC cq lu n a -> TC cq lu n a
 traceCtx bv t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
   => let msg = show t ++ ": " ++ (render "  " $ pretty ctx bv)
       in f (MkE gs globs ctx (msg :: bt)) st
@@ -305,7 +307,16 @@ deferEq g x y =
   if x == y
     then pure ()
     else MkTC $ \(MkE gs globs ctx bt), st
-          => Right (MkR st [] [DeferEq g bt (eraseQ ctx) x y] (noLU env.context) empty ())
+      => Right
+        ( MkR st []
+          [DeferEq g bt
+            (eraseQ contextQ ctx)
+            (eraseQ ttQ x)
+            (eraseQ ttQ y)
+          ]
+          (noLU ctx)
+          empty
+          ())
 
 whnfTC : Term n -> TC cq () n (Term n)
 whnfTC tm = do
@@ -318,10 +329,10 @@ mutual
   infix 3 ~=
   covering export
   (~=) : Term n -> Term n -> TC cq lu n ()
-  (~=) p q = do
+  (~=) p q = irrelevant $ do
     p' <- whnfTC p
     q' <- whnfTC q
-    irrelevant $ conv p' q'
+    conv p' q'
 
   covering
   conv : Term n -> Term n -> TC cq () n ()
@@ -335,17 +346,17 @@ mutual
     False => throw $ CantConvert (V i) (V j)
 
   conv l@(Lam b@(B n q ty) rhs) r@(Lam b'@(B n' q' ty') rhs') = do
-    q ~ q'
+    q ~~ q'
     ty ~= ty'
     withBnd (B n q ty) $ rhs ~= rhs'
 
   conv l@(Pi b@(B n q ty) rhs) r@(Pi b'@(B n' q' ty') rhs') = do
-    q ~ q'
+    q ~~ q'
     ty ~= ty'
     withBnd (B n q ty) $ rhs ~= rhs'
 
   conv l@(App q f x) r@(App q' f' x') = do
-    q ~ q'
+    q ~~ q'
     f ~= f'
     case q of
       QQ I => pure ()
@@ -376,7 +387,7 @@ inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
   tyTy <- irrelevant $ inferTm ty
   tyTy ~= Type_
 
-  Pi b <$> withBndR (B n [q] ty) $ inferTm rhs)
+  Pi b <$> withBndR (B n [q] ty) $ inferTm rhs
 
 inferTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
   tyTy <- irrelevant $ inferTm ty
