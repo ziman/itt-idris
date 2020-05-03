@@ -18,30 +18,42 @@ Backtrace = List String
 public export
 data Constr : Type where
   CSumLeq :
-    (ubnd : Evar)
-    -> (terms : List (List Evar))
+    (lhs : List (List Evar))
+    -> (rhs : Evar)
     -> Constr
 
   CProdEq :
-    (result : Evar)
-    -> (factors : List Evar)
+    (lhs : List Evar)
+    -> (rhs : Evar)
     -> Constr
 
-  CEq : (p, q : Evar) -> Constr
+  CSumLeqProd :
+    (lhs : List (List Evar))
+    -> (rhs : List Evar)
+    -> Constr
+
+  CEq : (lhs, rhs : Evar) -> Constr
 
 export
 Pretty () Constr where
-  pretty () (CSumLeq ubnd terms) =
-    text (show ubnd) <++> text "≥ sum"
+  pretty () (CSumLeq lhs rhs) =
+    text (show rhs) <++> text "≥ sum"
     $$ indentBlock
         [ text "product" <++> text (show term)
-        | term <- terms
+        | term <- lhs
         ]
 
-  pretty () (CProdEq q qs) =
-    text (show q) <++> text "~ product" <++> text (show qs)
+  pretty () (CSumLeqProd lhs rhs) =
+    text "product" <++> text (show rhs) <++> text "≥ sum"
+    $$ indentBlock
+        [ text "product" <++> text (show term)
+        | term <- lhs
+        ]
 
-  pretty () (CEq p q) = pretty () p <++> text "~" <++> pretty () q
+  pretty () (CProdEq lhs rhs) =
+    text (show rhs) <++> text "~ product" <++> text (show lhs)
+
+  pretty () (CEq lhs rhs) = pretty () rhs <++> text "~" <++> pretty () lhs
 
 export
 Show Constr where

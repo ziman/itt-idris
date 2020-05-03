@@ -197,11 +197,13 @@ withBndR b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
     Left fail
       => Left fail
     Right (MkR st' cs eqs (lu :: lus) gus x)
-      => Right (MkR st (CSumLeq q lu :: cs) eqs lus gus x)
+      => Right (MkR st (CSumLeq lu q :: cs) eqs lus gus x)
 
-withCtxR : Context Evar n -> TCR n a -> TCR Z a
-withCtxR [] tc = tc
+withCtxR : Context Evar n -> TCR n a -> TCC Z a
 withCtxR (b :: bs) tc = withCtxR bs $ withBndR b tc
+withCtxR [] (MkTC f) =
+  MkTC $ \env, st =>
+    record { localUsage = [] } <$> f env st  -- change the type of Nil
 
 withBndL : Binding Evar n -> TCL (S n) a -> TCL n a
 withBndL (B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
@@ -209,11 +211,13 @@ withBndL (B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
     Left fail
       => Left fail
     Right (MkR st' cs eqs (lu :: lus) gus x)
-      => Right (MkR st (CProdEq q lu :: cs) eqs lus gus x)
+      => Right (MkR st (CProdEq lu q :: cs) eqs lus gus x)
 
-withCtxL : Context Evar n -> TCL n a -> TCL Z a
-withCtxL [] tc = tc
+withCtxL : Context Evar n -> TCL n a -> TCC Z a
 withCtxL (b :: bs) tc = withCtxL bs $ withBndL b tc
+withCtxL [] (MkTC f) =
+  MkTC $ \env, st =>
+    record { localUsage = [] } <$> f env st  -- change the type of Nil
 
 withBndC : Binding Evar n -> TCC (S n) a -> TCC n a
 withBndC b (MkTC f) = MkTC $ \env, st =>
@@ -241,8 +245,8 @@ useGlobal : Name -> TCR n ()
 useGlobal n = MkTC $ \env, st =>
   Right (MkR st [] [] (noLU env.context) (insert n [env.guards] empty) ())
 
-useCtorTag : Evar -> Q -> TCL n ()
-useCtorTag p q = MkTC $ \env, st =>
+useCtorTag : Q -> TCL n ()
+useCtorTag q = MkTC $ \env, st =>
   -- constructor tags are always linearly bound
   -- (which means you can't force linearly bound patterns)
   --
@@ -254,7 +258,7 @@ useCtorTag p q = MkTC $ \env, st =>
   --   product guards >= q
   --
   -- For forced patterns, q = I; for checking patterns, q = L
-  Right (MkR st [CSumLeq p [[QQ q]]] [] (noLU env.context) empty ())
+  Right (MkR st [CSumLeqProd [[QQ q]] env.guards] [] (noLU env.context) empty ())
 
 irrelevant : TC lu n a -> TC lu' n a
 irrelevant (MkTC f) = MkTC $ \env, st =>
@@ -361,12 +365,12 @@ mutual
   conv l r = throw $ CantConvert l r
 
 covering export
-resumeEq : DeferredEq -> TCC n ()
+resumeEq : DeferredEq -> TCC Z ()
 resumeEq (DeferEq t bt ctx x y) = MkTC $ \env, st =>
-  case irrelevant $ x ~= y of
+  case x ~= y of
     MkTC f => case f (MkE [] env.globals ctx bt) st of
       Left fail => Left fail
-      Right (MkR st cs eqs lu gu x) => Right (MkR st cs eqs (noLU env.context) empty x)
+      Right (MkR st cs eqs lu gu x) => Right (MkR st cs eqs [] gu x)
 
 covering export
 inferTm : Term n -> TCR n (Ty n)
@@ -414,13 +418,13 @@ inferTm Erased = throw CantInferErased
 
 mutual
   covering export
-  inferPat : Evar -> Pat Evar n -> TCL n (Ty n)
-  inferPat fq pat@(PV i) = traceCtx pat "PV" $ do
+  inferPat : Pat Evar n -> TCL n (Ty n)
+  inferPat pat@(PV i) = traceCtx pat "PV" $ do
     b <- lookup i
     provide i
     pure b.type
 
-  inferPat fq pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
+  inferPat pat@(PCtorApp ctor args) = traceCtx pat "PAPP" $ do
     -- we don't construct the value so we don't place requirements on the quantity of the constructor
     -- it could happen that the constructor is never constructed
     -- in such cases, the whole pattern clause can be erased
@@ -438,46 +442,48 @@ mutual
 
     -- the remaining arguments use the same guards
     -- because they're disjoint from tag inspection
-    inferPatApp fq cTy args
+    inferPatApp cTy args
 
-  inferPat fq pat@(PForced tm) = traceCtx pat "PFORCED" $
+  inferPat pat@(PForced tm) = traceCtx pat "PFORCED" $
     -- just check type-correctness
     irrelevant $ inferTm tm
 
-  inferPat fq PWildcard =
+  inferPat PWildcard =
     throw CantInferWildcard
 
   covering export
-  inferPatApp : Evar -> TT Evar n -> List (Evar, Pat Evar n) -> TCL n (Ty n)
-  inferPatApp fq fTy [] = pure fTy
-  inferPatApp fq fTy ps@(pat :: pats) = traceCtx (PCtorApp (Checked (UN "_")) ps) "PAT-APP" $ do
+  inferPatApp : TT Evar n -> List (Evar, Pat Evar n) -> TCL n (Ty n)
+  inferPatApp fTy [] = pure fTy
+  inferPatApp fTy ps@((appQ, pat) :: pats) = traceCtx (PCtorApp (Checked (UN "_")) ps) "PAT-APP" $ do
     -- if we have gs applications
     -- then we will have (appQ :: gs) subpatterns available
     whnfTC fTy >>= \case
       Pi b@(B piN piQ piTy) piRhs => do
-        patTy <- withGuard piQ $ inferPat fq pat
+        appQ ~~ piQ
+
+        patTy <- withGuard piQ $ inferPat pat
         patTy ~= piTy
 
         -- remaining args use the same guards
         -- because they're disjoint
-        inferPatApp fq
+        inferPatApp
           (subst (substFZ $ patToTm pat) piRhs)
           pats
 
       _ => throw $ NotPi fTy
 
 covering export
-inferBinding : Binding () n -> TCC n ()
-inferBinding bnd@(B n () ty) = traceCtx bnd "BINDING" $ do
+inferBinding : Binding Evar n -> TCC n ()
+inferBinding bnd@(B n q ty) = traceCtx bnd "BINDING" $ do
   tyTy <- irrelevant $ inferTm ty
   tyTy ~= Type_
 
 covering export
-inferCtx : Context () n -> TCC Z ()
+inferCtx : Context Evar n -> TCC Z ()
 inferCtx [] = pure ()
 inferCtx (b :: bs) = do
   inferCtx bs
-  withCtx bs $ traceCtx b "CTX-BND" $ do
+  withCtxC bs $ traceCtx b "CTX-BND" $ do
     inferBinding b
 
 covering export
@@ -487,16 +493,16 @@ inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN fbnd.name) c) "C
   inferCtx pi
 
   -- check the LHS and get the provided quantities for patvars
-  (piQ, lhsTy) <- withCtxL pi $ traceCtx (PCtorApp (Checked (UN fbnd.name)) lhs) "CLAUSE-LHS" $
-    inferPatApp fbnd.qv (weakenClosed fbnd.type) (toList lhs)
+  lhsTy <- withCtxL pi $ traceCtx (PCtorApp (Checked (UN fbnd.name)) $ toList lhs) "CLAUSE-LHS" $
+    inferPatApp (weakenClosed fbnd.type) (toList lhs)
 
   -- with the provided quantities, check the RHS
-  rhsTy <- withCtxR piQ $ traceTm rhs "CLAUSE-RHS" $
+  rhsTy <- withCtxR pi $ traceTm rhs "CLAUSE-RHS" $
     inferTm rhs
 
   -- check that the types match
   -- this can be done in the plain old context
-  withCtx pi $ traceTm lhsTy "CLAUSE-CONV" $ do
+  withCtxC pi $ traceTm lhsTy "CLAUSE-CONV" $ do
     lhsTy ~= rhsTy
 
 covering export
