@@ -17,7 +17,7 @@ record Clause (q : Type) (argn : Nat) where
   constructor MkClause
   {pn : Nat}
   pi : Context () pn
-  lhs : Vect argn (Pat q pn)
+  lhs : Vect argn (q, Pat q pn)
   rhs : TT q pn
 
 prettyPi : ShowQ q => Context q n -> Doc -> Doc
@@ -31,21 +31,21 @@ ShowQ q => Pretty Name (Clause q argn) where
   pretty fn c =
     prettyPi c.pi $
       pretty () fn
-      <++> hsep (map (pretty c.pi . eraseQ patQ) (toList c.lhs))
+      <++> hsep (map (pretty c.pi . eraseQ patQ . snd) (toList c.lhs))
       <++> text "~>"
       <++> pretty (PTT True NoParens, c.pi) (eraseQ ttQ c.rhs)
 
 export
 clauseQ : Traversal (Clause q argn) (Clause q' argn) q q'
 clauseQ f (MkClause pi lhs rhs) =
-  MkClause pi <$> traverse (patQ f) lhs <*> ttQ f rhs
+  MkClause pi <$> traverse (qpatQ f) lhs <*> ttQ f rhs
 
 public export
 record RawClause (q : Type) where
   constructor MkRC
   {pn : Nat}
   pi : Context () pn
-  lhs : List (Pat q pn)
+  lhs : List (q, Pat q pn)
   rhs : TT q pn
 
 checkVect : (n : Nat) -> List a -> Maybe (Vect n a)

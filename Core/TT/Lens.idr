@@ -32,7 +32,7 @@ mutual
   ttQ g (V i) = pure $ V i
   ttQ g (Lam b rhs) = Lam <$> bindingQ g b <*> ttQ g rhs
   ttQ g (Pi  b rhs) = Pi  <$> bindingQ g b <*> ttQ g rhs
-  ttQ g (App f x) = App <$> ttQ g f <*> ttQ g x
+  ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
   ttQ g Type_ = pure Type_
   ttQ g Erased = pure Erased
 
@@ -58,7 +58,7 @@ mutual
   ttVars g (V i) = g i
   ttVars g (Lam b rhs) = Lam <$> bindingVars g b <*> ttVars (skipFZ g) rhs
   ttVars g (Pi  b rhs) = Pi  <$> bindingVars g b <*> ttVars (skipFZ g) rhs
-  ttVars g (App f x) = App <$> ttVars g f <*> ttVars g x
+  ttVars g (App q f x) = App q <$> ttVars g f <*> ttVars g x
   ttVars g Type_ = pure Type_
   ttVars g Erased = pure Erased
 

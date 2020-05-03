@@ -7,21 +7,21 @@ import Data.List
 %undotted_record_projections off
 
 export
-unApply' : TT q n -> TT q n -> (TT q n, List (TT q n))
-unApply' f x = go f [x]
+unApply' : q -> TT q n -> TT q n -> (TT q n, List (q, TT q n))
+unApply' qv f x = go f [(qv, x)]
   where
-    go : TT q n -> List (TT q n) -> (TT q n, List (TT q n))
-    go (App f x) args = go f (x :: args)
+    go : TT q n -> List (q, TT q n) -> (TT q n, List (q, TT q n))
+    go (App q f x) args = go f ((q, x) :: args)
     go f args = (f, args)
 
 export
-unApply : TT q n -> (TT q n, List (TT q n))
-unApply (App f x) = unApply' f x
+unApply : TT q n -> (TT q n, List (q, TT q n))
+unApply (App q f x) = unApply' q f x
 unApply tm = (tm, [])
 
 export
-mkApp : TT q n -> List (TT q n) -> TT q n
-mkApp f = foldl App f
+mkApp : TT q n -> List (q, TT q n) -> TT q n
+mkApp f = foldl (\g, (q, x) => App q g x) f
 
 export
 hasTypeTarget : TT q n -> Bool

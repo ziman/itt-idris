@@ -13,6 +13,7 @@ xDEBUG = False
 public export
 interface ShowQ q where
   showCol : q -> String
+  showApp : q -> String
 
 public export
 data Q = I | E | L | R
@@ -52,6 +53,7 @@ showSup = super . show
 export
 ShowQ () where
   showCol () = ":"
+  showApp () = " "
 
 export
 ShowQ Q where
@@ -60,10 +62,18 @@ ShowQ Q where
       then ":" ++ showSup q
       else ":" ++ show q
 
+  showApp q =
+    if xDEBUG
+      then " " ++ showSup q ++ " "
+      else " "
+
 export
 ShowQ (Maybe Q) where
   showCol Nothing = ":"
   showCol (Just q) = showCol q
+
+  showApp Nothing = " "
+  showApp (Just q) = showApp q
 
 qToInt : Q -> Int
 qToInt I = 0

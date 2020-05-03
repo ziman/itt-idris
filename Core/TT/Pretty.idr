@@ -66,9 +66,10 @@ mutual
     pretty (PTT top nl, ctx) (Pi b rhs) = parensFrom NoAppParens nl $
       parens (prettyBnd ctx b)
       <++> text "->" <++> pretty (PTT False NoParens, eraseQ bindingQ b :: ctx) rhs
-    pretty (PTT top nl, ctx) (App f x) = parensFrom UseParens nl $
+    pretty (PTT top nl, ctx) (App q f x) = parensFrom UseParens nl $
       pretty (PTT False NoAppParens, ctx) f 
-      <++> pretty (PTT False UseParens, ctx) x
+      <+> text (showApp q)
+      <+> pretty (PTT False UseParens, ctx) x
     pretty (PTT top nl, ctx) Type_ = text "Type"
     pretty (PTT top nl, ctx) Erased = text "_"
 
