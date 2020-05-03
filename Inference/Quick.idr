@@ -115,14 +115,14 @@ step vals cs idx todo = do
           upds' <- updateVals upds (eval vals gs) (SortedSet.toList us)
           findUpdates upds' is
 
-solveQuick : Config -> Globals Evar -> Constrs -> Either Error (SortedMap ENum Q)
-solveQuick cfg gs cs =
+solveQuick : Constrs -> Either Error (SortedMap ENum Q)
+solveQuick cs =
   let (qcs, idx) = collect $ concatMap splitConstr cs.constrs
     in step empty qcs idx (keys qcs)
 
 export
-solve : Config -> Globals Evar -> Constrs -> ITT (SortedMap ENum Q)
-solve cfg gs cs =
-  case solveQuick cfg (mapQ globalsQ toQuick gs) (mapQ constrsQ toQuick cs) of
+solve : Constrs -> ITT (SortedMap ENum Q)
+solve cs =
+  case solveQuick (mapQ constrsQ toQuick cs) of
     Left e => throw $ show e
     Right vals => pure vals

@@ -1,4 +1,4 @@
-module Inference.SmtModel
+module Inference.SmtQuick
 
 import Core.TT
 import Utils.Smt
@@ -16,15 +16,16 @@ data Error
   | OtherError String
 
 SmtValue Q where
-  smtShow = A . show
+  smtShow L = A "R"
+  smtShow q = A (show q)
+
   smtRead (A "I") = Just I
   smtRead (A "E") = Just E
-  smtRead (A "L") = Just L
   smtRead (A "R") = Just R
   smtRead _ = Nothing
 
 SmtEnum Q where
-  smtEnumValues = [I, E, L, R]
+  smtEnumValues = [I, E, R]
 
 eNums : List Constr -> SortedSet ENum
 eNums [] = neutral
@@ -74,7 +75,6 @@ model cs = do
       CProdEq lhs rhs => product lhs .== ev rhs
       CEq lhs rhs => ev lhs .== ev rhs
 
-  minimise $ numberOf L
   minimise $ numberOf R
   minimise $ numberOf E
   minimise $ numberOf I

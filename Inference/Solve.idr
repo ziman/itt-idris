@@ -6,7 +6,10 @@ import public Compiler.Monad
 import public Inference.Evar
 import public Inference.Infer
 import public Inference.Constraint
-import public Inference.SmtModel
+
+import Inference.Quick
+import Inference.SmtQuick
+import Inference.SmtModel
 
 import Data.Strings
 import public Data.SortedMap
@@ -42,7 +45,7 @@ iterConstrs :
     -> ITT (SortedMap ENum Q)
 iterConstrs cfg i gs cs st = do
   log $ "  -> iteration " ++ show i 
-  vals <- liftIO (SmtModel.solve cfg.disableL cs.constrs) >>= \case
+  vals <- liftIO (SmtQuick.solve cs.constrs) >>= \case
     Left (Unsatisfiable core) => do
       log ""
       banner "# Unsatisfiable core #"

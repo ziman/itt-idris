@@ -12,9 +12,7 @@ import public Compiler.Config
 import Inference.Evar
 import Inference.Infer
 import Inference.Solve
-import Inference.Quick
 import Inference.Constraint
-import Inference.SmtModel
 
 import Transformation.PruneClauses
 import Transformation.DefaultCtorQuantities
@@ -57,7 +55,7 @@ processModule cfg raw = do
   log $ unlines $ map show cs.deferredEqs
 
   -- solve the constraints
-  vals <- Quick.solve cfg evarified cs
+  vals <- Solve.solve cfg evarified cs
 
   banner "# Final valuation #"
   log $ unlines
