@@ -37,6 +37,12 @@ ShowQ Evar where
       then ":" ++ showSup i
       else ":" ++ show i
 
+  showApp (QQ q) = showApp q
+  showApp (EV i) =
+    if xDEBUG
+      then " " ++ showSup i ++ " "
+      else " "
+
 export
 Pretty () Evar where
   pretty () = text . show
