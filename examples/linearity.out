@@ -37,6 +37,11 @@ fL : (x :L T) -> Bool {
   fL (C x) ~> x
 }
 
+fR : (x :R T) -> Bool {
+  forall (x :R Bool)
+  fR (C x) ~> and x x
+}
+
 main : Type {
   main  ~> Type
 }
@@ -80,7 +85,12 @@ fL :22 (x :L T) -> Bool {
   fL (C x) ~> x
 }
 
-main :25 Type {
+fR :25 (x :R T) -> Bool {
+  forall (x :R Bool)
+  fR (C x) ~> and x x
+}
+
+main :30 Type {
   main  ~> Type
 }
 
@@ -98,7 +108,9 @@ Running erasure inference...
   product []
   product []
   product []
-25 ≥ sum
+5 ≥ sum
+  product []
+30 ≥ sum
   product []
 6 ~ 8
 product [6] ≥ sum
@@ -143,6 +155,16 @@ product [L] ≥ sum
 L ~ 24
 L ≥ sum
   product []
+R ~ product [L, R]
+R ~ 26
+product [R] ≥ sum
+  product [L]
+L ~ 27
+R ≥ sum
+  product [6]
+  product [7]
+6 ~ 29
+7 ~ 28
 #######################
 # Deferred equalities #
 #######################
@@ -157,6 +179,7 @@ L ≥ sum
 
   2 -> R
   4 -> R
+  5 -> L
   6 -> L
   7 -> L
   8 -> L
@@ -173,7 +196,11 @@ L ≥ sum
   21 -> L
   23 -> L
   24 -> L
-  25 -> L
+  26 -> R
+  27 -> L
+  28 -> L
+  29 -> L
+  30 -> L
 
 #####################
 # Annotated program #
@@ -185,7 +212,7 @@ constructor True :R Bool.
 
 constructor False :R Bool.
 
-and :I (_ :L Bool) -> (_ :L Bool) -> Bool {
+and :L (_ :L Bool) -> (_ :L Bool) -> Bool {
   and True True ~> True
   
   and True False ~> False
@@ -214,6 +241,11 @@ fL :I (x :L T) -> Bool {
   fL (C x) ~> x
 }
 
+fR :I (x :R T) -> Bool {
+  forall (x :R Bool)
+  fR (C x) ~> and x x
+}
+
 main :L Type {
   main  ~> Type
 }
@@ -225,6 +257,16 @@ main :L Type {
 constructor True : Bool.
 
 constructor False : Bool.
+
+and : (_) -> (_) -> Bool {
+  and True True ~> True
+  
+  and True False ~> False
+  
+  and False True ~> False
+  
+  and False False ~> False
+}
 
 main : Type {
   main  ~> Type

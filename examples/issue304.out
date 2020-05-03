@@ -1,0 +1,780 @@
+#############
+# Desugared #
+#############
+
+constructor Nat : Type.
+
+constructor Z : Nat.
+
+constructor S : (_ : Nat) -> Nat.
+
+constructor Fin : (_ : Nat) -> Type.
+
+constructor FZ : (n : Nat) -> Fin (S n).
+
+constructor FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
+
+constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
+
+constructor Nil : (a : Type) -> Vect Z a.
+
+constructor Cons : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+
+constructor Elem : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Type.
+
+constructor Here : (a : Type) -> (n : Nat) -> (x : a) -> (xs : Vect n a) -> Elem a n x (Cons a n x xs).
+
+constructor There : (a : Type) -> (n : Nat) -> (x : a) -> (y : a) -> (xs : Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+
+constructor Typ : Type.
+
+constructor TLam : (_ : Typ) -> (_ : Typ) -> Typ.
+
+constructor TNat : Typ.
+
+constructor Term : (n : Nat) -> (_ : Typ) -> (_ : Vect n Typ) -> Type.
+
+constructor Var : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Elem Typ n a ctx) -> Term n a ctx.
+
+constructor Lam : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (b : Typ) -> (_ : Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+
+constructor Fix : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+
+lookup : (n : Nat) -> (_ : Vect n Typ) -> (_ : Fin n) -> Typ {
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
+  
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ) (i : Fin n)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
+}
+
+count : (n : Nat) -> (ctx : Vect n Typ) -> (i : Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
+  
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ) (b : Typ) (i : Fin n)
+  count ({S} n) ({Cons} [Typ] [n] b ctx) (FS [n] i) ~> There Typ n a b ctx (count n ctx i)
+}
+
+main : Type {
+  main  ~> Type
+}
+
+#############
+# Evarified #
+#############
+
+constructor Nat :83 Type.
+
+constructor Z :138 Nat.
+
+constructor S :88 (_ :89 Nat) -> Nat.
+
+constructor Fin :27 (_ :28 Nat) -> Type.
+
+constructor FZ :23 (n :24 Nat) -> Fin (S n).
+
+constructor FS :17 (n :18 Nat) -> (_ :19 Fin n) -> Fin (S n).
+
+constructor Vect :135 (_ :136 Nat) -> (_ :137 Type) -> Type.
+
+constructor Nil :84 (a :85 Type) -> Vect Z a.
+
+constructor Cons :0 (a :1 Type) -> (n :2 Nat) -> (_ :3 a) -> (_ :4 Vect n a) -> Vect (S n) a.
+
+constructor Elem :10 (a :11 Type) -> (n :12 Nat) -> (_ :13 a) -> (_ :14 Vect n a) -> Type.
+
+constructor Here :47 (a :48 Type) -> (n :49 Nat) -> (x :50 a) -> (xs :51 Vect n a) -> Elem a n x (Cons a n x xs).
+
+constructor There :100 (a :101 Type) -> (n :102 Nat) -> (x :103 a) -> (y :104 a) -> (xs :105 Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+
+constructor Typ :120 Type.
+
+constructor TLam :90 (_ :91 Typ) -> (_ :92 Typ) -> Typ.
+
+constructor TNat :93 Typ.
+
+constructor Term :94 (n :95 Nat) -> (_ :96 Typ) -> (_ :97 Vect n Typ) -> Type.
+
+constructor Var :121 (a :122 Typ) -> (n :123 Nat) -> (ctx :124 Vect n Typ) -> (_ :127 Elem Typ n a ctx) -> Term n a ctx.
+
+constructor Lam :62 (a :63 Typ) -> (n :64 Nat) -> (ctx :65 Vect n Typ) -> (b :68 Typ) -> (_ :69 Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+
+constructor Fix :29 (a :30 Typ) -> (n :31 Nat) -> (ctx :32 Vect n Typ) -> (_ :35 Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+
+lookup :198 (n :199 Nat) -> (_ :200 Vect n Typ) -> (_ :203 Fin n) -> Typ {
+  forall (a :209 Typ) (n :208 Nat) (ctx :205 Vect n Typ)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
+  
+  forall (a :225 Typ) (n :224 Nat) (ctx :221 Vect n Typ) (i :219 Fin n)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
+}
+
+count :139 (n :140 Nat) -> (ctx :141 Vect n Typ) -> (i :144 Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+  forall (n :157 Nat) (ctx :154 Vect n Typ) (a :153 Typ)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
+  
+  forall (n :178 Nat) (ctx :175 Vect n Typ) (a :174 Typ) (b :173 Typ) (i :171 Fin n)
+  count ({S} n) ({Cons} [Typ] [n] b ctx) (FS [n] i) ~> There Typ n a b ctx (count n ctx i)
+}
+
+main :239 Type {
+  main  ~> Type
+}
+
+Running erasure inference...
+
+########################
+# Inferred constraints #
+########################
+
+47 ≥ sum
+  product []
+100 ≥ sum
+  product []
+120 ≥ sum
+  product [48]
+  product [101]
+139 ≥ sum
+  product [L]
+198 ≥ sum
+  product []
+239 ≥ sum
+  product []
+28 ~ 25
+89 ~ 26
+28 ~ 20
+28 ~ 21
+89 ~ 22
+136 ~ 87
+137 ~ 86
+136 ~ 6
+137 ~ 5
+136 ~ 8
+89 ~ 9
+137 ~ 7
+136 ~ 16
+137 ~ 15
+136 ~ 53
+137 ~ 52
+11 ~ 57
+12 ~ 56
+13 ~ 55
+14 ~ 54
+1 ~ 61
+2 ~ 60
+3 ~ 59
+4 ~ 58
+5 ~ 52
+6 ~ 53
+15 ~ 7
+16 ~ 8
+136 ~ 107
+137 ~ 106
+11 ~ 111
+12 ~ 110
+13 ~ 109
+14 ~ 108
+15 ~ 106
+16 ~ 107
+11 ~ 115
+12 ~ 114
+13 ~ 113
+14 ~ 112
+1 ~ 119
+2 ~ 118
+3 ~ 117
+4 ~ 116
+5 ~ 106
+6 ~ 107
+15 ~ 7
+16 ~ 8
+136 ~ 99
+137 ~ 98
+136 ~ 126
+137 ~ 125
+11 ~ 131
+12 ~ 130
+13 ~ 129
+14 ~ 128
+15 ~ 125
+16 ~ 126
+95 ~ 134
+96 ~ 133
+97 ~ 132
+98 ~ 125
+99 ~ 126
+136 ~ 67
+137 ~ 66
+95 ~ 72
+89 ~ 73
+96 ~ 71
+97 ~ 70
+1 ~ 77
+2 ~ 76
+3 ~ 75
+4 ~ 74
+5 ~ 66
+6 ~ 67
+98 ~ 7
+99 ~ 8
+95 ~ 80
+96 ~ 79
+91 ~ 82
+92 ~ 81
+97 ~ 78
+98 ~ 66
+99 ~ 67
+136 ~ 34
+137 ~ 33
+95 ~ 38
+89 ~ 39
+96 ~ 37
+97 ~ 36
+1 ~ 43
+2 ~ 42
+3 ~ 41
+4 ~ 40
+5 ~ 33
+6 ~ 34
+98 ~ 7
+99 ~ 8
+95 ~ 46
+96 ~ 45
+97 ~ 44
+98 ~ 33
+99 ~ 34
+136 ~ 202
+137 ~ 201
+28 ~ 204
+136 ~ 207
+137 ~ 206
+209 ~ product [3, 200]
+208 ~ product [89, 199]
+205 ~ product [4, 200]
+199 ~ 210
+product [199] ≥ sum
+  product [I]
+89 ~ 211
+200 ~ 212
+product [200] ≥ sum
+  product [I]
+1 ~ 213
+2 ~ 214
+3 ~ 215
+4 ~ 216
+5 ~ 206
+6 ~ 207
+201 ~ 7
+202 ~ 8
+203 ~ 217
+product [203] ≥ sum
+  product [L]
+24 ~ 218
+204 ~ 25
+209 ≥ sum
+  product []
+208 ≥ sum
+205 ≥ sum
+136 ~ 223
+137 ~ 222
+28 ~ 220
+225 ~ product [3, 200]
+224 ~ product [89, 199]
+221 ~ product [4, 200]
+219 ~ product [19, 203]
+199 ~ 226
+product [199] ≥ sum
+  product [I]
+89 ~ 227
+200 ~ 228
+product [200] ≥ sum
+  product [I]
+1 ~ 229
+2 ~ 230
+3 ~ 231
+4 ~ 232
+5 ~ 222
+6 ~ 223
+201 ~ 7
+202 ~ 8
+203 ~ 233
+product [203] ≥ sum
+  product [L]
+18 ~ 234
+19 ~ 235
+20 ~ 220
+204 ~ 21
+225 ≥ sum
+224 ≥ sum
+  product [199]
+221 ≥ sum
+  product [200]
+219 ≥ sum
+  product [203]
+199 ~ 238
+200 ~ 237
+201 ~ 222
+202 ~ 223
+203 ~ 236
+204 ~ 220
+136 ~ 143
+137 ~ 142
+28 ~ 145
+11 ~ 149
+12 ~ 148
+13 ~ 147
+199 ~ 152
+200 ~ 151
+201 ~ 142
+202 ~ 143
+203 ~ 150
+204 ~ 145
+14 ~ 146
+15 ~ 142
+16 ~ 143
+136 ~ 156
+137 ~ 155
+157 ~ product [89, 140]
+154 ~ product [4, 141]
+153 ~ product [3, 141]
+140 ~ 158
+product [140] ≥ sum
+  product [I]
+89 ~ 159
+141 ~ 160
+product [141] ≥ sum
+  product [I]
+1 ~ 161
+2 ~ 162
+3 ~ 163
+4 ~ 164
+5 ~ 155
+6 ~ 156
+142 ~ 7
+143 ~ 8
+144 ~ 165
+product [144] ≥ sum
+  product [L]
+24 ~ 166
+145 ~ 25
+157 ≥ sum
+  product [49]
+154 ≥ sum
+  product [51]
+153 ≥ sum
+  product [50]
+48 ~ 170
+49 ~ 169
+50 ~ 168
+51 ~ 167
+52 ~ 155
+53 ~ 156
+54 ~ 146
+55 ~ 147
+56 ~ 148
+57 ~ 149
+136 ~ 177
+137 ~ 176
+28 ~ 172
+178 ~ product [89, 140]
+175 ~ product [4, 141]
+174 ~ product []
+173 ~ product [3, 141]
+171 ~ product [19, 144]
+140 ~ 179
+product [140] ≥ sum
+  product [I]
+89 ~ 180
+141 ~ 181
+product [141] ≥ sum
+  product [I]
+1 ~ 182
+2 ~ 183
+3 ~ 184
+4 ~ 185
+5 ~ 176
+6 ~ 177
+142 ~ 7
+143 ~ 8
+144 ~ 186
+product [144] ≥ sum
+  product [L]
+18 ~ 187
+19 ~ 188
+20 ~ 172
+145 ~ 21
+178 ≥ sum
+  product [102]
+  product [140, L]
+175 ≥ sum
+  product [105]
+  product [141, L]
+174 ≥ sum
+  product [103]
+173 ≥ sum
+  product [104]
+171 ≥ sum
+  product [144, L]
+101 ~ 194
+102 ~ 193
+103 ~ 192
+104 ~ 191
+105 ~ 190
+106 ~ 176
+107 ~ 177
+L ~ 189
+140 ~ 197
+141 ~ 196
+142 ~ 176
+143 ~ 177
+144 ~ 195
+145 ~ 172
+108 ~ 146
+109 ~ 147
+110 ~ 148
+111 ~ 149
+112 ~ 146
+113 ~ 147
+114 ~ 148
+115 ~ 149
+#######################
+# Deferred equalities #
+#######################
+
+8 -> S n ~ n
+8 -> S n ~ n
+8 -> S n ~ S n
+8 -> S n ~ S n
+8 -> S n ~ S n
+25 -> S n ~ S n
+8 -> S n ~ S n
+21 -> S n ~ S n
+8 -> S n ~ S n
+25 -> S n ~ S n
+148 -> S n ~ n
+147 -> lookup (S n) (Cons Typ n a ctx) (FZ n) ~ a
+146 -> Cons Typ n a ctx ~ Cons Typ n a ctx
+8 -> S n ~ S n
+21 -> S n ~ S n
+147 -> lookup n ctx i ~ a
+148 -> S n ~ n
+147 -> lookup (S n) (Cons Typ n b ctx) (FS n i) ~ a
+146 -> Cons Typ n b ctx ~ Cons Typ n b ctx
+
+  -> iteration 1
+    -> No more equalities, fixed point reached.
+
+###################
+# Final valuation #
+###################
+
+  1 -> I
+  2 -> I
+  3 -> L
+  4 -> L
+  5 -> I
+  6 -> I
+  7 -> I
+  8 -> I
+  9 -> I
+  11 -> I
+  12 -> I
+  13 -> I
+  14 -> I
+  15 -> I
+  16 -> I
+  18 -> I
+  19 -> L
+  20 -> I
+  21 -> I
+  22 -> I
+  24 -> I
+  25 -> I
+  26 -> I
+  28 -> I
+  33 -> I
+  34 -> I
+  36 -> I
+  37 -> I
+  38 -> I
+  39 -> I
+  40 -> L
+  41 -> L
+  42 -> I
+  43 -> I
+  44 -> I
+  45 -> I
+  46 -> I
+  47 -> L
+  48 -> I
+  49 -> I
+  50 -> I
+  51 -> I
+  52 -> I
+  53 -> I
+  54 -> I
+  55 -> I
+  56 -> I
+  57 -> I
+  58 -> L
+  59 -> L
+  60 -> I
+  61 -> I
+  66 -> I
+  67 -> I
+  70 -> I
+  71 -> I
+  72 -> I
+  73 -> I
+  74 -> L
+  75 -> L
+  76 -> I
+  77 -> I
+  78 -> I
+  79 -> I
+  80 -> I
+  81 -> I
+  82 -> I
+  86 -> I
+  87 -> I
+  89 -> I
+  91 -> I
+  92 -> I
+  95 -> I
+  96 -> I
+  97 -> I
+  98 -> I
+  99 -> I
+  100 -> L
+  101 -> I
+  102 -> I
+  103 -> L
+  104 -> I
+  105 -> I
+  106 -> I
+  107 -> I
+  108 -> I
+  109 -> I
+  110 -> I
+  111 -> I
+  112 -> I
+  113 -> I
+  114 -> I
+  115 -> I
+  116 -> L
+  117 -> L
+  118 -> I
+  119 -> I
+  120 -> I
+  125 -> I
+  126 -> I
+  128 -> I
+  129 -> I
+  130 -> I
+  131 -> I
+  132 -> I
+  133 -> I
+  134 -> I
+  136 -> I
+  137 -> I
+  139 -> L
+  140 -> I
+  141 -> I
+  142 -> I
+  143 -> I
+  144 -> L
+  145 -> I
+  146 -> I
+  147 -> I
+  148 -> I
+  149 -> I
+  150 -> L
+  151 -> R
+  152 -> I
+  153 -> I
+  154 -> I
+  155 -> I
+  156 -> I
+  157 -> I
+  158 -> I
+  159 -> I
+  160 -> I
+  161 -> I
+  162 -> I
+  163 -> L
+  164 -> L
+  165 -> L
+  166 -> I
+  167 -> I
+  168 -> I
+  169 -> I
+  170 -> I
+  171 -> L
+  172 -> I
+  173 -> I
+  174 -> L
+  175 -> I
+  176 -> I
+  177 -> I
+  178 -> I
+  179 -> I
+  180 -> I
+  181 -> I
+  182 -> I
+  183 -> I
+  184 -> L
+  185 -> L
+  186 -> L
+  187 -> I
+  188 -> L
+  189 -> L
+  190 -> I
+  191 -> I
+  192 -> L
+  193 -> I
+  194 -> I
+  195 -> L
+  196 -> I
+  197 -> I
+  198 -> L
+  199 -> I
+  200 -> R
+  201 -> I
+  202 -> I
+  203 -> L
+  204 -> I
+  205 -> R
+  206 -> I
+  207 -> I
+  208 -> I
+  209 -> R
+  210 -> I
+  211 -> I
+  212 -> R
+  213 -> I
+  214 -> I
+  215 -> L
+  216 -> L
+  217 -> L
+  218 -> I
+  219 -> L
+  220 -> I
+  221 -> R
+  222 -> I
+  223 -> I
+  224 -> I
+  225 -> R
+  226 -> I
+  227 -> I
+  228 -> R
+  229 -> I
+  230 -> I
+  231 -> L
+  232 -> L
+  233 -> L
+  234 -> I
+  235 -> L
+  236 -> L
+  237 -> R
+  238 -> I
+  239 -> L
+
+#####################
+# Annotated program #
+#####################
+
+constructor Nat :I Type.
+
+constructor Z :I Nat.
+
+constructor S :I (_ :I Nat) -> Nat.
+
+constructor Fin :I (_ :I Nat) -> Type.
+
+constructor FZ :I (n :I Nat) -> Fin (S n).
+
+constructor FS :I (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+
+constructor Vect :I (_ :I Nat) -> (_ :I Type) -> Type.
+
+constructor Nil :I (a :I Type) -> Vect Z a.
+
+constructor Cons :I (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+
+constructor Elem :I (a :I Type) -> (n :I Nat) -> (_ :I a) -> (_ :I Vect n a) -> Type.
+
+constructor Here :L (a :I Type) -> (n :I Nat) -> (x :I a) -> (xs :I Vect n a) -> Elem a n x (Cons a n x xs).
+
+constructor There :L (a :I Type) -> (n :I Nat) -> (x :L a) -> (y :I a) -> (xs :I Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+
+constructor Typ :I Type.
+
+constructor TLam :I (_ :I Typ) -> (_ :I Typ) -> Typ.
+
+constructor TNat :I Typ.
+
+constructor Term :I (n :I Nat) -> (_ :I Typ) -> (_ :I Vect n Typ) -> Type.
+
+constructor Var :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Elem Typ n a ctx) -> Term n a ctx.
+
+constructor Lam :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (b :I Typ) -> (_ :I Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+
+constructor Fix :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+
+lookup :L (n :I Nat) -> (_ :R Vect n Typ) -> (_ :L Fin n) -> Typ {
+  forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
+  
+  forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ) (i :L Fin n)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
+}
+
+count :L (n :I Nat) -> (ctx :I Vect n Typ) -> (i :L Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+  forall (n :I Nat) (ctx :I Vect n Typ) (a :I Typ)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
+  
+  forall (n :I Nat) (ctx :I Vect n Typ) (a :L Typ) (b :I Typ) (i :L Fin n)
+  count ({S} n) ({Cons} [Typ] [n] b ctx) (FS [n] i) ~> There Typ n a b ctx (count n ctx i)
+}
+
+main :L Type {
+  main  ~> Type
+}
+
+##########
+# Erased #
+##########
+
+constructor Here : Elem.
+
+constructor There : (x) -> (t) -> Elem.
+
+lookup : (_) -> (_) -> Typ {
+  forall (a) (ctx)
+  lookup ({Cons} a ctx) FZ ~> a
+  
+  forall (a) (ctx) (i)
+  lookup ({Cons} a ctx) (FS i) ~> lookup ctx i
+}
+
+count : (i) -> Elem {
+  count FZ ~> Here
+  
+  forall (a) (i)
+  count (FS i) ~> There a (count i)
+}
+
+main : Type {
+  main  ~> Type
+}
+
+################
+# NF of `main` #
+################
+
+Unerased, reduced:
+Type
+
+Erased, reduced:
+Type
