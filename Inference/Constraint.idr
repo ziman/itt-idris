@@ -17,21 +17,29 @@ Backtrace = List String
 
 public export
 data Constr : Type where
-  CUse :
-    (lhs : List Evar)
-    -> (rhs : List (List Evar))
+  CSumLeq :
+    (ubnd : Evar)
+    -> (terms : List (List Evar))
+    -> Constr
+
+  CProdEq :
+    (result : Evar)
+    -> (factors : List Evar)
     -> Constr
 
   CEq : (p, q : Evar) -> Constr
 
 export
 Pretty () Constr where
-  pretty () (CUse lhs rhs) =
-    text "product" <++> text (show lhs) <++> text "≥ sum"
+  pretty () (CSumLeq ubnd terms) =
+    text (show ubnd) <++> text "≥ sum"
     $$ indentBlock
-        [ text "product" <++> text (show rhsTerm)
-        | rhsTerm <- rhs
+        [ text "product" <++> text (show term)
+        | term <- terms
         ]
+
+  pretty () (CProdEq q qs) =
+    text (show q) <++> text "~ product" <++> text (show qs)
 
   pretty () (CEq p q) = pretty () p <++> text "~" <++> pretty () q
 
@@ -40,14 +48,19 @@ Show Constr where
   show = render "  " . pretty ()
 
 public export
-data DeferredEq : Type where
-  DeferEq : (g : Evar) -> (bt : Backtrace)
-    -> (ctx : Context () n) -> (x, y : TT () n) -> DeferredEq
+record DeferredEq where
+  constructor DeferEq
+  {0 n : Nat}
+  trigger : Evar
+  backtrace : Backtrace
+  context : Context Evar n
+  lhs : TT Evar n
+  rhs : TT Evar n
 
 export
 Show DeferredEq where
-  show (DeferEq g bt ctx x y) =
-    show g ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
+  show (DeferEq t bt ctx x y) =
+    show t ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
 public export
 record Constrs where
