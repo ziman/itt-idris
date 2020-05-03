@@ -74,7 +74,7 @@ model cs = do
       CProdEq lhs rhs => product lhs .== ev rhs
       CEq lhs rhs => ev lhs .== ev rhs
 
-  minimise $ numberOf L
+  minimise $ numberOf R + numberOf L
   minimise $ numberOf R
   minimise $ numberOf E
   minimise $ numberOf I
