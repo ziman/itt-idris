@@ -50,8 +50,8 @@ count : (n : Nat) -> (ctx : Vect n Typ) -> (i : Fin n) -> Elem Typ n (lookup n c
   forall (n : Nat) (ctx : Vect n Typ) (a : Typ)
   count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx,
 
-  forall (n : Nat) (ctx : Vect n Typ) (a : Typ) (b : Typ) (i : Fin n)
-  count ({S} n) ({Cons} [Typ] [n] b ctx) (FS [n] i) ~> There Typ n a b ctx (count n ctx i)
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ) (i : Fin n)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
 }
 
 main : Type ~> Type.
