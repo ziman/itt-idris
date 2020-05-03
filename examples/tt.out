@@ -8,27 +8,27 @@ constructor Z : Nat.
 
 constructor S : (n : Nat) -> Nat.
 
-constructor Fin : Nat -> Type.
+constructor Fin : (_ : Nat) -> Type.
 
 constructor FZ : (n : Nat) -> Fin (S n).
 
-constructor FS : (n : Nat) -> Fin n -> Fin (S n).
+constructor FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
 
-constructor Vect : Nat -> Type -> Type.
+constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
 
 constructor VN : (a : Type) -> Vect Z a.
 
-constructor VC : (n : Nat) -> (a : Type) -> a -> Vect n a -> Vect (S n) a.
+constructor VC : (n : Nat) -> (a : Type) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
 
-constructor TT : Nat -> Type.
+constructor TT : (_ : Nat) -> Type.
 
-constructor V : (n : Nat) -> Fin n -> TT n.
+constructor V : (n : Nat) -> (_ : Fin n) -> TT n.
 
-constructor Lam : (n : Nat) -> TT (S n) -> TT n.
+constructor Lam : (n : Nat) -> (_ : TT (S n)) -> TT n.
 
-constructor App : (n : Nat) -> TT n -> TT n -> TT n.
+constructor App : (n : Nat) -> (_ : TT n) -> (_ : TT n) -> TT n.
 
-env : (m : Nat) -> (n : Nat) -> Vect m (TT n) -> Fin m -> TT n {
+env : (m : Nat) -> (n : Nat) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
   forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n))
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
@@ -36,53 +36,53 @@ env : (m : Nat) -> (n : Nat) -> Vect m (TT n) -> Fin m -> TT n {
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
-extendMap : (m : Nat) -> (n : Nat) -> (Fin m -> Fin n) -> Fin (S m) -> Fin (S n) {
-  forall (m : Nat) (n : Nat) (f : Fin m -> Fin n)
+extendMap : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : Fin (S m)) -> Fin (S n) {
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n)
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
-mapVars : (m : Nat) -> (n : Nat) -> (Fin m -> Fin n) -> TT m -> TT n {
-  forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (i : Fin m)
+mapVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : TT m) -> TT n {
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (x : TT (S m))
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m))
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : Fin m -> Fin n) (g : TT m) (x : TT m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m)
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
-extendSubst : (m : Nat) -> (n : Nat) -> (Fin m -> TT n) -> Fin (S m) -> TT (S n) {
-  forall (m : Nat) (n : Nat) (f : Fin m -> TT n)
+extendSubst : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : Fin (S m)) -> TT (S n) {
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n)
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
-substVars : (m : Nat) -> (n : Nat) -> (Fin m -> TT n) -> TT m -> TT n {
-  forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (i : Fin m)
+substVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : TT m) -> TT n {
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
   substVars m n f (V [m] i) ~> f i
   
-  forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (x : TT (S m))
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m))
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : Fin m -> TT n) (g : TT m) (x : TT m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m)
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
 testTm : TT (S Z) {
-  testTm ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
+  testTm  ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
 }
 
 example1 : TT Z {
-  example1 ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
+  example1  ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
 }
 
-substTop : (n : Nat) -> TT n -> Fin (S n) -> TT n {
+substTop : (n : Nat) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
   forall (n : Nat) (tm : TT n)
   substTop n tm (FZ [n]) ~> tm
   
@@ -90,7 +90,7 @@ substTop : (n : Nat) -> TT n -> Fin (S n) -> TT n {
   substTop n tm (FS [n] i) ~> V n i
 }
 
-redex : (m : Nat) -> TT m -> TT m -> TT m {
+redex : (m : Nat) -> (_ : TT m) -> (_ : TT m) -> TT m {
   forall (m : Nat) (y : TT (S m)) (x : TT m)
   redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
   
@@ -98,7 +98,7 @@ redex : (m : Nat) -> TT m -> TT m -> TT m {
   redex m f' x ~> App m f' (nf m x)
 }
 
-nf : (m : Nat) -> TT m -> TT m {
+nf : (m : Nat) -> (_ : TT m) -> TT m {
   forall (m : Nat) (i : Fin m)
   nf m (V [m] i) ~> V m i
   
@@ -110,7 +110,7 @@ nf : (m : Nat) -> TT m -> TT m {
 }
 
 example2 : TT (S Z) {
-  example2 ~> nf (S Z) testTm
+  example2  ~> nf (S Z) testTm
 }
 
 constructor Result : Type.
@@ -118,7 +118,7 @@ constructor Result : Type.
 constructor R : (x :R TT Z) -> (y :R TT (S Z)) -> Result.
 
 main :R Result {
-  main ~> R example1 example2
+  main  ~> R example1 example2
 }
 
 #############
@@ -131,27 +131,27 @@ constructor Z :57 Nat.
 
 constructor S :31 (n :32 Nat) -> Nat.
 
-constructor Fin :17 Nat -> Type.
+constructor Fin :17 (_ :18 Nat) -> Type.
 
 constructor FZ :13 (n :14 Nat) -> Fin (S n).
 
-constructor FS :7 (n :8 Nat) -> Fin n -> Fin (S n).
+constructor FS :7 (n :8 Nat) -> (_ :9 Fin n) -> Fin (S n).
 
-constructor Vect :54 Nat -> Type -> Type.
+constructor Vect :54 (_ :55 Nat) -> (_ :56 Type) -> Type.
 
 constructor VN :50 (a :51 Type) -> Vect Z a.
 
-constructor VC :40 (n :41 Nat) -> (a :42 Type) -> a -> Vect n a -> Vect (S n) a.
+constructor VC :40 (n :41 Nat) -> (a :42 Type) -> (_ :43 a) -> (_ :44 Vect n a) -> Vect (S n) a.
 
-constructor TT :33 Nat -> Type.
+constructor TT :33 (_ :34 Nat) -> Type.
 
-constructor V :35 (n :36 Nat) -> Fin n -> TT n.
+constructor V :35 (n :36 Nat) -> (_ :37 Fin n) -> TT n.
 
-constructor Lam :19 (n :20 Nat) -> TT (S n) -> TT n.
+constructor Lam :19 (n :20 Nat) -> (_ :21 TT (S n)) -> TT n.
 
-constructor App :0 (n :1 Nat) -> TT n -> TT n -> TT n.
+constructor App :0 (n :1 Nat) -> (_ :2 TT n) -> (_ :4 TT n) -> TT n.
 
-env :58 (m :59 Nat) -> (n :60 Nat) -> Vect m (TT n) -> Fin m -> TT n {
+env :58 (m :59 Nat) -> (n :60 Nat) -> (_ :61 Vect m (TT n)) -> (_ :65 Fin m) -> TT n {
   forall (m :75 Nat) (n :74 Nat) (x :72 TT n) (xs :68 Vect m (TT n))
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
@@ -159,53 +159,53 @@ env :58 (m :59 Nat) -> (n :60 Nat) -> Vect m (TT n) -> Fin m -> TT n {
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
-extendMap :143 (m :144 Nat) -> (n :145 Nat) -> (Fin m -> Fin n) -> Fin (S m) -> Fin (S n) {
-  forall (m :160 Nat) (n :159 Nat) (f :155 Fin m -> Fin n)
+extendMap :143 (m :144 Nat) -> (n :145 Nat) -> (_ :146 (_ :147 Fin m) -> Fin n) -> (_ :150 Fin (S m)) -> Fin (S n) {
+  forall (m :160 Nat) (n :159 Nat) (f :155 (_ :156 Fin m) -> Fin n)
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m :174 Nat) (n :173 Nat) (f :169 Fin m -> Fin n) (i :167 Fin m)
+  forall (m :174 Nat) (n :173 Nat) (f :169 (_ :170 Fin m) -> Fin n) (i :167 Fin m)
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
-mapVars :234 (m :235 Nat) -> (n :236 Nat) -> (Fin m -> Fin n) -> TT m -> TT n {
-  forall (m :251 Nat) (n :250 Nat) (f :246 Fin m -> Fin n) (i :244 Fin m)
+mapVars :234 (m :235 Nat) -> (n :236 Nat) -> (_ :237 (_ :238 Fin m) -> Fin n) -> (_ :241 TT m) -> TT n {
+  forall (m :251 Nat) (n :250 Nat) (f :246 (_ :247 Fin m) -> Fin n) (i :244 Fin m)
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m :269 Nat) (n :268 Nat) (f :264 Fin m -> Fin n) (x :261 TT (S m))
+  forall (m :269 Nat) (n :268 Nat) (f :264 (_ :265 Fin m) -> Fin n) (x :261 TT (S m))
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m :296 Nat) (n :295 Nat) (f :291 Fin m -> Fin n) (g :289 TT m) (x :287 TT m)
+  forall (m :296 Nat) (n :295 Nat) (f :291 (_ :292 Fin m) -> Fin n) (g :289 TT m) (x :287 TT m)
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
-extendSubst :184 (m :185 Nat) -> (n :186 Nat) -> (Fin m -> TT n) -> Fin (S m) -> TT (S n) {
-  forall (m :201 Nat) (n :200 Nat) (f :196 Fin m -> TT n)
+extendSubst :184 (m :185 Nat) -> (n :186 Nat) -> (_ :187 (_ :188 Fin m) -> TT n) -> (_ :191 Fin (S m)) -> TT (S n) {
+  forall (m :201 Nat) (n :200 Nat) (f :196 (_ :197 Fin m) -> TT n)
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m :218 Nat) (n :217 Nat) (f :213 Fin m -> TT n) (i :211 Fin m)
+  forall (m :218 Nat) (n :217 Nat) (f :213 (_ :214 Fin m) -> TT n) (i :211 Fin m)
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
-substVars :424 (m :425 Nat) -> (n :426 Nat) -> (Fin m -> TT n) -> TT m -> TT n {
-  forall (m :441 Nat) (n :440 Nat) (f :436 Fin m -> TT n) (i :434 Fin m)
+substVars :424 (m :425 Nat) -> (n :426 Nat) -> (_ :427 (_ :428 Fin m) -> TT n) -> (_ :431 TT m) -> TT n {
+  forall (m :441 Nat) (n :440 Nat) (f :436 (_ :437 Fin m) -> TT n) (i :434 Fin m)
   substVars m n f (V [m] i) ~> f i
   
-  forall (m :457 Nat) (n :456 Nat) (f :452 Fin m -> TT n) (x :449 TT (S m))
+  forall (m :457 Nat) (n :456 Nat) (f :452 (_ :453 Fin m) -> TT n) (x :449 TT (S m))
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m :484 Nat) (n :483 Nat) (f :479 Fin m -> TT n) (g :477 TT m) (x :475 TT m)
+  forall (m :484 Nat) (n :483 Nat) (f :479 (_ :480 Fin m) -> TT n) (g :477 TT m) (x :475 TT m)
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
 testTm :503 TT (S Z) {
-  testTm ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
+  testTm  ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
 }
 
 example1 :113 TT Z {
-  example1 ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
+  example1  ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
 }
 
-substTop :397 (n :398 Nat) -> TT n -> Fin (S n) -> TT n {
+substTop :397 (n :398 Nat) -> (_ :399 TT n) -> (_ :401 Fin (S n)) -> TT n {
   forall (n :407 Nat) (tm :405 TT n)
   substTop n tm (FZ [n]) ~> tm
   
@@ -213,7 +213,7 @@ substTop :397 (n :398 Nat) -> TT n -> Fin (S n) -> TT n {
   substTop n tm (FS [n] i) ~> V n i
 }
 
-redex :355 (m :356 Nat) -> TT m -> TT m -> TT m {
+redex :355 (m :356 Nat) -> (_ :357 TT m) -> (_ :359 TT m) -> TT m {
   forall (m :367 Nat) (y :364 TT (S m)) (x :362 TT m)
   redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
   
@@ -221,7 +221,7 @@ redex :355 (m :356 Nat) -> TT m -> TT m -> TT m {
   redex m f' x ~> App m f' (nf m x)
 }
 
-nf :315 (m :316 Nat) -> TT m -> TT m {
+nf :315 (m :316 Nat) -> (_ :317 TT m) -> TT m {
   forall (m :322 Nat) (i :320 Fin m)
   nf m (V [m] i) ~> V m i
   
@@ -233,7 +233,7 @@ nf :315 (m :316 Nat) -> TT m -> TT m {
 }
 
 example2 :137 TT (S Z) {
-  example2 ~> nf (S Z) testTm
+  example2  ~> nf (S Z) testTm
 }
 
 constructor Result :30 Type.
@@ -241,7 +241,7 @@ constructor Result :30 Type.
 constructor R :26 (x :R TT Z) -> (y :R TT (S Z)) -> Result.
 
 main :R Result {
-  main ~> R example1 example2
+  main  ~> R example1 example2
 }
 
 Running erasure inference...
@@ -250,2792 +250,990 @@ Running erasure inference...
 # Inferred constraints #
 ########################
 
-Sums:
-  R ≥ Sum
-    product  [I]
-    product  [I]
-  0 ≥ Sum
-    product  []
-    product  []
-    product  []
-    product  [507, 510]
-    product  [506, 532]
-    product  []
-  1 ≥ Sum
-    product  [I]
-    product  [I, 3]
-    product  [I, 5]
-    product  [I, 6]
-  2 ≥ Sum
-    product  [I]
-  4 ≥ Sum
-    product  [I]
-  7 ≥ Sum
-    product  []
-    product  [226]
-    product  [507, 510, 513, 524]
-    product  [506, 532, 536, 540]
-  8 ≥ Sum
-    product  [I]
-    product  [I, 10]
-    product  [I, 11, 12]
-  9 ≥ Sum
-    product  [I]
-    product  [I]
-  13 ≥ Sum
-    product  []
-    product  [207]
-    product  [507, 510, 514, 518]
-    product  [507, 510, 513, 524, 528]
-    product  [506, 532, 536, 540, 544]
-    product  [506, 532, 535, 548]
-    product  [116, 120, 125, 129, 131]
-  14 ≥ Sum
-    product  [I]
-    product  [I, 15, 16]
-  17 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-  18 ≥ Sum
-    product  [I]
-  19 ≥ Sum
-    product  []
-    product  []
-    product  [507]
-    product  [506]
-    product  [116, 120, 125]
-    product  []
-  20 ≥ Sum
-    product  [I]
-    product  [I, 22, 23]
-    product  [I, 24]
-  21 ≥ Sum
-    product  [I]
-  25 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-  26 ≥ Sum
-    product  []
-  30 ≥ Sum
-    product  [I]
-    product  [I]
-  31 ≥ Sum
-    product  [I, 15]
-    product  [I, 11]
-    product  [I, 48]
-    product  [I, 22]
-    product  [I]
-    product  [I]
-    product  [I, 151]
-    product  [I, 153]
-    product  [I, 262]
-    product  [276, 281]
-    product  [276, 280]
-    product  [I, 192]
-    product  [I, 194]
-    product  [208]
-    product  [227]
-    product  [I, 450]
-    product  [464, 469]
-    product  [464, 468]
-    product  [I, 504]
-    product  [508]
-    product  [507, 511]
-    product  [507, 510, 515]
-    product  [507, 510, 515, 516]
-    product  [507, 510, 514, 519]
-    product  [507, 510, 514, 519, 520]
-    product  [507, 510, 514, 518, 522]
-    product  [507, 510, 513, 525]
-    product  [507, 510, 513, 525, 526]
-    product  [507, 510, 513, 524, 529]
-    product  [506, 533]
-    product  [506, 532, 537]
-    product  [506, 532, 537, 538]
-    product  [506, 532, 536, 541]
-    product  [506, 532, 536, 541, 542]
-    product  [506, 532, 536, 540, 545]
-    product  [506, 532, 535, 549]
-    product  [506, 532, 535, 549, 550]
-    product  [506, 532, 535, 548, 552]
-    product  [118]
-    product  [116, 122]
-    product  [116, 120, 125, 129, 132]
-    product  [I, 402]
-    product  [I, 365]
-    product  [373, 378]
-    product  [I, 330]
-    product  [337, 340]
-    product  [I, 138]
-    product  [141]
-    product  [I, 28]
-  32 ≥ Sum
-    product  [I]
-  33 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I, 62]
-    product  [I]
-    product  [I]
-    product  [I, 69]
-    product  [I]
-    product  [I]
-    product  [I, 90]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [116, 120, 126]
-    product  [116, 120, 124, 135]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-  34 ≥ Sum
-    product  [I]
-  35 ≥ Sum
-    product  []
-    product  []
-    product  [507, 510, 514]
-    product  [507, 510, 513]
-    product  [506, 532, 536]
-    product  [506, 532, 535]
-    product  [116, 120, 125, 129]
-    product  []
-    product  []
-  36 ≥ Sum
-    product  [I]
-    product  [I, 38]
-    product  [I, 39]
-  37 ≥ Sum
-    product  [I]
-  40 ≥ Sum
-    product  [116, 120]
-  41 ≥ Sum
-    product  [I]
-    product  [I, 46]
-    product  [I, 48, 49]
-  42 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 45]
-    product  [I, 47]
-  43 ≥ Sum
-    product  [I]
-  44 ≥ Sum
-    product  [I]
-  50 ≥ Sum
-    product  [116, 120, 124]
-  51 ≥ Sum
-    product  [I]
-    product  [I, 52]
-  54 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-  55 ≥ Sum
-    product  [I]
-  56 ≥ Sum
-    product  [I]
-  57 ≥ Sum
-    product  [I, 53]
-    product  [I, 504, 505]
-    product  [508, 509]
-    product  [507, 511, 512]
-    product  [507, 510, 515, 516, 517]
-    product  [507, 510, 514, 519, 520, 521]
-    product  [507, 510, 514, 518, 522, 523]
-    product  [507, 510, 513, 525, 526, 527]
-    product  [507, 510, 513, 524, 529, 530]
-    product  [507, 510, 513, 524, 528, 531]
-    product  [506, 533, 534]
-    product  [506, 532, 537, 538, 539]
-    product  [506, 532, 536, 541, 542, 543]
-    product  [506, 532, 536, 540, 545, 546]
-    product  [506, 532, 536, 540, 544, 547]
-    product  [506, 532, 535, 549, 550, 551]
-    product  [506, 532, 535, 548, 552, 553]
-    product  [I, 114]
-    product  [118, 119]
-    product  [117]
-    product  [116, 122, 123]
-    product  [116, 121]
-    product  [116, 120, 127]
-    product  [116, 120, 126, 128]
-    product  [116, 120, 125, 130]
-    product  [116, 120, 125, 129, 132, 133]
-    product  [116, 120, 125, 129, 131, 134]
-    product  [116, 120, 124, 135, 136]
-    product  [I, 138, 139]
-    product  [141, 142]
-    product  [I, 27]
-    product  [I, 28, 29]
-  58 ≥ Sum
-    product  []
-    product  [116]
-  59 ≥ Sum
-    product  [I]
-    product  [I, 63]
-    product  [I, 66]
-  60 ≥ Sum
-    product  [I]
-    product  [I, 62, 64]
-    product  [I, 67]
-  61 ≥ Sum
-    product  [I]
-  65 ≥ Sum
-    product  [I]
-    product  [I]
-  68 ≥ Sum
-    product  [I]
-  72 ≥ Sum
-    product  [I]
-    product  [I]
-    product  []
-  74 ≥ Sum
-    product  [I]
-    product  [I, 73]
-    product  [I]
-    product  [I, 69, 71]
-    product  [I]
-    product  [I, 82]
-  75 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I, 70]
-    product  [I]
-    product  [I, 77]
-    product  [I]
-  87 ≥ Sum
-    product  [I]
-    product  [109]
-  89 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [110]
-  93 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-  95 ≥ Sum
-    product  [I]
-    product  [I, 94]
-    product  [I]
-    product  [I, 90, 92]
-    product  [I]
-    product  [I]
-    product  [I, 103]
-    product  [111]
-  96 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I, 91]
-    product  [I]
-    product  [I, 88]
-    product  [I]
-    product  [I, 98]
-    product  [I]
-    product  [112]
-  113 ≥ Sum
-    product  [233]
-  137 ≥ Sum
-    product  [232]
-  143 ≥ Sum
-    product  [276, 279]
-  144 ≥ Sum
-    product  [I]
-    product  [I, 148]
-    product  [I, 151, 152]
-  145 ≥ Sum
-    product  [I]
-    product  [I, 149]
-    product  [I, 153, 154]
-  146 ≥ Sum
-    product  [I]
-  147 ≥ Sum
-    product  [I]
-  150 ≥ Sum
-    product  [I]
-    product  [I]
-  155 ≥ Sum
-    product  [I]
-  156 ≥ Sum
-    product  [I]
-    product  [I]
-  159 ≥ Sum
-    product  [I]
-    product  [I, 158]
-    product  [I]
-    product  [166]
-  160 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 157]
-    product  [I]
-    product  [I]
-  167 ≥ Sum
-    product  [I]
-    product  [181, 183]
-  169 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [181]
-  170 ≥ Sum
-    product  [I]
-    product  [I]
-  173 ≥ Sum
-    product  [I]
-    product  [I, 172]
-    product  [I]
-    product  [I]
-    product  [182]
-  174 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 171]
-    product  [I]
-    product  [I, 168]
-    product  [I]
-    product  [I]
-  184 ≥ Sum
-    product  [464, 467]
-  185 ≥ Sum
-    product  [I]
-    product  [I, 189]
-    product  [I, 192, 193]
-  186 ≥ Sum
-    product  [I]
-    product  [I, 190]
-    product  [I, 194, 195]
-  187 ≥ Sum
-    product  [I]
-  188 ≥ Sum
-    product  [I]
-  191 ≥ Sum
-    product  [I]
-    product  [I]
-  196 ≥ Sum
-    product  [I]
-  197 ≥ Sum
-    product  [I]
-    product  [I]
-  200 ≥ Sum
-    product  [I]
-    product  [I, 199]
-    product  [I]
-    product  [208, 209]
-    product  [207, 210]
-  201 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 198]
-    product  [I]
-    product  [I]
-  211 ≥ Sum
-    product  [I]
-    product  [225, 231]
-  213 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [225]
-  214 ≥ Sum
-    product  [I]
-    product  [I]
-  217 ≥ Sum
-    product  [I]
-    product  [I, 216]
-    product  [I]
-    product  [I]
-    product  [228]
-    product  [227, 229]
-    product  [226, 230]
-  218 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 215]
-    product  [I]
-    product  [I, 212]
-    product  [I]
-    product  [I]
-  234 ≥ Sum
-    product  [276]
-    product  [305]
-    product  [304]
-    product  []
-  235 ≥ Sum
-    product  [I]
-    product  [I, 239]
-    product  [I, 242]
-  236 ≥ Sum
-    product  [I]
-    product  [I, 240]
-    product  [I, 243]
-  237 ≥ Sum
-    product  [I]
-  238 ≥ Sum
-    product  [I]
-  241 ≥ Sum
-    product  [I]
-  244 ≥ Sum
-    product  [I]
-    product  [258, 260]
-  246 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [258]
-  247 ≥ Sum
-    product  [I]
-    product  [I]
-  250 ≥ Sum
-    product  [I]
-    product  [I, 249]
-    product  [I]
-    product  [I]
-    product  [259]
-  251 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 248]
-    product  [I]
-    product  [I, 245]
-    product  [I]
-    product  [I]
-  261 ≥ Sum
-    product  [I]
-    product  [276, 278]
-  264 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [276, 279, 284]
-  265 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-  268 ≥ Sum
-    product  [I]
-    product  [I, 267]
-    product  [I]
-    product  [I]
-    product  [277]
-    product  [276, 280, 283]
-    product  [276, 279, 285]
-  269 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 266]
-    product  [I]
-    product  [I, 262, 263]
-    product  [I]
-    product  [I]
-    product  [276, 281, 282]
-    product  [276, 279, 286]
-  287 ≥ Sum
-    product  [I]
-    product  [304, 311]
-  289 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [305, 307]
-  291 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [305, 308]
-    product  [304, 312]
-  292 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-  295 ≥ Sum
-    product  [I]
-    product  [I, 294]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [306]
-    product  [305, 309]
-    product  [304, 313]
-  296 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 293]
-    product  [I]
-    product  [I, 290]
-    product  [I]
-    product  [I, 288]
-    product  [I]
-    product  [I]
-    product  [305, 310]
-    product  [304, 314]
-  315 ≥ Sum
-    product  []
-    product  [373, 376, 380]
-    product  [392]
-    product  [337]
-    product  []
-  316 ≥ Sum
-    product  [I]
-    product  [I, 318]
-    product  [I, 319]
-  317 ≥ Sum
-    product  [I]
-  320 ≥ Sum
-    product  [I]
-    product  [327]
-  322 ≥ Sum
-    product  [I]
-    product  [I, 321]
-    product  [I]
-    product  [I]
-    product  [328]
-  329 ≥ Sum
-    product  [I]
-    product  [337, 339]
-  332 ≥ Sum
-    product  [I]
-    product  [I, 330, 331]
-    product  [I]
-    product  [I]
-    product  [338]
-    product  [337, 340, 341]
-  342 ≥ Sum
-    product  [I]
-    product  [352]
-  344 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [353]
-  346 ≥ Sum
-    product  [I]
-    product  [I, 345]
-    product  [I]
-    product  [I, 343]
-    product  [I]
-    product  [I]
-    product  [354]
-  355 ≥ Sum
-    product  []
-  356 ≥ Sum
-    product  [I]
-    product  [I, 358]
-    product  [I, 360]
-    product  [I, 361]
-  357 ≥ Sum
-    product  [I]
-  359 ≥ Sum
-    product  [I]
-  362 ≥ Sum
-    product  [I]
-    product  [373, 376, 380, 382]
-  364 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [373, 375]
-  367 ≥ Sum
-    product  [I]
-    product  [I, 365, 366]
-    product  [I]
-    product  [I, 363]
-    product  [I]
-    product  [I]
-    product  [374]
-    product  [373, 378, 379]
-    product  [373, 377]
-    product  [373, 376, 381]
-    product  [373, 376, 380, 383]
-  384 ≥ Sum
-    product  [I]
-    product  [392, 395]
-  386 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [393]
-  388 ≥ Sum
-    product  [I]
-    product  [I, 387]
-    product  [I]
-    product  [I, 385]
-    product  [I]
-    product  [394]
-    product  [392, 396]
-  397 ≥ Sum
-    product  [373, 376]
-  398 ≥ Sum
-    product  [I]
-    product  [I, 400]
-    product  [I, 402, 403]
-    product  [I, 404]
-  399 ≥ Sum
-    product  [I]
-  401 ≥ Sum
-    product  [I]
-    product  [I]
-  405 ≥ Sum
-    product  [I]
-    product  []
-  407 ≥ Sum
-    product  [I]
-    product  [I, 406]
-    product  [I]
-    product  [I]
-  412 ≥ Sum
-    product  [I]
-    product  [422]
-  414 ≥ Sum
-    product  [I]
-    product  [I]
-  416 ≥ Sum
-    product  [I]
-    product  [I, 415]
-    product  [I]
-    product  [I, 413]
-    product  [I]
-    product  [I]
-    product  [423]
-  424 ≥ Sum
-    product  [464]
-    product  [493]
-    product  [492]
-    product  []
-    product  [373]
-  425 ≥ Sum
-    product  [I]
-    product  [I, 429]
-    product  [I, 432]
-  426 ≥ Sum
-    product  [I]
-    product  [I, 430]
-    product  [I, 433]
-  427 ≥ Sum
-    product  [I]
-  428 ≥ Sum
-    product  [I]
-  431 ≥ Sum
-    product  [I]
-  434 ≥ Sum
-    product  [I]
-    product  [448]
-  436 ≥ Sum
-    product  [I]
-    product  [I]
-    product  []
-  437 ≥ Sum
-    product  [I]
-    product  [I]
-  440 ≥ Sum
-    product  [I]
-    product  [I, 439]
-    product  [I]
-    product  [I]
-  441 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 438]
-    product  [I]
-    product  [I, 435]
-    product  [I]
-    product  [I]
-  449 ≥ Sum
-    product  [I]
-    product  [464, 466]
-  452 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [464, 467, 472]
-  453 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-  456 ≥ Sum
-    product  [I]
-    product  [I, 455]
-    product  [I]
-    product  [I]
-    product  [465]
-    product  [464, 468, 471]
-    product  [464, 467, 473]
-  457 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 454]
-    product  [I]
-    product  [I, 450, 451]
-    product  [I]
-    product  [I]
-    product  [464, 469, 470]
-    product  [464, 467, 474]
-  475 ≥ Sum
-    product  [I]
-    product  [492, 499]
-  477 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [493, 495]
-  479 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [493, 496]
-    product  [492, 500]
-  480 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-  483 ≥ Sum
-    product  [I]
-    product  [I, 482]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [494]
-    product  [493, 497]
-    product  [492, 501]
-  484 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I, 481]
-    product  [I]
-    product  [I, 478]
-    product  [I]
-    product  [I, 476]
-    product  [I]
-    product  [I]
-    product  [493, 498]
-    product  [492, 502]
-  503 ≥ Sum
-    product  [115]
-    product  [140]
-
-Maxes:
-  R ≥ Max
-    product  [233]
-    product  [232]
-  1 ≥ Max
-    product  [301]
-    product  [306]
-    product  [489]
-    product  [494]
-    product  [508]
-    product  [515]
-    product  [537]
-    product  [394]
-    product  [349]
-  2 ≥ Max
-    product  [302]
-    product  [305]
-    product  [490]
-    product  [493]
-    product  [514]
-    product  [507]
-    product  [536]
-    product  [393]
-    product  [350]
-  3 ≥ Max
-    product  [34]
-    product  [290]
-    product  [243]
-    product  [478]
-    product  [433]
-    product  [39]
-    product  [24]
-    product  [39]
-    product  [387]
-    product  [345]
-  4 ≥ Max
-    product  [303]
-    product  [304]
-    product  [491]
-    product  [492]
-    product  [513]
-    product  [535]
-    product  [506]
-    product  [392]
-    product  [351]
-  5 ≥ Max
-    product  [34]
-    product  [288]
-    product  [243]
-    product  [476]
-    product  [433]
-    product  [39]
-    product  [39]
-    product  [24]
-    product  [319]
-    product  [343]
-  6 ≥ Max
-    product  [34]
-    product  [242]
-    product  [243]
-    product  [432]
-    product  [433]
-    product  [22]
-    product  [22]
-    product  [504]
-    product  [361]
-    product  [318]
-  8 ≥ Max
-    product  [107]
-    product  [179]
-    product  [182]
-    product  [223]
-    product  [230]
-    product  [529]
-    product  [545]
-    product  [420]
-  9 ≥ Max
-    product  [108]
-    product  [180]
-    product  [181]
-    product  [224]
-    product  [238]
-    product  [528]
-    product  [544]
-    product  [421]
-  10 ≥ Max
-    product  [18]
-    product  [88]
-    product  [168]
-    product  [172]
-    product  [212]
-    product  [239]
-    product  [15]
-    product  [15]
-    product  [413]
-  11 ≥ Max
-    product  [18]
-    product  [66]
-    product  [151]
-    product  [153]
-    product  [192]
-    product  [240]
-    product  [38]
-    product  [38]
-    product  [402]
-  12 ≥ Max
-    product  [32]
-  14 ≥ Max
-    product  [86]
-    product  [165]
-    product  [166]
-    product  [206]
-    product  [210]
-    product  [522]
-    product  [531]
-    product  [547]
-    product  [552]
-    product  [134]
-    product  [411]
-  15 ≥ Max
-    product  [18]
-    product  [66]
-    product  [151]
-    product  [153]
-    product  [192]
-    product  [38]
-    product  [38]
-    product  [10]
-    product  [10]
-    product  [38]
-    product  [38]
-    product  [402]
-  16 ≥ Max
-    product  [32]
-  18 ≥ Max
-    product  [15]
-    product  [10]
-    product  [11]
-    product  [38]
-    product  [66]
-    product  [88]
-    product  [148]
-    product  [149]
-    product  [151]
-    product  [153]
-    product  [157]
-    product  [158]
-    product  [171]
-    product  [172]
-    product  [168]
-    product  [239]
-    product  [240]
-    product  [248]
-    product  [249]
-    product  [245]
-    product  [266]
-    product  [267]
-    product  [293]
-    product  [294]
-    product  [189]
-    product  [192]
-    product  [198]
-    product  [215]
-    product  [212]
-    product  [429]
-    product  [438]
-    product  [435]
-    product  [454]
-    product  [481]
-    product  [402]
-    product  [413]
-    product  [321]
-  20 ≥ Max
-    product  [274]
-    product  [277]
-    product  [462]
-    product  [465]
-    product  [511]
-    product  [533]
-    product  [130]
-    product  [370]
-    product  [335]
-    product  [338]
-  21 ≥ Max
-    product  [275]
-    product  [276]
-    product  [463]
-    product  [464]
-    product  [510]
-    product  [532]
-    product  [129]
-    product  [371]
-    product  [336]
-    product  [337]
-  22 ≥ Max
-    product  [34]
-    product  [262]
-    product  [243]
-    product  [450]
-    product  [433]
-    product  [6]
-    product  [6]
-    product  [39]
-    product  [365]
-    product  [330]
-    product  [319]
-  23 ≥ Max
-    product  [32]
-  24 ≥ Max
-    product  [34]
-    product  [242]
-    product  [243]
-    product  [432]
-    product  [433]
-    product  [3]
-    product  [5]
-    product  [128]
-    product  [358]
-    product  [318]
-    product  [319]
-  27 ≥ Max
-    product  [34]
-    product  [114]
-  28 ≥ Max
-    product  [34]
-    product  [138]
-  29 ≥ Max
-    product  [32]
-  32 ≥ Max
-    product  [16]
-    product  [12]
-    product  [49]
-    product  [23]
-    product  [77]
-    product  [98]
-    product  [152]
-    product  [154]
-    product  [263]
-    product  [282]
-    product  [283]
-    product  [193]
-    product  [195]
-    product  [209]
-    product  [229]
-    product  [451]
-    product  [470]
-    product  [471]
-    product  [505]
-    product  [509]
-    product  [512]
-    product  [517]
-    product  [516]
-    product  [521]
-    product  [520]
-    product  [523]
-    product  [527]
-    product  [526]
-    product  [530]
-    product  [534]
-    product  [539]
-    product  [538]
-    product  [543]
-    product  [542]
-    product  [546]
-    product  [551]
-    product  [550]
-    product  [553]
-    product  [119]
-    product  [123]
-    product  [133]
-    product  [403]
-    product  [366]
-    product  [379]
-    product  [331]
-    product  [341]
-    product  [139]
-    product  [142]
-    product  [29]
-  34 ≥ Max
-    product  [39]
-    product  [22]
-    product  [24]
-    product  [3]
-    product  [5]
-    product  [6]
-    product  [64]
-    product  [67]
-    product  [73]
-    product  [71]
-    product  [82]
-    product  [94]
-    product  [92]
-    product  [103]
-    product  [242]
-    product  [243]
-    product  [262]
-    product  [290]
-    product  [288]
-    product  [190]
-    product  [194]
-    product  [199]
-    product  [216]
-    product  [430]
-    product  [432]
-    product  [433]
-    product  [439]
-    product  [455]
-    product  [450]
-    product  [482]
-    product  [478]
-    product  [476]
-    product  [504]
-    product  [114]
-    product  [128]
-    product  [136]
-    product  [400]
-    product  [404]
-    product  [406]
-    product  [415]
-    product  [358]
-    product  [360]
-    product  [361]
-    product  [365]
-    product  [363]
-    product  [387]
-    product  [385]
-    product  [318]
-    product  [319]
-    product  [330]
-    product  [345]
-    product  [343]
-    product  [138]
-    product  [27]
-    product  [28]
-  36 ≥ Max
-    product  [256]
-    product  [259]
-    product  [208]
-    product  [446]
-    product  [519]
-    product  [525]
-    product  [541]
-    product  [549]
-    product  [132]
-    product  [423]
-    product  [325]
-    product  [328]
-  37 ≥ Max
-    product  [257]
-    product  [258]
-    product  [207]
-    product  [447]
-    product  [518]
-    product  [524]
-    product  [540]
-    product  [548]
-    product  [131]
-    product  [422]
-    product  [326]
-    product  [327]
-  38 ≥ Max
-    product  [18]
-    product  [245]
-    product  [249]
-    product  [15]
-    product  [435]
-    product  [15]
-    product  [11]
-    product  [11]
-    product  [15]
-    product  [15]
-    product  [413]
-    product  [321]
-    product  [321]
-  39 ≥ Max
-    product  [34]
-    product  [242]
-    product  [243]
-    product  [194]
-    product  [432]
-    product  [3]
-    product  [5]
-    product  [3]
-    product  [5]
-    product  [22]
-    product  [404]
-    product  [318]
-    product  [319]
-  41 ≥ Max
-    product  [80]
-    product  [101]
-    product  [127]
-  42 ≥ Max
-    product  [81]
-    product  [102]
-    product  [126]
-  43 ≥ Max
-    product  [83]
-    product  [104]
-    product  [125]
-  44 ≥ Max
-    product  [84]
-    product  [105]
-    product  [124]
-  45 ≥ Max
-    product  [56]
-    product  [69]
-    product  [90]
-    product  [52]
-  46 ≥ Max
-    product  [55]
-    product  [70]
-    product  [91]
-    product  [53]
-  47 ≥ Max
-    product  [56]
-    product  [62]
-    product  [62]
-    product  [62]
-  48 ≥ Max
-    product  [55]
-    product  [63]
-    product  [63]
-    product  [63]
-  49 ≥ Max
-    product  [32]
-  51 ≥ Max
-    product  [135]
-  52 ≥ Max
-    product  [56]
-    product  [45]
-  53 ≥ Max
-    product  [55]
-    product  [46]
-  55 ≥ Max
-    product  [53]
-    product  [46]
-    product  [48]
-    product  [63]
-    product  [70]
-    product  [91]
-  56 ≥ Max
-    product  [52]
-    product  [45]
-    product  [47]
-    product  [62]
-    product  [69]
-    product  [90]
-  59 ≥ Max
-    product  [76]
-    product  [97]
-    product  [112]
-    product  [122]
-  60 ≥ Max
-    product  [78]
-    product  [99]
-    product  [111]
-    product  [121]
-  61 ≥ Max
-    product  [79]
-    product  [100]
-    product  [110]
-    product  [120]
-  62 ≥ Max
-    product  [56]
-    product  [47]
-    product  [47]
-    product  [90]
-    product  [47]
-  63 ≥ Max
-    product  [55]
-    product  [48]
-    product  [48]
-    product  [91]
-    product  [48]
-  64 ≥ Max
-    product  [34]
-  65 ≥ Max
-    product  [85]
-    product  [106]
-    product  [109]
-    product  [428]
-  66 ≥ Max
-    product  [18]
-    product  [15]
-    product  [11]
-    product  [88]
-    product  [429]
-  67 ≥ Max
-    product  [34]
-    product  [73]
-    product  [67]
-    product  [67]
-    product  [430]
-  68 ≥ Max
-    product  [79, 84]
-  69 ≥ Max
-    product  [56]
-    product  [45]
-  70 ≥ Max
-    product  [55]
-    product  [46]
-  71 ≥ Max
-    product  [34]
-  72 ≥ Max
-    product  [79, 83]
-  73 ≥ Max
-    product  [34]
-    product  [82]
-    product  [67]
-  74 ≥ Max
-    product  [78]
-  75 ≥ Max
-    product  [85, 86]
-  76 ≥ Max
-    product  [59]
-  77 ≥ Max
-    product  [32]
-  78 ≥ Max
-    product  [74]
-    product  [60]
-  79 ≥ Max
-    product  [L]
-    product  [72]
-    product  [68]
-    product  [61]
-  80 ≥ Max
-    product  [41]
-  81 ≥ Max
-    product  [42]
-  82 ≥ Max
-    product  [34]
-    product  [73]
-  83 ≥ Max
-    product  [72]
-    product  [43]
-  84 ≥ Max
-    product  [68]
-    product  [44]
-  85 ≥ Max
-    product  [L]
-    product  [75]
-    product  [65]
-  86 ≥ Max
-    product  [75]
-    product  [14]
-  87 ≥ Max
-    product  [106, 108]
-  88 ≥ Max
-    product  [18]
-    product  [10]
-    product  [66]
-  89 ≥ Max
-    product  [100, 105]
-  90 ≥ Max
-    product  [56]
-    product  [45]
-    product  [62]
-  91 ≥ Max
-    product  [55]
-    product  [46]
-    product  [63]
-  92 ≥ Max
-    product  [34]
-  93 ≥ Max
-    product  [100, 104]
-  94 ≥ Max
-    product  [34]
-    product  [103]
-  95 ≥ Max
-    product  [99]
-  96 ≥ Max
-    product  [106, 107]
-  97 ≥ Max
-    product  [59]
-  98 ≥ Max
-    product  [32]
-  99 ≥ Max
-    product  [95]
-    product  [60]
-  100 ≥ Max
-    product  [L]
-    product  [93]
-    product  [89]
-    product  [61]
-  101 ≥ Max
-    product  [41]
-  102 ≥ Max
-    product  [42]
-  103 ≥ Max
-    product  [34]
-    product  [94]
-  104 ≥ Max
-    product  [93]
-    product  [43]
-  105 ≥ Max
-    product  [89]
-    product  [44]
-  106 ≥ Max
-    product  [L]
-    product  [96]
-    product  [87]
-    product  [65]
-  107 ≥ Max
-    product  [96]
-    product  [8]
-  108 ≥ Max
-    product  [87]
-    product  [9]
-  109 ≥ Max
-    product  [65]
-  110 ≥ Max
-    product  [61]
-  111 ≥ Max
-    product  [60]
-  112 ≥ Max
-    product  [59]
-  114 ≥ Max
-    product  [34]
-    product  [433]
-    product  [27]
-  115 ≥ Max
-    product  [431]
-  116 ≥ Max
-    product  [427]
-  117 ≥ Max
-    product  [426]
-  118 ≥ Max
-    product  [425]
-  119 ≥ Max
-    product  [32]
-  120 ≥ Max
-    product  [61]
-  121 ≥ Max
-    product  [60]
-  122 ≥ Max
-    product  [59]
-  123 ≥ Max
-    product  [32]
-  124 ≥ Max
-    product  [44]
-  125 ≥ Max
-    product  [43]
-  126 ≥ Max
-    product  [42]
-  127 ≥ Max
-    product  [41]
-  128 ≥ Max
-    product  [34]
-    product  [24]
-  129 ≥ Max
-    product  [21]
-  130 ≥ Max
-    product  [20]
-  131 ≥ Max
-    product  [37]
-  132 ≥ Max
-    product  [36]
-  133 ≥ Max
-    product  [32]
-  134 ≥ Max
-    product  [14]
-  135 ≥ Max
-    product  [51]
-  136 ≥ Max
-    product  [34]
-  138 ≥ Max
-    product  [34]
-    product  [319]
-    product  [28]
-  139 ≥ Max
-    product  [32]
-  140 ≥ Max
-    product  [317]
-  141 ≥ Max
-    product  [316]
-  142 ≥ Max
-    product  [32]
-  144 ≥ Max
-    product  [161]
-    product  [175]
-    product  [286]
-  145 ≥ Max
-    product  [162]
-    product  [176]
-    product  [285]
-  146 ≥ Max
-    product  [163]
-    product  [177]
-    product  [284]
-  147 ≥ Max
-    product  [156]
-    product  [170]
-    product  [265]
-  148 ≥ Max
-    product  [18]
-    product  [157]
-    product  [171]
-    product  [266]
-  149 ≥ Max
-    product  [18]
-    product  [158]
-    product  [172]
-    product  [267]
-  150 ≥ Max
-    product  [164]
-    product  [178]
-    product  [238]
-  151 ≥ Max
-    product  [18]
-    product  [15]
-    product  [11]
-    product  [239]
-  152 ≥ Max
-    product  [32]
-  153 ≥ Max
-    product  [18]
-    product  [15]
-    product  [11]
-    product  [240]
-  154 ≥ Max
-    product  [32]
-  155 ≥ Max
-    product  [163]
-  156 ≥ Max
-    product  [147]
-  157 ≥ Max
-    product  [18]
-    product  [148]
-  158 ≥ Max
-    product  [18]
-    product  [149]
-  159 ≥ Max
-    product  [162]
-  160 ≥ Max
-    product  [161]
-  161 ≥ Max
-    product  [160]
-    product  [144]
-  162 ≥ Max
-    product  [159]
-    product  [145]
-  163 ≥ Max
-    product  [155]
-    product  [146]
-  164 ≥ Max
-    product  [L]
-    product  [150]
-  165 ≥ Max
-    product  [14]
-  166 ≥ Max
-    product  [14]
-  167 ≥ Max
-    product  [178, 180]
-  168 ≥ Max
-    product  [18]
-    product  [10]
-    product  [171]
-  169 ≥ Max
-    product  [177]
-  170 ≥ Max
-    product  [147]
-    product  [183]
-  171 ≥ Max
-    product  [18]
-    product  [148]
-    product  [168]
-  172 ≥ Max
-    product  [18]
-    product  [149]
-    product  [10]
-  173 ≥ Max
-    product  [176]
-  174 ≥ Max
-    product  [175]
-  175 ≥ Max
-    product  [174]
-    product  [144]
-  176 ≥ Max
-    product  [173]
-    product  [145]
-  177 ≥ Max
-    product  [169]
-    product  [146]
-  178 ≥ Max
-    product  [L]
-    product  [167]
-    product  [150]
-  179 ≥ Max
-    product  [8]
-  180 ≥ Max
-    product  [167]
-    product  [9]
-  181 ≥ Max
-    product  [9]
-  182 ≥ Max
-    product  [8]
-  183 ≥ Max
-    product  [170]
-  185 ≥ Max
-    product  [202]
-    product  [219]
-    product  [474]
-  186 ≥ Max
-    product  [203]
-    product  [220]
-    product  [473]
-  187 ≥ Max
-    product  [204]
-    product  [221]
-    product  [472]
-  188 ≥ Max
-    product  [197]
-    product  [214]
-    product  [453]
-  189 ≥ Max
-    product  [18]
-    product  [198]
-    product  [215]
-    product  [454]
-  190 ≥ Max
-    product  [34]
-    product  [199]
-    product  [216]
-    product  [455]
-  191 ≥ Max
-    product  [205]
-    product  [222]
-    product  [428]
-  192 ≥ Max
-    product  [18]
-    product  [15]
-    product  [11]
-    product  [429]
-  193 ≥ Max
-    product  [32]
-  194 ≥ Max
-    product  [34]
-    product  [39]
-    product  [243]
-    product  [430]
-  195 ≥ Max
-    product  [32]
-  196 ≥ Max
-    product  [204]
-  197 ≥ Max
-    product  [188]
-  198 ≥ Max
-    product  [18]
-    product  [189]
-  199 ≥ Max
-    product  [34]
-    product  [190]
-  200 ≥ Max
-    product  [203]
-  201 ≥ Max
-    product  [202]
-  202 ≥ Max
-    product  [201]
-    product  [185]
-  203 ≥ Max
-    product  [200]
-    product  [186]
-  204 ≥ Max
-    product  [196]
-    product  [187]
-  205 ≥ Max
-    product  [L]
-    product  [191]
-  206 ≥ Max
-    product  [14]
-  207 ≥ Max
-    product  [37]
-  208 ≥ Max
-    product  [36]
-  209 ≥ Max
-    product  [32]
-  210 ≥ Max
-    product  [14]
-  211 ≥ Max
-    product  [222, 224]
-  212 ≥ Max
-    product  [18]
-    product  [10]
-    product  [215]
-  213 ≥ Max
-    product  [221]
-  214 ≥ Max
-    product  [188]
-    product  [231]
-  215 ≥ Max
-    product  [18]
-    product  [189]
-    product  [212]
-  216 ≥ Max
-    product  [34]
-    product  [190]
-    product  [242]
-  217 ≥ Max
-    product  [220]
-  218 ≥ Max
-    product  [219]
-  219 ≥ Max
-    product  [218]
-    product  [185]
-  220 ≥ Max
-    product  [217]
-    product  [186]
-  221 ≥ Max
-    product  [213]
-    product  [187]
-  222 ≥ Max
-    product  [L]
-    product  [211]
-    product  [191]
-  223 ≥ Max
-    product  [8]
-  224 ≥ Max
-    product  [211]
-    product  [9]
-  225 ≥ Max
-    product  [241]
-  226 ≥ Max
-    product  [237]
-  227 ≥ Max
-    product  [236]
-  228 ≥ Max
-    product  [235]
-  229 ≥ Max
-    product  [32]
-  230 ≥ Max
-    product  [8]
-  231 ≥ Max
-    product  [214]
-  232 ≥ Max
-    product  [R]
-  233 ≥ Max
-    product  [R]
-  235 ≥ Max
-    product  [252]
-    product  [270]
-    product  [281]
-    product  [297]
-    product  [310]
-    product  [314]
-    product  [228]
-  236 ≥ Max
-    product  [253]
-    product  [271]
-    product  [280]
-    product  [298]
-    product  [309]
-    product  [313]
-    product  [227]
-  237 ≥ Max
-    product  [254]
-    product  [272]
-    product  [279]
-    product  [299]
-    product  [308]
-    product  [312]
-    product  [226]
-  238 ≥ Max
-    product  [247]
-    product  [265]
-    product  [150]
-    product  [292]
-    product  [292]
-    product  [292]
-    product  [9]
-  239 ≥ Max
-    product  [18]
-    product  [248]
-    product  [266]
-    product  [151]
-    product  [293]
-    product  [293]
-    product  [293]
-    product  [10]
-  240 ≥ Max
-    product  [18]
-    product  [249]
-    product  [267]
-    product  [153]
-    product  [294]
-    product  [294]
-    product  [294]
-    product  [11]
-  241 ≥ Max
-    product  [255]
-    product  [273]
-    product  [278]
-    product  [300]
-    product  [307]
-    product  [311]
-    product  [225]
-  242 ≥ Max
-    product  [34]
-    product  [39]
-    product  [24]
-    product  [262]
-    product  [6]
-    product  [290]
-    product  [288]
-    product  [216]
-  243 ≥ Max
-    product  [34]
-    product  [39]
-    product  [22]
-    product  [24]
-    product  [3]
-    product  [5]
-    product  [6]
-    product  [194]
-  244 ≥ Max
-    product  [255, 257]
-  245 ≥ Max
-    product  [18]
-    product  [38]
-    product  [248]
-  246 ≥ Max
-    product  [254]
-  247 ≥ Max
-    product  [238]
-    product  [260]
-  248 ≥ Max
-    product  [18]
-    product  [239]
-    product  [245]
-  249 ≥ Max
-    product  [18]
-    product  [240]
-    product  [38]
-  250 ≥ Max
-    product  [253]
-  251 ≥ Max
-    product  [252]
-  252 ≥ Max
-    product  [251]
-    product  [235]
-  253 ≥ Max
-    product  [250]
-    product  [236]
-  254 ≥ Max
-    product  [246]
-    product  [237]
-  255 ≥ Max
-    product  [L]
-    product  [244]
-    product  [241]
-  256 ≥ Max
-    product  [36]
-  257 ≥ Max
-    product  [244]
-    product  [37]
-  258 ≥ Max
-    product  [37]
-  259 ≥ Max
-    product  [36]
-  260 ≥ Max
-    product  [247]
-  261 ≥ Max
-    product  [273, 275]
-  262 ≥ Max
-    product  [34]
-    product  [22]
-    product  [242]
-  263 ≥ Max
-    product  [32]
-  264 ≥ Max
-    product  [272]
-  265 ≥ Max
-    product  [238]
-    product  [147]
-  266 ≥ Max
-    product  [18]
-    product  [239]
-    product  [148]
-  267 ≥ Max
-    product  [18]
-    product  [240]
-    product  [149]
-  268 ≥ Max
-    product  [271]
-  269 ≥ Max
-    product  [270]
-  270 ≥ Max
-    product  [269]
-    product  [235]
-  271 ≥ Max
-    product  [268]
-    product  [236]
-  272 ≥ Max
-    product  [264]
-    product  [237]
-  273 ≥ Max
-    product  [L]
-    product  [261]
-    product  [241]
-  274 ≥ Max
-    product  [20]
-  275 ≥ Max
-    product  [261]
-    product  [21]
-  276 ≥ Max
-    product  [21]
-  277 ≥ Max
-    product  [20]
-  278 ≥ Max
-    product  [241]
-  279 ≥ Max
-    product  [237]
-  280 ≥ Max
-    product  [236]
-  281 ≥ Max
-    product  [235]
-  282 ≥ Max
-    product  [32]
-  283 ≥ Max
-    product  [32]
-  284 ≥ Max
-    product  [146]
-  285 ≥ Max
-    product  [145]
-  286 ≥ Max
-    product  [144]
-  287 ≥ Max
-    product  [300, 303]
-  288 ≥ Max
-    product  [34]
-    product  [5]
-    product  [242]
-  289 ≥ Max
-    product  [300, 302]
-  290 ≥ Max
-    product  [34]
-    product  [3]
-    product  [242]
-  291 ≥ Max
-    product  [299]
-  292 ≥ Max
-    product  [238]
-    product  [238]
-    product  [238]
-  293 ≥ Max
-    product  [18]
-    product  [239]
-    product  [239]
-    product  [239]
-  294 ≥ Max
-    product  [18]
-    product  [240]
-    product  [240]
-    product  [240]
-  295 ≥ Max
-    product  [298]
-  296 ≥ Max
-    product  [297]
-  297 ≥ Max
-    product  [296]
-    product  [235]
-  298 ≥ Max
-    product  [295]
-    product  [236]
-  299 ≥ Max
-    product  [291]
-    product  [237]
-  300 ≥ Max
-    product  [L]
-    product  [289]
-    product  [287]
-    product  [241]
-  301 ≥ Max
-    product  [1]
-  302 ≥ Max
-    product  [289]
-    product  [2]
-  303 ≥ Max
-    product  [287]
-    product  [4]
-  304 ≥ Max
-    product  [4]
-  305 ≥ Max
-    product  [2]
-  306 ≥ Max
-    product  [1]
-  307 ≥ Max
-    product  [241]
-  308 ≥ Max
-    product  [237]
-  309 ≥ Max
-    product  [236]
-  310 ≥ Max
-    product  [235]
-  311 ≥ Max
-    product  [241]
-  312 ≥ Max
-    product  [237]
-  313 ≥ Max
-    product  [236]
-  314 ≥ Max
-    product  [235]
-  316 ≥ Max
-    product  [374]
-    product  [383]
-    product  [396]
-    product  [323]
-    product  [333]
-    product  [340]
-    product  [347]
-    product  [141]
-  317 ≥ Max
-    product  [382]
-    product  [373]
-    product  [395]
-    product  [324]
-    product  [334]
-    product  [339]
-    product  [348]
-    product  [140]
-  318 ≥ Max
-    product  [363]
-    product  [433]
-    product  [385]
-    product  [34]
-    product  [39]
-    product  [24]
-    product  [330]
-    product  [6]
-    product  [504]
-  319 ≥ Max
-    product  [400]
-    product  [361]
-    product  [5]
-    product  [34]
-    product  [39]
-    product  [22]
-    product  [24]
-    product  [361]
-    product  [138]
-  320 ≥ Max
-    product  [324, 326]
-  321 ≥ Max
-    product  [18]
-    product  [38]
-    product  [38]
-  322 ≥ Max
-    product  [323]
-  323 ≥ Max
-    product  [322]
-    product  [316]
-  324 ≥ Max
-    product  [L]
-    product  [320]
-    product  [317]
-  325 ≥ Max
-    product  [36]
-  326 ≥ Max
-    product  [320]
-    product  [37]
-  327 ≥ Max
-    product  [37]
-  328 ≥ Max
-    product  [36]
-  329 ≥ Max
-    product  [334, 336]
-  330 ≥ Max
-    product  [34]
-    product  [22]
-    product  [318]
-  331 ≥ Max
-    product  [32]
-  332 ≥ Max
-    product  [333]
-  333 ≥ Max
-    product  [332]
-    product  [316]
-  334 ≥ Max
-    product  [L]
-    product  [329]
-    product  [317]
-  335 ≥ Max
-    product  [20]
-  336 ≥ Max
-    product  [329]
-    product  [21]
-  337 ≥ Max
-    product  [21]
-  338 ≥ Max
-    product  [20]
-  339 ≥ Max
-    product  [317]
-  340 ≥ Max
-    product  [316]
-  341 ≥ Max
-    product  [32]
-  342 ≥ Max
-    product  [348, 351]
-  343 ≥ Max
-    product  [34]
-    product  [5]
-    product  [360]
-  344 ≥ Max
-    product  [348, 350]
-  345 ≥ Max
-    product  [34]
-    product  [3]
-    product  [358]
-  346 ≥ Max
-    product  [347]
-  347 ≥ Max
-    product  [346]
-    product  [316]
-  348 ≥ Max
-    product  [L]
-    product  [344]
-    product  [342]
-    product  [317]
-  349 ≥ Max
-    product  [1]
-  350 ≥ Max
-    product  [344]
-    product  [2]
-  351 ≥ Max
-    product  [342]
-    product  [4]
-  352 ≥ Max
-    product  [359]
-  353 ≥ Max
-    product  [357]
-  354 ≥ Max
-    product  [356]
-  356 ≥ Max
-    product  [368]
-    product  [389]
-    product  [354]
-  357 ≥ Max
-    product  [369]
-    product  [390]
-    product  [353]
-  358 ≥ Max
-    product  [34]
-    product  [24]
-    product  [387]
-    product  [345]
-  359 ≥ Max
-    product  [372]
-    product  [391]
-    product  [352]
-  360 ≥ Max
-    product  [34]
-    product  [363]
-    product  [385]
-    product  [343]
-  361 ≥ Max
-    product  [34]
-    product  [319]
-    product  [6]
-    product  [319]
-  362 ≥ Max
-    product  [372]
-  363 ≥ Max
-    product  [34]
-    product  [360]
-    product  [318]
-  364 ≥ Max
-    product  [369, 371]
-  365 ≥ Max
-    product  [34]
-    product  [22]
-    product  [432]
-  366 ≥ Max
-    product  [32]
-  367 ≥ Max
-    product  [368]
-  368 ≥ Max
-    product  [367]
-    product  [356]
-  369 ≥ Max
-    product  [L]
-    product  [364]
-    product  [357]
-  370 ≥ Max
-    product  [20]
-  371 ≥ Max
-    product  [364]
-    product  [21]
-  372 ≥ Max
-    product  [362]
-    product  [359]
-  373 ≥ Max
-    product  [317]
-  374 ≥ Max
-    product  [316]
-  375 ≥ Max
-    product  [431]
-  376 ≥ Max
-    product  [427]
-  377 ≥ Max
-    product  [426]
-  378 ≥ Max
-    product  [425]
-  379 ≥ Max
-    product  [32]
-  380 ≥ Max
-    product  [399]
-  381 ≥ Max
-    product  [398]
-  382 ≥ Max
-    product  [317]
-  383 ≥ Max
-    product  [316]
-  384 ≥ Max
-    product  [391]
-  385 ≥ Max
-    product  [34]
-    product  [360]
-    product  [318]
-  386 ≥ Max
-    product  [390]
-  387 ≥ Max
-    product  [34]
-    product  [358]
-    product  [3]
-  388 ≥ Max
-    product  [389]
-  389 ≥ Max
-    product  [388]
-    product  [356]
-  390 ≥ Max
-    product  [386]
-    product  [357]
-  391 ≥ Max
-    product  [384]
-    product  [359]
-  392 ≥ Max
-    product  [4]
-  393 ≥ Max
-    product  [2]
-  394 ≥ Max
-    product  [1]
-  395 ≥ Max
-    product  [317]
-  396 ≥ Max
-    product  [316]
-  398 ≥ Max
-    product  [408]
-    product  [417]
-    product  [381]
-  399 ≥ Max
-    product  [409]
-    product  [418]
-    product  [380]
-  400 ≥ Max
-    product  [34]
-    product  [406]
-    product  [415]
-    product  [319]
-  401 ≥ Max
-    product  [410]
-    product  [419]
-    product  [428]
-  402 ≥ Max
-    product  [18]
-    product  [15]
-    product  [11]
-    product  [429]
-  403 ≥ Max
-    product  [32]
-  404 ≥ Max
-    product  [34]
-    product  [406]
-    product  [39]
-    product  [430]
-  405 ≥ Max
-    product  [409]
-  406 ≥ Max
-    product  [34]
-    product  [400]
-    product  [404]
-  407 ≥ Max
-    product  [408]
-  408 ≥ Max
-    product  [407]
-    product  [398]
-  409 ≥ Max
-    product  [405]
-    product  [399]
-  410 ≥ Max
-    product  [L]
-    product  [401]
-  411 ≥ Max
-    product  [14]
-  412 ≥ Max
-    product  [419, 421]
-  413 ≥ Max
-    product  [18]
-    product  [10]
-    product  [38]
-  414 ≥ Max
-    product  [418]
-  415 ≥ Max
-    product  [34]
-    product  [400]
-  416 ≥ Max
-    product  [417]
-  417 ≥ Max
-    product  [416]
-    product  [398]
-  418 ≥ Max
-    product  [414]
-    product  [399]
-  419 ≥ Max
-    product  [L]
-    product  [412]
-    product  [401]
-  420 ≥ Max
-    product  [8]
-  421 ≥ Max
-    product  [412]
-    product  [9]
-  422 ≥ Max
-    product  [37]
-  423 ≥ Max
-    product  [36]
-  425 ≥ Max
-    product  [442]
-    product  [458]
-    product  [469]
-    product  [485]
-    product  [498]
-    product  [502]
-    product  [118]
-    product  [378]
-  426 ≥ Max
-    product  [443]
-    product  [459]
-    product  [468]
-    product  [486]
-    product  [497]
-    product  [501]
-    product  [117]
-    product  [377]
-  427 ≥ Max
-    product  [444]
-    product  [460]
-    product  [467]
-    product  [487]
-    product  [496]
-    product  [500]
-    product  [116]
-    product  [376]
-  428 ≥ Max
-    product  [437]
-    product  [453]
-    product  [191]
-    product  [480]
-    product  [480]
-    product  [480]
-    product  [65]
-    product  [401]
-  429 ≥ Max
-    product  [18]
-    product  [438]
-    product  [454]
-    product  [192]
-    product  [481]
-    product  [481]
-    product  [481]
-    product  [66]
-    product  [402]
-  430 ≥ Max
-    product  [34]
-    product  [439]
-    product  [455]
-    product  [194]
-    product  [482]
-    product  [482]
-    product  [482]
-    product  [67]
-    product  [404]
-  431 ≥ Max
-    product  [445]
-    product  [461]
-    product  [466]
-    product  [488]
-    product  [495]
-    product  [499]
-    product  [115]
-    product  [375]
-  432 ≥ Max
-    product  [34]
-    product  [39]
-    product  [24]
-    product  [450]
-    product  [6]
-    product  [478]
-    product  [476]
-    product  [504]
-    product  [365]
-  433 ≥ Max
-    product  [34]
-    product  [439]
-    product  [22]
-    product  [24]
-    product  [3]
-    product  [5]
-    product  [6]
-    product  [114]
-    product  [318]
-  434 ≥ Max
-    product  [445, 447]
-  435 ≥ Max
-    product  [18]
-    product  [38]
-    product  [438]
-  436 ≥ Max
-    product  [444]
-  437 ≥ Max
-    product  [428]
-    product  [448]
-  438 ≥ Max
-    product  [18]
-    product  [429]
-    product  [435]
-  439 ≥ Max
-    product  [34]
-    product  [430]
-    product  [433]
-  440 ≥ Max
-    product  [443]
-  441 ≥ Max
-    product  [442]
-  442 ≥ Max
-    product  [441]
-    product  [425]
-  443 ≥ Max
-    product  [440]
-    product  [426]
-  444 ≥ Max
-    product  [436]
-    product  [427]
-  445 ≥ Max
-    product  [L]
-    product  [434]
-    product  [431]
-  446 ≥ Max
-    product  [36]
-  447 ≥ Max
-    product  [434]
-    product  [37]
-  448 ≥ Max
-    product  [437]
-  449 ≥ Max
-    product  [461, 463]
-  450 ≥ Max
-    product  [34]
-    product  [22]
-    product  [432]
-  451 ≥ Max
-    product  [32]
-  452 ≥ Max
-    product  [460]
-  453 ≥ Max
-    product  [428]
-    product  [188]
-  454 ≥ Max
-    product  [18]
-    product  [429]
-    product  [189]
-  455 ≥ Max
-    product  [34]
-    product  [430]
-    product  [190]
-  456 ≥ Max
-    product  [459]
-  457 ≥ Max
-    product  [458]
-  458 ≥ Max
-    product  [457]
-    product  [425]
-  459 ≥ Max
-    product  [456]
-    product  [426]
-  460 ≥ Max
-    product  [452]
-    product  [427]
-  461 ≥ Max
-    product  [L]
-    product  [449]
-    product  [431]
-  462 ≥ Max
-    product  [20]
-  463 ≥ Max
-    product  [449]
-    product  [21]
-  464 ≥ Max
-    product  [21]
-  465 ≥ Max
-    product  [20]
-  466 ≥ Max
-    product  [431]
-  467 ≥ Max
-    product  [427]
-  468 ≥ Max
-    product  [426]
-  469 ≥ Max
-    product  [425]
-  470 ≥ Max
-    product  [32]
-  471 ≥ Max
-    product  [32]
-  472 ≥ Max
-    product  [187]
-  473 ≥ Max
-    product  [186]
-  474 ≥ Max
-    product  [185]
-  475 ≥ Max
-    product  [488, 491]
-  476 ≥ Max
-    product  [34]
-    product  [5]
-    product  [432]
-  477 ≥ Max
-    product  [488, 490]
-  478 ≥ Max
-    product  [34]
-    product  [3]
-    product  [432]
-  479 ≥ Max
-    product  [487]
-  480 ≥ Max
-    product  [428]
-    product  [428]
-    product  [428]
-  481 ≥ Max
-    product  [18]
-    product  [429]
-    product  [429]
-    product  [429]
-  482 ≥ Max
-    product  [34]
-    product  [430]
-    product  [430]
-    product  [430]
-  483 ≥ Max
-    product  [486]
-  484 ≥ Max
-    product  [485]
-  485 ≥ Max
-    product  [484]
-    product  [425]
-  486 ≥ Max
-    product  [483]
-    product  [426]
-  487 ≥ Max
-    product  [479]
-    product  [427]
-  488 ≥ Max
-    product  [L]
-    product  [477]
-    product  [475]
-    product  [431]
-  489 ≥ Max
-    product  [1]
-  490 ≥ Max
-    product  [477]
-    product  [2]
-  491 ≥ Max
-    product  [475]
-    product  [4]
-  492 ≥ Max
-    product  [4]
-  493 ≥ Max
-    product  [2]
-  494 ≥ Max
-    product  [1]
-  495 ≥ Max
-    product  [431]
-  496 ≥ Max
-    product  [427]
-  497 ≥ Max
-    product  [426]
-  498 ≥ Max
-    product  [425]
-  499 ≥ Max
-    product  [431]
-  500 ≥ Max
-    product  [427]
-  501 ≥ Max
-    product  [426]
-  502 ≥ Max
-    product  [425]
-  504 ≥ Max
-    product  [34]
-    product  [6]
-    product  [432]
-    product  [318]
-  505 ≥ Max
-    product  [32]
-  506 ≥ Max
-    product  [4]
-  507 ≥ Max
-    product  [2]
-  508 ≥ Max
-    product  [1]
-  509 ≥ Max
-    product  [32]
-  510 ≥ Max
-    product  [21]
-  511 ≥ Max
-    product  [20]
-  512 ≥ Max
-    product  [32]
-  513 ≥ Max
-    product  [4]
-  514 ≥ Max
-    product  [2]
-  515 ≥ Max
-    product  [1]
-  516 ≥ Max
-    product  [32]
-  517 ≥ Max
-    product  [32]
-  518 ≥ Max
-    product  [37]
-  519 ≥ Max
-    product  [36]
-  520 ≥ Max
-    product  [32]
-  521 ≥ Max
-    product  [32]
-  522 ≥ Max
-    product  [14]
-  523 ≥ Max
-    product  [32]
-  524 ≥ Max
-    product  [37]
-  525 ≥ Max
-    product  [36]
-  526 ≥ Max
-    product  [32]
-  527 ≥ Max
-    product  [32]
-  528 ≥ Max
-    product  [9]
-  529 ≥ Max
-    product  [8]
-  530 ≥ Max
-    product  [32]
-  531 ≥ Max
-    product  [14]
-  532 ≥ Max
-    product  [21]
-  533 ≥ Max
-    product  [20]
-  534 ≥ Max
-    product  [32]
-  535 ≥ Max
-    product  [4]
-  536 ≥ Max
-    product  [2]
-  537 ≥ Max
-    product  [1]
-  538 ≥ Max
-    product  [32]
-  539 ≥ Max
-    product  [32]
-  540 ≥ Max
-    product  [37]
-  541 ≥ Max
-    product  [36]
-  542 ≥ Max
-    product  [32]
-  543 ≥ Max
-    product  [32]
-  544 ≥ Max
-    product  [9]
-  545 ≥ Max
-    product  [8]
-  546 ≥ Max
-    product  [32]
-  547 ≥ Max
-    product  [14]
-  548 ≥ Max
-    product  [37]
-  549 ≥ Max
-    product  [36]
-  550 ≥ Max
-    product  [32]
-  551 ≥ Max
-    product  [32]
-  552 ≥ Max
-    product  [14]
-  553 ≥ Max
-    product  [32]
-
+0 ≥ sum
+  product []
+  product []
+  product []
+  product [21, 2]
+  product [21, 4]
+  product []
+7 ≥ sum
+  product []
+  product [237]
+  product [37, 4, 21, 2]
+  product [37, 2, 21, 4]
+13 ≥ sum
+  product []
+  product [37]
+  product [37, 2, 21, 2]
+  product [9, 37, 4, 21, 2]
+  product [9, 37, 2, 21, 4]
+  product [37, 4, 21, 4]
+  product [37, 21, 43, 61, 427]
+19 ≥ sum
+  product []
+  product []
+  product [2]
+  product [4]
+  product [43, 61, 427]
+  product []
+26 ≥ sum
+  product []
+31 ≥ sum
+  product [235, 21]
+  product [236, 21]
+  product [36]
+  product [236]
+  product [425, 21]
+  product [426, 21]
+  product [1]
+  product [20, 2]
+  product [1, 21, 2]
+  product [32, 1, 21, 2]
+  product [36, 2, 21, 2]
+  product [32, 36, 2, 21, 2]
+  product [14, 37, 2, 21, 2]
+  product [36, 4, 21, 2]
+  product [32, 36, 4, 21, 2]
+  product [8, 37, 4, 21, 2]
+  product [20, 4]
+  product [1, 21, 4]
+  product [32, 1, 21, 4]
+  product [36, 2, 21, 4]
+  product [32, 36, 2, 21, 4]
+  product [8, 37, 2, 21, 4]
+  product [36, 4, 21, 4]
+  product [32, 36, 4, 21, 4]
+  product [14, 37, 4, 21, 4]
+  product [425]
+  product [59, 427]
+  product [36, 21, 43, 61, 427]
+  product [425, 317]
+  product [316, 21]
+  product [316]
+33 ≥ sum
+  product [42, 61, 427]
+  product [51, 44, 61, 427]
+35 ≥ sum
+  product []
+  product []
+  product [2, 21, 2]
+  product [4, 21, 2]
+  product [2, 21, 4]
+  product [4, 21, 4]
+  product [21, 43, 61, 427]
+  product []
+  product []
+40 ≥ sum
+  product [61, 427]
+50 ≥ sum
+  product [44, 61, 427]
+57 ≥ sum
+  product [32, 1]
+  product [32, 20, 2]
+  product [32, 32, 1, 21, 2]
+  product [32, 32, 36, 2, 21, 2]
+  product [32, 14, 37, 2, 21, 2]
+  product [32, 32, 36, 4, 21, 2]
+  product [32, 8, 37, 4, 21, 2]
+  product [14, 9, 37, 4, 21, 2]
+  product [32, 20, 4]
+  product [32, 32, 1, 21, 4]
+  product [32, 32, 36, 2, 21, 4]
+  product [32, 8, 37, 2, 21, 4]
+  product [14, 9, 37, 2, 21, 4]
+  product [32, 32, 36, 4, 21, 4]
+  product [32, 14, 37, 4, 21, 4]
+  product [32, 425]
+  product [426]
+  product [32, 59, 427]
+  product [60, 427]
+  product [41, 61, 427]
+  product [34, 42, 61, 427]
+  product [20, 43, 61, 427]
+  product [32, 36, 21, 43, 61, 427]
+  product [14, 37, 21, 43, 61, 427]
+  product [34, 51, 44, 61, 427]
+  product [32, 316]
+58 ≥ sum
+  product []
+  product [427]
+113 ≥ sum
+  product [R]
+137 ≥ sum
+  product [R]
+143 ≥ sum
+  product [237, 21]
+184 ≥ sum
+  product [427, 21]
+234 ≥ sum
+  product [21]
+  product [2]
+  product [4]
+  product []
+315 ≥ sum
+  product []
+  product [399, 427, 317]
+  product [4]
+  product [21]
+  product []
+355 ≥ sum
+  product []
+397 ≥ sum
+  product [427, 317]
+424 ≥ sum
+  product [21]
+  product [2]
+  product [4]
+  product []
+  product [317]
+503 ≥ sum
+  product [431]
+  product [317]
+18 ~ 15
+32 ~ 16
+18 ~ 10
+18 ~ 11
+32 ~ 12
+55 ~ 53
+56 ~ 52
+55 ~ 46
+56 ~ 45
+55 ~ 48
+32 ~ 49
+56 ~ 47
+18 ~ 38
+34 ~ 39
+34 ~ 22
+32 ~ 23
+34 ~ 24
+34 ~ 3
+34 ~ 5
+34 ~ 6
+55 ~ 63
+56 ~ 62
+34 ~ 64
+18 ~ 66
+34 ~ 67
+34 ~ 73
+55 ~ 70
+56 ~ 69
+34 ~ 71
+75 ~ product [14, 65]
+74 ~ product [60]
+72 ~ product [43, 61]
+68 ~ product [44, 61]
+59 ~ 76
+32 ~ 77
+60 ~ 78
+61 ~ 79
+product [61] ≥ sum
+  product [L]
+41 ~ 80
+42 ~ 81
+34 ~ 82
+43 ~ 83
+82 ~ 73
+44 ~ 84
+45 ~ 69
+46 ~ 70
+62 ~ 47
+63 ~ 48
+65 ~ 85
+product [65] ≥ sum
+  product [L]
+14 ~ 86
+66 ~ 15
+75 ≥ sum
+74 ≥ sum
+72 ≥ sum
+  product []
+68 ≥ sum
+73 ~ 67
+34 ~ 94
+55 ~ 91
+56 ~ 90
+34 ~ 92
+18 ~ 88
+96 ~ product [8, 65]
+95 ~ product [60]
+93 ~ product [43, 61]
+89 ~ product [44, 61]
+87 ~ product [9, 65]
+59 ~ 97
+32 ~ 98
+60 ~ 99
+61 ~ 100
+product [61] ≥ sum
+  product [L]
+41 ~ 101
+42 ~ 102
+34 ~ 103
+43 ~ 104
+103 ~ 94
+44 ~ 105
+45 ~ 90
+46 ~ 91
+62 ~ 47
+63 ~ 48
+65 ~ 106
+product [65] ≥ sum
+  product [L]
+8 ~ 107
+9 ~ 108
+10 ~ 88
+66 ~ 11
+96 ≥ sum
+  product [59]
+95 ≥ sum
+  product [60]
+93 ≥ sum
+89 ≥ sum
+  product [61]
+87 ≥ sum
+  product [65]
+59 ~ 112
+60 ~ 111
+61 ~ 110
+62 ~ 90
+63 ~ 91
+65 ~ 109
+66 ~ 88
+67 ~ 67
+18 ~ 148
+18 ~ 149
+18 ~ 151
+32 ~ 152
+18 ~ 153
+32 ~ 154
+18 ~ 157
+18 ~ 158
+160 ~ product [144]
+159 ~ product [145]
+155 ~ product [146]
+144 ~ 161
+145 ~ 162
+146 ~ 163
+147 ~ 156
+148 ~ 157
+149 ~ 158
+150 ~ 164
+product [150] ≥ sum
+  product [L]
+14 ~ 165
+151 ~ 15
+160 ≥ sum
+159 ≥ sum
+  product [14]
+155 ≥ sum
+14 ~ 166
+15 ~ 153
+18 ~ 171
+18 ~ 172
+18 ~ 168
+174 ~ product [144]
+173 ~ product [145]
+169 ~ product [146]
+167 ~ product [9, 150]
+144 ~ 175
+145 ~ 176
+146 ~ 177
+147 ~ 170
+148 ~ 171
+149 ~ 172
+150 ~ 178
+product [150] ≥ sum
+  product [L]
+8 ~ 179
+9 ~ 180
+10 ~ 168
+151 ~ 11
+174 ≥ sum
+173 ≥ sum
+  product [8]
+169 ≥ sum
+  product [9]
+167 ≥ sum
+  product [170, 9]
+8 ~ 182
+9 ~ 181
+170 ~ 183
+171 ~ 168
+10 ~ 172
+11 ~ 153
+18 ~ 239
+18 ~ 240
+34 ~ 242
+34 ~ 243
+18 ~ 248
+18 ~ 249
+18 ~ 245
+251 ~ product [235]
+250 ~ product [236]
+246 ~ product [237]
+244 ~ product [37, 241]
+235 ~ 252
+236 ~ 253
+237 ~ 254
+238 ~ 247
+239 ~ 248
+240 ~ 249
+241 ~ 255
+product [241] ≥ sum
+  product [L]
+36 ~ 256
+37 ~ 257
+38 ~ 245
+242 ~ 39
+251 ≥ sum
+250 ≥ sum
+  product [36]
+246 ≥ sum
+  product [37]
+244 ≥ sum
+  product [247, 37]
+36 ~ 259
+37 ~ 258
+247 ~ 260
+248 ~ 245
+38 ~ 249
+39 ~ 243
+18 ~ 266
+18 ~ 267
+34 ~ 262
+32 ~ 263
+269 ~ product [235]
+268 ~ product [236]
+264 ~ product [237]
+261 ~ product [21, 241]
+235 ~ 270
+236 ~ 271
+237 ~ 272
+238 ~ 265
+239 ~ 266
+240 ~ 267
+241 ~ 273
+product [241] ≥ sum
+  product [L]
+20 ~ 274
+21 ~ 275
+22 ~ 262
+242 ~ 24
+269 ≥ sum
+  product [32, 235, 21]
+  product [144, 237, 21]
+268 ≥ sum
+  product [20]
+  product [32, 236, 21]
+  product [145, 237, 21]
+264 ≥ sum
+  product [146, 237, 21]
+261 ≥ sum
+  product [241, 21]
+20 ~ 277
+21 ~ 276
+235 ~ 281
+32 ~ 282
+236 ~ 280
+32 ~ 283
+237 ~ 279
+144 ~ 286
+145 ~ 285
+146 ~ 284
+147 ~ 265
+148 ~ 266
+149 ~ 267
+238 ~ 150
+239 ~ 151
+240 ~ 153
+241 ~ 278
+242 ~ 262
+22 ~ 243
+24 ~ 243
+18 ~ 293
+18 ~ 294
+34 ~ 290
+34 ~ 288
+296 ~ product [235]
+295 ~ product [236]
+291 ~ product [237]
+289 ~ product [2, 241]
+287 ~ product [4, 241]
+235 ~ 297
+236 ~ 298
+237 ~ 299
+238 ~ 292
+239 ~ 293
+240 ~ 294
+241 ~ 300
+product [241] ≥ sum
+  product [L]
+1 ~ 301
+2 ~ 302
+3 ~ 290
+4 ~ 303
+5 ~ 288
+242 ~ 6
+296 ≥ sum
+  product [235, 2]
+  product [235, 4]
+295 ≥ sum
+  product [1]
+  product [236, 2]
+  product [236, 4]
+291 ≥ sum
+  product [237, 2]
+  product [237, 4]
+289 ≥ sum
+  product [241, 2]
+287 ≥ sum
+  product [241, 4]
+1 ~ 306
+2 ~ 305
+235 ~ 310
+236 ~ 309
+237 ~ 308
+238 ~ 292
+239 ~ 293
+240 ~ 294
+241 ~ 307
+242 ~ 290
+3 ~ 243
+4 ~ 304
+235 ~ 314
+236 ~ 313
+237 ~ 312
+238 ~ 292
+239 ~ 293
+240 ~ 294
+241 ~ 311
+242 ~ 288
+5 ~ 243
+6 ~ 243
+18 ~ 189
+34 ~ 190
+18 ~ 192
+32 ~ 193
+34 ~ 194
+32 ~ 195
+18 ~ 198
+34 ~ 199
+201 ~ product [185]
+200 ~ product [186]
+196 ~ product [187]
+185 ~ 202
+186 ~ 203
+187 ~ 204
+188 ~ 197
+189 ~ 198
+190 ~ 199
+191 ~ 205
+product [191] ≥ sum
+  product [L]
+14 ~ 206
+192 ~ 15
+201 ≥ sum
+200 ≥ sum
+  product [32, 36]
+  product [14, 37]
+196 ≥ sum
+36 ~ 208
+32 ~ 209
+37 ~ 207
+14 ~ 210
+38 ~ 15
+39 ~ 194
+18 ~ 215
+34 ~ 216
+18 ~ 212
+218 ~ product [185]
+217 ~ product [186]
+213 ~ product [187]
+211 ~ product [9, 191]
+185 ~ 219
+186 ~ 220
+187 ~ 221
+188 ~ 214
+189 ~ 215
+190 ~ 216
+191 ~ 222
+product [191] ≥ sum
+  product [L]
+8 ~ 223
+9 ~ 224
+10 ~ 212
+192 ~ 11
+218 ≥ sum
+217 ≥ sum
+  product [235]
+  product [32, 236]
+  product [8, 237]
+213 ≥ sum
+  product [241]
+211 ≥ sum
+  product [214, 241]
+235 ~ 228
+236 ~ 227
+32 ~ 229
+237 ~ 226
+8 ~ 230
+238 ~ 9
+239 ~ 10
+240 ~ 11
+241 ~ 225
+214 ~ 231
+215 ~ 212
+242 ~ 216
+243 ~ 194
+18 ~ 429
+34 ~ 430
+34 ~ 432
+34 ~ 433
+18 ~ 438
+34 ~ 439
+18 ~ 435
+441 ~ product [425]
+440 ~ product [426]
+436 ~ product [427]
+434 ~ product [37, 431]
+425 ~ 442
+426 ~ 443
+427 ~ 444
+428 ~ 437
+429 ~ 438
+430 ~ 439
+431 ~ 445
+product [431] ≥ sum
+  product [L]
+36 ~ 446
+37 ~ 447
+38 ~ 435
+432 ~ 39
+441 ≥ sum
+440 ≥ sum
+436 ≥ sum
+  product []
+434 ≥ sum
+  product [437]
+437 ~ 448
+438 ~ 435
+439 ~ 433
+18 ~ 454
+34 ~ 455
+34 ~ 450
+32 ~ 451
+457 ~ product [425]
+456 ~ product [426]
+452 ~ product [427]
+449 ~ product [21, 431]
+425 ~ 458
+426 ~ 459
+427 ~ 460
+428 ~ 453
+429 ~ 454
+430 ~ 455
+431 ~ 461
+product [431] ≥ sum
+  product [L]
+20 ~ 462
+21 ~ 463
+22 ~ 450
+432 ~ 24
+457 ≥ sum
+  product [32, 425, 21]
+  product [185, 427, 21]
+456 ≥ sum
+  product [20]
+  product [32, 426, 21]
+  product [186, 427, 21]
+452 ≥ sum
+  product [187, 427, 21]
+449 ≥ sum
+  product [431, 21]
+20 ~ 465
+21 ~ 464
+425 ~ 469
+32 ~ 470
+426 ~ 468
+32 ~ 471
+427 ~ 467
+185 ~ 474
+186 ~ 473
+187 ~ 472
+188 ~ 453
+189 ~ 454
+190 ~ 455
+428 ~ 191
+429 ~ 192
+430 ~ 194
+431 ~ 466
+432 ~ 450
+22 ~ 433
+24 ~ 433
+18 ~ 481
+34 ~ 482
+34 ~ 478
+34 ~ 476
+484 ~ product [425]
+483 ~ product [426]
+479 ~ product [427]
+477 ~ product [2, 431]
+475 ~ product [4, 431]
+425 ~ 485
+426 ~ 486
+427 ~ 487
+428 ~ 480
+429 ~ 481
+430 ~ 482
+431 ~ 488
+product [431] ≥ sum
+  product [L]
+1 ~ 489
+2 ~ 490
+3 ~ 478
+4 ~ 491
+5 ~ 476
+432 ~ 6
+484 ≥ sum
+  product [425, 2]
+  product [425, 4]
+483 ≥ sum
+  product [1]
+  product [426, 2]
+  product [426, 4]
+479 ≥ sum
+  product [427, 2]
+  product [427, 4]
+477 ≥ sum
+  product [431, 2]
+475 ≥ sum
+  product [431, 4]
+1 ~ 494
+2 ~ 493
+425 ~ 498
+426 ~ 497
+427 ~ 496
+428 ~ 480
+429 ~ 481
+430 ~ 482
+431 ~ 495
+432 ~ 478
+3 ~ 433
+4 ~ 492
+425 ~ 502
+426 ~ 501
+427 ~ 500
+428 ~ 480
+429 ~ 481
+430 ~ 482
+431 ~ 499
+432 ~ 476
+5 ~ 433
+6 ~ 433
+34 ~ 504
+32 ~ 505
+1 ~ 508
+32 ~ 509
+2 ~ 507
+20 ~ 511
+32 ~ 512
+21 ~ 510
+1 ~ 515
+32 ~ 516
+32 ~ 517
+2 ~ 514
+36 ~ 519
+32 ~ 520
+32 ~ 521
+37 ~ 518
+14 ~ 522
+32 ~ 523
+38 ~ 15
+3 ~ 39
+4 ~ 513
+36 ~ 525
+32 ~ 526
+32 ~ 527
+37 ~ 524
+8 ~ 529
+32 ~ 530
+9 ~ 528
+14 ~ 531
+10 ~ 15
+38 ~ 11
+5 ~ 39
+22 ~ 6
+3 ~ 24
+4 ~ 506
+20 ~ 533
+32 ~ 534
+21 ~ 532
+1 ~ 537
+32 ~ 538
+32 ~ 539
+2 ~ 536
+36 ~ 541
+32 ~ 542
+32 ~ 543
+37 ~ 540
+8 ~ 545
+32 ~ 546
+9 ~ 544
+14 ~ 547
+10 ~ 15
+38 ~ 11
+3 ~ 39
+4 ~ 535
+36 ~ 549
+32 ~ 550
+32 ~ 551
+37 ~ 548
+14 ~ 552
+32 ~ 553
+38 ~ 15
+5 ~ 39
+22 ~ 6
+5 ~ 24
+6 ~ 504
+34 ~ 114
+425 ~ 118
+32 ~ 119
+426 ~ 117
+427 ~ 116
+59 ~ 122
+32 ~ 123
+60 ~ 121
+61 ~ 120
+41 ~ 127
+42 ~ 126
+34 ~ 128
+43 ~ 125
+20 ~ 130
+21 ~ 129
+36 ~ 132
+32 ~ 133
+37 ~ 131
+14 ~ 134
+38 ~ 15
+22 ~ 39
+128 ~ 24
+44 ~ 124
+51 ~ 135
+34 ~ 136
+45 ~ 52
+46 ~ 53
+62 ~ 47
+63 ~ 48
+428 ~ 65
+429 ~ 66
+430 ~ 67
+431 ~ 115
+432 ~ 504
+433 ~ 114
+34 ~ 400
+18 ~ 402
+32 ~ 403
+34 ~ 404
+34 ~ 406
+407 ~ product [398]
+405 ~ product [399]
+398 ~ 408
+399 ~ 409
+400 ~ 406
+401 ~ 410
+product [401] ≥ sum
+  product [L]
+14 ~ 411
+402 ~ 15
+407 ≥ sum
+405 ≥ sum
+  product []
+406 ~ 404
+34 ~ 415
+18 ~ 413
+416 ~ product [398]
+414 ~ product [399]
+412 ~ product [9, 401]
+398 ~ 417
+399 ~ 418
+400 ~ 415
+401 ~ 419
+product [401] ≥ sum
+  product [L]
+8 ~ 420
+9 ~ 421
+10 ~ 413
+402 ~ 11
+416 ≥ sum
+  product [36]
+414 ≥ sum
+412 ≥ sum
+  product [37]
+36 ~ 423
+37 ~ 422
+38 ~ 413
+39 ~ 404
+34 ~ 358
+34 ~ 360
+34 ~ 361
+34 ~ 365
+32 ~ 366
+34 ~ 363
+367 ~ product [356]
+364 ~ product [21, 357]
+362 ~ product [359]
+356 ~ 368
+357 ~ 369
+product [357] ≥ sum
+  product [L]
+20 ~ 370
+21 ~ 371
+22 ~ 365
+358 ~ 24
+359 ~ 372
+360 ~ 363
+367 ≥ sum
+  product [316]
+  product [32, 425, 317]
+  product [426, 317]
+  product [398, 427, 317]
+  product [316, 399, 427, 317]
+364 ≥ sum
+  product [431, 317]
+362 ≥ sum
+  product [317, 399, 427, 317]
+316 ~ 374
+317 ~ 373
+425 ~ 378
+32 ~ 379
+426 ~ 377
+427 ~ 376
+398 ~ 381
+399 ~ 380
+316 ~ 383
+317 ~ 382
+318 ~ 363
+400 ~ 319
+428 ~ 401
+429 ~ 402
+430 ~ 404
+431 ~ 375
+432 ~ 365
+318 ~ 433
+319 ~ 361
+34 ~ 387
+34 ~ 385
+388 ~ product [356]
+386 ~ product [357]
+384 ~ product [359]
+356 ~ 389
+357 ~ 390
+358 ~ 387
+359 ~ 391
+360 ~ 385
+388 ≥ sum
+  product [1]
+  product [316, 4]
+386 ≥ sum
+  product [2]
+384 ≥ sum
+  product [317, 4]
+1 ~ 394
+2 ~ 393
+3 ~ 387
+4 ~ 392
+316 ~ 396
+317 ~ 395
+318 ~ 385
+5 ~ 319
+6 ~ 361
+34 ~ 318
+34 ~ 319
+18 ~ 321
+322 ~ product [316]
+320 ~ product [37, 317]
+316 ~ 323
+317 ~ 324
+product [317] ≥ sum
+  product [L]
+36 ~ 325
+37 ~ 326
+38 ~ 321
+318 ~ 39
+322 ≥ sum
+  product [36]
+320 ≥ sum
+  product [37]
+36 ~ 328
+37 ~ 327
+38 ~ 321
+39 ~ 319
+34 ~ 330
+32 ~ 331
+332 ~ product [316]
+329 ~ product [21, 317]
+316 ~ 333
+317 ~ 334
+product [317] ≥ sum
+  product [L]
+20 ~ 335
+21 ~ 336
+22 ~ 330
+318 ~ 24
+332 ≥ sum
+  product [20]
+  product [32, 316, 21]
+329 ≥ sum
+  product [317, 21]
+20 ~ 338
+21 ~ 337
+316 ~ 340
+32 ~ 341
+317 ~ 339
+318 ~ 330
+22 ~ 319
+24 ~ 319
+34 ~ 345
+34 ~ 343
+346 ~ product [316]
+344 ~ product [2, 317]
+342 ~ product [4, 317]
+316 ~ 347
+317 ~ 348
+product [317] ≥ sum
+  product [L]
+1 ~ 349
+2 ~ 350
+3 ~ 345
+4 ~ 351
+5 ~ 343
+318 ~ 6
+346 ≥ sum
+  product [356]
+344 ≥ sum
+  product [357]
+342 ≥ sum
+  product [359]
+356 ~ 354
+357 ~ 353
+358 ~ 345
+359 ~ 352
+360 ~ 343
+361 ~ 319
+34 ~ 138
+32 ~ 139
+316 ~ 141
+32 ~ 142
+317 ~ 140
+318 ~ 504
+319 ~ 138
+34 ~ 27
+34 ~ 28
+32 ~ 29
+R ~ 233
+27 ~ 114
+R ~ 232
+28 ~ 138
 #######################
 # Deferred equalities #
 #######################
@@ -3112,14 +1310,14 @@ Maxes:
 
   0 -> R
   1 -> I
-  2 -> R
+  2 -> L
   3 -> I
-  4 -> R
+  4 -> L
   5 -> I
   6 -> I
   7 -> R
   8 -> I
-  9 -> R
+  9 -> L
   10 -> I
   11 -> I
   12 -> I
@@ -3127,27 +1325,24 @@ Maxes:
   14 -> I
   15 -> I
   16 -> I
-  17 -> I
   18 -> I
   19 -> R
   20 -> I
-  21 -> R
+  21 -> L
   22 -> I
   23 -> I
   24 -> I
-  25 -> I
   26 -> L
   27 -> I
   28 -> I
   29 -> I
-  30 -> I
   31 -> I
   32 -> I
   33 -> I
   34 -> I
   35 -> R
   36 -> I
-  37 -> R
+  37 -> L
   38 -> I
   39 -> I
   40 -> R
@@ -3164,7 +1359,6 @@ Maxes:
   51 -> I
   52 -> I
   53 -> I
-  54 -> I
   55 -> I
   56 -> I
   57 -> I
@@ -3175,7 +1369,7 @@ Maxes:
   62 -> I
   63 -> I
   64 -> I
-  65 -> R
+  65 -> L
   66 -> I
   67 -> I
   68 -> R
@@ -3189,15 +1383,15 @@ Maxes:
   76 -> I
   77 -> I
   78 -> I
-  79 -> R
+  79 -> I
   80 -> I
   81 -> I
   82 -> I
-  83 -> R
-  84 -> R
-  85 -> R
+  83 -> I
+  84 -> I
+  85 -> L
   86 -> I
-  87 -> R
+  87 -> L
   88 -> I
   89 -> R
   90 -> I
@@ -3210,38 +1404,38 @@ Maxes:
   97 -> I
   98 -> I
   99 -> I
-  100 -> R
+  100 -> I
   101 -> I
   102 -> I
   103 -> I
-  104 -> R
-  105 -> R
-  106 -> R
+  104 -> I
+  105 -> I
+  106 -> L
   107 -> I
-  108 -> R
-  109 -> R
-  110 -> R
+  108 -> L
+  109 -> L
+  110 -> I
   111 -> I
   112 -> I
   113 -> R
   114 -> I
-  115 -> R
-  116 -> R
+  115 -> L
+  116 -> I
   117 -> I
   118 -> I
   119 -> I
-  120 -> R
+  120 -> I
   121 -> I
   122 -> I
   123 -> I
-  124 -> R
-  125 -> R
+  124 -> I
+  125 -> I
   126 -> I
   127 -> I
   128 -> I
-  129 -> R
+  129 -> L
   130 -> I
-  131 -> R
+  131 -> L
   132 -> I
   133 -> I
   134 -> I
@@ -3250,268 +1444,268 @@ Maxes:
   137 -> R
   138 -> I
   139 -> I
-  140 -> R
+  140 -> L
   141 -> I
   142 -> I
-  143 -> R
+  143 -> L
   144 -> I
   145 -> I
   146 -> R
-  147 -> R
+  147 -> L
   148 -> I
   149 -> I
-  150 -> R
+  150 -> L
   151 -> I
   152 -> I
   153 -> I
   154 -> I
   155 -> R
-  156 -> R
+  156 -> L
   157 -> I
   158 -> I
   159 -> I
   160 -> I
   161 -> I
   162 -> I
-  163 -> R
-  164 -> R
+  163 -> I
+  164 -> L
   165 -> I
   166 -> I
-  167 -> R
+  167 -> L
   168 -> I
   169 -> R
-  170 -> R
+  170 -> L
   171 -> I
   172 -> I
   173 -> I
   174 -> I
   175 -> I
   176 -> I
-  177 -> R
-  178 -> R
+  177 -> I
+  178 -> L
   179 -> I
-  180 -> R
-  181 -> R
+  180 -> L
+  181 -> L
   182 -> I
-  183 -> R
-  184 -> R
+  183 -> L
+  184 -> L
   185 -> I
   186 -> I
   187 -> R
-  188 -> R
+  188 -> L
   189 -> I
   190 -> I
-  191 -> R
+  191 -> L
   192 -> I
   193 -> I
   194 -> I
   195 -> I
   196 -> R
-  197 -> R
+  197 -> L
   198 -> I
   199 -> I
   200 -> I
   201 -> I
   202 -> I
   203 -> I
-  204 -> R
-  205 -> R
+  204 -> I
+  205 -> L
   206 -> I
-  207 -> R
+  207 -> L
   208 -> I
   209 -> I
   210 -> I
-  211 -> R
+  211 -> L
   212 -> I
   213 -> R
-  214 -> R
+  214 -> L
   215 -> I
   216 -> I
   217 -> I
   218 -> I
   219 -> I
   220 -> I
-  221 -> R
-  222 -> R
+  221 -> I
+  222 -> L
   223 -> I
-  224 -> R
-  225 -> R
-  226 -> R
+  224 -> L
+  225 -> L
+  226 -> I
   227 -> I
   228 -> I
   229 -> I
   230 -> I
-  231 -> R
-  232 -> R
-  233 -> R
+  231 -> L
+  232 -> I
+  233 -> I
   234 -> R
   235 -> I
   236 -> I
   237 -> R
-  238 -> R
+  238 -> L
   239 -> I
   240 -> I
-  241 -> R
+  241 -> L
   242 -> I
   243 -> I
-  244 -> R
+  244 -> L
   245 -> I
   246 -> R
-  247 -> R
+  247 -> L
   248 -> I
   249 -> I
   250 -> I
   251 -> I
   252 -> I
   253 -> I
-  254 -> R
-  255 -> R
+  254 -> I
+  255 -> L
   256 -> I
-  257 -> R
-  258 -> R
+  257 -> L
+  258 -> L
   259 -> I
-  260 -> R
-  261 -> R
+  260 -> L
+  261 -> L
   262 -> I
   263 -> I
   264 -> R
-  265 -> R
+  265 -> L
   266 -> I
   267 -> I
   268 -> I
   269 -> I
   270 -> I
   271 -> I
-  272 -> R
-  273 -> R
+  272 -> I
+  273 -> L
   274 -> I
-  275 -> R
-  276 -> R
+  275 -> L
+  276 -> L
   277 -> I
-  278 -> R
-  279 -> R
+  278 -> L
+  279 -> I
   280 -> I
   281 -> I
   282 -> I
   283 -> I
-  284 -> R
+  284 -> I
   285 -> I
   286 -> I
-  287 -> R
+  287 -> L
   288 -> I
-  289 -> R
+  289 -> L
   290 -> I
   291 -> R
-  292 -> R
+  292 -> L
   293 -> I
   294 -> I
   295 -> I
   296 -> I
   297 -> I
   298 -> I
-  299 -> R
-  300 -> R
+  299 -> I
+  300 -> L
   301 -> I
-  302 -> R
-  303 -> R
-  304 -> R
-  305 -> R
+  302 -> L
+  303 -> L
+  304 -> L
+  305 -> L
   306 -> I
-  307 -> R
-  308 -> R
+  307 -> L
+  308 -> I
   309 -> I
   310 -> I
-  311 -> R
-  312 -> R
+  311 -> L
+  312 -> I
   313 -> I
   314 -> I
   315 -> R
   316 -> I
-  317 -> R
+  317 -> L
   318 -> I
   319 -> I
-  320 -> R
+  320 -> L
   321 -> I
   322 -> I
   323 -> I
-  324 -> R
+  324 -> L
   325 -> I
-  326 -> R
-  327 -> R
+  326 -> L
+  327 -> L
   328 -> I
-  329 -> R
+  329 -> L
   330 -> I
   331 -> I
   332 -> I
   333 -> I
-  334 -> R
+  334 -> L
   335 -> I
-  336 -> R
-  337 -> R
+  336 -> L
+  337 -> L
   338 -> I
-  339 -> R
+  339 -> L
   340 -> I
   341 -> I
-  342 -> R
+  342 -> L
   343 -> I
-  344 -> R
+  344 -> L
   345 -> I
   346 -> I
   347 -> I
-  348 -> R
+  348 -> L
   349 -> I
-  350 -> R
-  351 -> R
-  352 -> R
-  353 -> R
+  350 -> L
+  351 -> L
+  352 -> L
+  353 -> L
   354 -> I
   355 -> L
   356 -> I
-  357 -> R
+  357 -> L
   358 -> I
-  359 -> R
+  359 -> L
   360 -> I
   361 -> I
-  362 -> R
+  362 -> L
   363 -> I
-  364 -> R
+  364 -> L
   365 -> I
   366 -> I
   367 -> I
   368 -> I
-  369 -> R
+  369 -> L
   370 -> I
-  371 -> R
-  372 -> R
-  373 -> R
+  371 -> L
+  372 -> L
+  373 -> L
   374 -> I
-  375 -> R
-  376 -> R
+  375 -> L
+  376 -> I
   377 -> I
   378 -> I
   379 -> I
-  380 -> R
+  380 -> I
   381 -> I
-  382 -> R
+  382 -> L
   383 -> I
-  384 -> R
+  384 -> L
   385 -> I
-  386 -> R
+  386 -> L
   387 -> I
   388 -> I
   389 -> I
-  390 -> R
-  391 -> R
-  392 -> R
-  393 -> R
+  390 -> L
+  391 -> L
+  392 -> L
+  393 -> L
   394 -> I
-  395 -> R
+  395 -> L
   396 -> I
-  397 -> R
+  397 -> L
   398 -> I
   399 -> R
   400 -> I
-  401 -> R
+  401 -> L
   402 -> I
   403 -> I
   404 -> I
@@ -3519,146 +1713,146 @@ Maxes:
   406 -> I
   407 -> I
   408 -> I
-  409 -> R
-  410 -> R
+  409 -> I
+  410 -> L
   411 -> I
-  412 -> R
+  412 -> L
   413 -> I
   414 -> R
   415 -> I
   416 -> I
   417 -> I
-  418 -> R
-  419 -> R
+  418 -> I
+  419 -> L
   420 -> I
-  421 -> R
-  422 -> R
+  421 -> L
+  422 -> L
   423 -> I
   424 -> R
   425 -> I
   426 -> I
   427 -> R
-  428 -> R
+  428 -> L
   429 -> I
   430 -> I
-  431 -> R
+  431 -> L
   432 -> I
   433 -> I
-  434 -> R
+  434 -> L
   435 -> I
   436 -> R
-  437 -> R
+  437 -> L
   438 -> I
   439 -> I
   440 -> I
   441 -> I
   442 -> I
   443 -> I
-  444 -> R
-  445 -> R
+  444 -> I
+  445 -> L
   446 -> I
-  447 -> R
-  448 -> R
-  449 -> R
+  447 -> L
+  448 -> L
+  449 -> L
   450 -> I
   451 -> I
   452 -> R
-  453 -> R
+  453 -> L
   454 -> I
   455 -> I
   456 -> I
   457 -> I
   458 -> I
   459 -> I
-  460 -> R
-  461 -> R
+  460 -> I
+  461 -> L
   462 -> I
-  463 -> R
-  464 -> R
+  463 -> L
+  464 -> L
   465 -> I
-  466 -> R
-  467 -> R
+  466 -> L
+  467 -> I
   468 -> I
   469 -> I
   470 -> I
   471 -> I
-  472 -> R
+  472 -> I
   473 -> I
   474 -> I
-  475 -> R
+  475 -> L
   476 -> I
-  477 -> R
+  477 -> L
   478 -> I
   479 -> R
-  480 -> R
+  480 -> L
   481 -> I
   482 -> I
   483 -> I
   484 -> I
   485 -> I
   486 -> I
-  487 -> R
-  488 -> R
+  487 -> I
+  488 -> L
   489 -> I
-  490 -> R
-  491 -> R
-  492 -> R
-  493 -> R
+  490 -> L
+  491 -> L
+  492 -> L
+  493 -> L
   494 -> I
-  495 -> R
-  496 -> R
+  495 -> L
+  496 -> I
   497 -> I
   498 -> I
-  499 -> R
-  500 -> R
+  499 -> L
+  500 -> I
   501 -> I
   502 -> I
   503 -> R
   504 -> I
   505 -> I
-  506 -> R
-  507 -> R
+  506 -> L
+  507 -> L
   508 -> I
   509 -> I
-  510 -> R
+  510 -> L
   511 -> I
   512 -> I
-  513 -> R
-  514 -> R
+  513 -> L
+  514 -> L
   515 -> I
   516 -> I
   517 -> I
-  518 -> R
+  518 -> L
   519 -> I
   520 -> I
   521 -> I
   522 -> I
   523 -> I
-  524 -> R
+  524 -> L
   525 -> I
   526 -> I
   527 -> I
-  528 -> R
+  528 -> L
   529 -> I
   530 -> I
   531 -> I
-  532 -> R
+  532 -> L
   533 -> I
   534 -> I
-  535 -> R
-  536 -> R
+  535 -> L
+  536 -> L
   537 -> I
   538 -> I
   539 -> I
-  540 -> R
+  540 -> L
   541 -> I
   542 -> I
   543 -> I
-  544 -> R
+  544 -> L
   545 -> I
   546 -> I
   547 -> I
-  548 -> R
+  548 -> L
   549 -> I
   550 -> I
   551 -> I
@@ -3675,109 +1869,109 @@ constructor Z :I Nat.
 
 constructor S :I (n :I Nat) -> Nat.
 
-constructor Fin :I Nat -> Type.
+constructor Fin :I (_ :I Nat) -> Type.
 
 constructor FZ :R (n :I Nat) -> Fin (S n).
 
-constructor FS :R (n :I Nat) -> Fin n -> Fin (S n).
+constructor FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
 
-constructor Vect :I Nat -> Type -> Type.
+constructor Vect :I (_ :I Nat) -> (_ :I Type) -> Type.
 
 constructor VN :R (a :I Type) -> Vect Z a.
 
-constructor VC :R (n :I Nat) -> (a :I Type) -> a -> Vect n a -> Vect (S n) a.
+constructor VC :R (n :I Nat) -> (a :I Type) -> (_ :R a) -> (_ :R Vect n a) -> Vect (S n) a.
 
-constructor TT :I Nat -> Type.
+constructor TT :I (_ :I Nat) -> Type.
 
-constructor V :R (n :I Nat) -> Fin n -> TT n.
+constructor V :R (n :I Nat) -> (_ :L Fin n) -> TT n.
 
-constructor Lam :R (n :I Nat) -> TT (S n) -> TT n.
+constructor Lam :R (n :I Nat) -> (_ :L TT (S n)) -> TT n.
 
-constructor App :R (n :I Nat) -> TT n -> TT n -> TT n.
+constructor App :R (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
 
-env :R (m :I Nat) -> (n :I Nat) -> Vect m (TT n) -> Fin m -> TT n {
+env :R (m :I Nat) -> (n :I Nat) -> (_ :R Vect m (TT n)) -> (_ :L Fin m) -> TT n {
   forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n))
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
-  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)) (i :R Fin m)
+  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)) (i :L Fin m)
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
-extendMap :R (m :I Nat) -> (n :I Nat) -> (Fin m -> Fin n) -> Fin (S m) -> Fin (S n) {
-  forall (m :I Nat) (n :I Nat) (f :R Fin m -> Fin n)
+extendMap :L (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L Fin (S m)) -> Fin (S n) {
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n)
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m :I Nat) (n :I Nat) (f :R Fin m -> Fin n) (i :R Fin m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
-mapVars :R (m :I Nat) -> (n :I Nat) -> (Fin m -> Fin n) -> TT m -> TT n {
-  forall (m :I Nat) (n :I Nat) (f :R Fin m -> Fin n) (i :R Fin m)
+mapVars :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L TT m) -> TT n {
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m :I Nat) (n :I Nat) (f :R Fin m -> Fin n) (x :R TT (S m))
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (x :L TT (S m))
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m :I Nat) (n :I Nat) (f :R Fin m -> Fin n) (g :R TT m) (x :R TT m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :L TT m)
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
-extendSubst :R (m :I Nat) -> (n :I Nat) -> (Fin m -> TT n) -> Fin (S m) -> TT (S n) {
-  forall (m :I Nat) (n :I Nat) (f :R Fin m -> TT n)
+extendSubst :L (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L Fin (S m)) -> TT (S n) {
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n)
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m :I Nat) (n :I Nat) (f :R Fin m -> TT n) (i :R Fin m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
-substVars :R (m :I Nat) -> (n :I Nat) -> (Fin m -> TT n) -> TT m -> TT n {
-  forall (m :I Nat) (n :I Nat) (f :R Fin m -> TT n) (i :R Fin m)
+substVars :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L TT m) -> TT n {
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
   substVars m n f (V [m] i) ~> f i
   
-  forall (m :I Nat) (n :I Nat) (f :R Fin m -> TT n) (x :R TT (S m))
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (x :L TT (S m))
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m :I Nat) (n :I Nat) (f :R Fin m -> TT n) (g :R TT m) (x :R TT m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :L TT m)
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
 testTm :R TT (S Z) {
-  testTm ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
+  testTm  ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
 }
 
 example1 :R TT Z {
-  example1 ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
+  example1  ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
 }
 
-substTop :R (n :I Nat) -> TT n -> Fin (S n) -> TT n {
+substTop :L (n :I Nat) -> (_ :R TT n) -> (_ :L Fin (S n)) -> TT n {
   forall (n :I Nat) (tm :R TT n)
   substTop n tm (FZ [n]) ~> tm
   
-  forall (n :I Nat) (tm :R TT n) (i :R Fin n)
+  forall (n :I Nat) (tm :R TT n) (i :L Fin n)
   substTop n tm (FS [n] i) ~> V n i
 }
 
-redex :L (m :I Nat) -> TT m -> TT m -> TT m {
-  forall (m :I Nat) (y :R TT (S m)) (x :R TT m)
+redex :L (m :I Nat) -> (_ :L TT m) -> (_ :L TT m) -> TT m {
+  forall (m :I Nat) (y :L TT (S m)) (x :L TT m)
   redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
   
-  forall (m :I Nat) (f' :R TT m) (x :R TT m)
+  forall (m :I Nat) (f' :L TT m) (x :L TT m)
   redex m f' x ~> App m f' (nf m x)
 }
 
-nf :R (m :I Nat) -> TT m -> TT m {
-  forall (m :I Nat) (i :R Fin m)
+nf :R (m :I Nat) -> (_ :L TT m) -> TT m {
+  forall (m :I Nat) (i :L Fin m)
   nf m (V [m] i) ~> V m i
   
-  forall (m :I Nat) (x :R TT (S m))
+  forall (m :I Nat) (x :L TT (S m))
   nf m (Lam [m] x) ~> Lam m (nf (S m) x)
   
-  forall (m :I Nat) (f :R TT m) (x :R TT m)
+  forall (m :I Nat) (f :L TT m) (x :L TT m)
   nf m (App [m] f x) ~> redex m f x
 }
 
 example2 :R TT (S Z) {
-  example2 ~> nf (S Z) testTm
+  example2  ~> nf (S Z) testTm
 }
 
 constructor Result :I Type.
@@ -3785,14 +1979,12 @@ constructor Result :I Type.
 constructor R :L (x :R TT Z) -> (y :R TT (S Z)) -> Result.
 
 main :R Result {
-  main ~> R example1 example2
+  main  ~> R example1 example2
 }
 
 ###############
 # Final check #
 ###############
-
-** OK **
 
 ##########
 # Erased #
@@ -3800,89 +1992,89 @@ main :R Result {
 
 constructor FZ : Fin.
 
-constructor FS : _ -> Fin.
+constructor FS : (_) -> Fin.
 
 constructor VN : Vect.
 
-constructor VC : _ -> _ -> Vect.
+constructor VC : (_) -> (_) -> Vect.
 
-constructor V : _ -> TT.
+constructor V : (_) -> TT.
 
-constructor Lam : _ -> TT.
+constructor Lam : (_) -> TT.
 
-constructor App : _ -> _ -> TT.
+constructor App : (_) -> (_) -> TT.
 
-env : _ -> _ -> TT {
+env : (_) -> (_) -> TT {
   forall (x) (xs)
-  env (VC x xs) FZ ~> x
+  env FZ ~> x
   
   forall (x) (xs) (i)
-  env (VC x xs) (FS i) ~> env xs i
+  env (FS i) ~> env i
 }
 
-extendMap : _ -> _ -> Fin {
+extendMap : (_) -> (_) -> Fin {
   forall (f)
-  extendMap f FZ ~> FZ
+  extendMap FZ ~> FZ
   
   forall (f) (i)
-  extendMap f (FS i) ~> FS (f i)
+  extendMap (FS i) ~> FS (f i)
 }
 
-mapVars : _ -> _ -> TT {
+mapVars : (_) -> (_) -> TT {
   forall (f) (i)
-  mapVars f (V i) ~> V (f i)
+  mapVars (V i) ~> V (f i)
   
   forall (f) (x)
-  mapVars f (Lam x) ~> Lam (mapVars (extendMap f) x)
+  mapVars (Lam x) ~> Lam (mapVars x)
   
   forall (f) (g) (x)
-  mapVars f (App g x) ~> App (mapVars f g) (mapVars f x)
+  mapVars (App g x) ~> App (mapVars g) (mapVars x)
 }
 
-extendSubst : _ -> _ -> TT {
+extendSubst : (_) -> (_) -> TT {
   forall (f)
-  extendSubst f FZ ~> V FZ
+  extendSubst FZ ~> V FZ
   
   forall (f) (i)
-  extendSubst f (FS i) ~> mapVars FS (f i)
+  extendSubst (FS i) ~> mapVars (f i)
 }
 
-substVars : _ -> _ -> TT {
+substVars : (_) -> (_) -> TT {
   forall (f) (i)
-  substVars f (V i) ~> f i
+  substVars (V i) ~> f i
   
   forall (f) (x)
-  substVars f (Lam x) ~> Lam (substVars (extendSubst f) x)
+  substVars (Lam x) ~> Lam (substVars x)
   
   forall (f) (g) (x)
-  substVars f (App g x) ~> App (substVars f g) (substVars f x)
+  substVars (App g x) ~> App (substVars g) (substVars x)
 }
 
 testTm : TT {
-  testTm ~> App (Lam (App (V FZ) (V (FS FZ)))) (Lam (App (V (FS FZ)) (V FZ)))
+  testTm  ~> App (Lam (App (V FZ) (V (FS FZ)))) (Lam (App (V (FS FZ)) (V FZ)))
 }
 
 example1 : TT {
-  example1 ~> substVars (env (VC (Lam (V FZ)) VN)) testTm
+  example1  ~> substVars testTm
 }
 
-substTop : _ -> _ -> TT {
+substTop : (_) -> (_) -> TT {
   forall (tm)
-  substTop tm FZ ~> tm
+  substTop FZ ~> tm
   
   forall (tm) (i)
-  substTop tm (FS i) ~> V i
+  substTop (FS i) ~> V i
 }
 
-redex : _ -> _ -> TT {
+redex : (_) -> (_) -> TT {
   forall (y) (x)
-  redex (Lam y) x ~> nf (substVars (substTop (nf x)) y)
+  redex (Lam y) x ~> nf (substVars y)
   
   forall (f') (x)
   redex f' x ~> App f' (nf x)
 }
 
-nf : _ -> TT {
+nf : (_) -> TT {
   forall (i)
   nf (V i) ~> V i
   
@@ -3894,13 +2086,13 @@ nf : _ -> TT {
 }
 
 example2 : TT {
-  example2 ~> nf testTm
+  example2  ~> nf testTm
 }
 
 constructor R : (x) -> (y) -> Result.
 
 main : Result {
-  main ~> R example1 example2
+  main  ~> R
 }
 
 ################
@@ -3911,4 +2103,4 @@ Unerased, reduced:
 R (App Z (Lam Z (App (S Z) (V (S Z) (FZ Z)) (Lam (S Z) (V (S (S Z)) (FZ (S Z)))))) (Lam Z (App (S Z) (Lam (S Z) (V (S (S Z)) (FZ (S Z)))) (V (S Z) (FZ Z))))) (App (S Z) (V (S Z) (FZ Z)) (V (S Z) (FZ Z)))
 
 Erased, reduced:
-R (App (Lam (App (V FZ) (Lam (V FZ)))) (Lam (App (Lam (V FZ)) (V FZ)))) (App (V FZ) (V FZ))
+R

@@ -28,13 +28,13 @@ true : (x : Bool) -> Bool {
   true x ~> True
 }
 
-apply : (f : Bool -> Bool) -> (y : Bool) -> Bool {
-  forall (f : Bool -> Bool) (y : Bool)
+apply : (f : (_ : Bool) -> Bool) -> (y : Bool) -> Bool {
+  forall (f : (_ : Bool) -> Bool) (y : Bool)
   apply f y ~> f y
 }
 
 main :L Pair {
-  main ~> P (apply not (true False)) (apply false (true False))
+  main  ~> P (apply not (true False)) (apply false (true False))
 }
 
 #############
@@ -67,13 +67,13 @@ true :31 (x :32 Bool) -> Bool {
   true x ~> True
 }
 
-apply :5 (f :6 Bool -> Bool) -> (y :8 Bool) -> Bool {
-  forall (f :10 Bool -> Bool) (y :9 Bool)
+apply :5 (f :6 (_ :7 Bool) -> Bool) -> (y :8 Bool) -> Bool {
+  forall (f :10 (_ :11 Bool) -> Bool) (y :9 Bool)
   apply f y ~> f y
 }
 
 main :L Pair {
-  main ~> P (apply not (true False)) (apply false (true False))
+  main  ~> P (apply not (true False)) (apply false (true False))
 }
 
 Running erasure inference...
@@ -82,170 +82,182 @@ Running erasure inference...
 # Inferred constraints #
 ########################
 
-Sums:
-  L ≥ Sum
-    product  [I]
-    product  [I]
-  0 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-  1 ≥ Sum
-    product  []
-    product  []
-    product  [20, 21, 23]
-    product  [19, 24, 26]
-  2 ≥ Sum
-    product  []
-  3 ≥ Sum
-    product  [I]
-    product  [I]
-  4 ≥ Sum
-    product  []
-    product  []
-  5 ≥ Sum
-    product  [20]
-    product  [19]
-  6 ≥ Sum
-    product  [I]
-  7 ≥ Sum
-    product  [I]
-  8 ≥ Sum
-    product  [I]
-  9 ≥ Sum
-    product  [I]
-    product  [14]
-  10 ≥ Sum
-    product  [I]
-    product  [I]
-    product  []
-  11 ≥ Sum
-    product  [I]
-    product  [I]
-  15 ≥ Sum
-    product  [19, 25]
-  16 ≥ Sum
-    product  [I]
-    product  [I]
-  17 ≥ Sum
-    product  [I]
-  27 ≥ Sum
-    product  [20, 22]
-  28 ≥ Sum
-    product  [I]
-    product  [I]
-  31 ≥ Sum
-    product  [20, 21]
-    product  [19, 24]
-  32 ≥ Sum
-    product  [I]
-  33 ≥ Sum
-    product  [I]
-
-Maxes:
-  L ≥ Max
-    product  [20]
-    product  [19]
-  6 ≥ Max
-    product  [12]
-    product  [22]
-    product  [25]
-  7 ≥ Max
-    product  [11]
-    product  [28]
-    product  [16]
-  8 ≥ Max
-    product  [13]
-    product  [21]
-    product  [24]
-  9 ≥ Max
-    product  [13]
-  10 ≥ Max
-    product  [12]
-  11 ≥ Max
-    product  [7]
-    product  [14]
-  12 ≥ Max
-    product  [10]
-    product  [6]
-  13 ≥ Max
-    product  [9]
-    product  [8]
-  14 ≥ Max
-    product  [11]
-  16 ≥ Max
-    product  [18]
-    product  [7]
-  17 ≥ Max
-    product  [18]
-  18 ≥ Max
-    product  [17]
-    product  [16]
-  19 ≥ Max
-    product  [L]
-  20 ≥ Max
-    product  [L]
-  21 ≥ Max
-    product  [8]
-  22 ≥ Max
-    product  [6]
-  23 ≥ Max
-    product  [32]
-  24 ≥ Max
-    product  [8]
-  25 ≥ Max
-    product  [6]
-  26 ≥ Max
-    product  [32]
-  28 ≥ Max
-    product  [29]
-    product  [30]
-    product  [7]
-  29 ≥ Max
-    product  [L]
-    product  [28]
-  30 ≥ Max
-    product  [L]
-    product  [28]
-  32 ≥ Max
-    product  [34]
-    product  [23]
-    product  [26]
-  33 ≥ Max
-    product  [34]
-  34 ≥ Max
-    product  [33]
-    product  [32]
-
+1 ≥ sum
+  product []
+  product []
+  product [32, 8, L]
+  product [32, 8, L]
+2 ≥ sum
+  product []
+4 ≥ sum
+  product []
+  product []
+5 ≥ sum
+  product [L]
+  product [L]
+15 ≥ sum
+  product [6, L]
+27 ≥ sum
+  product [6, L]
+31 ≥ sum
+  product [8, L]
+  product [8, L]
+28 ~ 29
+product [28] ≥ sum
+  product [L]
+28 ~ 30
+product [28] ≥ sum
+  product [L]
+17 ~ product [16]
+16 ~ 18
+17 ≥ sum
+33 ~ product [32]
+32 ~ 34
+33 ≥ sum
+10 ~ product [6]
+9 ~ product [8]
+6 ~ 12
+7 ~ 11
+8 ~ 13
+10 ≥ sum
+  product []
+9 ≥ sum
+  product [11]
+11 ~ 14
+L ~ 20
+6 ~ 22
+7 ~ 28
+8 ~ 21
+32 ~ 23
+L ~ 19
+6 ~ 25
+7 ~ 16
+8 ~ 24
+32 ~ 26
 #######################
 # Deferred equalities #
 #######################
 
 
   -> iteration 1
+    -> No more equalities, fixed point reached.
 
-######################
-# Unsatisfiable core #
-######################
+###################
+# Final valuation #
+###################
 
-L ≥ Sum
-  product  [I]
-  product  [I]
+  1 -> R
+  2 -> L
+  4 -> R
+  5 -> R
+  6 -> L
+  7 -> R
+  8 -> I
+  9 -> I
+  10 -> L
+  11 -> I
+  12 -> L
+  13 -> I
+  14 -> I
+  15 -> L
+  16 -> I
+  17 -> I
+  18 -> I
+  19 -> L
+  20 -> L
+  21 -> I
+  22 -> L
+  23 -> I
+  24 -> I
+  25 -> L
+  26 -> I
+  27 -> L
+  28 -> L
+  29 -> L
+  30 -> L
+  31 -> I
+  32 -> I
+  33 -> I
+  34 -> I
 
-error: inconsistent constraints
+#####################
+# Annotated program #
+#####################
+
+constructor Bool :I Type.
+
+constructor True :R Bool.
+
+constructor False :R Bool.
+
+constructor Pair :I Type.
+
+constructor P :L (x :L Bool) -> (y :L Bool) -> Pair.
+
+not :L (x :L Bool) -> Bool {
+  not True ~> False
+  
+  not False ~> True
+}
+
+false :L (x :I Bool) -> Bool {
+  forall (x :I Bool)
+  false x ~> False
+}
+
+true :I (x :I Bool) -> Bool {
+  forall (x :I Bool)
+  true x ~> True
+}
+
+apply :R (f :L (_ :R Bool) -> Bool) -> (y :I Bool) -> Bool {
+  forall (f :L (_ :I Bool) -> Bool) (y :I Bool)
+  apply f y ~> f y
+}
+
+main :L Pair {
+  main  ~> P (apply not (true False)) (apply false (true False))
+}
+
+###############
+# Final check #
+###############
+
+##########
+# Erased #
+##########
+
+constructor True : Bool.
+
+constructor False : Bool.
+
+constructor P : (x) -> (y) -> Pair.
+
+not : (x) -> Bool {
+  not True ~> False
+  
+  not False ~> True
+}
+
+false : Bool {
+  false  ~> False
+}
+
+apply : (f) -> Bool {
+  forall (f)
+  apply f ~> f
+}
+
+main : Pair {
+  main  ~> P (apply not) (apply false)
+}
+
+################
+# NF of `main` #
+################
+
+Unerased, reduced:
+P False False
+
+Erased, reduced:
+P not False

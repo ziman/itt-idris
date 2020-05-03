@@ -8,7 +8,7 @@ constructor True : Bool.
 
 constructor False : Bool.
 
-and : Bool -> Bool -> Bool {
+and : (_ : Bool) -> (_ : Bool) -> Bool {
   and True True ~> True
   
   and True False ~> False
@@ -32,7 +32,7 @@ constructor True :4 Bool.
 
 constructor False :2 Bool.
 
-and :5 Bool -> Bool -> Bool {
+and :5 (_ :6 Bool) -> (_ :7 Bool) -> Bool {
   and True True ~> True
   
   and True False ~> False
@@ -52,77 +52,103 @@ Running erasure inference...
 # Inferred constraints #
 ########################
 
-Sums:
-  L ≥ Sum
-    product  [I]
-  0 ≥ Sum
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-    product  [I]
-  2 ≥ Sum
-    product  []
-    product  []
-    product  []
-  3 ≥ Sum
-    product  [I]
-  4 ≥ Sum
-    product  []
-  6 ≥ Sum
-    product  [I]
-  7 ≥ Sum
-    product  [I]
-
-Maxes:
-  6 ≥ Max
-    product  [8]
-    product  [10]
-    product  [12]
-    product  [14]
-  7 ≥ Max
-    product  [9]
-    product  [11]
-    product  [13]
-    product  [15]
-  8 ≥ Max
-    product  [L]
-    product  [6]
-  9 ≥ Max
-    product  [L]
-    product  [7]
-  10 ≥ Max
-    product  [L]
-    product  [6]
-  11 ≥ Max
-    product  [L]
-    product  [7]
-  12 ≥ Max
-    product  [L]
-    product  [6]
-  13 ≥ Max
-    product  [L]
-    product  [7]
-  14 ≥ Max
-    product  [L]
-    product  [6]
-  15 ≥ Max
-    product  [L]
-    product  [7]
-
+2 ≥ sum
+  product []
+  product []
+  product []
+4 ≥ sum
+  product []
+6 ~ 8
+product [6] ≥ sum
+  product [L]
+7 ~ 9
+product [7] ≥ sum
+  product [L]
+6 ~ 10
+product [6] ≥ sum
+  product [L]
+7 ~ 11
+product [7] ≥ sum
+  product [L]
+6 ~ 12
+product [6] ≥ sum
+  product [L]
+7 ~ 13
+product [7] ≥ sum
+  product [L]
+6 ~ 14
+product [6] ≥ sum
+  product [L]
+7 ~ 15
+product [7] ≥ sum
+  product [L]
 #######################
 # Deferred equalities #
 #######################
 
 
   -> iteration 1
+    -> No more equalities, fixed point reached.
 
-######################
-# Unsatisfiable core #
-######################
+###################
+# Final valuation #
+###################
 
-L ≥ Sum
-  product  [I]
+  2 -> R
+  4 -> L
+  6 -> L
+  7 -> L
+  8 -> L
+  9 -> L
+  10 -> L
+  11 -> L
+  12 -> L
+  13 -> L
+  14 -> L
+  15 -> L
 
-error: inconsistent constraints
+#####################
+# Annotated program #
+#####################
+
+constructor Bool :I Type.
+
+constructor True :L Bool.
+
+constructor False :R Bool.
+
+and :I (_ :L Bool) -> (_ :L Bool) -> Bool {
+  and True True ~> True
+  
+  and True False ~> False
+  
+  and False True ~> False
+  
+  and False False ~> False
+}
+
+constructor T :I Type.
+
+constructor C :I (x :L Bool) -> T.
+
+###############
+# Final check #
+###############
+
+##########
+# Erased #
+##########
+
+constructor True : Bool.
+
+constructor False : Bool.
+
+################
+# NF of `main` #
+################
+
+Unerased, reduced:
+main
+
+Erased, reduced:
+main

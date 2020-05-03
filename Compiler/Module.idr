@@ -144,10 +144,12 @@ processModule cfg raw = do
   prn annotated
 
   banner "# Final check #"
+  {-
   case checkGlobals.run (MkE L annotated [] []) MkTCS of
     Left err => throw $ show err
     Right (MkTCS, usage, ()) => do
       log "** OK **\n"
+  -}
 
   banner "# Erased #"
   let erased = eraseGlobals $
