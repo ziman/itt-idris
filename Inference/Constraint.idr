@@ -17,7 +17,7 @@ Backtrace = List String
 
 public export
 data Constr : Type where
-  CSumLeq :
+  CProdSumLeq :
     (lhs : List (List Evar))
     -> (rhs : Evar)
     -> Constr
@@ -27,7 +27,7 @@ data Constr : Type where
     -> (rhs : Evar)
     -> Constr
 
-  CSumLeqProd :
+  CProdSumLeqProd :
     (lhs : List (List Evar))
     -> (rhs : List Evar)
     -> Constr
@@ -36,14 +36,14 @@ data Constr : Type where
 
 export
 Pretty () Constr where
-  pretty () (CSumLeq lhs rhs) =
+  pretty () (CProdSumLeq lhs rhs) =
     text (show rhs) <++> text "≥ sum"
     $$ indentBlock
         [ text "product" <++> text (show term)
         | term <- lhs
         ]
 
-  pretty () (CSumLeqProd lhs rhs) =
+  pretty () (CProdSumLeqProd lhs rhs) =
     text "product" <++> text (show rhs) <++> text "≥ sum"
     $$ indentBlock
         [ text "product" <++> text (show term)

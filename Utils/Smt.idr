@@ -323,17 +323,21 @@ lit : SmtValue a => a -> Smt a
 lit = MkSmt . smtShow
 
 export
-assert : Maybe al -> Smt Bool -> SmtM al ()
-assert Nothing (MkSmt x) = tellL [A "assert", x]
-assert (Just label) (MkSmt x) = do
+assert' : Maybe al -> Smt Bool -> SmtM al ()
+assert' Nothing (MkSmt x) = tellL [A "assert", x]
+assert' (Just label) (MkSmt x) = do
   nr <- freshAssertionNr label
   tellL [A "assert", L [A "!", x, A ":named", smtShow nr]]
 
 export
+assert : al -> Smt Bool -> SmtM al ()
+assert = assert' . Just
+
+export
 assertEq : (SmtValue a, SmtValue b)
-    => Maybe al -> Smt a -> Smt b
+    => al -> Smt a -> Smt b
     -> SmtM al ()
-assertEq mbLabel x y = assert mbLabel $ x .== y
+assertEq label x y = assert label $ x .== y
 
 export
 smtError : String -> Smt a
@@ -369,7 +373,7 @@ defineEnumFun2 n ta tb tc f = do
   g <- declFun2 n ta tb tc
   for_ smtEnumValues $ \x =>
     for_ smtEnumValues $ \y =>
-      assertEq Nothing (g (lit x) (lit y)) (lit $ f x y)
+      assert' Nothing $ g (lit x) (lit y) .== lit (f x y)
   pure g
 
 export

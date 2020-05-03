@@ -35,7 +35,8 @@ eNums (c :: cs) = eNumsC c <+> eNums cs
     ev (EV i) = SortedSet.insert i neutral
 
     eNumsC : Constr -> SortedSet ENum
-    eNumsC (MkC agg bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
+    eNumsC c = ?rhs
+    -- eNumsC (MkC agg bt gs v) = concat $ map ev (v :: SortedSet.toList gs)
 
 declVars : SmtType Q -> List ENum -> SmtM Doc (SortedMap ENum (Smt Q))
 declVars smtQ [] = pure $ SortedMap.empty
@@ -59,7 +60,7 @@ model disableL cs = do
 
   when disableL $ do
     for_ (toList ens) $ \(en, qv) => do
-      assert (Just . text $ "linearity for " ++ show en) $
+      assert (text $ "--disable-L for " ++ show en) $
         not (qv .== lit Quantity.L)
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
@@ -69,14 +70,12 @@ model disableL cs = do
   let product = foldMap mul (lit semi1) ev
   let prodSum = foldMap add (lit semi0) product
 
-  for_ ccs.sums $ \c =>
-    assert (Just $ pretty () c) $
-      prodSum c.inputs `leq` ev c.result
-
-  for_ ccs.maxes $ \c =>
-    for_ c.inputs $ \gs =>
-      assert (Just $ pretty () c) $
-        product gs `leq` ev c.result
+  for_ cs $ \c =>
+    assert (pretty () c) $ case c of
+      CProdSumLeqProd lhs rhs => prodSum lhs `leq` product rhs
+      CProdSumLeq lhs rhs => prodSum lhs `leq` ev rhs
+      CProdEq lhs rhs => product lhs .== ev rhs
+      CEq lhs rhs => ev lhs `leq` ev rhs
 
   minimise $ numberOf R
   minimise $ numberOf L
@@ -89,9 +88,6 @@ model disableL cs = do
   foldMap op neutr f [] = neutr
   foldMap op neutr f [x] = f x
   foldMap op neutr f (x :: xs) = f x `op` foldMap op neutr f xs
-
-  ccs : CollectedConstrs
-  ccs = collect cs
 
 export
 solve : Bool -> List Constr -> IO (Either Error (SortedMap ENum Q))

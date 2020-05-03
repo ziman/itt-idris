@@ -194,7 +194,7 @@ withBndR b@(B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
     Left fail
       => Left fail
     Right (MkR st' cs eqs (lu :: lus) gus x)
-      => Right (MkR st (CSumLeq lu q :: cs) eqs lus gus x)
+      => Right (MkR st (CProdSumLeq lu q :: cs) eqs lus gus x)
 
 withCtxR : Context Evar n -> TCR n a -> TCC Z a
 withCtxR (b :: bs) tc = withCtxR bs $ withBndR b tc
@@ -255,7 +255,7 @@ useCtorTag q = MkTC $ \env, st =>
   --   product guards >= q
   --
   -- For forced patterns, q = I; for checking patterns, q = L
-  Right (MkR st [CSumLeqProd [[QQ q]] env.guards] [] (noLU env.context) empty ())
+  Right (MkR st [CProdSumLeqProd [[QQ q]] env.guards] [] (noLU env.context) empty ())
 
 irrelevant : TC lu n a -> TC lu' n a
 irrelevant (MkTC f) = MkTC $ \env, st =>
