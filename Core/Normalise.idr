@@ -102,7 +102,7 @@ mutual
         -- TODO: check that cn is actually a constructor
         -- if not, we should be stuck!
         if ctorMatches ctor cn
-          then case zipMatch (snd <$> ps) (snd <$> args) of
+          then case zipMatch ps args of
             Just psArgs =>
               let psa = fromList psArgs
                 in matchPats s (fst <$> psa) (snd <$> psa)
@@ -126,7 +126,7 @@ mutual
 
 matchClause : Clause q argn -> Vect argn (TT q n) -> Outcome (TT q n)
 matchClause clause args =
-  matchPats (\_ => Nothing) (snd <$> clause.lhs) args >>=
+  matchPats (\_ => Nothing) clause.lhs args >>=
     \s => case fromSubst s of
       Nothing => Error UnmatchedPatVar
       Just vs => Match $ subst (\i => lookup i vs) clause.rhs
@@ -139,13 +139,6 @@ matchClauses args (c :: cs) =
     Mismatch => matchClauses args cs
     Stuck => Stuck
     Error e => Error e
-
-covering
-mapArgs :
-    (TT q n -> Either EvalError (TT q n))
-    -> List (q, TT q n)
-    -> Either EvalError (List (q, TT q n))
-mapArgs nf = traverse (\(q', tm) => nf tm >>= \tmNF => Right (q', tmNF))
 
 public export
 data Form = NF | WHNF
@@ -171,17 +164,17 @@ mutual
   red   NF gs (Pi (B n q ty) rhs) = do
     tyNF <- red NF gs ty
     Pi (B n q tyNF) <$> red NF gs rhs
-  red rf gs (App q f x) =
+  red rf gs (App f x) =
     red WHNF gs f >>= \case
       Lam b rhs => do
         xNF <- red operandForm gs x
         red rf gs $ subst (substFZ xNF) rhs
-      fWHNF => case unApply' q fWHNF x of
+      fWHNF => case unApply' fWHNF x of
         (P n, args) => case .body <$> lookup n gs of
           Nothing => Left $ UnknownGlobal n
           Just (Clauses argn cs) => case maybeTake argn args of
             Just (fargs, rest) => do
-              fargsRed <- traverse (red operandForm gs . snd) fargs
+              fargsRed <- traverse (red operandForm gs) fargs
               case matchClauses fargsRed cs of
                 Match fx => red rf gs $ mkApp fx rest
                 Mismatch => Left $ NoMatchingClause n
@@ -193,6 +186,6 @@ mutual
   red rf gs Erased = pure Erased
 
   covering
-  stuckTm : Form -> Globals q -> Name -> List (q, TT q n) -> Either EvalError (TT q n)
+  stuckTm : Form -> Globals q -> Name -> List (TT q n) -> Either EvalError (TT q n)
   stuckTm WHNF gs n args = pure $ mkApp (P n) args
-  stuckTm   NF gs n args = mkApp (P n) <$> mapArgs (red NF gs) args
+  stuckTm   NF gs n args = mkApp (P n) <$> traverse (red NF gs) args
