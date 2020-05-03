@@ -108,12 +108,12 @@ OrdSemiring Q where
   (.*.) p q = case (p, q) of
     (I, q) => I
     (q, I) => I
-    (R, q) => q
-    (q, R) => q
-    (E, L) => E
-    (L, E) => E
+    (L, q) => q
+    (q, L) => q
     (E, E) => E
-    (L, L) => L
+    (E, R) => E
+    (R, E) => E
+    (R, R) => R
 
   -- this is dodgy
   -- is L .\/. R still R in a non-affine system?

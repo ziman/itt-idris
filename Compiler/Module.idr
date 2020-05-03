@@ -118,7 +118,7 @@ processModule cfg raw = do
   cs <- case inferGlobals.run (MkE [] evarified [] []) MkTCS of
     Left err => throw $ show err
     Right (MkR st cs eqs lu gu ()) =>
-      case toConstrs evarified gu of
+      case toConstrs evarified $ addMain gu of
         Left n => throw $ "constraint for non-existent global: " ++ show n
         Right gcs => pure $ MkConstrs (gcs ++ cs) eqs
 
@@ -143,8 +143,8 @@ processModule cfg raw = do
   banner "# Annotated program #"
   prn annotated
 
-  banner "# Final check #"
   {-
+  banner "# Final check #"
   case checkGlobals.run (MkE L annotated [] []) MkTCS of
     Left err => throw $ show err
     Right (MkTCS, usage, ()) => do

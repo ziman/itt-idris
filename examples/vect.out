@@ -18,7 +18,7 @@ constructor Vect : (_ : Nat) -> Type.
 
 constructor Nil : Vect Z.
 
-constructor Cons : (n :I Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
+constructor Cons : (n : Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
 
 length : (n : Nat) -> (_ : Vect n) -> Nat {
   length {Z} Nil ~> Z
@@ -27,7 +27,7 @@ length : (n : Nat) -> (_ : Vect n) -> Nat {
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
-main :L Nat {
+main : Nat {
   main  ~> length (S Z) (Cons Z True Nil)
 }
 
@@ -37,30 +37,30 @@ main :L Nat {
 
 constructor Bool :0 Type.
 
-constructor True :12 Bool.
+constructor True :13 Bool.
 
-constructor False :7 Bool.
+constructor False :8 Bool.
 
-constructor Nat :8 Type.
+constructor Nat :9 Type.
 
-constructor Z :15 Nat.
+constructor Z :16 Nat.
 
-constructor S :11 (n :L Nat) -> Nat.
+constructor S :12 (n :L Nat) -> Nat.
 
-constructor Vect :13 (_ :14 Nat) -> Type.
+constructor Vect :14 (_ :15 Nat) -> Type.
 
-constructor Nil :9 Vect Z.
+constructor Nil :10 Vect Z.
 
-constructor Cons :1 (n :I Nat) -> (_ :2 Bool) -> (_ :3 Vect n) -> Vect (S n).
+constructor Cons :1 (n :2 Nat) -> (_ :3 Bool) -> (_ :4 Vect n) -> Vect (S n).
 
-length :16 (n :17 Nat) -> (_ :18 Vect n) -> Nat {
+length :17 (n :18 Nat) -> (_ :19 Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n :25 Nat) (x :24 Bool) (xs :22 Vect n)
+  forall (n :26 Nat) (x :25 Bool) (xs :23 Vect n)
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
-main :L Nat {
+main :36 Nat {
   main  ~> length (S Z) (Cons Z True Nil)
 }
 
@@ -71,72 +71,74 @@ Running erasure inference...
 ########################
 
 1 ≥ sum
-  product [18]
-9 ≥ sum
-  product [3, 18]
-11 ≥ sum
-  product []
-  product [17]
+  product [19]
+10 ≥ sum
+  product [4, 19]
 12 ≥ sum
-  product [2, 18]
-15 ≥ sum
   product []
-  product [L, 17]
-  product [I, 18]
+  product [18]
+13 ≥ sum
+  product [3, 19]
 16 ≥ sum
+  product []
+  product [L, 18]
+  product [2, 19]
+17 ≥ sum
   product [L]
   product []
-14 ~ 10
-14 ~ 4
-14 ~ 5
-L ~ 6
-14 ~ 19
-17 ~ 20
-product [17] ≥ sum
-  product [I]
+36 ≥ sum
+  product []
+15 ~ 11
+15 ~ 5
+15 ~ 6
+L ~ 7
+15 ~ 20
 18 ~ 21
 product [18] ≥ sum
-  product [L]
-19 ~ 10
-14 ~ 23
-25 ~ product [L, 17]
-24 ~ product [2, 18]
-22 ~ product [3, 18]
-17 ~ 26
-product [17] ≥ sum
   product [I]
-L ~ 27
-18 ~ 28
-product [18] ≥ sum
+19 ~ 22
+product [19] ≥ sum
   product [L]
-I ~ 29
+20 ~ 11
+15 ~ 24
+26 ~ product [L, 18]
+25 ~ product [3, 19]
+23 ~ product [4, 19]
+18 ~ 27
+product [18] ≥ sum
+  product [I]
+L ~ 28
+19 ~ 29
+product [19] ≥ sum
+  product [L]
 2 ~ 30
 3 ~ 31
-4 ~ 23
-19 ~ 5
-25 ≥ sum
-  product [17, L]
-24 ≥ sum
-22 ≥ sum
+4 ~ 32
+5 ~ 24
+20 ~ 6
+26 ≥ sum
   product [18, L]
-L ~ 32
-17 ~ 34
-18 ~ 33
-19 ~ 23
-17 ~ 36
-L ~ 37
+25 ≥ sum
+23 ≥ sum
+  product [19, L]
+L ~ 33
 18 ~ 35
-I ~ 40
-2 ~ 39
-3 ~ 38
-4 ~ 10
-19 ~ 5
+19 ~ 34
+20 ~ 24
+18 ~ 38
+L ~ 39
+19 ~ 37
+2 ~ 42
+3 ~ 41
+4 ~ 40
+5 ~ 11
+20 ~ 6
 #######################
 # Deferred equalities #
 #######################
 
-5 -> S n ~ S n
-5 -> S Z ~ S Z
+6 -> S n ~ S n
+6 -> S Z ~ S Z
 
   -> iteration 1
     -> No more equalities, fixed point reached.
@@ -147,41 +149,43 @@ I ~ 40
 
   1 -> L
   2 -> I
-  3 -> L
-  4 -> I
+  3 -> I
+  4 -> L
   5 -> I
-  6 -> L
-  9 -> L
-  10 -> I
-  11 -> L
-  12 -> I
-  14 -> I
-  15 -> L
-  16 -> R
-  17 -> I
-  18 -> L
-  19 -> I
+  6 -> I
+  7 -> L
+  10 -> L
+  11 -> I
+  12 -> L
+  13 -> I
+  15 -> I
+  16 -> L
+  17 -> R
+  18 -> I
+  19 -> L
   20 -> I
-  21 -> L
+  21 -> I
   22 -> L
-  23 -> I
+  23 -> L
   24 -> I
   25 -> I
   26 -> I
-  27 -> L
+  27 -> I
   28 -> L
-  29 -> I
+  29 -> L
   30 -> I
-  31 -> L
+  31 -> I
   32 -> L
   33 -> L
-  34 -> I
-  35 -> L
-  36 -> I
+  34 -> L
+  35 -> I
+  36 -> L
   37 -> L
-  38 -> L
-  39 -> I
-  40 -> I
+  38 -> I
+  39 -> L
+  40 -> L
+  41 -> I
+  42 -> I
 
 #####################
 # Annotated program #
@@ -215,10 +219,6 @@ length :R (n :I Nat) -> (_ :L Vect n) -> Nat {
 main :L Nat {
   main  ~> length (S Z) (Cons Z True Nil)
 }
-
-###############
-# Final check #
-###############
 
 ##########
 # Erased #

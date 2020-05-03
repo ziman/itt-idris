@@ -97,6 +97,8 @@ Running erasure inference...
   product [L]
 15 ≥ sum
   product [6, L]
+L ≥ sum
+  product []
 27 ≥ sum
   product [6, L]
 31 ≥ sum
@@ -218,10 +220,6 @@ apply :R (f :L (_ :R Bool) -> Bool) -> (y :R Bool) -> Bool {
 main :L Pair {
   main  ~> P (apply not (true False)) (apply false (true False))
 }
-
-###############
-# Final check #
-###############
 
 ##########
 # Erased #

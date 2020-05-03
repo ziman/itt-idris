@@ -104,3 +104,7 @@ toConstrs gs = traverse toConstr . toList
       case lookup n gs of
         Just d => Right $ CProdSumLeq gss d.binding.qv
         Nothing => Left n
+
+export
+addMain : SortedMap Name (List (List Evar)) -> SortedMap Name (List (List Evar))
+addMain = insert (UN "main") [[]]  -- exactly one use of main
