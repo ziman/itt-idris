@@ -32,7 +32,7 @@ newlyReachableEqs vs (eq@(DeferEq g _ _ _ _) :: eqs) =
       Just True => (eq :: reached, unknown)  -- newly reached!
       Just False => (reached, unknown)       -- definitely unreachable, drop it
 
-covering export
+covering
 iterConstrs :
     Config
     -> Int
@@ -74,6 +74,10 @@ iterConstrs cfg i gs cs st = do
             -- prepend for efficiency
             (MkConstrs (cs' ++ cs.constrs) (eqs' ++ waitingEqs))
             st'
+
+covering export
+solve : Config -> Globals Evar -> Constrs -> ITT (SortedMap ENum Q)
+solve cfg gs cs = iterConstrs cfg 1 gs cs MkTCS
 
 export
 substQ : SortedMap ENum Q -> Evar -> Maybe Q

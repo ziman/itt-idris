@@ -55,7 +55,8 @@ processModule cfg raw = do
   banner "# Deferred equalities #"
   log $ unlines $ map show cs.deferredEqs
 
-  vals <- iterConstrs cfg 1 evarified cs MkTCS
+  -- solve the constraints
+  vals <- Solve.solve cfg evarified cs
 
   banner "# Final valuation #"
   log $ unlines
