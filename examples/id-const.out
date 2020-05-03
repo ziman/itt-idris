@@ -152,30 +152,30 @@ L ~ 19
   5 -> R
   6 -> L
   7 -> R
-  8 -> I
-  9 -> I
+  8 -> R
+  9 -> R
   10 -> L
-  11 -> I
+  11 -> R
   12 -> L
-  13 -> I
-  14 -> I
+  13 -> R
+  14 -> R
   15 -> L
-  16 -> I
-  17 -> I
-  18 -> I
+  16 -> R
+  17 -> R
+  18 -> R
   19 -> L
   20 -> L
-  21 -> I
+  21 -> R
   22 -> L
   23 -> I
-  24 -> I
+  24 -> R
   25 -> L
   26 -> I
   27 -> L
-  28 -> L
-  29 -> L
-  30 -> L
-  31 -> I
+  28 -> R
+  29 -> R
+  30 -> R
+  31 -> R
   32 -> I
   33 -> I
   34 -> I
@@ -194,24 +194,24 @@ constructor Pair :I Type.
 
 constructor P :L (x :L Bool) -> (y :L Bool) -> Pair.
 
-not :L (x :L Bool) -> Bool {
+not :L (x :R Bool) -> Bool {
   not True ~> False
   
   not False ~> True
 }
 
-false :L (x :I Bool) -> Bool {
-  forall (x :I Bool)
+false :L (x :R Bool) -> Bool {
+  forall (x :R Bool)
   false x ~> False
 }
 
-true :I (x :I Bool) -> Bool {
+true :R (x :I Bool) -> Bool {
   forall (x :I Bool)
   true x ~> True
 }
 
-apply :R (f :L (_ :R Bool) -> Bool) -> (y :I Bool) -> Bool {
-  forall (f :L (_ :I Bool) -> Bool) (y :I Bool)
+apply :R (f :L (_ :R Bool) -> Bool) -> (y :R Bool) -> Bool {
+  forall (f :L (_ :R Bool) -> Bool) (y :R Bool)
   apply f y ~> f y
 }
 
@@ -239,17 +239,22 @@ not : (x) -> Bool {
   not False ~> True
 }
 
-false : Bool {
-  false  ~> False
+false : (x) -> Bool {
+  forall (x)
+  false x ~> False
 }
 
-apply : (f) -> Bool {
-  forall (f)
-  apply f ~> f
+true : Bool {
+  true  ~> True
+}
+
+apply : (f) -> (y) -> Bool {
+  forall (f) (y)
+  apply f y ~> f y
 }
 
 main : Pair {
-  main  ~> P (apply not) (apply false)
+  main  ~> P (apply not true) (apply false true)
 }
 
 ################
@@ -260,4 +265,4 @@ Unerased, reduced:
 P False False
 
 Erased, reduced:
-P not False
+P False False

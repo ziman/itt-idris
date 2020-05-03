@@ -1383,12 +1383,12 @@ R ~ 232
   76 -> I
   77 -> I
   78 -> I
-  79 -> I
+  79 -> R
   80 -> I
   81 -> I
   82 -> I
-  83 -> I
-  84 -> I
+  83 -> R
+  84 -> R
   85 -> L
   86 -> I
   87 -> L
@@ -1404,32 +1404,32 @@ R ~ 232
   97 -> I
   98 -> I
   99 -> I
-  100 -> I
+  100 -> R
   101 -> I
   102 -> I
   103 -> I
-  104 -> I
-  105 -> I
+  104 -> R
+  105 -> R
   106 -> L
   107 -> I
   108 -> L
   109 -> L
-  110 -> I
+  110 -> R
   111 -> I
   112 -> I
   113 -> R
   114 -> I
   115 -> L
-  116 -> I
+  116 -> R
   117 -> I
   118 -> I
   119 -> I
-  120 -> I
+  120 -> R
   121 -> I
   122 -> I
   123 -> I
-  124 -> I
-  125 -> I
+  124 -> R
+  125 -> R
   126 -> I
   127 -> I
   128 -> I
@@ -1467,7 +1467,7 @@ R ~ 232
   160 -> I
   161 -> I
   162 -> I
-  163 -> I
+  163 -> R
   164 -> L
   165 -> I
   166 -> I
@@ -1481,7 +1481,7 @@ R ~ 232
   174 -> I
   175 -> I
   176 -> I
-  177 -> I
+  177 -> R
   178 -> L
   179 -> I
   180 -> L
@@ -1508,7 +1508,7 @@ R ~ 232
   201 -> I
   202 -> I
   203 -> I
-  204 -> I
+  204 -> R
   205 -> L
   206 -> I
   207 -> L
@@ -1525,19 +1525,19 @@ R ~ 232
   218 -> I
   219 -> I
   220 -> I
-  221 -> I
+  221 -> R
   222 -> L
   223 -> I
   224 -> L
   225 -> L
-  226 -> I
+  226 -> R
   227 -> I
   228 -> I
   229 -> I
   230 -> I
   231 -> L
-  232 -> I
-  233 -> I
+  232 -> R
+  233 -> R
   234 -> R
   235 -> I
   236 -> I
@@ -1558,7 +1558,7 @@ R ~ 232
   251 -> I
   252 -> I
   253 -> I
-  254 -> I
+  254 -> R
   255 -> L
   256 -> I
   257 -> L
@@ -1576,19 +1576,19 @@ R ~ 232
   269 -> I
   270 -> I
   271 -> I
-  272 -> I
+  272 -> R
   273 -> L
   274 -> I
   275 -> L
   276 -> L
   277 -> I
   278 -> L
-  279 -> I
+  279 -> R
   280 -> I
   281 -> I
   282 -> I
   283 -> I
-  284 -> I
+  284 -> R
   285 -> I
   286 -> I
   287 -> L
@@ -1603,7 +1603,7 @@ R ~ 232
   296 -> I
   297 -> I
   298 -> I
-  299 -> I
+  299 -> R
   300 -> L
   301 -> I
   302 -> L
@@ -1612,11 +1612,11 @@ R ~ 232
   305 -> L
   306 -> I
   307 -> L
-  308 -> I
+  308 -> R
   309 -> I
   310 -> I
   311 -> L
-  312 -> I
+  312 -> R
   313 -> I
   314 -> I
   315 -> R
@@ -1680,11 +1680,11 @@ R ~ 232
   373 -> L
   374 -> I
   375 -> L
-  376 -> I
+  376 -> R
   377 -> I
   378 -> I
   379 -> I
-  380 -> I
+  380 -> R
   381 -> I
   382 -> L
   383 -> I
@@ -1713,7 +1713,7 @@ R ~ 232
   406 -> I
   407 -> I
   408 -> I
-  409 -> I
+  409 -> R
   410 -> L
   411 -> I
   412 -> L
@@ -1722,7 +1722,7 @@ R ~ 232
   415 -> I
   416 -> I
   417 -> I
-  418 -> I
+  418 -> R
   419 -> L
   420 -> I
   421 -> L
@@ -1748,7 +1748,7 @@ R ~ 232
   441 -> I
   442 -> I
   443 -> I
-  444 -> I
+  444 -> R
   445 -> L
   446 -> I
   447 -> L
@@ -1764,19 +1764,19 @@ R ~ 232
   457 -> I
   458 -> I
   459 -> I
-  460 -> I
+  460 -> R
   461 -> L
   462 -> I
   463 -> L
   464 -> L
   465 -> I
   466 -> L
-  467 -> I
+  467 -> R
   468 -> I
   469 -> I
   470 -> I
   471 -> I
-  472 -> I
+  472 -> R
   473 -> I
   474 -> I
   475 -> L
@@ -1791,7 +1791,7 @@ R ~ 232
   484 -> I
   485 -> I
   486 -> I
-  487 -> I
+  487 -> R
   488 -> L
   489 -> I
   490 -> L
@@ -1800,11 +1800,11 @@ R ~ 232
   493 -> L
   494 -> I
   495 -> L
-  496 -> I
+  496 -> R
   497 -> I
   498 -> I
   499 -> L
-  500 -> I
+  500 -> R
   501 -> I
   502 -> I
   503 -> R
@@ -2006,48 +2006,48 @@ constructor App : (_) -> (_) -> TT.
 
 env : (_) -> (_) -> TT {
   forall (x) (xs)
-  env FZ ~> x
+  env (VC x xs) FZ ~> x
   
   forall (x) (xs) (i)
-  env (FS i) ~> env i
+  env (VC x xs) (FS i) ~> env xs i
 }
 
 extendMap : (_) -> (_) -> Fin {
   forall (f)
-  extendMap FZ ~> FZ
+  extendMap f FZ ~> FZ
   
   forall (f) (i)
-  extendMap (FS i) ~> FS (f i)
+  extendMap f (FS i) ~> FS (f i)
 }
 
 mapVars : (_) -> (_) -> TT {
   forall (f) (i)
-  mapVars (V i) ~> V (f i)
+  mapVars f (V i) ~> V (f i)
   
   forall (f) (x)
-  mapVars (Lam x) ~> Lam (mapVars x)
+  mapVars f (Lam x) ~> Lam (mapVars (extendMap f) x)
   
   forall (f) (g) (x)
-  mapVars (App g x) ~> App (mapVars g) (mapVars x)
+  mapVars f (App g x) ~> App (mapVars f g) (mapVars f x)
 }
 
 extendSubst : (_) -> (_) -> TT {
   forall (f)
-  extendSubst FZ ~> V FZ
+  extendSubst f FZ ~> V FZ
   
   forall (f) (i)
-  extendSubst (FS i) ~> mapVars (f i)
+  extendSubst f (FS i) ~> mapVars FS (f i)
 }
 
 substVars : (_) -> (_) -> TT {
   forall (f) (i)
-  substVars (V i) ~> f i
+  substVars f (V i) ~> f i
   
   forall (f) (x)
-  substVars (Lam x) ~> Lam (substVars x)
+  substVars f (Lam x) ~> Lam (substVars (extendSubst f) x)
   
   forall (f) (g) (x)
-  substVars (App g x) ~> App (substVars g) (substVars x)
+  substVars f (App g x) ~> App (substVars f g) (substVars f x)
 }
 
 testTm : TT {
@@ -2055,20 +2055,20 @@ testTm : TT {
 }
 
 example1 : TT {
-  example1  ~> substVars testTm
+  example1  ~> substVars (env (VC (Lam (V FZ)) VN)) testTm
 }
 
 substTop : (_) -> (_) -> TT {
   forall (tm)
-  substTop FZ ~> tm
+  substTop tm FZ ~> tm
   
   forall (tm) (i)
-  substTop (FS i) ~> V i
+  substTop tm (FS i) ~> V i
 }
 
 redex : (_) -> (_) -> TT {
   forall (y) (x)
-  redex (Lam y) x ~> nf (substVars y)
+  redex (Lam y) x ~> nf (substVars (substTop (nf x)) y)
   
   forall (f') (x)
   redex f' x ~> App f' (nf x)
@@ -2092,7 +2092,7 @@ example2 : TT {
 constructor R : (x) -> (y) -> Result.
 
 main : Result {
-  main  ~> R
+  main  ~> R example1 example2
 }
 
 ################
@@ -2103,4 +2103,4 @@ Unerased, reduced:
 R (App Z (Lam Z (App (S Z) (V (S Z) (FZ Z)) (Lam (S Z) (V (S (S Z)) (FZ (S Z)))))) (Lam Z (App (S Z) (Lam (S Z) (V (S (S Z)) (FZ (S Z)))) (V (S Z) (FZ Z))))) (App (S Z) (V (S Z) (FZ Z)) (V (S Z) (FZ Z)))
 
 Erased, reduced:
-R
+R (App (Lam (App (V FZ) (Lam (V FZ)))) (Lam (App (Lam (V FZ)) (V FZ)))) (App (V FZ) (V FZ))

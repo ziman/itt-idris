@@ -119,6 +119,10 @@ L ~ 24
 8 -> C b ~ C False
 
   -> iteration 1
+    C False ~ C True
+    C b ~ C False
+
+  -> iteration 2
     -> No more equalities, fixed point reached.
 
 ###################
@@ -128,10 +132,10 @@ L ~ 24
   2 -> L
   4 -> L
   7 -> L
-  8 -> I
+  8 -> E
   9 -> I
   10 -> L
-  11 -> I
+  11 -> E
   12 -> I
   14 -> I
   15 -> L
@@ -141,7 +145,7 @@ L ~ 24
   19 -> L
   20 -> L
   21 -> L
-  22 -> I
+  22 -> E
   23 -> I
   24 -> L
   26 -> L
