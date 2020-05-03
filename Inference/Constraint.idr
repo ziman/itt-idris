@@ -3,6 +3,7 @@ module Inference.Constraint
 import public Core.TT
 import public Core.TT.Pretty
 import public Core.Context
+import public Core.Globals
 import public Inference.Evar
 import public Data.SortedSet
 import public Data.SortedMap
@@ -88,3 +89,13 @@ Semigroup Constrs where
 export
 Monoid Constrs where
   neutral = MkConstrs [] []
+
+export
+toConstrs : Globals Evar -> SortedMap Name (List (List Evar)) -> Either Name (List Constr)
+toConstrs gs = traverse toConstr . toList
+  where
+    toConstr : (Name, List (List Evar)) -> Either Name Constr
+    toConstr (n, gss) =
+      case lookup n gs of
+        Just d => Right $ CProdSumLeq gss d.binding.qv
+        Nothing => Left n
