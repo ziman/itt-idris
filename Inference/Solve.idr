@@ -44,7 +44,7 @@ iterConstrs :
     -> ITT (SortedMap ENum Q)
 iterConstrs cfg i cs st = do
   log $ "  -> iteration " ++ show i 
-  vals <- liftIO (SmtQuick.solve cs.constrs) >>= \case
+  vals <- liftIO (SmtModel.solve cs.constrs) >>= \case
     Left (Unsatisfiable core) => do
       log ""
       banner "# Unsatisfiable core #"

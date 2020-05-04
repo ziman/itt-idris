@@ -8,6 +8,7 @@ import public Compiler.Monad
 import public Data.SortedMap
 
 import Data.Maybe
+import Utils.Pretty
 import Inference.Infer
 import Inference.Solve
 
@@ -32,11 +33,20 @@ inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (d :: ds) = do
       Right (MkR st cs eqs lu gu ()) => pure (cs, eqs, gu)
 
   prd . indent $
-    text "inferred constraints: "
-    $$ indentBlock (map (pretty ()) cs)
-    $$ text ""
-    $$ text "deferred equalities: "
-    $$ indentBlock (map (pretty ()) eqs)
+    (case cs of
+        [] => neutral
+        _ =>
+          text "inferred constraints: "
+          $$ indentBlock (map (pretty ()) cs)
+          $$ text ""
+    ) $$ (
+      case eqs of
+        [] => neutral
+        _ =>
+          text "deferred equalities: "
+          $$ indentBlock (map (pretty ()) eqs)
+          $$ text ""
+    )
 
   newVals <- Solve.solve cfg (MkConstrs cs eqs)
   let vals = mergeLeft newVals oldVals
