@@ -5,6 +5,7 @@ import Core.Erase
 import Core.Normalise
 import Core.TT.Pretty
 import Core.Quantity
+import public Core.Pragma
 import public Core.TT
 import public Compiler.Monad
 import public Compiler.Config
@@ -24,8 +25,8 @@ import Data.SortedMap
 %undotted_record_projections off
 
 covering export
-processModule : Config -> Globals (Maybe Q) -> ITT ()
-processModule cfg raw = do
+processModule : Config -> Globals (Maybe Q) -> List Pragma -> ITT ()
+processModule cfg raw pragmas = do
   banner "# Desugared #"
   printP () raw
 
@@ -38,6 +39,7 @@ processModule cfg raw = do
   let evarified = evarify globalsQ rawCQ
   prn evarified
 
+  let incremental = cfg.incrementalInference || elem Incremental pragmas
   vals <- case cfg.incrementalInference of
     True => Incremental.infer cfg evarified
     False => WholeProgram.infer cfg evarified

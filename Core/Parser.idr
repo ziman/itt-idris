@@ -4,6 +4,7 @@ import public Core.Globals
 
 import Core.TT
 import Core.Clause
+import Core.Pragma
 
 import Text.Lexer
 import Text.Lexer.Core
@@ -11,6 +12,7 @@ import Text.Parser
 import Text.Parser.Core
 import Data.List
 import Data.Vect
+import Data.Strings
 
 %default total
 
@@ -33,6 +35,7 @@ data Token
   | Comment
   | Underscore
   | Pipe
+  | Pragma String
   | Colon (Maybe Q)
   | Keyword String
   | Natural Nat
@@ -56,6 +59,7 @@ Show Token where
   show Comment = "(comment)"
   show Underscore = "_"
   show Pipe = "|"
+  show (Pragma s) = "%" ++ s
   show (Natural n) = show n
   show (Colon mbQ) = "colon " ++ show mbQ
   show (Keyword kwd) = "keyword " ++ show kwd
@@ -80,6 +84,7 @@ Eq Token where
     (Comment, Comment) => True
     (Pipe, Pipe) => True
     (Underscore, Underscore) => True
+    (Pragma s, Pragma s') => s == s'
     (Colon mq, Colon mq') => mq == mq'
     (Keyword x, Keyword y) => x == y
     (Natural n, Natural n') => n == n'
@@ -134,10 +139,17 @@ lex src = case lex tokens src of
           [ "Type", "foreign", "postulate", "data", "where", "forall"
           ]
 
+    pragma : Lexer
+    pragma = is '%' <+> ident
+
+    parsePragma : String -> Token
+    parsePragma s = Pragma $ assert_total (strTail s)
+
     tokens : TokenMap Token
     tokens = 
       [ (lineComment (exact "--"), const Comment)
       , (blockComment (exact "{-") (exact "-}"), const Comment)
+      , (pragma,       parsePragma)
       , (is '(',       const ParL)
       , (is ')',       const ParR)
       , (is '{',       const BraceL)
@@ -187,6 +199,11 @@ lookupName x (y :: ys) =
 ident : Rule String
 ident = terminal "identifier" $ \t => case tok t of
   Ident n => Just n
+  _ => Nothing
+
+pragma : Rule Pragma
+pragma = terminal "pragma" $ \t => case tok t of
+  Pragma "incremental" => Just Incremental
   _ => Nothing
 
 natural : Rule Nat
@@ -382,11 +399,14 @@ definition =
   <|> dataDecl
   <|> clauseFun
 
-globals : Grammar (TokenData Token) False (Globals (Maybe Q))
-globals = fromList . concat <$> many definition
+globals : Grammar (TokenData Token) False (Globals (Maybe Q), List Pragma)
+globals = do
+  ps <- many pragma
+  ds <- fromList . concat <$> many definition
+  pure (ds, ps)
 
 export
-parse : String -> Either ParseError (Globals (Maybe Q))
+parse : String -> Either ParseError (Globals (Maybe Q), List Pragma)
 parse src = case lex src of
   Left err => Left err
   Right ts => case Text.Parser.Core.parse (globals <* eof) ts of

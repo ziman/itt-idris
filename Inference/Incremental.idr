@@ -12,10 +12,16 @@ import Utils.Pretty
 import Inference.Infer
 import Inference.Solve
 
+-- fill/conservative
 -- if known, fill in; otherwise leave unspecified
-fill : SortedMap ENum Q -> Evar -> Evar
-fill vals (QQ q) = QQ q
-fill vals (EV i) = fromMaybe (EV i) (QQ <$> lookup i vals)
+fillC : SortedMap ENum Q -> Evar -> Evar
+fillC vals (QQ q) = QQ q
+fillC vals (EV i) = fromMaybe (EV i) (QQ <$> lookup i vals)
+
+-- fill/I
+fillI : SortedMap ENum Q -> Evar -> Evar
+fillI vals (QQ q) = QQ q
+fillI vals (EV i) = fromMaybe (QQ I) (QQ <$> lookup i vals)
 
 inferDefs :
      Config
@@ -26,6 +32,8 @@ inferDefs :
 inferDefs cfg gsSolved result [] = pure result
 inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (d :: ds) = do
   log $ "inferring " ++ show d.binding.name
+  prd . indent $ pretty () d
+  log ""
 
   (cs, eqs, newGlobalUsage) <-
     case (inferDefinition d).run (MkE [] (snoc gsSolved d) [] []) MkTCS of
@@ -50,11 +58,11 @@ inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (d :: ds) = do
 
   newVals <- Solve.solve cfg (MkConstrs cs eqs)
   let vals = mergeLeft newVals oldVals
-  let dSolved = mapQ definitionQ (fill vals) d
+  let dSolved = mapQ definitionQ (fillI vals) d
   inferDefs cfg (snoc gsSolved dSolved) (vals, merge newGlobalUsage oldGlobalUsage) ds
 
 mapGCs : SortedMap ENum Q -> SortedMap Name (List (List Evar)) -> SortedMap Name (List (List Evar))
-mapGCs vals = map (map (map (fill vals)))
+mapGCs vals = map (map (map (fillC vals)))
 
 export
 infer : Config -> Globals Evar -> ITT (SortedMap ENum Q)

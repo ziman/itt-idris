@@ -43,7 +43,6 @@ iterConstrs :
     -> Inference.Infer.TCState
     -> ITT (SortedMap ENum Q)
 iterConstrs cfg i cs st = do
-  log $ "  -> iteration " ++ show i 
   vals <- liftIO (SmtModel.solve cs.constrs) >>= \case
     Left (Unsatisfiable core) => do
       log ""
@@ -55,11 +54,10 @@ iterConstrs cfg i cs st = do
     Right vals => pure vals
 
   case newlyReachableEqs vals cs.deferredEqs of
-    ([], _) => do
-      log $ "    -> No more equalities, fixed point reached.\n"
-      pure vals
+    ([], _) => pure vals
 
     (newEqs, waitingEqs) => do
+      log $ "  -> iteration " ++ show i 
       log $ unlines
         [ "    " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
         | DeferEq trigger bt gs ctx x y <- newEqs

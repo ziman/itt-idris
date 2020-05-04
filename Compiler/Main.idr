@@ -41,6 +41,6 @@ main = (parse . drop 1 <$> getArgs) >>= \case
         Left err => printLn err
         Right src => case Parser.parse src of
           Left err => printLn err
-          Right gs => (processModule cfg gs).run >>= \case
+          Right (gs, ps) => (processModule cfg gs ps).run >>= \case
             Left err => putStrLn $ "error: " ++ err
             Right () => pure ()
