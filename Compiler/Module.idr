@@ -9,8 +9,8 @@ import public Core.TT
 import public Compiler.Monad
 import public Compiler.Config
 
-import Inference.Global
 import Inference.Incremental
+import Inference.WholeProgram
 
 import Transformation.PruneClauses
 import Transformation.DefaultCtorQuantities
@@ -38,9 +38,9 @@ processModule cfg raw = do
   let evarified = evarify globalsQ rawCQ
   prn evarified
 
-  vals <- case cfg.globalInference of
-    True => globalInference cfg evarified
-    False => incrementalInference cfg evarified
+  vals <- case cfg.incrementalInference of
+    True => WholeProgram.infer cfg evarified
+    False => Incremental.infer cfg evarified
 
   banner "# Final valuation #"
   log $ unlines

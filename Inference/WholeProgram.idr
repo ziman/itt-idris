@@ -1,4 +1,4 @@
-module Inference.Global
+module Inference.WholeProgram
 
 import public Core.Globals
 import public Core.Quantity
@@ -13,8 +13,8 @@ import Data.Strings
 import Inference.Solve
 
 export
-globalInference : Config -> Globals Evar -> ITT (SortedMap ENum Q)
-globalInference cfg evarified = do
+infer : Config -> Globals Evar -> ITT (SortedMap ENum Q)
+infer cfg evarified = do
   log "Running erasure inference...\n"
   cs <- case inferGlobals.run (MkE [] evarified [] []) MkTCS of
     Left err => throw $ show err

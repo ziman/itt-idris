@@ -7,7 +7,7 @@ record Config where
   fnameInput : Maybe String
   disableL : Bool
   pruneClauses : Bool
-  globalInference : Bool
+  incrementalInference : Bool
 
 export
 defaultConfig : Config
@@ -26,7 +26,7 @@ parse = \case
     record { defaultConstructorQuantities = True } <$> parse args
   "--prune-clauses" :: args =>
     record { pruneClauses = True } <$> parse args
-  "--global-inference" :: args =>
-    record { globalInference = True} <$> parse args
+  "--incremental" :: args =>
+    record { incrementalInference = True} <$> parse args
   arg :: _ =>
     Left $ "unknown argument: " ++ show arg

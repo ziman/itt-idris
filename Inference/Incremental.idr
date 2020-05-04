@@ -47,8 +47,8 @@ mapGCs : SortedMap ENum Q -> SortedMap Name (List (List Evar)) -> SortedMap Name
 mapGCs vals = map (map (map (fill vals)))
 
 export
-incrementalInference : Config -> Globals Evar -> ITT (SortedMap ENum Q)
-incrementalInference cfg evarified = do
+infer : Config -> Globals Evar -> ITT (SortedMap ENum Q)
+infer cfg evarified = do
   -- normally, we'd toposort the definitions here
   -- but let's just assume they come in the right order in the file
   -- (this is always the case in Idris, for example, provided there's no mutual recursion)
