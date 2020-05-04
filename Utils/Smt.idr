@@ -494,6 +494,10 @@ solve @{asv} {as} model =
       tell
         -- [ L [A "set-logic", A "QF_UFLIA"]  -- explicit logic does not work well with z3
         [ L [A "set-option", A ":produce-unsat-cores", A "true"]
+        , L [A "define-fun", A "min", L[L[A "x", A "Int"], L[A "y", A "Int"]], A "Int",
+            L [A "ite", L [A "<", A "x", A "y"], A "x", A "y"]]
+        , L [A "define-fun", A "max", L[L[A "x", A "Int"], L[A "y", A "Int"]], A "Int",
+            L [A "ite", L [A "<", A "x", A "y"], A "y", A "x"]]
         ]
       vs <- model
       tell
