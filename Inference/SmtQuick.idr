@@ -49,6 +49,7 @@ declVars (n::ns) = do
   v <- declVar ("ev" ++ show n) smtInt
   assert (text $ show n ++ " >= I") (v .>= litQ I)
   assert (text $ show n ++ " <= R") (v .<= litQ R)
+  -- assert (text $ show n ++ " != E") (not (v .== litQ E))
 
   vs <- declVars ns
   pure (insert n v vs)

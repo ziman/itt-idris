@@ -25,21 +25,8 @@ import Data.SortedMap
 %default total
 %undotted_record_projections off
 
-covering export
-processModule : Config -> Globals (Maybe Q) -> ITT ()
-processModule cfg raw = do
-  banner "# Desugared #"
-  printP () raw
-
-  let rawCQ =
-        if cfg.defaultConstructorQuantities
-          then applyDefaultCtorQuantities raw
-          else raw
-
-  banner "# Evarified #"
-  let evarified = evarify globalsQ rawCQ
-  prn evarified
-
+globalInference : Config -> Globals Evar -> ITT (Globals Q)
+globalInference cfg evarified = do
   log "Running erasure inference...\n"
   cs <- case inferGlobals.run (MkE [] evarified [] []) MkTCS of
     Left err => throw $ show err
@@ -63,9 +50,28 @@ processModule cfg raw = do
     | (i, q) <- SortedMap.toList vals
     ]
 
-  annotated <- case the (Maybe (Globals Q)) $ globalsQ (substQ vals) evarified of
+  case the (Maybe (Globals Q)) $ globalsQ (substQ vals) evarified of
     Nothing => throw "did not solve all evars"
     Just gs => pure gs
+
+covering export
+processModule : Config -> Globals (Maybe Q) -> ITT ()
+processModule cfg raw = do
+  banner "# Desugared #"
+  printP () raw
+
+  let rawCQ =
+        if cfg.defaultConstructorQuantities
+          then applyDefaultCtorQuantities raw
+          else raw
+
+  banner "# Evarified #"
+  let evarified = evarify globalsQ rawCQ
+  prn evarified
+
+  annotated <- case cfg.globalInference of
+    True => globalInference cfg evarified
+    False => throw "local inference TODO"
 
   banner "# Annotated program #"
   prn annotated
