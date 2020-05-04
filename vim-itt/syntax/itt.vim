@@ -17,6 +17,7 @@ syn keyword ttBody postulate foreign constructor
 syn match ttOperator  "\~>\|->\|\\\|="
 syn match ttDelimiter "[.,}{)(]\|\[\|\]"
 syn match ttForcedCtor "{\i\+}"
+syn match ttPragma    "%\i\+"
 
 syn match ttBinding   "\i\+\s*:[IELR]\?" contains=ttBoundName,ttColon
 syn match ttColon     ":[IELR]\?" contained
@@ -31,6 +32,7 @@ syn region ttString start=+"+ skip=+\\\\\|\\"+ end=+"+ contains=@Spell
 
 highlight link ttData    Type
 highlight link ttKeyword Keyword
+highlight link ttPragma Keyword
 highlight link ttBody    PreProc
 highlight link ttDelimiter Delimiter
 highlight link ttBoundName Identifier
