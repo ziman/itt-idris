@@ -81,13 +81,3 @@ iterConstrs cfg i gs cs st = do
 covering export
 solve : Config -> Globals Evar -> Constrs -> ITT (SortedMap ENum Q)
 solve cfg gs cs = iterConstrs cfg 1 gs cs MkTCS
-
-export
-substQ : SortedMap ENum Q -> Evar -> Maybe Q
-substQ vs (QQ q) = Just q
-substQ vs (EV i) = SortedMap.lookup i vs <|> Just I
--- sometimes, the solver does not return any solution for some variables
--- i assume that in such cases you can freely choose what you like
--- so we choose "I" here, by appending "<|> Just I"
--- this function thus never returns Nothing
-

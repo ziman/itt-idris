@@ -2,6 +2,7 @@ module Inference.Evar
 
 import Core.TT.Lens
 import public Core.TT
+import public Data.SortedMap
 import public Control.Monad.State
 
 %default total
@@ -70,3 +71,12 @@ evarify travQ x = evalState (travQ f x) 0
       i <- get
       put (i+1)
       pure $ EV (EN i)
+
+export
+substQ : SortedMap ENum Q -> Evar -> Maybe Q
+substQ vs (QQ q) = Just q
+substQ vs (EV i) = SortedMap.lookup i vs <|> Just I
+-- sometimes, Z3 does not return any solution for some variables
+-- i assume that in such cases you can freely choose what you like
+-- so we choose "I" here, by appending "<|> Just I"
+-- this function thus never returns Nothing
