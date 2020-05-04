@@ -29,4 +29,4 @@ globalInference cfg evarified = do
   banner "# Deferred equalities #"
   log $ unlines $ map show cs.deferredEqs
 
-  Solve.solve cfg evarified cs
+  Solve.solve cfg cs

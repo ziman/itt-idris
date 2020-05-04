@@ -28,9 +28,9 @@ isRelevant vs (EV i) = case SortedMap.lookup i vs of
 newlyReachableEqs : SortedMap ENum Q -> List DeferredEq
     -> (List DeferredEq, List DeferredEq)
 newlyReachableEqs vs [] = ([], [])
-newlyReachableEqs vs (eq@(DeferEq g _ _ _ _) :: eqs) =
+newlyReachableEqs vs (eq@(DeferEq trigger _ _ _ _ _) :: eqs) =
   let (reached, unknown) = newlyReachableEqs vs eqs
-    in case isRelevant vs g of
+    in case isRelevant vs trigger of
       Nothing => (reached, eq :: unknown)    -- still unknown
       Just True => (eq :: reached, unknown)  -- newly reached!
       Just False => (reached, unknown)       -- definitely unreachable, drop it
@@ -39,11 +39,10 @@ covering
 iterConstrs :
     Config
     -> Int
-    -> Globals Evar
     -> Constrs
     -> Inference.Infer.TCState
     -> ITT (SortedMap ENum Q)
-iterConstrs cfg i gs cs st = do
+iterConstrs cfg i cs st = do
   log $ "  -> iteration " ++ show i 
   vals <- liftIO (SmtQuick.solve cs.constrs) >>= \case
     Left (Unsatisfiable core) => do
@@ -63,21 +62,21 @@ iterConstrs cfg i gs cs st = do
     (newEqs, waitingEqs) => do
       log $ unlines
         [ "    " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
-        | DeferEq g bt ctx x y <- newEqs
+        | DeferEq trigger bt gs ctx x y <- newEqs
         ]
 
-      case (traverse_ Infer.resumeEq newEqs).run (MkE [] gs [] []) st of
+      case (traverse_ Infer.resumeEq newEqs).run (MkE [] empty [] []) st of
         Left fail => throw $ show fail
         Right (MkR st' cs' eqs' lu' gu' ()) => do
           -- we use waitingEqs (eqs from the previous iteration that have not been reached yet)
           -- and eqs' (eqs from this iteration)
           -- we drop eqs we have already reached and checked
           -- otherwise we'd loop forever in checking them again and again
-          iterConstrs cfg (i+1) gs
+          iterConstrs cfg (i+1)
             -- prepend for efficiency
             (MkConstrs (cs' ++ cs.constrs) (eqs' ++ waitingEqs))
             st'
 
 covering export
-solve : Config -> Globals Evar -> Constrs -> ITT (SortedMap ENum Q)
-solve cfg gs cs = iterConstrs cfg 1 gs cs MkTCS
+solve : Config -> Constrs -> ITT (SortedMap ENum Q)
+solve cfg cs = iterConstrs cfg 1 cs MkTCS

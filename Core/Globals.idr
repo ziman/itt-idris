@@ -51,7 +51,11 @@ export
 record Globals (q : Type) where
   constructor MkGlobals
   definitions : SortedMap Name (Definition q)
-  ordering : List Name
+  ordering : List Name  -- stored reversed for fast append!
+
+export
+empty : Globals q
+empty = MkGlobals empty []
 
 export
 lookup : Name -> Globals q -> Maybe (Definition q)
@@ -62,8 +66,14 @@ map : (Definition q -> Definition q') -> Globals q -> Globals q'
 map f (MkGlobals ds ord) = MkGlobals (f <$> ds) ord
 
 export
+snoc : Globals q -> Definition q -> Globals q
+snoc (MkGlobals ds ord) d =
+  let n = UN d.binding.name
+    in MkGlobals (insert n d ds) (n :: ord)
+
+export
 toList : Globals q -> List (Definition q)
-toList gs with (gs.ordering)
+toList gs with (reverse gs.ordering)
   toList gs | []      = []
   toList gs | n :: ns = case lookup n gs of
       Nothing => toList gs | ns
@@ -74,7 +84,7 @@ fromList : List (Definition q) -> Globals q
 fromList ds =
   MkGlobals
     (SortedMap.fromList [(UN d.binding.name, d) | d <- ds])
-    [UN d.binding.name | d <- ds]
+    (reverse [UN d.binding.name | d <- ds])
 
 export
 ShowQ q => Pretty () (Globals q) where

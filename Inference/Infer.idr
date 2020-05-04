@@ -311,7 +311,7 @@ deferEq g x y =
   if x == y
     then pure ()
     else MkTC $ \(MkE gs globs ctx bt), st
-      => Right (MkR st [] [DeferEq g bt ctx x y] (noLU ctx) empty ())
+      => Right (MkR st [] [DeferEq g bt globs ctx x y] (noLU ctx) empty ())
 
 whnfTC : Term n -> TC lu n (Term n)
 whnfTC tm = do
@@ -364,9 +364,9 @@ mutual
 
 covering export
 resumeEq : DeferredEq -> TCC Z ()
-resumeEq (DeferEq {n} t bt ctx x y) = MkTC $ \env, st =>
+resumeEq (DeferEq {n} t bt gs ctx x y) = MkTC $ \_, st =>
   case the (TCC n ()) (x ~= y) of
-    MkTC f => case f (MkE [] env.globals ctx bt) st of
+    MkTC f => case f (MkE [] gs ctx bt) st of
       Left fail => Left fail
       Right (MkR st cs eqs lu gu x) => Right (MkR st cs eqs [] gu x)
 

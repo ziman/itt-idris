@@ -81,19 +81,24 @@ record DeferredEq where
   {0 n : Nat}
   trigger : Evar
   backtrace : Backtrace
+  globals : Globals Evar
   context : Context Evar n
   lhs : TT Evar n
   rhs : TT Evar n
 
 export
 Show DeferredEq where
-  show (DeferEq t bt ctx x y) =
+  show (DeferEq t bt gs ctx x y) =
     show t ++ " -> " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
 
 export
+Pretty () DeferredEq where
+  pretty () = text . show
+
+export
 deferredEqQ : Traversal DeferredEq DeferredEq Evar Evar
-deferredEqQ f (DeferEq t bt ctx lhs rhs) =
-  [| DeferEq (f t) (pure bt) (contextQ f ctx) (ttQ f lhs) (ttQ f rhs) |]
+deferredEqQ f (DeferEq t bt gs ctx lhs rhs) =
+  [| DeferEq (f t) (pure bt) (globalsQ f gs) (contextQ f ctx) (ttQ f lhs) (ttQ f rhs) |]
 
 public export
 record Constrs where
