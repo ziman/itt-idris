@@ -13,6 +13,7 @@ import Inference.Evar
 import Inference.Infer
 import Inference.Solve
 import Inference.Constraint
+import Inference.Incremental
 
 import Transformation.PruneClauses
 import Transformation.DefaultCtorQuantities
@@ -25,7 +26,7 @@ import Data.SortedMap
 %default total
 %undotted_record_projections off
 
-globalInference : Config -> Globals Evar -> ITT (Globals Q)
+globalInference : Config -> Globals Evar -> ITT (SortedMap ENum Q)
 globalInference cfg evarified = do
   log "Running erasure inference...\n"
   cs <- case inferGlobals.run (MkE [] evarified [] []) MkTCS of
@@ -41,18 +42,7 @@ globalInference cfg evarified = do
   banner "# Deferred equalities #"
   log $ unlines $ map show cs.deferredEqs
 
-  -- solve the constraints
-  vals <- Solve.solve cfg evarified cs
-
-  banner "# Final valuation #"
-  log $ unlines
-    [ "  " ++ show i ++ " -> " ++ show q
-    | (i, q) <- SortedMap.toList vals
-    ]
-
-  case the (Maybe (Globals Q)) $ globalsQ (substQ vals) evarified of
-    Nothing => throw "did not solve all evars"
-    Just gs => pure gs
+  Solve.solve cfg evarified cs
 
 covering export
 processModule : Config -> Globals (Maybe Q) -> ITT ()
@@ -69,9 +59,19 @@ processModule cfg raw = do
   let evarified = evarify globalsQ rawCQ
   prn evarified
 
-  annotated <- case cfg.globalInference of
+  vals <- case cfg.globalInference of
     True => globalInference cfg evarified
-    False => throw "local inference TODO"
+    False => incrementalInference cfg evarified
+
+  banner "# Final valuation #"
+  log $ unlines
+    [ "  " ++ show i ++ " -> " ++ show q
+    | (i, q) <- SortedMap.toList vals
+    ]
+
+  annotated <- case the (Maybe (Globals Q)) $ globalsQ (substQ vals) evarified of
+    Nothing => throw "did not solve all evars"
+    Just gs => pure gs
 
   banner "# Annotated program #"
   prn annotated
