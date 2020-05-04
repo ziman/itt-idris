@@ -27,7 +27,7 @@ inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (d :: ds) = do
   log $ "inferring " ++ show d.binding.name
 
   (cs, eqs, newGlobalUsage) <-
-    case (inferDefinition d).run (MkE [] gsSolved [] []) MkTCS of
+    case (inferDefinition d).run (MkE [] (snoc gsSolved d) [] []) MkTCS of
       Left err => throw $ show err
       Right (MkR st cs eqs lu gu ()) => pure (cs, eqs, gu)
 
@@ -54,7 +54,8 @@ infer cfg evarified = do
   -- (this is always the case in Idris, for example, provided there's no mutual recursion)
   --
   -- TODO: mutual recursion
-  (vals, globUsage) <- inferDefs cfg empty (empty, empty) (toList evarified)
+  let initialGlobalUsage = insert (UN "main") [[]] empty  -- used exactly once by the RTS
+  (vals, globUsage) <- inferDefs cfg empty (empty, initialGlobalUsage) (toList evarified)
 
   -- globals constraints can be solved entirely separately
   -- per-definition stages filled in some bogus annotations on binders of definitions
