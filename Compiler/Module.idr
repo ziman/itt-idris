@@ -39,8 +39,8 @@ processModule cfg raw = do
   prn evarified
 
   vals <- case cfg.incrementalInference of
-    True => WholeProgram.infer cfg evarified
-    False => Incremental.infer cfg evarified
+    True => Incremental.infer cfg evarified
+    False => WholeProgram.infer cfg evarified
 
   banner "# Final valuation #"
   log $ unlines
