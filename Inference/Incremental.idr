@@ -30,15 +30,15 @@ inferDefs :
      Config
   -> Globals Evar
   -> (SortedMap ENum Q, SortedMap Name (List (List Evar)))
-  -> List (Definition Evar)
+  -> List (List (Definition Evar))
   -> ITT (SortedMap ENum Q, SortedMap Name (List (List Evar)))
 inferDefs cfg gsSolved result [] = pure result
-inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (d :: ds) = do
-  prd $ text "inferring " <++> (pretty () d)
+inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (ds :: dss) = do
+  prd $ text "inferring " <++> (pretty () ds)
   log ""
 
   (cs, eqs, newGlobalUsage) <-
-    case (inferDefinition d).run (MkE [] (snoc gsSolved d) [] []) MkTCS of
+    case (traverse_ inferDefinition ds).run (MkE [] (gsSolved `snocBlock` ds) [] []) MkTCS of
       Left err => throw $ show err
       Right (MkR st cs eqs lu gu ()) => pure (cs, eqs, gu)
 
@@ -59,19 +59,19 @@ inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (d :: ds) = do
     )
 
   log "  variance of evars:"
-  let var = variance d.binding.type
+  let var = concatMap (variance . .binding.type) ds
   prd . indent $
     text "variance of evars:"
     $$ indent (pretty () var)
 
   newVals <- Solve.solve cfg var.contravariant var.covariant (MkConstrs cs eqs)
   let vals = mergeLeft newVals oldVals
-  let dSolved = mapQ definitionQ (fillI vals) d
+  let dsSolved = map (mapQ definitionQ (fillI vals)) ds
 
-  prd . indent $ pretty () dSolved
+  prd . indent $ pretty () dsSolved
   log ""
 
-  inferDefs cfg (snoc gsSolved dSolved) (vals, merge newGlobalUsage oldGlobalUsage) ds
+  inferDefs cfg (snocBlock gsSolved dsSolved) (vals, merge newGlobalUsage oldGlobalUsage) dss
 
 mapGCs : SortedMap ENum Q -> SortedMap Name (List (List Evar)) -> SortedMap Name (List (List Evar))
 mapGCs vals = map (map (map (fillC vals)))
@@ -85,7 +85,7 @@ infer cfg evarified = do
   --
   -- TODO: mutual recursion
   let initialGlobalUsage = insert (UN "main") [[]] empty  -- used exactly once by the RTS
-  (vals, globUsage) <- inferDefs cfg empty (empty, initialGlobalUsage) (toList evarified)
+  (vals, globUsage) <- inferDefs cfg empty (empty, initialGlobalUsage) (toBlocks evarified)
 
   -- globals constraints can be solved entirely separately
   -- per-definition stages filled in some bogus annotations on binders of definitions
@@ -94,7 +94,7 @@ infer cfg evarified = do
     Left n => throw $ "constraint for non-existent global: " ++ show n
     Right gcs => pure gcs
 
-  let allGVs = concatMap getENum [d.binding.qv | d <- toList evarified]
+  let allGVs = concat [concatMap (getENum . .binding.qv) ds | ds <- toBlocks evarified]
   gvals <- Solve.solve cfg allGVs empty (MkConstrs globConstrs [])
 
   -- gvals have priority on conflict

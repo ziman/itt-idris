@@ -31,7 +31,7 @@ infer cfg evarified = do
   log $ unlines $ map show cs.deferredEqs
 
   banner "# Variance of evars #"
-  let var = concatMap (variance . .binding.type) $ toList evarified
+  let var = concatMap (concatMap $ variance . .binding.type) $ toBlocks evarified
   prd $ pretty () var
 
   Solve.solve cfg var.contravariant var.covariant cs

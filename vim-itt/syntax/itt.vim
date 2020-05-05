@@ -11,7 +11,7 @@ let b:current_syntax = 'itt'
 syntax clear
 
 syn keyword ttData data
-syn keyword ttKeyword forall
+syn keyword ttKeyword forall mutual
 syn keyword ttBody postulate foreign constructor
 
 syn match ttOperator  "\~>\|->\|\\\|="

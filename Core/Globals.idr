@@ -51,7 +51,11 @@ export
 record Globals (q : Type) where
   constructor MkGlobals
   definitions : SortedMap Name (Definition q)
-  ordering : List Name  -- stored reversed for fast append!
+
+  -- list of mutual blocks
+  -- the outer list is stored reversed for fast append!
+  -- the inner list is _not_ reversed, however
+  ordering : List (List Name)
 
 export
 empty : Globals q
@@ -69,28 +73,40 @@ export
 snoc : Globals q -> Definition q -> Globals q
 snoc (MkGlobals ds ord) d =
   let n = UN d.binding.name
-    in MkGlobals (insert n d ds) (n :: ord)
+    in MkGlobals (insert n d ds) ([n] :: ord)
 
 export
-toList : Globals q -> List (Definition q)
-toList gs with (reverse gs.ordering)
-  toList gs | []      = []
-  toList gs | n :: ns = case lookup n gs of
-      Nothing => toList gs | ns
-      Just d  => d :: toList gs | ns
+snocBlock : Globals q -> List (Definition q) -> Globals q
+snocBlock (MkGlobals ds ord) dsBlk =
+  let ns = map (UN . .binding.name) dsBlk
+      dsBlkMap = SortedMap.fromList [(UN d.binding.name, d) | d <- dsBlk]
+   in MkGlobals (ds `mergeLeft` dsBlkMap) (ns :: ord)
 
 export
-fromList : List (Definition q) -> Globals q
-fromList ds =
-  MkGlobals
-    (SortedMap.fromList [(UN d.binding.name, d) | d <- ds])
-    (reverse [UN d.binding.name | d <- ds])
+toBlocks : Globals q -> List (List (Definition q))
+toBlocks gs with (gs.ordering)
+  toBlocks gs | nss with (Prelude.Nil {a = List $ Definition q})
+    toBlocks gs |        [] | acc = acc
+    toBlocks gs | ns :: nss | acc =
+      case sequence [lookup n gs | n <- ns] of
+        Nothing => toBlocks gs | nss |       acc
+        Just ds => toBlocks gs | nss | ds :: acc
+
+export
+fromBlocks : List (List (Definition q)) -> Globals q
+fromBlocks = foldl snocBlock empty
+
+export
+ShowQ q => Pretty () (List (Definition q)) where
+  pretty () [d] = pretty () d
+  pretty () ds =
+    text "mutual {"
+    $$ indentBlock (intersperse (text "") [pretty () d | d <- ds])
+    $$ text "}"
 
 export
 ShowQ q => Pretty () (Globals q) where
-  pretty () gs =
-    vcat
-      [pretty () d $$ text "" | d <- toList gs]
+  pretty () gs = vsep [pretty () blk | blk <- toBlocks gs]
 
 export
 ShowQ q => Show (Globals q) where

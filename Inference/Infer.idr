@@ -181,6 +181,10 @@ getCtx = .context <$> getEnv
 getGlobals : TC lu n (Globals Evar)
 getGlobals = .globals <$> getEnv
 
+withMutualBlock : List (Definition Evar) -> TC lu n a -> TC lu n a
+withMutualBlock ds (MkTC f) = MkTC $ \env, st =>
+  f (record {globals $= \g => g `snocBlock` ds} env) st
+
 throw : ErrorMessage n -> TC lu n a
 throw msg = MkTC $ \env, st
     => Left (MkF env.backtrace env.context msg)
@@ -517,7 +521,13 @@ inferDefinition d@(MkDef bnd body) = traceDoc (pretty () d) "DEF" $ do
   inferBody bnd body
 
 covering export
+inferDefinitions : List (List (Definition Evar)) -> TCC Z ()
+inferDefinitions [] = pure ()
+inferDefinitions (ds :: dss) =
+  withMutualBlock ds $ do
+    traverse_ inferDefinition ds
+    inferDefinitions dss
+
+covering export
 inferGlobals : TCC Z ()
-inferGlobals = do
-  gs <- Globals.toList <$> getGlobals
-  traverse_ inferDefinition gs
+inferGlobals = inferDefinitions . Globals.toBlocks =<< getGlobals

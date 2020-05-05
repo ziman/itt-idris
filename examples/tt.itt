@@ -93,24 +93,26 @@ substTop : (n : Nat) -> TT n -> Fin (S n) -> TT n {
   substTop n tm (FS [n] i) ~> V n i
 }
 
-redex : (m : Nat) -> TT m -> TT m -> TT m {
-  forall (m : Nat) (y : TT (S m)) (x : TT m)
-  redex m (Lam [m] y) x
-    ~> nf m (substVars (S m) m (substTop m (nf m x)) y),
+mutual {
+  redex : (m : Nat) -> TT m -> TT m -> TT m {
+    forall (m : Nat) (y : TT (S m)) (x : TT m)
+    redex m (Lam [m] y) x
+      ~> nf m (substVars (S m) m (substTop m (nf m x)) y),
 
-  forall (m : Nat) (f' : TT m) (x : TT m)
-  redex m f' x ~> App m f' (nf m x)
-}
+    forall (m : Nat) (f' : TT m) (x : TT m)
+    redex m f' x ~> App m f' (nf m x)
+  }
 
-nf : (m : Nat) -> TT m -> TT m {
-  forall (m : Nat) (i : Fin m)
-  nf m (V [m] i) ~> V m i,
+  nf : (m : Nat) -> TT m -> TT m {
+    forall (m : Nat) (i : Fin m)
+    nf m (V [m] i) ~> V m i,
 
-  forall (m : Nat) (x : TT (S m))
-  nf m (Lam [m] x) ~> Lam m (nf (S m) x),
+    forall (m : Nat) (x : TT (S m))
+    nf m (Lam [m] x) ~> Lam m (nf (S m) x),
 
-  forall (m : Nat) (f : TT m) (x : TT m)
-  nf m (App [m] f x) ~> redex m f x
+    forall (m : Nat) (f : TT m) (x : TT m)
+    nf m (App [m] f x) ~> redex m f x
+  }
 }
 
 example2 : TT 1 ~> nf 1 testTm.

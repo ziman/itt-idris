@@ -103,4 +103,4 @@ eraseDefs ((MkDef (B n _ ty) body) :: ds) =
 
 export
 eraseGlobals : (gs : Globals Q) -> Globals ()
-eraseGlobals = fromList . eraseDefs . toList
+eraseGlobals = fromBlocks . map eraseDefs . toBlocks

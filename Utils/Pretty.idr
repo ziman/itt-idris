@@ -45,6 +45,10 @@ vcat : List Doc -> Doc
 vcat = Vcat
 
 export
+vsep : List Doc -> Doc
+vsep = vcat . intersperse neutral
+
+export
 punctuate : Doc -> List Doc -> Doc
 punctuate sep = concat . intersperse sep
 

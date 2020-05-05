@@ -136,7 +136,8 @@ lex src = case lex tokens src of
       where
         keywords : List String
         keywords =
-          [ "Type", "foreign", "postulate", "data", "where", "forall"
+          [ "Type", "foreign", "postulate"
+          , "data", "forall", "mutual"
           ]
 
     pragma : Lexer
@@ -399,11 +400,23 @@ definition =
   <|> dataDecl
   <|> clauseFun
 
+mutualBlock : Rule (List (Definition (Maybe Q)))
+mutualBlock = do
+  kwd "mutual"
+  commit
+  token BraceL
+  ds <- concat <$> many definition
+  token BraceR
+  pure ds
+
+block : Rule (List (Definition (Maybe Q)))
+block = mutualBlock <|> definition
+
 globals : Grammar (TokenData Token) False (Globals (Maybe Q), List Pragma)
 globals = do
   ps <- many pragma
-  ds <- fromList . concat <$> many definition
-  pure (ds, ps)
+  bs <- fromBlocks <$> many block
+  pure (bs, ps)
 
 export
 parse : String -> Either ParseError (Globals (Maybe Q), List Pragma)

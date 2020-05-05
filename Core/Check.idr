@@ -150,6 +150,10 @@ getCtx = .context <$> getEnv
 getGlobals : TC n (Globals Q)
 getGlobals = .globals <$> getEnv
 
+withMutualBlock : List (Definition Q) -> TC n a -> TC n a
+withMutualBlock ds (MkTC f) = MkTC $ \env, st =>
+  f (record {globals $= \g => g `snocBlock` ds} env) st
+
 throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
     => Left (MkF env.backtrace _ env.context msg)
@@ -416,7 +420,12 @@ checkDefinition d@(MkDef bnd body) = traceDoc (pretty () d) "DEF" $ do
   checkBody bnd body
 
 covering export
+checkDefinitions : List (List (Definition Q)) -> TC Z ()
+checkDefinitions [] = pure ()
+checkDefinitions (ds :: dss) =
+  withMutualBlock ds $
+    traverse_ checkDefinition ds
+
+covering export
 checkGlobals : TC Z ()
-checkGlobals = do
-  gs <- Globals.toList <$> getGlobals
-  traverse_ checkDefinition gs
+checkGlobals = checkDefinitions . Globals.toBlocks =<< getGlobals
