@@ -1,5 +1,7 @@
 module Compiler.Config
 
+import public Core.Pragma
+
 public export
 record Config where
   constructor MkConfig
@@ -14,19 +16,24 @@ defaultConfig : Config
 defaultConfig = MkConfig False Nothing False False False
 
 export
-parse : List String -> Either String Config
+parse : List String -> Either String (Config -> Config)
 parse = \case
-  [] =>
-    pure defaultConfig
-  [fname] =>
-    record { fnameInput = Just fname } <$> pure defaultConfig
+  [] => Right id
+  [fname] => Right (record { fnameInput = Just fname })
   "--disable-L" :: args =>
-    record { disableL = True } <$> parse args
+    (record { disableL = True } .) <$> parse args
   "--default-constructor-quantities" :: args =>
-    record { defaultConstructorQuantities = True } <$> parse args
+    (record { defaultConstructorQuantities = True } .) <$> parse args
   "--prune-clauses" :: args =>
-    record { pruneClauses = True } <$> parse args
+    (record { pruneClauses = True } .) <$> parse args
   "--incremental" :: args =>
-    record { incrementalInference = True} <$> parse args
+    (record { incrementalInference = True} .) <$> parse args
   arg :: _ =>
     Left $ "unknown argument: " ++ show arg
+
+export
+parsePragmas : List Pragma -> Either String (Config -> Config)
+parsePragmas = \case
+  [] => Right id
+  Options opts :: ps =>
+    [| parse opts . parsePragmas ps |]

@@ -25,18 +25,13 @@ import Data.SortedMap
 %undotted_record_projections off
 
 covering export
-processModule : Config -> Globals (Maybe Q) -> List Pragma -> ITT ()
-processModule cfg raw pragmas = do
-  let incremental = cfg.incrementalInference || elem Incremental pragmas
-  case pragmas of
-    [] => pure ()
-    _ => log $ "Pragmas: " ++ show pragmas ++ "\n"
-
+processModule : Config -> Globals (Maybe Q) -> ITT ()
+processModule cfg raw = do
   banner "# Desugared #"
   printP () raw
 
   let rawCQ =
-        if cfg.defaultConstructorQuantities || incremental
+        if cfg.defaultConstructorQuantities
           then applyDefaultCtorQuantities raw
           else raw
 
@@ -44,7 +39,7 @@ processModule cfg raw pragmas = do
   let evarified = evarify globalsQ rawCQ
   prn evarified
 
-  vals <- case incremental of
+  vals <- case cfg.incrementalInference of
     True => Incremental.infer cfg evarified
     False => WholeProgram.infer cfg evarified
 

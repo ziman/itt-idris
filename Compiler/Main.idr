@@ -30,17 +30,21 @@ help = unlines
 
 covering
 main : IO ()
-main = (parse . drop 1 <$> getArgs) >>= \case
-  Left err => do
-    printLn $ "could not parse command line: " ++ err
-    putStr help
-  Right cfg =>
-    case cfg.fnameInput of
-      Nothing => putStr help
-      Just fname => readFile fname >>= \case
-        Left err => printLn err
-        Right src => case Parser.parse src of
+main = do
+  args <- drop 1 <$> getArgs
+  case parse args <*> pure defaultConfig of
+    Left err => do
+      printLn $ "could not parse command line: " ++ err
+      putStr help
+    Right cfg =>
+      case cfg.fnameInput of
+        Nothing => putStr help
+        Just fname => readFile fname >>= \case
           Left err => printLn err
-          Right (gs, ps) => (processModule cfg gs ps).run >>= \case
-            Left err => putStrLn $ "error: " ++ err
-            Right () => pure ()
+          Right src => case Parser.parse src of
+            Left err => printLn err
+            Right (gs, ps) => case Config.parsePragmas ps of
+              Left err => putStrLn $ "could not parse pragmas: " ++ err
+              Right f => (processModule (f cfg) gs).run >>= \case
+                Left err => putStrLn $ "error: " ++ err
+                Right () => pure ()

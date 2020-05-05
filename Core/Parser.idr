@@ -38,6 +38,7 @@ data Token
   | Pragma String
   | Colon (Maybe Q)
   | Keyword String
+  | StringLit String
   | Natural Nat
 
 Show Token where
@@ -60,6 +61,7 @@ Show Token where
   show Underscore = "_"
   show Pipe = "|"
   show (Pragma s) = "%" ++ s
+  show (StringLit s) = show s
   show (Natural n) = show n
   show (Colon mbQ) = "colon " ++ show mbQ
   show (Keyword kwd) = "keyword " ++ show kwd
@@ -84,6 +86,7 @@ Eq Token where
     (Comment, Comment) => True
     (Pipe, Pipe) => True
     (Underscore, Underscore) => True
+    (StringLit s, StringLit s') => s == s'
     (Pragma s, Pragma s') => s == s'
     (Colon mq, Colon mq') => mq == mq'
     (Keyword x, Keyword y) => x == y
@@ -118,6 +121,9 @@ lex src = case lex tokens src of
     colon : Lexer
     colon = is ':' <+> opt (is 'I' <|> is 'E' <|> is 'L' <|> is 'R')
 
+    strLit : Lexer
+    strLit = is '"' <+> manyUntil (is '"') any <+> is '"'
+
     parseColon : String -> Token
     parseColon ":I" = Colon (Just I)
     parseColon ":E" = Colon (Just E)
@@ -146,10 +152,14 @@ lex src = case lex tokens src of
     parsePragma : String -> Token
     parsePragma s = Pragma $ assert_total (strTail s)
 
+    parseStringLit : String -> Token
+    parseStringLit s = StringLit $ assert_total (strTail (reverse (strTail (reverse s))))
+
     tokens : TokenMap Token
     tokens = 
       [ (lineComment (exact "--"), const Comment)
       , (blockComment (exact "{-") (exact "-}"), const Comment)
+      , (stringLit,    parseStringLit)
       , (pragma,       parsePragma)
       , (is '(',       const ParL)
       , (is ')',       const ParR)
@@ -202,9 +212,14 @@ ident = terminal "identifier" $ \t => case tok t of
   Ident n => Just n
   _ => Nothing
 
-pragma : Rule Pragma
-pragma = terminal "pragma" $ \t => case tok t of
-  Pragma "incremental" => Just Incremental
+pragma : String -> Rule ()
+pragma s = terminal ("%" ++ s) $ \t => case tok t of
+  Pragma s => Just ()
+  _ => Nothing
+
+stringLit : Rule String
+stringLit = terminal "string literal" $ \t => case tok t of
+  StringLit s => Just s
   _ => Nothing
 
 natural : Rule Nat
@@ -412,9 +427,13 @@ mutualBlock = do
 block : Rule (List (Definition (Maybe Q)))
 block = mutualBlock <|> definition
 
+pragmaExpr : Rule Pragma
+pragmaExpr =
+  (pragma "options" *> commit *> (Options <$> many stringLit))
+
 globals : Grammar (TokenData Token) False (Globals (Maybe Q), List Pragma)
 globals = do
-  ps <- many pragma
+  ps <- many pragmaExpr
   bs <- fromBlocks <$> many block
   pure (bs, ps)
 
