@@ -409,7 +409,7 @@ inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
       appQ ~~ piQ
       xTy <- withGuard piQ $ inferTm x
       traceTm fTy "fTy" $
-        traceTm fTy "piTy" $
+        traceTm xTy "xTy" $
           xTy ~= piTy
 
       pure $ subst (substFZ x) piRhs
@@ -505,8 +505,10 @@ inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN fbnd.name) c) "C
 
   -- check that the types match
   -- this can be done in the plain old context
-  withCtxC pi $ traceTm lhsTy "CLAUSE-CONV" $ do
-    lhsTy ~= rhsTy
+  withCtxC pi $
+    traceTm lhsTy "CLAUSE-CONV-LHS" $
+      traceTm rhsTy "CLAUSE-CONV-RHS" $
+        lhsTy ~= rhsTy
 
 covering export
 inferBody : Binding Evar Z -> Body Evar -> TCC Z ()
