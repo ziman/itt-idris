@@ -123,8 +123,19 @@ mutual
   matchPats : Globals q -> Subst q n pn -> Vect argn (Pat q pn) -> Vect argn (TT q n) -> Outcome (Subst q n pn)
   matchPats gs s [] [] = Match s
   matchPats gs s (p :: ps) (tm :: tms) =
-    matchPat gs s p tm >>=
-      \s' => matchPats gs s' ps tms
+    case matchPat gs s p tm of
+      Match s' => matchPats gs s' ps tms
+      Mismatch => Mismatch
+      Error e  => Error e
+
+      -- special case: if one pattern is stuck, some other pattern could still mismatch
+      Stuck => case matchPats gs s ps tms of
+        -- if we have a mismatch, the whole pattern mismatches
+        Mismatch => Mismatch
+        Error e => Error e
+
+        -- otherwise we're stuck: we can't succeed here!
+        _ => Stuck
 
 matchClause : Globals q -> Clause q argn -> Vect argn (TT q n) -> Outcome (TT q n)
 matchClause gs clause args =
