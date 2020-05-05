@@ -185,14 +185,15 @@ mutual
               case matchClauses fargsRed cs of
                 Match fx => red rf gs $ mkApp fx rest
                 Mismatch => Left $ NoMatchingClause n
-                Stuck => stuckTm rf gs n args
+                Stuck => stuckTm rf gs (P n) args
                 Error e => Left e
-            Nothing => stuckTm rf gs n args -- underapplied
-          _ => stuckTm rf gs n args -- not a pattern matching function
+            Nothing => stuckTm rf gs (P n) args -- underapplied
+          Just _ => stuckTm rf gs (P n) args -- not a pattern matching function
+        (f, args) => stuckTm rf gs f args  -- not an application of a global
   red rf gs Type_ = pure Type_
   red rf gs Erased = pure Erased
 
   covering
-  stuckTm : Form -> Globals q -> Name -> List (q, TT q n) -> Either EvalError (TT q n)
-  stuckTm WHNF gs n args = pure $ mkApp (P n) args
-  stuckTm   NF gs n args = mkApp (P n) <$> mapArgs (red NF gs) args
+  stuckTm : Form -> Globals q -> TT q n -> List (q, TT q n) -> Either EvalError (TT q n)
+  stuckTm WHNF gs f args = pure $ mkApp f args
+  stuckTm   NF gs f args = mkApp f <$> mapArgs (red NF gs) args

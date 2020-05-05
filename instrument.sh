@@ -6,4 +6,6 @@
 
 set -xeuo pipefail
 
-sed -e 's/(define \([^ ]*\) (lambda/(define \1 (trace-lambda \1/g' -i "$1"
+prefix="${2:-}"
+
+sed -e "s/(define \(${prefix}[^ ]*\\) (lambda/(define \\1 (trace-lambda \\1/g" -i "$1"
