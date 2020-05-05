@@ -1,8 +1,6 @@
-{-
 %options
   "--incremental"
   "--default-constructor-quantities"
--}
 
 -- The prelude
 
@@ -51,7 +49,7 @@ subst : (a : Type) -> (P : a -> Type)
   subst a P x [x] ({Refl} [a] [x]) ~> \w : P x. w
 }
 
-cong : (a : Type) -> (b : Type) -> (f : a -> b)
+cong : (a : Type) -> (b : Type) -> (f : (x :L a) -> b)
   -> (x : a) -> (y : a) -> (eq : Id a x y)
   -> Id b (f x) (f y)
 {
