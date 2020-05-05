@@ -31,8 +31,7 @@ inferDefs :
   -> ITT (SortedMap ENum Q, SortedMap Name (List (List Evar)))
 inferDefs cfg gsSolved result [] = pure result
 inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (d :: ds) = do
-  log $ "inferring " ++ show d.binding.name
-  prd . indent $ pretty () d
+  prd $ text "inferring " <++> (pretty () d)
   log ""
 
   (cs, eqs, newGlobalUsage) <-
@@ -59,6 +58,10 @@ inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (d :: ds) = do
   newVals <- Solve.solve cfg (MkConstrs cs eqs)
   let vals = mergeLeft newVals oldVals
   let dSolved = mapQ definitionQ (fillI vals) d
+
+  prd . indent $ pretty () dSolved
+  log ""
+
   inferDefs cfg (snoc gsSolved dSolved) (vals, merge newGlobalUsage oldGlobalUsage) ds
 
 mapGCs : SortedMap ENum Q -> SortedMap Name (List (List Evar)) -> SortedMap Name (List (List Evar))

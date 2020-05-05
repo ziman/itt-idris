@@ -1,22 +1,24 @@
+%incremental
+
 data Nat : Type {
   Z : Nat,
   S : (n : Nat) -> Nat
 }
 
 data Fin : Nat -> Type {
-  FZ : (n : Nat) -> Fin (S n),
-  FS : (n : Nat) -> Fin n -> Fin (S n)
+  FZ : (n :I Nat) -> Fin (S n),
+  FS : (n :I Nat) -> Fin n -> Fin (S n)
 }
 
 data Vect : Nat -> Type -> Type {
-  VN : (a : Type) -> Vect Z a,
-  VC : (n : Nat) -> (a : Type) -> a -> Vect n a -> Vect (S n) a
+  VN : (a :I Type) -> Vect Z a,
+  VC : (n :I Nat) -> (a :I Type) -> a -> Vect n a -> Vect (S n) a
 }
 
 data TT : Nat -> Type {
-  V : (n : Nat) -> Fin n -> TT n,
-  Lam : (n : Nat) -> TT (S n) -> TT n,
-  App : (n : Nat) -> TT n -> TT n -> TT n
+  V : (n :I Nat) -> Fin n -> TT n,
+  Lam : (n :I Nat) -> TT (S n) -> TT n,
+  App : (n :I Nat) -> TT n -> TT n -> TT n
 }
 
 env : (m : Nat) -> (n : Nat) -> Vect m (TT n) -> Fin m -> TT n {
