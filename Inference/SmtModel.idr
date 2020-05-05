@@ -56,7 +56,8 @@ numberOf q vs = sum [ifte {a=Int} (v .== lit q) 1 0 | v <- vs]
 model : SortedSet ENum -> SortedSet ENum -> List Constr -> SmtM Doc (FList Smt [(ENum, Q)])
 model minvs maxvs cs = do
   smtQ <- the (SmtM Doc (SmtType Q)) $ declEnum "Q"
-  ens <- declVars smtQ (SortedSet.toList $ eNums cs)
+  let allENums = eNums cs <+> minvs <+> maxvs
+  ens <- declVars smtQ (SortedSet.toList allENums)
   let ev = evSmt ens
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
