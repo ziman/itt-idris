@@ -45,7 +45,7 @@ subst : (a : Type) -> (P : a -> Type)
   -> (eq : Id a x y)
   -> (w : P x) -> P y
 {
-  forall (a : Type) (P : a -> Type) (x : a)
+  forall (a : Type) (P : (x :E a) -> Type) (x : a)
   subst a P x [x] ({Refl} [a] [x]) ~> \w : P x. w
 }
 

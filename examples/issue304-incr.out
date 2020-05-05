@@ -238,4 +238,5 @@ error: With backtrace:
   "PI": ((xs :L Vect n a) -> Elem a n x (Cons a n x xs))
   "APP": Elem a n x (Cons a n x xs)
   "fTy": ((_ :E Vect n a) -> Type)
+  "xTy": Vect (S n) a
 can't convert: S n with n
