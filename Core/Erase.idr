@@ -101,6 +101,10 @@ eraseDefs ((MkDef (B n _ ty) body) :: ds) =
     (eraseBody body)
   :: eraseDefs ds
 
+dropEmpty : List a -> List (List a)
+dropEmpty [] = []
+dropEmpty xs = [xs]
+
 export
 eraseGlobals : (gs : Globals Q) -> Globals ()
-eraseGlobals = fromBlocks . map eraseDefs . toBlocks
+eraseGlobals = fromBlocks . concatMap dropEmpty . map eraseDefs . toBlocks
