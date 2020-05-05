@@ -91,52 +91,54 @@ ctorMatches (Forced _) _ = True
 ctorMatches (Checked cn) cn' = cn == cn'
 
 mutual
-  matchPat : Subst q n pn -> Pat q pn -> TT q n -> Outcome (Subst q n pn)
-  matchPat s (PV pv) tm = case s pv of
+  matchPat : Globals q -> Subst q n pn -> Pat q pn -> TT q n -> Outcome (Subst q n pn)
+  matchPat gs s (PV pv) tm = case s pv of
     Nothing => Match $ insert pv (Just tm) s
     Just _  => Error OvermatchedPatVar
-  matchPat s (PForced _) _ = Match s
-  matchPat s (PCtorApp ctor ps) tm =
+  matchPat gs s (PForced _) _ = Match s
+  matchPat gs s (PCtorApp ctor ps) tm =
     case unApply tm of
       (P cn, args) =>
-        -- TODO: check that cn is actually a constructor
-        -- if not, we should be stuck!
-        if ctorMatches ctor cn
-          then case zipMatch (snd <$> ps) (snd <$> args) of
-            Just psArgs =>
-              let psa = fromList psArgs
-                in matchPats s (fst <$> psa) (snd <$> psa)
+        case .body <$> lookup cn gs of
+          Just Constructor  =>
+            if ctorMatches ctor cn
+              then case zipMatch (snd <$> ps) (snd <$> args) of
+                Just psArgs =>
+                  let psa = fromList psArgs
+                    in matchPats gs s (fst <$> psa) (snd <$> psa)
 
-            -- this happens when we're matching a forced constructor:
-            -- wrong arity means this match is actually ill-typed
-            -- which means that some other pattern must mismatch (we just haven't gotten there yet)
-            -- because the clause is assumed to be forced-pattern-consistent
-            -- so let's just conclude mismatch
-            Nothing => Mismatch
-          else Mismatch
+                -- this happens when we're matching a forced constructor:
+                -- wrong arity means this match is actually ill-typed
+                -- which means that some other pattern must mismatch (we just haven't gotten there yet)
+                -- because the clause is assumed to be forced-pattern-consistent
+                -- so let's just conclude mismatch
+                Nothing => Mismatch
+              else Mismatch
+          Just _ => Stuck  -- not a constructor
+          Nothing => Error $ UnknownGlobal cn
       (V _, _) => Stuck
       _ => Mismatch
-  matchPat s PWildcard _ = Match s
+  matchPat gs s PWildcard _ = Match s
 
-  matchPats : Subst q n pn -> Vect argn (Pat q pn) -> Vect argn (TT q n) -> Outcome (Subst q n pn)
-  matchPats s [] [] = Match s
-  matchPats s (p :: ps) (tm :: tms) =
-    matchPat s p tm >>=
-      \s' => matchPats s' ps tms
+  matchPats : Globals q -> Subst q n pn -> Vect argn (Pat q pn) -> Vect argn (TT q n) -> Outcome (Subst q n pn)
+  matchPats gs s [] [] = Match s
+  matchPats gs s (p :: ps) (tm :: tms) =
+    matchPat gs s p tm >>=
+      \s' => matchPats gs s' ps tms
 
-matchClause : Clause q argn -> Vect argn (TT q n) -> Outcome (TT q n)
-matchClause clause args =
-  matchPats (\_ => Nothing) (snd <$> clause.lhs) args >>=
+matchClause : Globals q -> Clause q argn -> Vect argn (TT q n) -> Outcome (TT q n)
+matchClause gs clause args =
+  matchPats gs (\_ => Nothing) (snd <$> clause.lhs) args >>=
     \s => case fromSubst s of
       Nothing => Error UnmatchedPatVar
       Just vs => Match $ subst (\i => lookup i vs) clause.rhs
 
-matchClauses : Vect argn (TT q n) -> List (Clause q argn) -> Outcome (TT q n)
-matchClauses args [] = Mismatch
-matchClauses args (c :: cs) =
-  case matchClause c args of
+matchClauses : Globals q -> Vect argn (TT q n) -> List (Clause q argn) -> Outcome (TT q n)
+matchClauses gs args [] = Mismatch
+matchClauses gs args (c :: cs) =
+  case matchClause gs c args of
     Match tm => Match tm
-    Mismatch => matchClauses args cs
+    Mismatch => matchClauses gs args cs
     Stuck => Stuck
     Error e => Error e
 
@@ -182,7 +184,7 @@ mutual
           Just (Clauses argn cs) => case maybeTake argn args of
             Just (fargs, rest) => do
               fargsRed <- traverse (red operandForm gs . snd) fargs
-              case matchClauses fargsRed cs of
+              case matchClauses gs fargsRed cs of
                 Match fx => red rf gs $ mkApp fx rest
                 Mismatch => Left $ NoMatchingClause n
                 Stuck => stuckTm rf gs (P n) args

@@ -409,7 +409,8 @@ inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
       appQ ~~ piQ
       xTy <- withGuard piQ $ inferTm x
       traceTm fTy "fTy" $
-        xTy ~= piTy
+        traceTm fTy "piTy" $
+          xTy ~= piTy
 
       pure $ subst (substFZ x) piRhs
 
