@@ -1,3 +1,9 @@
+{-
+%options
+  "--incremental"
+  "--default-constructor-quantities"
+-}
+
 -- The prelude
 
 data N : Type {
