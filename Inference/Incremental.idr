@@ -8,9 +8,12 @@ import public Compiler.Monad
 import public Data.SortedMap
 
 import Data.Maybe
-import Utils.Pretty
+
+import Core.TT.Utils
 import Inference.Infer
 import Inference.Solve
+import Inference.Variance
+import Utils.Pretty
 
 -- fill/conservative
 -- if known, fill in; otherwise leave unspecified
@@ -55,7 +58,13 @@ inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (d :: ds) = do
           $$ text ""
     )
 
-  newVals <- Solve.solve cfg (MkConstrs cs eqs)
+  log "  variance of evars:"
+  let var = variance d.binding.type
+  prd . indent $
+    text "variance of evars:"
+    $$ indent (pretty () var)
+
+  newVals <- Solve.solve cfg var.contravariant var.covariant (MkConstrs cs eqs)
   let vals = mergeLeft newVals oldVals
   let dSolved = mapQ definitionQ (fillI vals) d
 
@@ -84,7 +93,9 @@ infer cfg evarified = do
   globConstrs <- case toConstrs evarified $ mapGCs vals globUsage of
     Left n => throw $ "constraint for non-existent global: " ++ show n
     Right gcs => pure gcs
-  gvals <- Solve.solve cfg (MkConstrs globConstrs [])
+
+  let allGVs = concatMap getENum [d.binding.qv | d <- toList evarified]
+  gvals <- Solve.solve cfg allGVs empty (MkConstrs globConstrs [])
 
   -- gvals have priority on conflict
   pure (mergeLeft gvals vals)

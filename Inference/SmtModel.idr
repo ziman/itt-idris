@@ -50,15 +50,14 @@ evSmt vs (EV i) = case SortedMap.lookup i vs of
   Just v  => v
   Nothing => smtError "cannot-happen"
 
-model : List Constr -> SmtM Doc (FList Smt [(ENum, Q)])
-model cs = do
+numberOf : Q -> List (Smt Q) -> Smt Int
+numberOf q vs = sum [ifte {a=Int} (v .== lit q) 1 0 | v <- vs]
+
+model : SortedSet ENum -> SortedSet ENum -> List Constr -> SmtM Doc (FList Smt [(ENum, Q)])
+model minvs maxvs cs = do
   smtQ <- the (SmtM Doc (SmtType Q)) $ declEnum "Q"
   ens <- declVars smtQ (SortedSet.toList $ eNums cs)
   let ev = evSmt ens
-  let numberOf = \q : Q => sum
-        [ ifte {a=Int} (v .== lit q) 1 0
-        | (i, v) <- SortedMap.toList ens
-        ]
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
   mul <- defineEnumFun2 "mul" smtQ smtQ smtQ (.*.)
@@ -74,10 +73,17 @@ model cs = do
       CProdEq lhs rhs => product lhs .== ev rhs
       CEq lhs rhs => ev lhs .== ev rhs
 
-  minimise $ numberOf R + numberOf L
-  minimise $ numberOf R
-  minimise $ numberOf E
-  minimise $ numberOf I
+  let minvs' = ev . EV <$> toList minvs
+  minimise $ numberOf R minvs' + numberOf L minvs'
+  minimise $ numberOf R minvs'
+  minimise $ numberOf E minvs'
+  minimise $ numberOf I minvs'
+
+  let maxvs' = ev . EV <$> toList maxvs
+  maximise $ numberOf R maxvs' + numberOf L maxvs'
+  maximise $ numberOf R maxvs'
+  maximise $ numberOf E maxvs'
+  maximise $ numberOf I maxvs'
 
   pure [SortedMap.toList ens]
  where
@@ -87,9 +93,9 @@ model cs = do
   foldMap op neutr f (x :: xs) = f x `op` foldMap op neutr f xs
 
 export
-solve : List Constr -> IO (Either Error (SortedMap ENum Q))
-solve cs = do
-  sol <- Smt.solve $ model cs
+solve : SortedSet ENum -> SortedSet ENum -> List Constr -> IO (Either Error (SortedMap ENum Q))
+solve minvs maxvs cs = do
+  sol <- Smt.solve $ model minvs maxvs cs
   pure $ case sol of
     Left (Smt.Unsatisfiable core) => Left (Unsatisfiable core)
     Left e => Left (OtherError $ show e)

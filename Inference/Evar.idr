@@ -3,6 +3,7 @@ module Inference.Evar
 import Core.TT.Lens
 import public Core.TT
 import public Data.SortedMap
+import public Data.SortedSet
 import public Control.Monad.State
 
 %default total
@@ -80,3 +81,8 @@ substQ vs (EV i) = SortedMap.lookup i vs <|> Just I
 -- i assume that in such cases you can freely choose what you like
 -- so we choose "I" here, by appending "<|> Just I"
 -- this function thus never returns Nothing
+
+export
+getENum : Evar -> SortedSet ENum
+getENum (EV i) = insert i empty
+getENum (QQ _) = empty

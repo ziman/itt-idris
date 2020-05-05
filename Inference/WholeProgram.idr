@@ -6,6 +6,7 @@ import public Compiler.Config
 import public Compiler.Monad
 import public Inference.Evar
 import public Inference.Infer
+import public Inference.Variance
 import public Inference.Constraint
 import public Data.SortedMap
 
@@ -29,4 +30,8 @@ infer cfg evarified = do
   banner "# Deferred equalities #"
   log $ unlines $ map show cs.deferredEqs
 
-  Solve.solve cfg cs
+  banner "# Variance of evars #"
+  let var = concatMap (variance . .binding.type) $ toList evarified
+  prd $ pretty () var
+
+  Solve.solve cfg var.contravariant var.covariant cs

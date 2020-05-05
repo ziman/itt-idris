@@ -12,6 +12,7 @@ import Inference.SmtQuick
 import Inference.SmtModel
 
 import Data.Strings
+import public Data.SortedSet
 import public Data.SortedMap
 
 %default total
@@ -39,11 +40,13 @@ covering
 iterConstrs :
     Config
     -> Int
+    -> SortedSet ENum
+    -> SortedSet ENum
     -> Constrs
     -> Inference.Infer.TCState
     -> ITT (SortedMap ENum Q)
-iterConstrs cfg i cs st = do
-  vals <- liftIO (SmtModel.solve cs.constrs) >>= \case
+iterConstrs cfg i minvs maxvs cs st = do
+  vals <- liftIO (SmtModel.solve minvs maxvs cs.constrs) >>= \case
     Left (Unsatisfiable core) => do
       log ""
       banner "# Unsatisfiable core #"
@@ -57,7 +60,7 @@ iterConstrs cfg i cs st = do
     ([], _) => pure vals
 
     (newEqs, waitingEqs) => do
-      log $ "  -> iteration " ++ show i 
+      log $ "  -> iteration " ++ show i
       log $ unlines
         [ "    " ++ showTm ctx x ++ " ~ " ++ showTm ctx y
         | DeferEq trigger bt gs ctx x y <- newEqs
@@ -70,11 +73,11 @@ iterConstrs cfg i cs st = do
           -- and eqs' (eqs from this iteration)
           -- we drop eqs we have already reached and checked
           -- otherwise we'd loop forever in checking them again and again
-          iterConstrs cfg (i+1)
+          iterConstrs cfg (i+1) minvs maxvs
             -- prepend for efficiency
             (MkConstrs (cs' ++ cs.constrs) (eqs' ++ waitingEqs))
             st'
 
 covering export
-solve : Config -> Constrs -> ITT (SortedMap ENum Q)
-solve cfg cs = iterConstrs cfg 1 cs MkTCS
+solve : Config -> SortedSet ENum -> SortedSet ENum -> Constrs -> ITT (SortedMap ENum Q)
+solve cfg minvs maxvs cs = iterConstrs cfg 1 minvs maxvs cs MkTCS

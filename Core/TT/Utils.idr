@@ -1,6 +1,7 @@
 module Core.TT.Utils
 
 import public Core.TT
+import public Data.SortedSet
 import Data.List
 
 %default total
@@ -28,3 +29,12 @@ hasTypeTarget : TT q n -> Bool
 hasTypeTarget (Pi b rhs) = hasTypeTarget rhs
 hasTypeTarget Type_ = True
 hasTypeTarget _ = False
+
+-- returns (covariant, contravariant)
+export
+getVariance : Ord q => TT q n -> (SortedSet q, SortedSet q)
+getVariance (Pi (B n q ty) rhs) =
+  case (getVariance ty, getVariance rhs) of
+    ((coTy, contraTy), (coRhs, contraRhs)) =>
+      (coRhs <+> contraTy, insert q contraRhs <+> coTy)
+getVariance _ = (empty, empty)
