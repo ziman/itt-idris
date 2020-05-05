@@ -77,6 +77,7 @@ snoc (MkGlobals ds ord) d =
 
 export
 snocBlock : Globals q -> List (Definition q) -> Globals q
+snocBlock gs [] = gs
 snocBlock (MkGlobals ds ord) dsBlk =
   let ns = map (UN . .binding.name) dsBlk
       dsBlkMap = SortedMap.fromList [(UN d.binding.name, d) | d <- dsBlk]
