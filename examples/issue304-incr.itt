@@ -1,0 +1,60 @@
+-- https://github.com/edwinb/Idris2/issues/304
+%options "--incremental" "--default-constructor-quantities"
+
+data Nat : Type {
+  Z : Nat,
+  S : Nat -> Nat
+}
+
+data Fin : Nat -> Type {
+  FZ : (n :I Nat) -> Fin (S n),
+  FS : (n :I Nat) -> Fin n -> Fin (S n)
+}
+
+data Vect : Nat -> Type -> Type {
+  Nil : (a :I Type) -> Vect Z a,
+  Cons : (a :I Type) -> (n :I Nat) -> a -> Vect n a -> Vect (S n) a
+}
+
+data Elem : (a : Type) -> (n : Nat) -> a -> Vect n a -> Type {
+  Here : (a :I Type) -> (n :I Nat) -> (x : a) -> (xs : Vect n a)
+    -> Elem a n x (Cons a n x xs),
+  There : (a :I Type) -> (n :I Nat) -> (x : a) -> (y : a) -> (xs : Vect n a)
+    -> (t :L Elem a n x xs)
+    -> Elem a n x (Cons a n y xs)
+}
+
+data Typ : Type {
+  TLam : Typ -> Typ -> Typ,
+  TNat : Typ
+}
+
+data Term : (n : Nat) -> Typ -> Vect n Typ -> Type {
+  Var : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ)
+    -> Elem Typ n a ctx
+    -> Term n a ctx,
+  Lam : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (b : Typ)
+    -> Term (S n) b (Cons Typ n a ctx)
+    -> Term n (TLam a b) ctx,
+  Fix : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ)
+    -> Term (S n) a (Cons Typ n a ctx)
+    -> Term n a ctx
+}
+
+lookup : (n : Nat) -> Vect n Typ -> Fin n -> Typ {
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a,
+
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ) (i : Fin n)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
+}
+
+count : (n : Nat) -> (ctx : Vect n Typ) -> (i : Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx,
+
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ) (i : Fin n)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
+}
+
+main : Type ~> Type.

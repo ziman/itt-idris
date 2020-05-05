@@ -2,11 +2,13 @@
 # Desugared #
 #############
 
-constructor Bool : Type.
-
-constructor True : Bool.
-
-constructor False : Bool.
+mutual {
+  constructor Bool : Type.
+  
+  constructor True : Bool.
+  
+  constructor False : Bool.
+}
 
 and : (_ : Bool) -> (_ : Bool) -> Bool {
   and True True ~> True
@@ -18,9 +20,11 @@ and : (_ : Bool) -> (_ : Bool) -> Bool {
   and False False ~> False
 }
 
-constructor T : Type.
-
-constructor C : (x :L Bool) -> T.
+mutual {
+  constructor T : Type.
+  
+  constructor C : (x :L Bool) -> T.
+}
 
 fI : (x :I T) -> Bool {
   forall (x :I Bool)
@@ -45,16 +49,17 @@ fR : (x :R T) -> Bool {
 main : Type {
   main  ~> Type
 }
-
 #############
 # Evarified #
 #############
 
-constructor Bool :0 Type.
-
-constructor True :4 Bool.
-
-constructor False :2 Bool.
+mutual {
+  constructor Bool :0 Type.
+  
+  constructor True :4 Bool.
+  
+  constructor False :2 Bool.
+}
 
 and :5 (_ :6 Bool) -> (_ :7 Bool) -> Bool {
   and True True ~> True
@@ -66,9 +71,11 @@ and :5 (_ :6 Bool) -> (_ :7 Bool) -> Bool {
   and False False ~> False
 }
 
-constructor T :3 Type.
-
-constructor C :1 (x :L Bool) -> T.
+mutual {
+  constructor T :3 Type.
+  
+  constructor C :1 (x :L Bool) -> T.
+}
 
 fI :19 (x :I T) -> Bool {
   forall (x :I Bool)
@@ -93,7 +100,6 @@ fR :25 (x :R T) -> Bool {
 main :30 Type {
   main  ~> Type
 }
-
 Running erasure inference...
 
 ########################
@@ -170,9 +176,12 @@ R ≥ sum
 #######################
 
 
-  -> iteration 1
-    -> No more equalities, fixed point reached.
+#####################
+# Variance of evars #
+#####################
 
+covariant: []
+contravariant: [6, 7]
 ###################
 # Final valuation #
 ###################
@@ -206,11 +215,13 @@ R ≥ sum
 # Annotated program #
 #####################
 
-constructor Bool :I Type.
-
-constructor True :R Bool.
-
-constructor False :R Bool.
+mutual {
+  constructor Bool :I Type.
+  
+  constructor True :R Bool.
+  
+  constructor False :R Bool.
+}
 
 and :L (_ :L Bool) -> (_ :L Bool) -> Bool {
   and True True ~> True
@@ -222,9 +233,11 @@ and :L (_ :L Bool) -> (_ :L Bool) -> Bool {
   and False False ~> False
 }
 
-constructor T :I Type.
-
-constructor C :I (x :L Bool) -> T.
+mutual {
+  constructor T :I Type.
+  
+  constructor C :I (x :L Bool) -> T.
+}
 
 fI :I (x :I T) -> Bool {
   forall (x :I Bool)
@@ -249,14 +262,15 @@ fR :I (x :R T) -> Bool {
 main :L Type {
   main  ~> Type
 }
-
 ##########
 # Erased #
 ##########
 
-constructor True : Bool.
-
-constructor False : Bool.
+mutual {
+  constructor True : Bool.
+  
+  constructor False : Bool.
+}
 
 and : (_) -> (_) -> Bool {
   and True True ~> True
@@ -268,10 +282,24 @@ and : (_) -> (_) -> Bool {
   and False False ~> False
 }
 
+mutual {
+}
+
+mutual {
+}
+
+mutual {
+}
+
+mutual {
+}
+
+mutual {
+}
+
 main : Type {
   main  ~> Type
 }
-
 ################
 # NF of `main` #
 ################

@@ -15,7 +15,7 @@ mutual {
   
   constructor Z : Nat.
   
-  constructor S : (n :L Nat) -> Nat.
+  constructor S : (n : Nat) -> Nat.
 }
 
 mutual {
@@ -23,7 +23,7 @@ mutual {
   
   constructor Nil : Vect Z.
   
-  constructor Cons : (n : Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
+  constructor Cons : (n :I Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
 }
 
 length : (n : Nat) -> (_ : Vect n) -> Nat {
@@ -45,23 +45,23 @@ mutual {
   
   constructor True :13 Bool.
   
-  constructor False :8 Bool.
+  constructor False :7 Bool.
 }
 
 mutual {
-  constructor Nat :9 Type.
+  constructor Nat :8 Type.
   
   constructor Z :16 Nat.
   
-  constructor S :12 (n :L Nat) -> Nat.
+  constructor S :11 (n :12 Nat) -> Nat.
 }
 
 mutual {
   constructor Vect :14 (_ :15 Nat) -> Type.
   
-  constructor Nil :10 Vect Z.
+  constructor Nil :9 Vect Z.
   
-  constructor Cons :1 (n :2 Nat) -> (_ :3 Bool) -> (_ :4 Vect n) -> Vect (S n).
+  constructor Cons :1 (n :I Nat) -> (_ :2 Bool) -> (_ :3 Vect n) -> Vect (S n).
 }
 
 length :17 (n :18 Nat) -> (_ :19 Vect n) -> Nat {
@@ -82,26 +82,26 @@ Running erasure inference...
 
 1 ≥ sum
   product [19]
-10 ≥ sum
-  product [4, 19]
-12 ≥ sum
+9 ≥ sum
+  product [3, 19]
+11 ≥ sum
   product []
   product [18]
 13 ≥ sum
-  product [3, 19]
+  product [2, 19]
 16 ≥ sum
   product []
-  product [L, 18]
-  product [2, 19]
+  product [12, 18]
+  product [I, 19]
 17 ≥ sum
-  product [L]
+  product [12]
   product []
 36 ≥ sum
   product []
-15 ~ 11
+15 ~ 10
+15 ~ 4
 15 ~ 5
-15 ~ 6
-L ~ 7
+12 ~ 6
 15 ~ 20
 18 ~ 21
 product [18] ≥ sum
@@ -109,53 +109,53 @@ product [18] ≥ sum
 19 ~ 22
 product [19] ≥ sum
   product [L]
-20 ~ 11
+20 ~ 10
 15 ~ 24
-26 ~ product [L, 18]
-25 ~ product [3, 19]
-23 ~ product [4, 19]
+26 ~ product [12, 18]
+25 ~ product [2, 19]
+23 ~ product [3, 19]
 18 ~ 27
 product [18] ≥ sum
   product [I]
-L ~ 28
+12 ~ 28
 19 ~ 29
 product [19] ≥ sum
   product [L]
-2 ~ 30
-3 ~ 31
-4 ~ 32
-5 ~ 24
-20 ~ 6
+I ~ 30
+2 ~ 31
+3 ~ 32
+4 ~ 24
+20 ~ 5
 26 ≥ sum
-  product [18, L]
+  product [18, 12]
 25 ≥ sum
 23 ≥ sum
-  product [19, L]
-L ~ 33
+  product [19, 12]
+12 ~ 33
 18 ~ 35
 19 ~ 34
 20 ~ 24
 18 ~ 38
-L ~ 39
+12 ~ 39
 19 ~ 37
-2 ~ 42
-3 ~ 41
-4 ~ 40
-5 ~ 11
-20 ~ 6
+I ~ 42
+2 ~ 41
+3 ~ 40
+4 ~ 10
+20 ~ 5
 #######################
 # Deferred equalities #
 #######################
 
-6 -> S n ~ S n
-6 -> S Z ~ S Z
+5 -> S n ~ S n
+5 -> S Z ~ S Z
 
 #####################
 # Variance of evars #
 #####################
 
 covariant: []
-contravariant: [2, 3, 4, 15, 18, 19]
+contravariant: [2, 3, 12, 15, 18, 19]
 ###################
 # Final valuation #
 ###################
@@ -163,40 +163,40 @@ contravariant: [2, 3, 4, 15, 18, 19]
   1 -> R
   2 -> I
   3 -> I
-  4 -> L
+  4 -> I
   5 -> I
   6 -> I
-  7 -> L
-  10 -> R
-  11 -> I
-  12 -> L
+  9 -> I
+  10 -> I
+  11 -> R
+  12 -> I
   13 -> I
   15 -> I
-  16 -> L
+  16 -> R
   17 -> R
   18 -> I
   19 -> L
   20 -> I
   21 -> I
   22 -> L
-  23 -> L
+  23 -> I
   24 -> I
   25 -> I
   26 -> I
   27 -> I
-  28 -> L
+  28 -> I
   29 -> L
   30 -> I
   31 -> I
-  32 -> L
-  33 -> L
+  32 -> I
+  33 -> I
   34 -> L
   35 -> I
   36 -> L
   37 -> L
   38 -> I
-  39 -> L
-  40 -> L
+  39 -> I
+  40 -> I
   41 -> I
   42 -> I
 
@@ -215,23 +215,23 @@ mutual {
 mutual {
   constructor Nat :I Type.
   
-  constructor Z :L Nat.
+  constructor Z :R Nat.
   
-  constructor S :L (n :L Nat) -> Nat.
+  constructor S :R (n :I Nat) -> Nat.
 }
 
 mutual {
   constructor Vect :I (_ :I Nat) -> Type.
   
-  constructor Nil :R Vect Z.
+  constructor Nil :I Vect Z.
   
-  constructor Cons :R (n :I Nat) -> (_ :I Bool) -> (_ :L Vect n) -> Vect (S n).
+  constructor Cons :R (n :I Nat) -> (_ :I Bool) -> (_ :I Vect n) -> Vect (S n).
 }
 
 length :R (n :I Nat) -> (_ :L Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n :I Nat) (x :I Bool) (xs :L Vect n)
+  forall (n :I Nat) (x :I Bool) (xs :I Vect n)
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
@@ -248,24 +248,19 @@ mutual {
 mutual {
   constructor Z : Nat.
   
-  constructor S : (n) -> Nat.
+  constructor S : Nat.
 }
 
-mutual {
-  constructor Nil : Vect.
-  
-  constructor Cons : (_) -> Vect.
-}
+constructor Cons : Vect.
 
 length : (_) -> Nat {
   length Nil ~> Z
   
-  forall (xs)
-  length (Cons xs) ~> S (length xs)
+  length Cons ~> S
 }
 
 main : Nat {
-  main  ~> length (Cons Nil)
+  main  ~> length Cons
 }
 ################
 # NF of `main` #
@@ -275,4 +270,4 @@ Unerased, reduced:
 S Z
 
 Erased, reduced:
-S Z
+S

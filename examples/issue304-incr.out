@@ -1,0 +1,241 @@
+#############
+# Desugared #
+#############
+
+mutual {
+  constructor Nat : Type.
+  
+  constructor Z : Nat.
+  
+  constructor S : (_ : Nat) -> Nat.
+}
+
+mutual {
+  constructor Fin : (_ : Nat) -> Type.
+  
+  constructor FZ : (n :I Nat) -> Fin (S n).
+  
+  constructor FS : (n :I Nat) -> (_ : Fin n) -> Fin (S n).
+}
+
+mutual {
+  constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
+  
+  constructor Nil : (a :I Type) -> Vect Z a.
+  
+  constructor Cons : (a :I Type) -> (n :I Nat) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+}
+
+mutual {
+  constructor Elem : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Type.
+  
+  constructor Here : (a :I Type) -> (n :I Nat) -> (x : a) -> (xs : Vect n a) -> Elem a n x (Cons a n x xs).
+  
+  constructor There : (a :I Type) -> (n :I Nat) -> (x : a) -> (y : a) -> (xs : Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+}
+
+mutual {
+  constructor Typ : Type.
+  
+  constructor TLam : (_ : Typ) -> (_ : Typ) -> Typ.
+  
+  constructor TNat : Typ.
+}
+
+mutual {
+  constructor Term : (n : Nat) -> (_ : Typ) -> (_ : Vect n Typ) -> Type.
+  
+  constructor Var : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Elem Typ n a ctx) -> Term n a ctx.
+  
+  constructor Lam : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (b : Typ) -> (_ : Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  
+  constructor Fix : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+}
+
+lookup : (n : Nat) -> (_ : Vect n Typ) -> (_ : Fin n) -> Typ {
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
+  
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ) (i : Fin n)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
+}
+
+count : (n : Nat) -> (ctx : Vect n Typ) -> (i : Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
+  
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ) (i : Fin n)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
+}
+
+main : Type {
+  main  ~> Type
+}
+#############
+# Evarified #
+#############
+
+mutual {
+  constructor Nat :E Type.
+  
+  constructor Z :R Nat.
+  
+  constructor S :R (_ :L Nat) -> Nat.
+}
+
+mutual {
+  constructor Fin :E (_ :E Nat) -> Type.
+  
+  constructor FZ :R (n :I Nat) -> Fin (S n).
+  
+  constructor FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+}
+
+mutual {
+  constructor Vect :E (_ :E Nat) -> (_ :E Type) -> Type.
+  
+  constructor Nil :R (a :I Type) -> Vect Z a.
+  
+  constructor Cons :R (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+}
+
+mutual {
+  constructor Elem :E (a :E Type) -> (n :E Nat) -> (_ :E a) -> (_ :E Vect n a) -> Type.
+  
+  constructor Here :R (a :I Type) -> (n :I Nat) -> (x :L a) -> (xs :L Vect n a) -> Elem a n x (Cons a n x xs).
+  
+  constructor There :R (a :I Type) -> (n :I Nat) -> (x :L a) -> (y :L a) -> (xs :L Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+}
+
+mutual {
+  constructor Typ :E Type.
+  
+  constructor TLam :R (_ :L Typ) -> (_ :L Typ) -> Typ.
+  
+  constructor TNat :R Typ.
+}
+
+mutual {
+  constructor Term :E (n :E Nat) -> (_ :E Typ) -> (_ :E Vect n Typ) -> Type.
+  
+  constructor Var :R (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Elem Typ n a ctx) -> Term n a ctx.
+  
+  constructor Lam :R (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (b :L Typ) -> (_ :L Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  
+  constructor Fix :R (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+}
+
+lookup :138 (n :139 Nat) -> (_ :140 Vect n Typ) -> (_ :143 Fin n) -> Typ {
+  forall (a :149 Typ) (n :148 Nat) (ctx :145 Vect n Typ)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
+  
+  forall (a :165 Typ) (n :164 Nat) (ctx :161 Vect n Typ) (i :159 Fin n)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
+}
+
+count :77 (n :78 Nat) -> (ctx :79 Vect n Typ) -> (i :82 Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+  forall (n :95 Nat) (ctx :92 Vect n Typ) (a :91 Typ)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
+  
+  forall (n :115 Nat) (ctx :112 Vect n Typ) (a :111 Typ) (i :109 Fin n)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
+}
+
+main :179 Type {
+  main  ~> Type
+}
+inferring  mutual {
+    constructor Nat :E Type.
+    
+    constructor Z :R Nat.
+    
+    constructor S :R (_ :L Nat) -> Nat.
+  }
+
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor Nat :E Type.
+    
+    constructor Z :R Nat.
+    
+    constructor S :R (_ :L Nat) -> Nat.
+  }
+
+inferring  mutual {
+    constructor Fin :E (_ :E Nat) -> Type.
+    
+    constructor FZ :R (n :I Nat) -> Fin (S n).
+    
+    constructor FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+  }
+
+  inferred constraints: 
+    E ~ 10
+    L ~ 11
+    E ~ 7
+    E ~ 8
+    L ~ 9
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor Fin :E (_ :E Nat) -> Type.
+    
+    constructor FZ :R (n :I Nat) -> Fin (S n).
+    
+    constructor FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+  }
+
+inferring  mutual {
+    constructor Vect :E (_ :E Nat) -> (_ :E Type) -> Type.
+    
+    constructor Nil :R (a :I Type) -> Vect Z a.
+    
+    constructor Cons :R (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+  }
+
+  inferred constraints: 
+    E ~ 51
+    E ~ 50
+    E ~ 1
+    E ~ 0
+    E ~ 3
+    L ~ 4
+    E ~ 2
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor Vect :E (_ :E Nat) -> (_ :E Type) -> Type.
+    
+    constructor Nil :R (a :I Type) -> Vect Z a.
+    
+    constructor Cons :R (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+  }
+
+inferring  mutual {
+    constructor Elem :E (a :E Type) -> (n :E Nat) -> (_ :E a) -> (_ :E Vect n a) -> Type.
+    
+    constructor Here :R (a :I Type) -> (n :I Nat) -> (x :L a) -> (xs :L Vect n a) -> Elem a n x (Cons a n x xs).
+    
+    constructor There :R (a :I Type) -> (n :I Nat) -> (x :L a) -> (y :L a) -> (xs :L Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+  }
+
+error: With backtrace:
+  "DEF":  constructor Here :R (a :I Type) -> (n :I Nat) -> (x :L a) -> (xs :L Vect n a) -> Elem a n x (Cons a n x xs).
+  "BINDING": Here :R (a :I Type) -> (n :I Nat) -> (x :L a) -> (xs :L Vect n a) -> Elem a n x (Cons a n x xs)
+  "PI": ((a :I Type) -> (n :I Nat) -> (x :L a) -> (xs :L Vect n a) -> Elem a n x (Cons a n x xs))
+  "PI": ((n :I Nat) -> (x :L a) -> (xs :L Vect n a) -> Elem a n x (Cons a n x xs))
+  "PI": ((x :L a) -> (xs :L Vect n a) -> Elem a n x (Cons a n x xs))
+  "PI": ((xs :L Vect n a) -> Elem a n x (Cons a n x xs))
+  "APP": Elem a n x (Cons a n x xs)
+  "fTy": ((_ :E Vect n a) -> Type)
+can't convert: S n with n

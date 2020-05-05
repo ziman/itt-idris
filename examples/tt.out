@@ -2,31 +2,39 @@
 # Desugared #
 #############
 
-constructor Nat : Type.
+mutual {
+  constructor Nat : Type.
+  
+  constructor Z : Nat.
+  
+  constructor S : (n : Nat) -> Nat.
+}
 
-constructor Z : Nat.
+mutual {
+  constructor Fin : (_ : Nat) -> Type.
+  
+  constructor FZ : (n :I Nat) -> Fin (S n).
+  
+  constructor FS : (n :I Nat) -> (_ : Fin n) -> Fin (S n).
+}
 
-constructor S : (n : Nat) -> Nat.
+mutual {
+  constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
+  
+  constructor VN : (a :I Type) -> Vect Z a.
+  
+  constructor VC : (n :I Nat) -> (a :I Type) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+}
 
-constructor Fin : (_ : Nat) -> Type.
-
-constructor FZ : (n : Nat) -> Fin (S n).
-
-constructor FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
-
-constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
-
-constructor VN : (a : Type) -> Vect Z a.
-
-constructor VC : (n : Nat) -> (a : Type) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
-
-constructor TT : (_ : Nat) -> Type.
-
-constructor V : (n : Nat) -> (_ : Fin n) -> TT n.
-
-constructor Lam : (n : Nat) -> (_ : TT (S n)) -> TT n.
-
-constructor App : (n : Nat) -> (_ : TT n) -> (_ : TT n) -> TT n.
+mutual {
+  constructor TT : (_ : Nat) -> Type.
+  
+  constructor V : (n :I Nat) -> (_ : Fin n) -> TT n.
+  
+  constructor Lam : (n :I Nat) -> (_ : TT (S n)) -> TT n.
+  
+  constructor App : (n :I Nat) -> (_ : TT n) -> (_ : TT n) -> TT n.
+}
 
 env : (m : Nat) -> (n : Nat) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
   forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n))
@@ -90,1629 +98,1873 @@ substTop : (n : Nat) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
   substTop n tm (FS [n] i) ~> V n i
 }
 
-redex : (m : Nat) -> (_ : TT m) -> (_ : TT m) -> TT m {
-  forall (m : Nat) (y : TT (S m)) (x : TT m)
-  redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+mutual {
+  redex : (m : Nat) -> (_ : TT m) -> (_ : TT m) -> TT m {
+    forall (m : Nat) (y : TT (S m)) (x : TT m)
+    redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+    
+    forall (m : Nat) (f' : TT m) (x : TT m)
+    redex m f' x ~> App m f' (nf m x)
+  }
   
-  forall (m : Nat) (f' : TT m) (x : TT m)
-  redex m f' x ~> App m f' (nf m x)
-}
-
-nf : (m : Nat) -> (_ : TT m) -> TT m {
-  forall (m : Nat) (i : Fin m)
-  nf m (V [m] i) ~> V m i
-  
-  forall (m : Nat) (x : TT (S m))
-  nf m (Lam [m] x) ~> Lam m (nf (S m) x)
-  
-  forall (m : Nat) (f : TT m) (x : TT m)
-  nf m (App [m] f x) ~> redex m f x
+  nf : (m : Nat) -> (_ : TT m) -> TT m {
+    forall (m : Nat) (i : Fin m)
+    nf m (V [m] i) ~> V m i
+    
+    forall (m : Nat) (x : TT (S m))
+    nf m (Lam [m] x) ~> Lam m (nf (S m) x)
+    
+    forall (m : Nat) (f : TT m) (x : TT m)
+    nf m (App [m] f x) ~> redex m f x
+  }
 }
 
 example2 : TT (S Z) {
   example2  ~> nf (S Z) testTm
 }
 
-constructor Result : Type.
-
-constructor R : (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+mutual {
+  constructor Result : Type.
+  
+  constructor R : (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+}
 
 main : Result {
   main  ~> R example1 example2
 }
-
 #############
 # Evarified #
 #############
 
-constructor Nat :25 Type.
+mutual {
+  constructor Nat :E Type.
+  
+  constructor Z :R Nat.
+  
+  constructor S :R (n :L Nat) -> Nat.
+}
 
-constructor Z :57 Nat.
+mutual {
+  constructor Fin :E (_ :E Nat) -> Type.
+  
+  constructor FZ :R (n :I Nat) -> Fin (S n).
+  
+  constructor FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+}
 
-constructor S :31 (n :32 Nat) -> Nat.
+mutual {
+  constructor Vect :E (_ :E Nat) -> (_ :E Type) -> Type.
+  
+  constructor VN :R (a :I Type) -> Vect Z a.
+  
+  constructor VC :R (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+}
 
-constructor Fin :17 (_ :18 Nat) -> Type.
+mutual {
+  constructor TT :E (_ :E Nat) -> Type.
+  
+  constructor V :R (n :I Nat) -> (_ :L Fin n) -> TT n.
+  
+  constructor Lam :R (n :I Nat) -> (_ :L TT (S n)) -> TT n.
+  
+  constructor App :R (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
+}
 
-constructor FZ :13 (n :14 Nat) -> Fin (S n).
-
-constructor FS :7 (n :8 Nat) -> (_ :9 Fin n) -> Fin (S n).
-
-constructor Vect :54 (_ :55 Nat) -> (_ :56 Type) -> Type.
-
-constructor VN :50 (a :51 Type) -> Vect Z a.
-
-constructor VC :40 (n :41 Nat) -> (a :42 Type) -> (_ :43 a) -> (_ :44 Vect n a) -> Vect (S n) a.
-
-constructor TT :33 (_ :34 Nat) -> Type.
-
-constructor V :35 (n :36 Nat) -> (_ :37 Fin n) -> TT n.
-
-constructor Lam :19 (n :20 Nat) -> (_ :21 TT (S n)) -> TT n.
-
-constructor App :0 (n :1 Nat) -> (_ :2 TT n) -> (_ :4 TT n) -> TT n.
-
-env :58 (m :59 Nat) -> (n :60 Nat) -> (_ :61 Vect m (TT n)) -> (_ :65 Fin m) -> TT n {
-  forall (m :75 Nat) (n :74 Nat) (x :72 TT n) (xs :68 Vect m (TT n))
+env :23 (m :24 Nat) -> (n :25 Nat) -> (_ :26 Vect m (TT n)) -> (_ :30 Fin m) -> TT n {
+  forall (m :40 Nat) (n :39 Nat) (x :37 TT n) (xs :33 Vect m (TT n))
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
-  forall (m :96 Nat) (n :95 Nat) (x :93 TT n) (xs :89 Vect m (TT n)) (i :87 Fin m)
+  forall (m :61 Nat) (n :60 Nat) (x :58 TT n) (xs :54 Vect m (TT n)) (i :52 Fin m)
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
-extendMap :143 (m :144 Nat) -> (n :145 Nat) -> (_ :146 (_ :147 Fin m) -> Fin n) -> (_ :150 Fin (S m)) -> Fin (S n) {
-  forall (m :160 Nat) (n :159 Nat) (f :155 (_ :156 Fin m) -> Fin n)
+extendMap :108 (m :109 Nat) -> (n :110 Nat) -> (_ :111 (_ :112 Fin m) -> Fin n) -> (_ :115 Fin (S m)) -> Fin (S n) {
+  forall (m :125 Nat) (n :124 Nat) (f :120 (_ :121 Fin m) -> Fin n)
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m :174 Nat) (n :173 Nat) (f :169 (_ :170 Fin m) -> Fin n) (i :167 Fin m)
+  forall (m :139 Nat) (n :138 Nat) (f :134 (_ :135 Fin m) -> Fin n) (i :132 Fin m)
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
-mapVars :235 (m :236 Nat) -> (n :237 Nat) -> (_ :238 (_ :239 Fin m) -> Fin n) -> (_ :242 TT m) -> TT n {
-  forall (m :252 Nat) (n :251 Nat) (f :247 (_ :248 Fin m) -> Fin n) (i :245 Fin m)
+mapVars :200 (m :201 Nat) -> (n :202 Nat) -> (_ :203 (_ :204 Fin m) -> Fin n) -> (_ :207 TT m) -> TT n {
+  forall (m :217 Nat) (n :216 Nat) (f :212 (_ :213 Fin m) -> Fin n) (i :210 Fin m)
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m :270 Nat) (n :269 Nat) (f :265 (_ :266 Fin m) -> Fin n) (x :262 TT (S m))
+  forall (m :235 Nat) (n :234 Nat) (f :230 (_ :231 Fin m) -> Fin n) (x :227 TT (S m))
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m :297 Nat) (n :296 Nat) (f :292 (_ :293 Fin m) -> Fin n) (g :290 TT m) (x :288 TT m)
+  forall (m :262 Nat) (n :261 Nat) (f :257 (_ :258 Fin m) -> Fin n) (g :255 TT m) (x :253 TT m)
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
-extendSubst :184 (m :185 Nat) -> (n :186 Nat) -> (_ :187 (_ :188 Fin m) -> TT n) -> (_ :191 Fin (S m)) -> TT (S n) {
-  forall (m :201 Nat) (n :200 Nat) (f :196 (_ :197 Fin m) -> TT n)
+extendSubst :149 (m :150 Nat) -> (n :151 Nat) -> (_ :152 (_ :153 Fin m) -> TT n) -> (_ :156 Fin (S m)) -> TT (S n) {
+  forall (m :166 Nat) (n :165 Nat) (f :161 (_ :162 Fin m) -> TT n)
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m :218 Nat) (n :217 Nat) (f :213 (_ :214 Fin m) -> TT n) (i :211 Fin m)
+  forall (m :183 Nat) (n :182 Nat) (f :178 (_ :179 Fin m) -> TT n) (i :176 Fin m)
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
-substVars :425 (m :426 Nat) -> (n :427 Nat) -> (_ :428 (_ :429 Fin m) -> TT n) -> (_ :432 TT m) -> TT n {
-  forall (m :442 Nat) (n :441 Nat) (f :437 (_ :438 Fin m) -> TT n) (i :435 Fin m)
+substVars :390 (m :391 Nat) -> (n :392 Nat) -> (_ :393 (_ :394 Fin m) -> TT n) -> (_ :397 TT m) -> TT n {
+  forall (m :407 Nat) (n :406 Nat) (f :402 (_ :403 Fin m) -> TT n) (i :400 Fin m)
   substVars m n f (V [m] i) ~> f i
   
-  forall (m :458 Nat) (n :457 Nat) (f :453 (_ :454 Fin m) -> TT n) (x :450 TT (S m))
+  forall (m :423 Nat) (n :422 Nat) (f :418 (_ :419 Fin m) -> TT n) (x :415 TT (S m))
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m :485 Nat) (n :484 Nat) (f :480 (_ :481 Fin m) -> TT n) (g :478 TT m) (x :476 TT m)
+  forall (m :450 Nat) (n :449 Nat) (f :445 (_ :446 Fin m) -> TT n) (g :443 TT m) (x :441 TT m)
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
-testTm :504 TT (S Z) {
+testTm :469 TT (S Z) {
   testTm  ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
 }
 
-example1 :113 TT Z {
+example1 :78 TT Z {
   example1  ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
 }
 
-substTop :398 (n :399 Nat) -> (_ :400 TT n) -> (_ :402 Fin (S n)) -> TT n {
-  forall (n :408 Nat) (tm :406 TT n)
+substTop :363 (n :364 Nat) -> (_ :365 TT n) -> (_ :367 Fin (S n)) -> TT n {
+  forall (n :373 Nat) (tm :371 TT n)
   substTop n tm (FZ [n]) ~> tm
   
-  forall (n :417 Nat) (tm :415 TT n) (i :413 Fin n)
+  forall (n :382 Nat) (tm :380 TT n) (i :378 Fin n)
   substTop n tm (FS [n] i) ~> V n i
 }
 
-redex :356 (m :357 Nat) -> (_ :358 TT m) -> (_ :360 TT m) -> TT m {
-  forall (m :368 Nat) (y :365 TT (S m)) (x :363 TT m)
-  redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+mutual {
+  redex :321 (m :322 Nat) -> (_ :323 TT m) -> (_ :325 TT m) -> TT m {
+    forall (m :333 Nat) (y :330 TT (S m)) (x :328 TT m)
+    redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+    
+    forall (m :354 Nat) (f' :352 TT m) (x :350 TT m)
+    redex m f' x ~> App m f' (nf m x)
+  }
   
-  forall (m :389 Nat) (f' :387 TT m) (x :385 TT m)
-  redex m f' x ~> App m f' (nf m x)
+  nf :281 (m :282 Nat) -> (_ :283 TT m) -> TT m {
+    forall (m :288 Nat) (i :286 Fin m)
+    nf m (V [m] i) ~> V m i
+    
+    forall (m :298 Nat) (x :295 TT (S m))
+    nf m (Lam [m] x) ~> Lam m (nf (S m) x)
+    
+    forall (m :312 Nat) (f :310 TT m) (x :308 TT m)
+    nf m (App [m] f x) ~> redex m f x
+  }
 }
 
-nf :316 (m :317 Nat) -> (_ :318 TT m) -> TT m {
-  forall (m :323 Nat) (i :321 Fin m)
-  nf m (V [m] i) ~> V m i
-  
-  forall (m :333 Nat) (x :330 TT (S m))
-  nf m (Lam [m] x) ~> Lam m (nf (S m) x)
-  
-  forall (m :347 Nat) (f :345 TT m) (x :343 TT m)
-  nf m (App [m] f x) ~> redex m f x
-}
-
-example2 :137 TT (S Z) {
+example2 :102 TT (S Z) {
   example2  ~> nf (S Z) testTm
 }
 
-constructor Result :30 Type.
-
-constructor R :26 (x :L TT Z) -> (y :L TT (S Z)) -> Result.
-
-main :232 Result {
-  main  ~> R example1 example2
+mutual {
+  constructor Result :E Type.
+  
+  constructor R :R (x :L TT Z) -> (y :L TT (S Z)) -> Result.
 }
 
-Running erasure inference...
+main :197 Result {
+  main  ~> R example1 example2
+}
+inferring  mutual {
+    constructor Nat :E Type.
+    
+    constructor Z :R Nat.
+    
+    constructor S :R (n :L Nat) -> Nat.
+  }
 
-########################
-# Inferred constraints #
-########################
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor Nat :E Type.
+    
+    constructor Z :R Nat.
+    
+    constructor S :R (n :L Nat) -> Nat.
+  }
 
-0 ≥ sum
-  product []
-  product []
-  product []
-  product [21, 2]
-  product [21, 4]
-  product []
-7 ≥ sum
-  product []
-  product [238]
-  product [37, 4, 21, 2]
-  product [37, 2, 21, 4]
-13 ≥ sum
-  product []
-  product [37]
-  product [37, 2, 21, 2]
-  product [9, 37, 4, 21, 2]
-  product [9, 37, 2, 21, 4]
-  product [37, 4, 21, 4]
-  product [37, 21, 43, 61, 428]
-19 ≥ sum
-  product []
-  product []
-  product [2]
-  product [4]
-  product [43, 61, 428]
-  product []
-26 ≥ sum
-  product []
-31 ≥ sum
-  product [236, 21]
-  product [237, 21]
-  product [36]
-  product [237]
-  product [426, 21]
-  product [427, 21]
-  product [1]
-  product [20, 2]
-  product [1, 21, 2]
-  product [32, 1, 21, 2]
-  product [36, 2, 21, 2]
-  product [32, 36, 2, 21, 2]
-  product [14, 37, 2, 21, 2]
-  product [36, 4, 21, 2]
-  product [32, 36, 4, 21, 2]
-  product [8, 37, 4, 21, 2]
-  product [20, 4]
-  product [1, 21, 4]
-  product [32, 1, 21, 4]
-  product [36, 2, 21, 4]
-  product [32, 36, 2, 21, 4]
-  product [8, 37, 2, 21, 4]
-  product [36, 4, 21, 4]
-  product [32, 36, 4, 21, 4]
-  product [14, 37, 4, 21, 4]
-  product [426]
-  product [59, 428]
-  product [36, 21, 43, 61, 428]
-  product [426, 318]
-  product [317, 21]
-  product [317]
-33 ≥ sum
-  product [42, 61, 428]
-  product [51, 44, 61, 428]
-35 ≥ sum
-  product []
-  product []
-  product [2, 21, 2]
-  product [4, 21, 2]
-  product [2, 21, 4]
-  product [4, 21, 4]
-  product [21, 43, 61, 428]
-  product []
-  product []
-40 ≥ sum
-  product [61, 428]
-50 ≥ sum
-  product [44, 61, 428]
-57 ≥ sum
-  product [32, 1]
-  product [32, 20, 2]
-  product [32, 32, 1, 21, 2]
-  product [32, 32, 36, 2, 21, 2]
-  product [32, 14, 37, 2, 21, 2]
-  product [32, 32, 36, 4, 21, 2]
-  product [32, 8, 37, 4, 21, 2]
-  product [14, 9, 37, 4, 21, 2]
-  product [32, 20, 4]
-  product [32, 32, 1, 21, 4]
-  product [32, 32, 36, 2, 21, 4]
-  product [32, 8, 37, 2, 21, 4]
-  product [14, 9, 37, 2, 21, 4]
-  product [32, 32, 36, 4, 21, 4]
-  product [32, 14, 37, 4, 21, 4]
-  product [32, 426]
-  product [427]
-  product [32, 59, 428]
-  product [60, 428]
-  product [41, 61, 428]
-  product [34, 42, 61, 428]
-  product [20, 43, 61, 428]
-  product [32, 36, 21, 43, 61, 428]
-  product [14, 37, 21, 43, 61, 428]
-  product [34, 51, 44, 61, 428]
-  product [32, 317]
-58 ≥ sum
-  product []
-  product [428]
-113 ≥ sum
-  product [L]
-137 ≥ sum
-  product [L]
-143 ≥ sum
-  product [238, 21]
-184 ≥ sum
-  product [428, 21]
-232 ≥ sum
-  product []
-235 ≥ sum
-  product [21]
-  product [2]
-  product [4]
-  product []
-316 ≥ sum
-  product []
-  product [400, 428, 318]
-  product [4]
-  product [21]
-  product []
-356 ≥ sum
-  product []
-398 ≥ sum
-  product [428, 318]
-425 ≥ sum
-  product [21]
-  product [2]
-  product [4]
-  product []
-  product [318]
-504 ≥ sum
-  product [432]
-  product [318]
-18 ~ 15
-32 ~ 16
-18 ~ 10
-18 ~ 11
-32 ~ 12
-55 ~ 53
-56 ~ 52
-55 ~ 46
-56 ~ 45
-55 ~ 48
-32 ~ 49
-56 ~ 47
-18 ~ 38
-34 ~ 39
-34 ~ 22
-32 ~ 23
-34 ~ 24
-34 ~ 3
-34 ~ 5
-34 ~ 6
-55 ~ 63
-56 ~ 62
-34 ~ 64
-18 ~ 66
-34 ~ 67
-34 ~ 73
-55 ~ 70
-56 ~ 69
-34 ~ 71
-75 ~ product [14, 65]
-74 ~ product [60]
-72 ~ product [43, 61]
-68 ~ product [44, 61]
-59 ~ 76
-32 ~ 77
-60 ~ 78
-61 ~ 79
-product [61] ≥ sum
-  product [L]
-41 ~ 80
-42 ~ 81
-34 ~ 82
-43 ~ 83
-82 ~ 73
-44 ~ 84
-45 ~ 69
-46 ~ 70
-62 ~ 47
-63 ~ 48
-65 ~ 85
-product [65] ≥ sum
-  product [L]
-14 ~ 86
-66 ~ 15
-75 ≥ sum
-74 ≥ sum
-72 ≥ sum
-  product []
-68 ≥ sum
-73 ~ 67
-34 ~ 94
-55 ~ 91
-56 ~ 90
-34 ~ 92
-18 ~ 88
-96 ~ product [8, 65]
-95 ~ product [60]
-93 ~ product [43, 61]
-89 ~ product [44, 61]
-87 ~ product [9, 65]
-59 ~ 97
-32 ~ 98
-60 ~ 99
-61 ~ 100
-product [61] ≥ sum
-  product [L]
-41 ~ 101
-42 ~ 102
-34 ~ 103
-43 ~ 104
-103 ~ 94
-44 ~ 105
-45 ~ 90
-46 ~ 91
-62 ~ 47
-63 ~ 48
-65 ~ 106
-product [65] ≥ sum
-  product [L]
-8 ~ 107
-9 ~ 108
-10 ~ 88
-66 ~ 11
-96 ≥ sum
-  product [59]
-95 ≥ sum
-  product [60]
-93 ≥ sum
-89 ≥ sum
-  product [61]
-87 ≥ sum
-  product [65]
-59 ~ 112
-60 ~ 111
-61 ~ 110
-62 ~ 90
-63 ~ 91
-65 ~ 109
-66 ~ 88
-67 ~ 67
-18 ~ 148
-18 ~ 149
-18 ~ 151
-32 ~ 152
-18 ~ 153
-32 ~ 154
-18 ~ 157
-18 ~ 158
-160 ~ product [144]
-159 ~ product [145]
-155 ~ product [146]
-144 ~ 161
-145 ~ 162
-146 ~ 163
-147 ~ 156
-148 ~ 157
-149 ~ 158
-150 ~ 164
-product [150] ≥ sum
-  product [L]
-14 ~ 165
-151 ~ 15
-160 ≥ sum
-159 ≥ sum
-  product [14]
-155 ≥ sum
-14 ~ 166
-15 ~ 153
-18 ~ 171
-18 ~ 172
-18 ~ 168
-174 ~ product [144]
-173 ~ product [145]
-169 ~ product [146]
-167 ~ product [9, 150]
-144 ~ 175
-145 ~ 176
-146 ~ 177
-147 ~ 170
-148 ~ 171
-149 ~ 172
-150 ~ 178
-product [150] ≥ sum
-  product [L]
-8 ~ 179
-9 ~ 180
-10 ~ 168
-151 ~ 11
-174 ≥ sum
-173 ≥ sum
-  product [8]
-169 ≥ sum
-  product [9]
-167 ≥ sum
-  product [170, 9]
-8 ~ 182
-9 ~ 181
-170 ~ 183
-171 ~ 168
-10 ~ 172
-11 ~ 153
-18 ~ 240
-18 ~ 241
-34 ~ 243
-34 ~ 244
-18 ~ 249
-18 ~ 250
-18 ~ 246
-252 ~ product [236]
-251 ~ product [237]
-247 ~ product [238]
-245 ~ product [37, 242]
-236 ~ 253
-237 ~ 254
-238 ~ 255
-239 ~ 248
-240 ~ 249
-241 ~ 250
-242 ~ 256
-product [242] ≥ sum
-  product [L]
-36 ~ 257
-37 ~ 258
-38 ~ 246
-243 ~ 39
-252 ≥ sum
-251 ≥ sum
-  product [36]
-247 ≥ sum
-  product [37]
-245 ≥ sum
-  product [248, 37]
-36 ~ 260
-37 ~ 259
-248 ~ 261
-249 ~ 246
-38 ~ 250
-39 ~ 244
-18 ~ 267
-18 ~ 268
-34 ~ 263
-32 ~ 264
-270 ~ product [236]
-269 ~ product [237]
-265 ~ product [238]
-262 ~ product [21, 242]
-236 ~ 271
-237 ~ 272
-238 ~ 273
-239 ~ 266
-240 ~ 267
-241 ~ 268
-242 ~ 274
-product [242] ≥ sum
-  product [L]
-20 ~ 275
-21 ~ 276
-22 ~ 263
-243 ~ 24
-270 ≥ sum
-  product [32, 236, 21]
-  product [144, 238, 21]
-269 ≥ sum
-  product [20]
-  product [32, 237, 21]
-  product [145, 238, 21]
-265 ≥ sum
-  product [146, 238, 21]
-262 ≥ sum
-  product [242, 21]
-20 ~ 278
-21 ~ 277
-236 ~ 282
-32 ~ 283
-237 ~ 281
-32 ~ 284
-238 ~ 280
-144 ~ 287
-145 ~ 286
-146 ~ 285
-147 ~ 266
-148 ~ 267
-149 ~ 268
-239 ~ 150
-240 ~ 151
-241 ~ 153
-242 ~ 279
-243 ~ 263
-22 ~ 244
-24 ~ 244
-18 ~ 294
-18 ~ 295
-34 ~ 291
-34 ~ 289
-297 ~ product [236]
-296 ~ product [237]
-292 ~ product [238]
-290 ~ product [2, 242]
-288 ~ product [4, 242]
-236 ~ 298
-237 ~ 299
-238 ~ 300
-239 ~ 293
-240 ~ 294
-241 ~ 295
-242 ~ 301
-product [242] ≥ sum
-  product [L]
-1 ~ 302
-2 ~ 303
-3 ~ 291
-4 ~ 304
-5 ~ 289
-243 ~ 6
-297 ≥ sum
-  product [236, 2]
-  product [236, 4]
-296 ≥ sum
-  product [1]
-  product [237, 2]
-  product [237, 4]
-292 ≥ sum
-  product [238, 2]
-  product [238, 4]
-290 ≥ sum
-  product [242, 2]
-288 ≥ sum
-  product [242, 4]
-1 ~ 307
-2 ~ 306
-236 ~ 311
-237 ~ 310
-238 ~ 309
-239 ~ 293
-240 ~ 294
-241 ~ 295
-242 ~ 308
-243 ~ 291
-3 ~ 244
-4 ~ 305
-236 ~ 315
-237 ~ 314
-238 ~ 313
-239 ~ 293
-240 ~ 294
-241 ~ 295
-242 ~ 312
-243 ~ 289
-5 ~ 244
-6 ~ 244
-18 ~ 189
-34 ~ 190
-18 ~ 192
-32 ~ 193
-34 ~ 194
-32 ~ 195
-18 ~ 198
-34 ~ 199
-201 ~ product [185]
-200 ~ product [186]
-196 ~ product [187]
-185 ~ 202
-186 ~ 203
-187 ~ 204
-188 ~ 197
-189 ~ 198
-190 ~ 199
-191 ~ 205
-product [191] ≥ sum
-  product [L]
-14 ~ 206
-192 ~ 15
-201 ≥ sum
-200 ≥ sum
-  product [32, 36]
-  product [14, 37]
-196 ≥ sum
-36 ~ 208
-32 ~ 209
-37 ~ 207
-14 ~ 210
-38 ~ 15
-39 ~ 194
-18 ~ 215
-34 ~ 216
-18 ~ 212
-218 ~ product [185]
-217 ~ product [186]
-213 ~ product [187]
-211 ~ product [9, 191]
-185 ~ 219
-186 ~ 220
-187 ~ 221
-188 ~ 214
-189 ~ 215
-190 ~ 216
-191 ~ 222
-product [191] ≥ sum
-  product [L]
-8 ~ 223
-9 ~ 224
-10 ~ 212
-192 ~ 11
-218 ≥ sum
-217 ≥ sum
-  product [236]
-  product [32, 237]
-  product [8, 238]
-213 ≥ sum
-  product [242]
-211 ≥ sum
-  product [214, 242]
-236 ~ 228
-237 ~ 227
-32 ~ 229
-238 ~ 226
-8 ~ 230
-239 ~ 9
-240 ~ 10
-241 ~ 11
-242 ~ 225
-214 ~ 231
-215 ~ 212
-243 ~ 216
-244 ~ 194
-18 ~ 430
-34 ~ 431
-34 ~ 433
-34 ~ 434
-18 ~ 439
-34 ~ 440
-18 ~ 436
-442 ~ product [426]
-441 ~ product [427]
-437 ~ product [428]
-435 ~ product [37, 432]
-426 ~ 443
-427 ~ 444
-428 ~ 445
-429 ~ 438
-430 ~ 439
-431 ~ 440
-432 ~ 446
-product [432] ≥ sum
-  product [L]
-36 ~ 447
-37 ~ 448
-38 ~ 436
-433 ~ 39
-442 ≥ sum
-441 ≥ sum
-437 ≥ sum
-  product []
-435 ≥ sum
-  product [438]
-438 ~ 449
-439 ~ 436
-440 ~ 434
-18 ~ 455
-34 ~ 456
-34 ~ 451
-32 ~ 452
-458 ~ product [426]
-457 ~ product [427]
-453 ~ product [428]
-450 ~ product [21, 432]
-426 ~ 459
-427 ~ 460
-428 ~ 461
-429 ~ 454
-430 ~ 455
-431 ~ 456
-432 ~ 462
-product [432] ≥ sum
-  product [L]
-20 ~ 463
-21 ~ 464
-22 ~ 451
-433 ~ 24
-458 ≥ sum
-  product [32, 426, 21]
-  product [185, 428, 21]
-457 ≥ sum
-  product [20]
-  product [32, 427, 21]
-  product [186, 428, 21]
-453 ≥ sum
-  product [187, 428, 21]
-450 ≥ sum
-  product [432, 21]
-20 ~ 466
-21 ~ 465
-426 ~ 470
-32 ~ 471
-427 ~ 469
-32 ~ 472
-428 ~ 468
-185 ~ 475
-186 ~ 474
-187 ~ 473
-188 ~ 454
-189 ~ 455
-190 ~ 456
-429 ~ 191
-430 ~ 192
-431 ~ 194
-432 ~ 467
-433 ~ 451
-22 ~ 434
-24 ~ 434
-18 ~ 482
-34 ~ 483
-34 ~ 479
-34 ~ 477
-485 ~ product [426]
-484 ~ product [427]
-480 ~ product [428]
-478 ~ product [2, 432]
-476 ~ product [4, 432]
-426 ~ 486
-427 ~ 487
-428 ~ 488
-429 ~ 481
-430 ~ 482
-431 ~ 483
-432 ~ 489
-product [432] ≥ sum
-  product [L]
-1 ~ 490
-2 ~ 491
-3 ~ 479
-4 ~ 492
-5 ~ 477
-433 ~ 6
-485 ≥ sum
-  product [426, 2]
-  product [426, 4]
-484 ≥ sum
-  product [1]
-  product [427, 2]
-  product [427, 4]
-480 ≥ sum
-  product [428, 2]
-  product [428, 4]
-478 ≥ sum
-  product [432, 2]
-476 ≥ sum
-  product [432, 4]
-1 ~ 495
-2 ~ 494
-426 ~ 499
-427 ~ 498
-428 ~ 497
-429 ~ 481
-430 ~ 482
-431 ~ 483
-432 ~ 496
-433 ~ 479
-3 ~ 434
-4 ~ 493
-426 ~ 503
-427 ~ 502
-428 ~ 501
-429 ~ 481
-430 ~ 482
-431 ~ 483
-432 ~ 500
-433 ~ 477
-5 ~ 434
-6 ~ 434
-34 ~ 505
-32 ~ 506
-1 ~ 509
-32 ~ 510
-2 ~ 508
-20 ~ 512
-32 ~ 513
-21 ~ 511
-1 ~ 516
-32 ~ 517
-32 ~ 518
-2 ~ 515
-36 ~ 520
-32 ~ 521
-32 ~ 522
-37 ~ 519
-14 ~ 523
-32 ~ 524
-38 ~ 15
-3 ~ 39
-4 ~ 514
-36 ~ 526
-32 ~ 527
-32 ~ 528
-37 ~ 525
-8 ~ 530
-32 ~ 531
-9 ~ 529
-14 ~ 532
-10 ~ 15
-38 ~ 11
-5 ~ 39
-22 ~ 6
-3 ~ 24
-4 ~ 507
-20 ~ 534
-32 ~ 535
-21 ~ 533
-1 ~ 538
-32 ~ 539
-32 ~ 540
-2 ~ 537
-36 ~ 542
-32 ~ 543
-32 ~ 544
-37 ~ 541
-8 ~ 546
-32 ~ 547
-9 ~ 545
-14 ~ 548
-10 ~ 15
-38 ~ 11
-3 ~ 39
-4 ~ 536
-36 ~ 550
-32 ~ 551
-32 ~ 552
-37 ~ 549
-14 ~ 553
-32 ~ 554
-38 ~ 15
-5 ~ 39
-22 ~ 6
-5 ~ 24
-6 ~ 505
-34 ~ 114
-426 ~ 118
-32 ~ 119
-427 ~ 117
-428 ~ 116
-59 ~ 122
-32 ~ 123
-60 ~ 121
-61 ~ 120
-41 ~ 127
-42 ~ 126
-34 ~ 128
-43 ~ 125
-20 ~ 130
-21 ~ 129
-36 ~ 132
-32 ~ 133
-37 ~ 131
-14 ~ 134
-38 ~ 15
-22 ~ 39
-128 ~ 24
-44 ~ 124
-51 ~ 135
-34 ~ 136
-45 ~ 52
-46 ~ 53
-62 ~ 47
-63 ~ 48
-429 ~ 65
-430 ~ 66
-431 ~ 67
-432 ~ 115
-433 ~ 505
-434 ~ 114
-34 ~ 401
-18 ~ 403
-32 ~ 404
-34 ~ 405
-34 ~ 407
-408 ~ product [399]
-406 ~ product [400]
-399 ~ 409
-400 ~ 410
-401 ~ 407
-402 ~ 411
-product [402] ≥ sum
-  product [L]
-14 ~ 412
-403 ~ 15
-408 ≥ sum
-406 ≥ sum
-  product []
-407 ~ 405
-34 ~ 416
-18 ~ 414
-417 ~ product [399]
-415 ~ product [400]
-413 ~ product [9, 402]
-399 ~ 418
-400 ~ 419
-401 ~ 416
-402 ~ 420
-product [402] ≥ sum
-  product [L]
-8 ~ 421
-9 ~ 422
-10 ~ 414
-403 ~ 11
-417 ≥ sum
-  product [36]
-415 ≥ sum
-413 ≥ sum
-  product [37]
-36 ~ 424
-37 ~ 423
-38 ~ 414
-39 ~ 405
-34 ~ 359
-34 ~ 361
-34 ~ 362
-34 ~ 366
-32 ~ 367
-34 ~ 364
-368 ~ product [357]
-365 ~ product [21, 358]
-363 ~ product [360]
-357 ~ 369
-358 ~ 370
-product [358] ≥ sum
-  product [L]
-20 ~ 371
-21 ~ 372
-22 ~ 366
-359 ~ 24
-360 ~ 373
-361 ~ 364
-368 ≥ sum
-  product [317]
-  product [32, 426, 318]
-  product [427, 318]
-  product [399, 428, 318]
-  product [317, 400, 428, 318]
-365 ≥ sum
-  product [432, 318]
-363 ≥ sum
-  product [318, 400, 428, 318]
-317 ~ 375
-318 ~ 374
-426 ~ 379
-32 ~ 380
-427 ~ 378
-428 ~ 377
-399 ~ 382
-400 ~ 381
-317 ~ 384
-318 ~ 383
-319 ~ 364
-401 ~ 320
-429 ~ 402
-430 ~ 403
-431 ~ 405
-432 ~ 376
-433 ~ 366
-319 ~ 434
-320 ~ 362
-34 ~ 388
-34 ~ 386
-389 ~ product [357]
-387 ~ product [358]
-385 ~ product [360]
-357 ~ 390
-358 ~ 391
-359 ~ 388
-360 ~ 392
-361 ~ 386
-389 ≥ sum
-  product [1]
-  product [317, 4]
-387 ≥ sum
-  product [2]
-385 ≥ sum
-  product [318, 4]
-1 ~ 395
-2 ~ 394
-3 ~ 388
-4 ~ 393
-317 ~ 397
-318 ~ 396
-319 ~ 386
-5 ~ 320
-6 ~ 362
-34 ~ 319
-34 ~ 320
-18 ~ 322
-323 ~ product [317]
-321 ~ product [37, 318]
-317 ~ 324
-318 ~ 325
-product [318] ≥ sum
-  product [L]
-36 ~ 326
-37 ~ 327
-38 ~ 322
-319 ~ 39
-323 ≥ sum
-  product [36]
-321 ≥ sum
-  product [37]
-36 ~ 329
-37 ~ 328
-38 ~ 322
-39 ~ 320
-34 ~ 331
-32 ~ 332
-333 ~ product [317]
-330 ~ product [21, 318]
-317 ~ 334
-318 ~ 335
-product [318] ≥ sum
-  product [L]
-20 ~ 336
-21 ~ 337
-22 ~ 331
-319 ~ 24
-333 ≥ sum
-  product [20]
-  product [32, 317, 21]
-330 ≥ sum
-  product [318, 21]
-20 ~ 339
-21 ~ 338
-317 ~ 341
-32 ~ 342
-318 ~ 340
-319 ~ 331
-22 ~ 320
-24 ~ 320
-34 ~ 346
-34 ~ 344
-347 ~ product [317]
-345 ~ product [2, 318]
-343 ~ product [4, 318]
-317 ~ 348
-318 ~ 349
-product [318] ≥ sum
-  product [L]
-1 ~ 350
-2 ~ 351
-3 ~ 346
-4 ~ 352
-5 ~ 344
-319 ~ 6
-347 ≥ sum
-  product [357]
-345 ≥ sum
-  product [358]
-343 ≥ sum
-  product [360]
-357 ~ 355
-358 ~ 354
-359 ~ 346
-360 ~ 353
-361 ~ 344
-362 ~ 320
-34 ~ 138
-32 ~ 139
-317 ~ 141
-32 ~ 142
-318 ~ 140
-319 ~ 505
-320 ~ 138
-34 ~ 27
-34 ~ 28
-32 ~ 29
-L ~ 234
-27 ~ 114
-L ~ 233
-28 ~ 138
-#######################
-# Deferred equalities #
-#######################
+inferring  mutual {
+    constructor Fin :E (_ :E Nat) -> Type.
+    
+    constructor FZ :R (n :I Nat) -> Fin (S n).
+    
+    constructor FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+  }
 
-69 -> TT n ~ TT n
-48 -> S m ~ S m
-47 -> TT n ~ TT n
-15 -> S m ~ S m
-90 -> TT n ~ TT n
-48 -> S m ~ S m
-47 -> TT n ~ TT n
-11 -> S m ~ S m
-90 -> TT n ~ TT n
-15 -> S m ~ S m
-153 -> S n ~ S n
-11 -> S m ~ S m
-153 -> S n ~ S n
-263 -> S m ~ S m
-151 -> S m ~ S m
-153 -> S n ~ S n
-263 -> S m ~ S m
-244 -> S n ~ S n
-15 -> S m ~ S m
-15 -> S n ~ S n
-194 -> S n ~ S n
-11 -> S m ~ S m
-11 -> S n ~ S n
-194 -> S n ~ S n
-451 -> S m ~ S m
-192 -> S m ~ S m
-194 -> S n ~ S n
-451 -> S m ~ S m
-434 -> S n ~ S n
-15 -> S (S Z) ~ S (S Z)
-39 -> S (S Z) ~ S (S Z)
-15 -> S Z ~ S Z
-11 -> S (S Z) ~ S (S Z)
-39 -> S (S Z) ~ S (S Z)
-6 -> S (S Z) ~ S (S Z)
-24 -> S Z ~ S Z
-15 -> S Z ~ S Z
-11 -> S (S Z) ~ S (S Z)
-39 -> S (S Z) ~ S (S Z)
-15 -> S (S Z) ~ S (S Z)
-39 -> S (S Z) ~ S (S Z)
-6 -> S (S Z) ~ S (S Z)
-24 -> S Z ~ S Z
-505 -> S Z ~ S Z
-15 -> S Z ~ S Z
-39 -> S Z ~ S Z
-52 -> TT Z ~ TT Z
-48 -> S Z ~ S Z
-47 -> TT Z ~ TT Z
-66 -> S Z ~ S Z
-505 -> S Z ~ S Z
-15 -> S n ~ S n
-11 -> S n ~ S n
-366 -> S m ~ S m
-403 -> S m ~ S m
-366 -> S m ~ S m
-331 -> S m ~ S m
-331 -> S m ~ S m
-320 -> S m ~ S m
-505 -> S Z ~ S Z
-138 -> S Z ~ S Z
-138 -> S Z ~ S Z
+  inferred constraints: 
+    E ~ 6
+    L ~ 7
+    E ~ 3
+    E ~ 4
+    L ~ 5
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor Fin :E (_ :E Nat) -> Type.
+    
+    constructor FZ :R (n :I Nat) -> Fin (S n).
+    
+    constructor FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+  }
 
+inferring  mutual {
+    constructor Vect :E (_ :E Nat) -> (_ :E Type) -> Type.
+    
+    constructor VN :R (a :I Type) -> Vect Z a.
+    
+    constructor VC :R (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+  }
+
+  inferred constraints: 
+    E ~ 22
+    E ~ 21
+    E ~ 17
+    E ~ 16
+    E ~ 19
+    L ~ 20
+    E ~ 18
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor Vect :E (_ :E Nat) -> (_ :E Type) -> Type.
+    
+    constructor VN :R (a :I Type) -> Vect Z a.
+    
+    constructor VC :R (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+  }
+
+inferring  mutual {
+    constructor TT :E (_ :E Nat) -> Type.
+    
+    constructor V :R (n :I Nat) -> (_ :L Fin n) -> TT n.
+    
+    constructor Lam :R (n :I Nat) -> (_ :L TT (S n)) -> TT n.
+    
+    constructor App :R (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
+  }
+
+  inferred constraints: 
+    E ~ 14
+    E ~ 15
+    E ~ 8
+    L ~ 9
+    E ~ 10
+    E ~ 0
+    E ~ 1
+    E ~ 2
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor TT :E (_ :E Nat) -> Type.
+    
+    constructor V :R (n :I Nat) -> (_ :L Fin n) -> TT n.
+    
+    constructor Lam :R (n :I Nat) -> (_ :L TT (S n)) -> TT n.
+    
+    constructor App :R (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
+  }
+
+inferring  env :23 (m :24 Nat) -> (n :25 Nat) -> (_ :26 Vect m (TT n)) -> (_ :30 Fin m) -> TT n {
+    forall (m :40 Nat) (n :39 Nat) (x :37 TT n) (xs :33 Vect m (TT n))
+    env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
+    
+    forall (m :61 Nat) (n :60 Nat) (x :58 TT n) (xs :54 Vect m (TT n)) (i :52 Fin m)
+    env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
+  }
+
+  inferred constraints: 
+    E ~ 28
+    E ~ 27
+    E ~ 29
+    E ~ 31
+    E ~ 32
+    E ~ 38
+    E ~ 35
+    E ~ 34
+    E ~ 36
+    40 ~ product [I, 30]
+    39 ~ product [25]
+    37 ~ product [L, 26]
+    33 ~ product [L, 26]
+    24 ~ 41
+    L ~ 42
+    25 ~ 43
+    26 ~ 44
+    product [26] ≥ sum
+      product [L]
+    I ~ 45
+    I ~ 46
+    E ~ 47
+    L ~ 48
+    47 ~ 38
+    L ~ 49
+    E ~ 34
+    E ~ 35
+    27 ~ E
+    28 ~ E
+    42 ~ L
+    29 ~ 47
+    30 ~ 50
+    product [30] ≥ sum
+      product [L]
+    I ~ 51
+    31 ~ E
+    42 ~ L
+    40 ≥ sum
+    39 ≥ sum
+    37 ≥ sum
+      product []
+    33 ≥ sum
+    38 ~ 32
+    E ~ 59
+    E ~ 56
+    E ~ 55
+    E ~ 57
+    E ~ 53
+    61 ~ product [I, 30]
+    60 ~ product [25]
+    58 ~ product [L, 26]
+    54 ~ product [L, 26]
+    52 ~ product [L, 30]
+    24 ~ 62
+    L ~ 63
+    25 ~ 64
+    26 ~ 65
+    product [26] ≥ sum
+      product [L]
+    I ~ 66
+    I ~ 67
+    E ~ 68
+    L ~ 69
+    68 ~ 59
+    L ~ 70
+    E ~ 55
+    E ~ 56
+    27 ~ E
+    28 ~ E
+    63 ~ L
+    29 ~ 68
+    30 ~ 71
+    product [30] ≥ sum
+      product [L]
+    I ~ 72
+    L ~ 73
+    E ~ 53
+    31 ~ E
+    63 ~ L
+    61 ≥ sum
+      product [24]
+    60 ≥ sum
+      product [25]
+    58 ≥ sum
+    54 ≥ sum
+      product [26]
+    52 ≥ sum
+      product [30]
+    24 ~ 77
+    25 ~ 76
+    26 ~ 75
+    27 ~ 55
+    28 ~ 56
+    30 ~ 74
+    31 ~ 53
+    32 ~ 32
+  
+  deferred equalities: 
+    34 -> TT n ~ TT n
+    55 -> TT n ~ TT n
+    55 -> TT n ~ TT n
+  
+  variance of evars:
+    covariant: []
+    contravariant: [24, 25, 26, 30]
   -> iteration 1
-    -> No more equalities, fixed point reached.
+    TT n ~ TT n
+    TT n ~ TT n
+    TT n ~ TT n
+
+  env :I (m :I Nat) -> (n :I Nat) -> (_ :R Vect m (TT n)) -> (_ :L Fin m) -> TT n {
+    forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n))
+    env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
+    
+    forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)) (i :L Fin m)
+    env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
+  }
+
+inferring  extendMap :108 (m :109 Nat) -> (n :110 Nat) -> (_ :111 (_ :112 Fin m) -> Fin n) -> (_ :115 Fin (S m)) -> Fin (S n) {
+    forall (m :125 Nat) (n :124 Nat) (f :120 (_ :121 Fin m) -> Fin n)
+    extendMap m n f (FZ [m]) ~> FZ n
+    
+    forall (m :139 Nat) (n :138 Nat) (f :134 (_ :135 Fin m) -> Fin n) (i :132 Fin m)
+    extendMap m n f (FS [m] i) ~> FS n (f i)
+  }
+
+  inferred constraints: 
+    E ~ 113
+    E ~ 114
+    E ~ 116
+    L ~ 117
+    E ~ 118
+    L ~ 119
+    E ~ 122
+    E ~ 123
+    125 ~ product [109]
+    124 ~ product [110]
+    120 ~ product [111]
+    109 ~ 126
+    110 ~ 127
+    111 ~ 128
+    112 ~ 121
+    113 ~ 122
+    114 ~ 123
+    115 ~ 129
+    product [115] ≥ sum
+      product [L]
+    I ~ 130
+    116 ~ E
+    117 ~ L
+    125 ≥ sum
+    124 ≥ sum
+      product [I]
+    120 ≥ sum
+    I ~ 131
+    E ~ 118
+    E ~ 136
+    E ~ 137
+    E ~ 133
+    139 ~ product [109]
+    138 ~ product [110]
+    134 ~ product [111]
+    132 ~ product [L, 115]
+    109 ~ 140
+    110 ~ 141
+    111 ~ 142
+    112 ~ 135
+    113 ~ 136
+    114 ~ 137
+    115 ~ 143
+    product [115] ≥ sum
+      product [L]
+    I ~ 144
+    L ~ 145
+    E ~ 133
+    116 ~ E
+    117 ~ L
+    139 ≥ sum
+    138 ≥ sum
+      product [I]
+    134 ≥ sum
+      product [L]
+    132 ≥ sum
+      product [135, L]
+    I ~ 147
+    L ~ 146
+    135 ~ 148
+    136 ~ 133
+    E ~ 137
+    E ~ 118
+  
+  deferred equalities: 
+    118 -> S n ~ S n
+    118 -> S n ~ S n
+  
+  variance of evars:
+    covariant: [112]
+    contravariant: [109, 110, 111, 115]
+  -> iteration 1
+    S n ~ S n
+    S n ~ S n
+
+  extendMap :I (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L Fin (S m)) -> Fin (S n) {
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n)
+    extendMap m n f (FZ [m]) ~> FZ n
+    
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
+    extendMap m n f (FS [m] i) ~> FS n (f i)
+  }
+
+inferring  mapVars :200 (m :201 Nat) -> (n :202 Nat) -> (_ :203 (_ :204 Fin m) -> Fin n) -> (_ :207 TT m) -> TT n {
+    forall (m :217 Nat) (n :216 Nat) (f :212 (_ :213 Fin m) -> Fin n) (i :210 Fin m)
+    mapVars m n f (V [m] i) ~> V n (f i)
+    
+    forall (m :235 Nat) (n :234 Nat) (f :230 (_ :231 Fin m) -> Fin n) (x :227 TT (S m))
+    mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
+    
+    forall (m :262 Nat) (n :261 Nat) (f :257 (_ :258 Fin m) -> Fin n) (g :255 TT m) (x :253 TT m)
+    mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
+  }
+
+  inferred constraints: 
+    E ~ 205
+    E ~ 206
+    E ~ 208
+    E ~ 209
+    E ~ 214
+    E ~ 215
+    E ~ 211
+    217 ~ product [201]
+    216 ~ product [202]
+    212 ~ product [203]
+    210 ~ product [L, 207]
+    201 ~ 218
+    202 ~ 219
+    203 ~ 220
+    204 ~ 213
+    205 ~ 214
+    206 ~ 215
+    207 ~ 221
+    product [207] ≥ sum
+      product [L]
+    I ~ 222
+    L ~ 223
+    E ~ 211
+    208 ~ E
+    217 ≥ sum
+    216 ≥ sum
+      product [I]
+    212 ≥ sum
+      product [L]
+    210 ≥ sum
+      product [213, L]
+    I ~ 225
+    L ~ 224
+    213 ~ 226
+    214 ~ 211
+    E ~ 215
+    E ~ 209
+    E ~ 232
+    E ~ 233
+    E ~ 228
+    L ~ 229
+    235 ~ product [201]
+    234 ~ product [202]
+    230 ~ product [203]
+    227 ~ product [L, 207]
+    201 ~ 236
+    202 ~ 237
+    203 ~ 238
+    204 ~ 231
+    205 ~ 232
+    206 ~ 233
+    207 ~ 239
+    product [207] ≥ sum
+      product [L]
+    I ~ 240
+    L ~ 241
+    E ~ 228
+    208 ~ E
+    235 ≥ sum
+      product [L, 201, L]
+      product [I, 203, L]
+    234 ≥ sum
+      product [I]
+      product [L, 202, L]
+      product [I, 203, L]
+    230 ≥ sum
+      product [R, 203, L]
+    227 ≥ sum
+      product [207, L]
+    I ~ 243
+    L ~ 242
+    201 ~ 247
+    L ~ 248
+    202 ~ 246
+    L ~ 249
+    203 ~ 245
+    I ~ 252
+    I ~ 251
+    R ~ 250
+    L ~ 231
+    E ~ 232
+    E ~ 233
+    204 ~ L
+    205 ~ E
+    248 ~ L
+    206 ~ E
+    249 ~ L
+    207 ~ 244
+    208 ~ 228
+    E ~ 209
+    E ~ 209
+    E ~ 259
+    E ~ 260
+    E ~ 256
+    E ~ 254
+    262 ~ product [201]
+    261 ~ product [202]
+    257 ~ product [203]
+    255 ~ product [L, 207]
+    253 ~ product [L, 207]
+    201 ~ 263
+    202 ~ 264
+    203 ~ 265
+    204 ~ 258
+    205 ~ 259
+    206 ~ 260
+    207 ~ 266
+    product [207] ≥ sum
+      product [L]
+    I ~ 267
+    L ~ 268
+    E ~ 256
+    L ~ 269
+    E ~ 254
+    208 ~ E
+    262 ≥ sum
+      product [201, L]
+      product [201, L]
+    261 ≥ sum
+      product [I]
+      product [202, L]
+      product [202, L]
+    257 ≥ sum
+      product [203, L]
+      product [203, L]
+    255 ≥ sum
+      product [207, L]
+    253 ≥ sum
+      product [207, L]
+    I ~ 272
+    L ~ 271
+    201 ~ 276
+    202 ~ 275
+    203 ~ 274
+    204 ~ 258
+    205 ~ 259
+    206 ~ 260
+    207 ~ 273
+    208 ~ 256
+    E ~ 209
+    L ~ 270
+    201 ~ 280
+    202 ~ 279
+    203 ~ 278
+    204 ~ 258
+    205 ~ 259
+    206 ~ 260
+    207 ~ 277
+    208 ~ 254
+    E ~ 209
+    E ~ 209
+  
+  deferred equalities: 
+    228 -> S m ~ S m
+    228 -> S m ~ S m
+    209 -> S n ~ S n
+  
+  variance of evars:
+    covariant: [204]
+    contravariant: [201, 202, 203, 207]
+  -> iteration 1
+    S m ~ S m
+    S m ~ S m
+    S n ~ S n
+
+  mapVars :I (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L TT m) -> TT n {
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
+    mapVars m n f (V [m] i) ~> V n (f i)
+    
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (x :L TT (S m))
+    mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
+    
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :L TT m)
+    mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
+  }
+
+inferring  extendSubst :149 (m :150 Nat) -> (n :151 Nat) -> (_ :152 (_ :153 Fin m) -> TT n) -> (_ :156 Fin (S m)) -> TT (S n) {
+    forall (m :166 Nat) (n :165 Nat) (f :161 (_ :162 Fin m) -> TT n)
+    extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
+    
+    forall (m :183 Nat) (n :182 Nat) (f :178 (_ :179 Fin m) -> TT n) (i :176 Fin m)
+    extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
+  }
+
+  inferred constraints: 
+    E ~ 154
+    E ~ 155
+    E ~ 157
+    L ~ 158
+    E ~ 159
+    L ~ 160
+    E ~ 163
+    E ~ 164
+    166 ~ product [150]
+    165 ~ product [151]
+    161 ~ product [152]
+    150 ~ 167
+    151 ~ 168
+    152 ~ 169
+    153 ~ 162
+    154 ~ 163
+    155 ~ 164
+    156 ~ 170
+    product [156] ≥ sum
+      product [L]
+    I ~ 171
+    157 ~ E
+    158 ~ L
+    166 ≥ sum
+    165 ≥ sum
+      product [L, I]
+      product [I, L]
+    161 ≥ sum
+    I ~ 173
+    L ~ 174
+    L ~ 172
+    I ~ 175
+    174 ~ L
+    E ~ 159
+    E ~ 180
+    E ~ 181
+    E ~ 177
+    183 ~ product [150]
+    182 ~ product [151]
+    178 ~ product [152]
+    176 ~ product [L, 156]
+    150 ~ 184
+    151 ~ 185
+    152 ~ 186
+    153 ~ 179
+    154 ~ 180
+    155 ~ 181
+    156 ~ 187
+    product [156] ≥ sum
+      product [L]
+    I ~ 188
+    L ~ 189
+    E ~ 177
+    157 ~ E
+    158 ~ L
+    183 ≥ sum
+    182 ≥ sum
+      product [I]
+      product [L, I]
+      product [I, R]
+    178 ≥ sum
+      product [L]
+    176 ≥ sum
+      product [179, L]
+    I ~ 193
+    I ~ 192
+    L ~ 194
+    R ~ 191
+    I ~ 195
+    194 ~ L
+    L ~ 190
+    179 ~ 196
+    180 ~ 177
+    E ~ 181
+    E ~ 159
+  
+  deferred equalities: 
+    159 -> S n ~ S n
+    159 -> S n ~ S n
+  
+  variance of evars:
+    covariant: [153]
+    contravariant: [150, 151, 152, 156]
+  -> iteration 1
+    S n ~ S n
+    S n ~ S n
+
+  extendSubst :I (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L Fin (S m)) -> TT (S n) {
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n)
+    extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
+    
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
+    extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
+  }
+
+inferring  substVars :390 (m :391 Nat) -> (n :392 Nat) -> (_ :393 (_ :394 Fin m) -> TT n) -> (_ :397 TT m) -> TT n {
+    forall (m :407 Nat) (n :406 Nat) (f :402 (_ :403 Fin m) -> TT n) (i :400 Fin m)
+    substVars m n f (V [m] i) ~> f i
+    
+    forall (m :423 Nat) (n :422 Nat) (f :418 (_ :419 Fin m) -> TT n) (x :415 TT (S m))
+    substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
+    
+    forall (m :450 Nat) (n :449 Nat) (f :445 (_ :446 Fin m) -> TT n) (g :443 TT m) (x :441 TT m)
+    substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
+  }
+
+  inferred constraints: 
+    E ~ 395
+    E ~ 396
+    E ~ 398
+    E ~ 399
+    E ~ 404
+    E ~ 405
+    E ~ 401
+    407 ~ product [391]
+    406 ~ product [392]
+    402 ~ product [393]
+    400 ~ product [L, 397]
+    391 ~ 408
+    392 ~ 409
+    393 ~ 410
+    394 ~ 403
+    395 ~ 404
+    396 ~ 405
+    397 ~ 411
+    product [397] ≥ sum
+      product [L]
+    I ~ 412
+    L ~ 413
+    E ~ 401
+    398 ~ E
+    407 ≥ sum
+    406 ≥ sum
+    402 ≥ sum
+      product []
+    400 ≥ sum
+      product [403]
+    403 ~ 414
+    404 ~ 401
+    405 ~ 399
+    E ~ 420
+    E ~ 421
+    E ~ 416
+    L ~ 417
+    423 ~ product [391]
+    422 ~ product [392]
+    418 ~ product [393]
+    415 ~ product [L, 397]
+    391 ~ 424
+    392 ~ 425
+    393 ~ 426
+    394 ~ 419
+    395 ~ 420
+    396 ~ 421
+    397 ~ 427
+    product [397] ≥ sum
+      product [L]
+    I ~ 428
+    L ~ 429
+    E ~ 416
+    398 ~ E
+    423 ≥ sum
+      product [L, 391, L]
+      product [I, 393, L]
+    422 ≥ sum
+      product [I]
+      product [L, 392, L]
+      product [I, 393, L]
+    418 ≥ sum
+      product [R, 393, L]
+    415 ≥ sum
+      product [397, L]
+    I ~ 431
+    L ~ 430
+    391 ~ 435
+    L ~ 436
+    392 ~ 434
+    L ~ 437
+    393 ~ 433
+    I ~ 440
+    I ~ 439
+    R ~ 438
+    L ~ 419
+    E ~ 420
+    E ~ 421
+    394 ~ L
+    395 ~ E
+    436 ~ L
+    396 ~ E
+    437 ~ L
+    397 ~ 432
+    398 ~ 416
+    E ~ 399
+    E ~ 399
+    E ~ 447
+    E ~ 448
+    E ~ 444
+    E ~ 442
+    450 ~ product [391]
+    449 ~ product [392]
+    445 ~ product [393]
+    443 ~ product [L, 397]
+    441 ~ product [L, 397]
+    391 ~ 451
+    392 ~ 452
+    393 ~ 453
+    394 ~ 446
+    395 ~ 447
+    396 ~ 448
+    397 ~ 454
+    product [397] ≥ sum
+      product [L]
+    I ~ 455
+    L ~ 456
+    E ~ 444
+    L ~ 457
+    E ~ 442
+    398 ~ E
+    450 ≥ sum
+      product [391, L]
+      product [391, L]
+    449 ≥ sum
+      product [I]
+      product [392, L]
+      product [392, L]
+    445 ≥ sum
+      product [393, L]
+      product [393, L]
+    443 ≥ sum
+      product [397, L]
+    441 ≥ sum
+      product [397, L]
+    I ~ 460
+    L ~ 459
+    391 ~ 464
+    392 ~ 463
+    393 ~ 462
+    394 ~ 446
+    395 ~ 447
+    396 ~ 448
+    397 ~ 461
+    398 ~ 444
+    E ~ 399
+    L ~ 458
+    391 ~ 468
+    392 ~ 467
+    393 ~ 466
+    394 ~ 446
+    395 ~ 447
+    396 ~ 448
+    397 ~ 465
+    398 ~ 442
+    E ~ 399
+    E ~ 399
+  
+  deferred equalities: 
+    416 -> S m ~ S m
+    416 -> S m ~ S m
+    399 -> S n ~ S n
+  
+  variance of evars:
+    covariant: [394]
+    contravariant: [391, 392, 393, 397]
+  -> iteration 1
+    S m ~ S m
+    S m ~ S m
+    S n ~ S n
+
+  substVars :I (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L TT m) -> TT n {
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
+    substVars m n f (V [m] i) ~> f i
+    
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (x :L TT (S m))
+    substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
+    
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :L TT m)
+    substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
+  }
+
+inferring  testTm :469 TT (S Z) {
+    testTm  ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
+  }
+
+  inferred constraints: 
+    E ~ 470
+    L ~ 471
+    I ~ 474
+    L ~ 475
+    L ~ 473
+    I ~ 477
+    L ~ 478
+    L ~ 476
+    I ~ 481
+    L ~ 482
+    L ~ 483
+    L ~ 480
+    I ~ 485
+    L ~ 486
+    L ~ 487
+    L ~ 484
+    I ~ 488
+    L ~ 489
+    486 ~ L
+    487 ~ 489
+    482 ~ 486
+    L ~ 479
+    I ~ 491
+    L ~ 492
+    L ~ 493
+    L ~ 490
+    I ~ 495
+    L ~ 496
+    L ~ 494
+    I ~ 497
+    496 ~ L
+    492 ~ L
+    493 ~ 496
+    482 ~ 492
+    L ~ 482
+    475 ~ 478
+    L ~ 472
+    I ~ 499
+    L ~ 500
+    L ~ 498
+    I ~ 503
+    L ~ 504
+    L ~ 505
+    L ~ 502
+    I ~ 507
+    L ~ 508
+    L ~ 509
+    L ~ 506
+    I ~ 511
+    L ~ 512
+    L ~ 510
+    I ~ 513
+    512 ~ L
+    508 ~ L
+    509 ~ 512
+    504 ~ 508
+    L ~ 501
+    I ~ 515
+    L ~ 516
+    L ~ 517
+    L ~ 514
+    I ~ 518
+    L ~ 519
+    516 ~ L
+    517 ~ 519
+    504 ~ 516
+    L ~ 504
+    475 ~ 500
+    E ~ 470
+  
+  deferred equalities: 
+    486 -> S Z ~ S Z
+    492 -> S Z ~ S Z
+    482 -> S Z ~ S Z
+    508 -> S Z ~ S Z
+    516 -> S Z ~ S Z
+    504 -> S Z ~ S Z
+    470 -> S Z ~ S Z
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  -> iteration 1
+    S Z ~ S Z
+    S Z ~ S Z
+    S Z ~ S Z
+    S Z ~ S Z
+    S Z ~ S Z
+    S Z ~ S Z
+    S Z ~ S Z
+
+  testTm :I TT (S Z) {
+    testTm  ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
+  }
+
+inferring  example1 :78 TT Z {
+    example1  ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
+  }
+
+  inferred constraints: 
+    E ~ 79
+    I ~ 83
+    L ~ 84
+    I ~ 82
+    R ~ 81
+    I ~ 87
+    L ~ 88
+    I ~ 86
+    R ~ 85
+    I ~ 92
+    I ~ 91
+    E ~ 93
+    L ~ 90
+    I ~ 95
+    L ~ 94
+    I ~ 97
+    L ~ 98
+    L ~ 96
+    I ~ 99
+    98 ~ L
+    L ~ 98
+    93 ~ E
+    L ~ 89
+    I ~ 100
+    E ~ 101
+    93 ~ 101
+    88 ~ L
+    E ~ 93
+    84 ~ 88
+    L ~ 80
+    84 ~ L
+    E ~ 79
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  example1 :I TT Z {
+    example1  ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
+  }
+
+inferring  substTop :363 (n :364 Nat) -> (_ :365 TT n) -> (_ :367 Fin (S n)) -> TT n {
+    forall (n :373 Nat) (tm :371 TT n)
+    substTop n tm (FZ [n]) ~> tm
+    
+    forall (n :382 Nat) (tm :380 TT n) (i :378 Fin n)
+    substTop n tm (FS [n] i) ~> V n i
+  }
+
+  inferred constraints: 
+    E ~ 366
+    E ~ 368
+    L ~ 369
+    E ~ 370
+    E ~ 372
+    373 ~ product [364]
+    371 ~ product [365]
+    364 ~ 374
+    365 ~ 375
+    366 ~ 372
+    367 ~ 376
+    product [367] ≥ sum
+      product [L]
+    I ~ 377
+    368 ~ E
+    369 ~ L
+    373 ≥ sum
+    371 ≥ sum
+      product []
+    372 ~ 370
+    E ~ 381
+    E ~ 379
+    382 ~ product [364]
+    380 ~ product [365]
+    378 ~ product [L, 367]
+    364 ~ 383
+    365 ~ 384
+    366 ~ 381
+    367 ~ 385
+    product [367] ≥ sum
+      product [L]
+    I ~ 386
+    L ~ 387
+    E ~ 379
+    368 ~ E
+    369 ~ L
+    382 ≥ sum
+      product [I]
+    380 ≥ sum
+    378 ≥ sum
+      product [L]
+    I ~ 389
+    L ~ 388
+    E ~ 379
+    E ~ 370
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: [364, 365, 367]
+  substTop :I (n :I Nat) -> (_ :R TT n) -> (_ :L Fin (S n)) -> TT n {
+    forall (n :I Nat) (tm :R TT n)
+    substTop n tm (FZ [n]) ~> tm
+    
+    forall (n :I Nat) (tm :R TT n) (i :L Fin n)
+    substTop n tm (FS [n] i) ~> V n i
+  }
+
+inferring  mutual {
+    redex :321 (m :322 Nat) -> (_ :323 TT m) -> (_ :325 TT m) -> TT m {
+      forall (m :333 Nat) (y :330 TT (S m)) (x :328 TT m)
+      redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+      
+      forall (m :354 Nat) (f' :352 TT m) (x :350 TT m)
+      redex m f' x ~> App m f' (nf m x)
+    }
+    
+    nf :281 (m :282 Nat) -> (_ :283 TT m) -> TT m {
+      forall (m :288 Nat) (i :286 Fin m)
+      nf m (V [m] i) ~> V m i
+      
+      forall (m :298 Nat) (x :295 TT (S m))
+      nf m (Lam [m] x) ~> Lam m (nf (S m) x)
+      
+      forall (m :312 Nat) (f :310 TT m) (x :308 TT m)
+      nf m (App [m] f x) ~> redex m f x
+    }
+  }
+
+  inferred constraints: 
+    E ~ 324
+    E ~ 326
+    E ~ 327
+    E ~ 331
+    L ~ 332
+    E ~ 329
+    333 ~ product [322]
+    330 ~ product [L, 323]
+    328 ~ product [325]
+    322 ~ 334
+    323 ~ 335
+    product [323] ≥ sum
+      product [L]
+    I ~ 336
+    L ~ 337
+    E ~ 331
+    324 ~ E
+    325 ~ 338
+    326 ~ 329
+    333 ≥ sum
+      product [282]
+      product [L, I, 283]
+      product [I, 283]
+      product [I, R, 283]
+      product [282, R, R, 283]
+    330 ≥ sum
+      product [L, 283]
+    328 ≥ sum
+      product [283, R, R, 283]
+    282 ~ 340
+    283 ~ 339
+    I ~ 344
+    L ~ 345
+    I ~ 343
+    R ~ 342
+    I ~ 347
+    R ~ 346
+    282 ~ 349
+    283 ~ 348
+    284 ~ 329
+    E ~ 285
+    345 ~ L
+    L ~ 341
+    E ~ 331
+    284 ~ E
+    285 ~ 327
+    E ~ 353
+    E ~ 351
+    354 ~ product [322]
+    352 ~ product [323]
+    350 ~ product [325]
+    322 ~ 355
+    323 ~ 356
+    324 ~ 353
+    325 ~ 357
+    326 ~ 351
+    354 ≥ sum
+      product [I]
+      product [282, L]
+    352 ≥ sum
+      product [L]
+    350 ≥ sum
+      product [283, L]
+    I ~ 360
+    L ~ 359
+    E ~ 353
+    L ~ 358
+    282 ~ 362
+    283 ~ 361
+    284 ~ 351
+    E ~ 285
+    E ~ 327
+    E ~ 284
+    E ~ 285
+    E ~ 287
+    288 ~ product [282]
+    286 ~ product [L, 283]
+    282 ~ 289
+    283 ~ 290
+    product [283] ≥ sum
+      product [L]
+    I ~ 291
+    L ~ 292
+    E ~ 287
+    284 ~ E
+    288 ≥ sum
+      product [I]
+    286 ≥ sum
+      product [L]
+    I ~ 294
+    L ~ 293
+    E ~ 287
+    E ~ 285
+    E ~ 296
+    L ~ 297
+    298 ~ product [282]
+    295 ~ product [L, 283]
+    282 ~ 299
+    283 ~ 300
+    product [283] ≥ sum
+      product [L]
+    I ~ 301
+    L ~ 302
+    E ~ 296
+    284 ~ E
+    298 ≥ sum
+      product [I]
+      product [L, 282, L]
+    295 ≥ sum
+      product [283, L]
+    I ~ 304
+    L ~ 303
+    282 ~ 306
+    L ~ 307
+    283 ~ 305
+    284 ~ 296
+    E ~ 285
+    E ~ 285
+    E ~ 311
+    E ~ 309
+    312 ~ product [282]
+    310 ~ product [L, 283]
+    308 ~ product [L, 283]
+    282 ~ 313
+    283 ~ 314
+    product [283] ≥ sum
+      product [L]
+    I ~ 315
+    L ~ 316
+    E ~ 311
+    L ~ 317
+    E ~ 309
+    284 ~ E
+    312 ≥ sum
+      product [322]
+    310 ≥ sum
+      product [323]
+    308 ≥ sum
+      product [325]
+    322 ~ 320
+    323 ~ 319
+    324 ~ 311
+    325 ~ 318
+    326 ~ 309
+    327 ~ 285
+  
+  deferred equalities: 
+    331 -> S m ~ S m
+    331 -> S m ~ S m
+    296 -> S m ~ S m
+    296 -> S m ~ S m
+    285 -> S m ~ S m
+  
+  variance of evars:
+    covariant: []
+    contravariant: [282, 283, 322, 323, 325]
+  -> iteration 1
+    S m ~ S m
+    S m ~ S m
+    S m ~ S m
+    S m ~ S m
+    S m ~ S m
+
+  mutual {
+    redex :I (m :I Nat) -> (_ :R TT m) -> (_ :R TT m) -> TT m {
+      forall (m :I Nat) (y :R TT (S m)) (x :R TT m)
+      redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+      
+      forall (m :I Nat) (f' :R TT m) (x :R TT m)
+      redex m f' x ~> App m f' (nf m x)
+    }
+    
+    nf :I (m :I Nat) -> (_ :R TT m) -> TT m {
+      forall (m :I Nat) (i :R Fin m)
+      nf m (V [m] i) ~> V m i
+      
+      forall (m :I Nat) (x :R TT (S m))
+      nf m (Lam [m] x) ~> Lam m (nf (S m) x)
+      
+      forall (m :I Nat) (f :R TT m) (x :R TT m)
+      nf m (App [m] f x) ~> redex m f x
+    }
+  }
+
+inferring  example2 :102 TT (S Z) {
+    example2  ~> nf (S Z) testTm
+  }
+
+  inferred constraints: 
+    E ~ 103
+    L ~ 104
+    I ~ 106
+    L ~ 107
+    R ~ 105
+    107 ~ L
+    E ~ 103
+  
+  deferred equalities: 
+    103 -> S Z ~ S Z
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  -> iteration 1
+    S Z ~ S Z
+
+  example2 :I TT (S Z) {
+    example2  ~> nf (S Z) testTm
+  }
+
+inferring  mutual {
+    constructor Result :E Type.
+    
+    constructor R :R (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  }
+
+  inferred constraints: 
+    E ~ 11
+    E ~ 12
+    L ~ 13
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor Result :E Type.
+    
+    constructor R :R (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  }
+
+inferring  main :197 Result {
+    main  ~> R example1 example2
+  }
+
+  inferred constraints: 
+    L ~ 199
+    L ~ 198
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  main :I Result {
+    main  ~> R example1 example2
+  }
 
 ###################
 # Final valuation #
 ###################
 
-  0 -> R
-  1 -> I
-  2 -> L
-  3 -> I
-  4 -> R
-  5 -> I
-  6 -> I
-  7 -> R
-  8 -> I
+  0 -> E
+  1 -> E
+  2 -> E
+  3 -> E
+  4 -> E
+  5 -> L
+  6 -> E
+  7 -> L
+  8 -> E
   9 -> L
-  10 -> I
-  11 -> I
-  12 -> I
-  13 -> R
-  14 -> I
-  15 -> I
-  16 -> I
-  18 -> I
-  19 -> R
-  20 -> I
-  21 -> L
-  22 -> I
-  23 -> I
+  10 -> E
+  11 -> E
+  12 -> E
+  13 -> L
+  14 -> E
+  15 -> E
+  16 -> E
+  17 -> E
+  18 -> E
+  19 -> E
+  20 -> L
+  21 -> E
+  22 -> E
+  23 -> R
   24 -> I
-  26 -> L
-  27 -> I
-  28 -> I
-  29 -> I
-  31 -> I
-  32 -> I
-  33 -> I
-  34 -> I
-  35 -> R
-  36 -> I
-  37 -> L
-  38 -> I
+  25 -> I
+  26 -> R
+  27 -> E
+  28 -> E
+  29 -> E
+  30 -> L
+  31 -> E
+  32 -> E
+  33 -> R
+  34 -> E
+  35 -> E
+  36 -> E
+  37 -> R
+  38 -> E
   39 -> I
-  40 -> R
+  40 -> I
   41 -> I
-  42 -> I
-  43 -> L
-  44 -> L
+  42 -> L
+  43 -> I
+  44 -> R
   45 -> I
   46 -> I
-  47 -> I
-  48 -> I
-  49 -> I
-  50 -> R
+  47 -> E
+  48 -> L
+  49 -> L
+  50 -> L
   51 -> I
-  52 -> I
-  53 -> I
-  55 -> I
-  56 -> I
-  57 -> I
+  52 -> L
+  53 -> E
+  54 -> R
+  55 -> E
+  56 -> E
+  57 -> E
   58 -> R
-  59 -> I
+  59 -> E
   60 -> I
-  61 -> R
+  61 -> I
   62 -> I
-  63 -> I
+  63 -> L
   64 -> I
-  65 -> L
+  65 -> R
   66 -> I
   67 -> I
-  68 -> R
-  69 -> I
-  70 -> I
-  71 -> I
-  72 -> R
-  73 -> I
-  74 -> I
-  75 -> I
+  68 -> E
+  69 -> L
+  70 -> L
+  71 -> L
+  72 -> I
+  73 -> L
+  74 -> L
+  75 -> R
   76 -> I
   77 -> I
-  78 -> I
-  79 -> R
-  80 -> I
-  81 -> I
+  78 -> L
+  79 -> E
+  80 -> L
+  81 -> R
   82 -> I
-  83 -> L
+  83 -> I
   84 -> L
-  85 -> L
+  85 -> R
   86 -> I
-  87 -> L
-  88 -> I
-  89 -> R
-  90 -> I
+  87 -> I
+  88 -> L
+  89 -> L
+  90 -> L
   91 -> I
   92 -> I
-  93 -> R
-  94 -> I
+  93 -> E
+  94 -> L
   95 -> I
-  96 -> I
+  96 -> L
   97 -> I
-  98 -> I
+  98 -> L
   99 -> I
-  100 -> R
-  101 -> I
-  102 -> I
-  103 -> I
+  100 -> I
+  101 -> E
+  102 -> L
+  103 -> E
   104 -> L
-  105 -> L
-  106 -> L
-  107 -> I
-  108 -> L
-  109 -> L
-  110 -> R
-  111 -> I
-  112 -> I
-  113 -> L
-  114 -> I
+  105 -> R
+  106 -> I
+  107 -> L
+  108 -> R
+  109 -> I
+  110 -> I
+  111 -> R
+  112 -> L
+  113 -> E
+  114 -> E
   115 -> L
-  116 -> R
-  117 -> I
-  118 -> I
-  119 -> I
+  116 -> E
+  117 -> L
+  118 -> E
+  119 -> L
   120 -> R
-  121 -> I
-  122 -> I
-  123 -> I
-  124 -> L
-  125 -> L
+  121 -> L
+  122 -> E
+  123 -> E
+  124 -> I
+  125 -> I
   126 -> I
   127 -> I
-  128 -> I
+  128 -> R
   129 -> L
   130 -> I
-  131 -> L
-  132 -> I
-  133 -> I
-  134 -> I
-  135 -> I
-  136 -> I
-  137 -> L
+  131 -> I
+  132 -> L
+  133 -> E
+  134 -> R
+  135 -> L
+  136 -> E
+  137 -> E
   138 -> I
   139 -> I
-  140 -> L
+  140 -> I
   141 -> I
-  142 -> I
-  143 -> R
+  142 -> R
+  143 -> L
   144 -> I
-  145 -> I
-  146 -> R
-  147 -> L
-  148 -> I
-  149 -> I
-  150 -> L
+  145 -> L
+  146 -> L
+  147 -> I
+  148 -> L
+  149 -> R
+  150 -> I
   151 -> I
-  152 -> I
-  153 -> I
-  154 -> I
-  155 -> R
+  152 -> R
+  153 -> L
+  154 -> E
+  155 -> E
   156 -> L
-  157 -> I
-  158 -> I
-  159 -> I
-  160 -> I
-  161 -> I
-  162 -> I
-  163 -> R
-  164 -> L
+  157 -> E
+  158 -> L
+  159 -> E
+  160 -> L
+  161 -> R
+  162 -> L
+  163 -> E
+  164 -> E
   165 -> I
   166 -> I
-  167 -> L
+  167 -> I
   168 -> I
   169 -> R
   170 -> L
   171 -> I
-  172 -> I
+  172 -> L
   173 -> I
-  174 -> I
+  174 -> L
   175 -> I
-  176 -> I
-  177 -> R
-  178 -> L
-  179 -> I
-  180 -> L
-  181 -> L
+  176 -> L
+  177 -> E
+  178 -> R
+  179 -> L
+  180 -> E
+  181 -> E
   182 -> I
-  183 -> L
-  184 -> R
+  183 -> I
+  184 -> I
   185 -> I
-  186 -> I
-  187 -> R
-  188 -> L
-  189 -> I
-  190 -> I
-  191 -> L
+  186 -> R
+  187 -> L
+  188 -> I
+  189 -> L
+  190 -> L
+  191 -> R
   192 -> I
   193 -> I
-  194 -> I
+  194 -> L
   195 -> I
-  196 -> R
+  196 -> L
   197 -> L
-  198 -> I
-  199 -> I
-  200 -> I
+  198 -> L
+  199 -> L
+  200 -> R
   201 -> I
   202 -> I
-  203 -> I
-  204 -> R
-  205 -> L
-  206 -> I
+  203 -> R
+  204 -> L
+  205 -> E
+  206 -> E
   207 -> L
-  208 -> I
-  209 -> I
-  210 -> I
-  211 -> L
-  212 -> I
-  213 -> R
-  214 -> L
-  215 -> I
+  208 -> E
+  209 -> E
+  210 -> L
+  211 -> E
+  212 -> R
+  213 -> L
+  214 -> E
+  215 -> E
   216 -> I
   217 -> I
   218 -> I
   219 -> I
-  220 -> I
-  221 -> R
-  222 -> L
-  223 -> I
+  220 -> R
+  221 -> L
+  222 -> I
+  223 -> L
   224 -> L
-  225 -> L
-  226 -> R
-  227 -> I
-  228 -> I
-  229 -> I
-  230 -> I
+  225 -> I
+  226 -> L
+  227 -> L
+  228 -> E
+  229 -> L
+  230 -> R
   231 -> L
-  232 -> L
-  233 -> L
-  234 -> L
-  235 -> R
+  232 -> E
+  233 -> E
+  234 -> I
+  235 -> I
   236 -> I
   237 -> I
   238 -> R
   239 -> L
   240 -> I
-  241 -> I
+  241 -> L
   242 -> L
   243 -> I
-  244 -> I
-  245 -> L
+  244 -> L
+  245 -> R
   246 -> I
-  247 -> R
+  247 -> I
   248 -> L
-  249 -> I
-  250 -> I
+  249 -> L
+  250 -> R
   251 -> I
   252 -> I
-  253 -> I
-  254 -> I
-  255 -> R
-  256 -> L
-  257 -> I
+  253 -> L
+  254 -> E
+  255 -> L
+  256 -> E
+  257 -> R
   258 -> L
-  259 -> L
-  260 -> I
-  261 -> L
-  262 -> L
+  259 -> E
+  260 -> E
+  261 -> I
+  262 -> I
   263 -> I
   264 -> I
   265 -> R
   266 -> L
   267 -> I
-  268 -> I
-  269 -> I
-  270 -> I
-  271 -> I
+  268 -> L
+  269 -> L
+  270 -> L
+  271 -> L
   272 -> I
-  273 -> R
-  274 -> L
+  273 -> L
+  274 -> R
   275 -> I
-  276 -> L
+  276 -> I
   277 -> L
-  278 -> I
-  279 -> L
-  280 -> R
-  281 -> I
+  278 -> R
+  279 -> I
+  280 -> I
+  281 -> R
   282 -> I
-  283 -> I
-  284 -> I
-  285 -> R
-  286 -> I
-  287 -> I
-  288 -> R
+  283 -> R
+  284 -> E
+  285 -> E
+  286 -> R
+  287 -> E
+  288 -> I
   289 -> I
-  290 -> L
+  290 -> R
   291 -> I
-  292 -> R
+  292 -> L
   293 -> L
   294 -> I
-  295 -> I
-  296 -> I
-  297 -> I
+  295 -> R
+  296 -> E
+  297 -> L
   298 -> I
   299 -> I
   300 -> R
-  301 -> L
-  302 -> I
+  301 -> I
+  302 -> L
   303 -> L
-  304 -> R
+  304 -> I
   305 -> R
-  306 -> L
-  307 -> I
-  308 -> L
-  309 -> R
-  310 -> I
-  311 -> I
-  312 -> L
-  313 -> R
-  314 -> I
+  306 -> I
+  307 -> L
+  308 -> R
+  309 -> E
+  310 -> R
+  311 -> E
+  312 -> I
+  313 -> I
+  314 -> R
   315 -> I
-  316 -> R
-  317 -> I
-  318 -> L
-  319 -> I
+  316 -> L
+  317 -> L
+  318 -> R
+  319 -> R
   320 -> I
   321 -> L
   322 -> I
-  323 -> I
-  324 -> I
-  325 -> L
-  326 -> I
-  327 -> L
-  328 -> L
-  329 -> I
-  330 -> L
-  331 -> I
-  332 -> I
+  323 -> R
+  324 -> E
+  325 -> R
+  326 -> E
+  327 -> E
+  328 -> R
+  329 -> E
+  330 -> R
+  331 -> E
+  332 -> L
   333 -> I
   334 -> I
-  335 -> L
+  335 -> R
   336 -> I
   337 -> L
-  338 -> L
-  339 -> I
-  340 -> L
-  341 -> I
-  342 -> I
-  343 -> R
+  338 -> R
+  339 -> R
+  340 -> I
+  341 -> L
+  342 -> R
+  343 -> I
   344 -> I
   345 -> L
-  346 -> I
+  346 -> R
   347 -> I
-  348 -> I
-  349 -> L
-  350 -> I
-  351 -> L
+  348 -> R
+  349 -> I
+  350 -> R
+  351 -> E
   352 -> R
-  353 -> R
-  354 -> L
+  353 -> E
+  354 -> I
   355 -> I
-  356 -> L
-  357 -> I
+  356 -> R
+  357 -> R
   358 -> L
-  359 -> I
-  360 -> R
-  361 -> I
+  359 -> L
+  360 -> I
+  361 -> R
   362 -> I
   363 -> R
   364 -> I
-  365 -> L
-  366 -> I
-  367 -> I
-  368 -> I
-  369 -> I
-  370 -> L
-  371 -> I
-  372 -> L
-  373 -> R
-  374 -> L
-  375 -> I
+  365 -> R
+  366 -> E
+  367 -> L
+  368 -> E
+  369 -> L
+  370 -> E
+  371 -> R
+  372 -> E
+  373 -> I
+  374 -> I
+  375 -> R
   376 -> L
-  377 -> R
-  378 -> I
-  379 -> I
-  380 -> I
-  381 -> R
+  377 -> I
+  378 -> L
+  379 -> E
+  380 -> R
+  381 -> E
   382 -> I
-  383 -> L
-  384 -> I
-  385 -> R
+  383 -> I
+  384 -> R
+  385 -> L
   386 -> I
   387 -> L
-  388 -> I
+  388 -> L
   389 -> I
-  390 -> I
-  391 -> L
-  392 -> R
+  390 -> R
+  391 -> I
+  392 -> I
   393 -> R
   394 -> L
-  395 -> I
-  396 -> L
-  397 -> I
-  398 -> R
-  399 -> I
-  400 -> R
-  401 -> I
-  402 -> L
-  403 -> I
-  404 -> I
-  405 -> I
-  406 -> R
+  395 -> E
+  396 -> E
+  397 -> L
+  398 -> E
+  399 -> E
+  400 -> L
+  401 -> E
+  402 -> R
+  403 -> L
+  404 -> E
+  405 -> E
+  406 -> I
   407 -> I
   408 -> I
   409 -> I
@@ -1720,177 +1972,150 @@ L ~ 233
   411 -> L
   412 -> I
   413 -> L
-  414 -> I
-  415 -> R
-  416 -> I
-  417 -> I
-  418 -> I
-  419 -> R
-  420 -> L
-  421 -> I
-  422 -> L
-  423 -> L
+  414 -> L
+  415 -> L
+  416 -> E
+  417 -> L
+  418 -> R
+  419 -> L
+  420 -> E
+  421 -> E
+  422 -> I
+  423 -> I
   424 -> I
-  425 -> R
-  426 -> I
-  427 -> I
-  428 -> R
+  425 -> I
+  426 -> R
+  427 -> L
+  428 -> I
   429 -> L
-  430 -> I
+  430 -> L
   431 -> I
   432 -> L
-  433 -> I
+  433 -> R
   434 -> I
-  435 -> L
-  436 -> I
-  437 -> R
-  438 -> L
+  435 -> I
+  436 -> L
+  437 -> L
+  438 -> R
   439 -> I
   440 -> I
-  441 -> I
-  442 -> I
-  443 -> I
-  444 -> I
+  441 -> L
+  442 -> E
+  443 -> L
+  444 -> E
   445 -> R
   446 -> L
-  447 -> I
-  448 -> L
-  449 -> L
-  450 -> L
+  447 -> E
+  448 -> E
+  449 -> I
+  450 -> I
   451 -> I
   452 -> I
   453 -> R
   454 -> L
   455 -> I
-  456 -> I
-  457 -> I
-  458 -> I
-  459 -> I
+  456 -> L
+  457 -> L
+  458 -> L
+  459 -> L
   460 -> I
-  461 -> R
-  462 -> L
+  461 -> L
+  462 -> R
   463 -> I
-  464 -> L
+  464 -> I
   465 -> L
-  466 -> I
-  467 -> L
-  468 -> R
-  469 -> I
-  470 -> I
-  471 -> I
-  472 -> I
-  473 -> R
+  466 -> R
+  467 -> I
+  468 -> I
+  469 -> R
+  470 -> E
+  471 -> L
+  472 -> L
+  473 -> L
   474 -> I
-  475 -> I
-  476 -> R
+  475 -> L
+  476 -> L
   477 -> I
   478 -> L
-  479 -> I
-  480 -> R
-  481 -> L
-  482 -> I
-  483 -> I
-  484 -> I
+  479 -> L
+  480 -> L
+  481 -> I
+  482 -> L
+  483 -> L
+  484 -> L
   485 -> I
-  486 -> I
-  487 -> I
-  488 -> R
+  486 -> L
+  487 -> L
+  488 -> I
   489 -> L
-  490 -> I
-  491 -> L
-  492 -> R
-  493 -> R
+  490 -> L
+  491 -> I
+  492 -> L
+  493 -> L
   494 -> L
   495 -> I
   496 -> L
-  497 -> R
-  498 -> I
+  497 -> I
+  498 -> L
   499 -> I
   500 -> L
-  501 -> R
-  502 -> I
+  501 -> L
+  502 -> L
   503 -> I
-  504 -> R
-  505 -> I
-  506 -> I
-  507 -> R
+  504 -> L
+  505 -> L
+  506 -> L
+  507 -> I
   508 -> L
-  509 -> I
-  510 -> I
-  511 -> L
-  512 -> I
+  509 -> L
+  510 -> L
+  511 -> I
+  512 -> L
   513 -> I
-  514 -> R
-  515 -> L
-  516 -> I
-  517 -> I
+  514 -> L
+  515 -> I
+  516 -> L
+  517 -> L
   518 -> I
   519 -> L
-  520 -> I
-  521 -> I
-  522 -> I
-  523 -> I
-  524 -> I
-  525 -> L
-  526 -> I
-  527 -> I
-  528 -> I
-  529 -> L
-  530 -> I
-  531 -> I
-  532 -> I
-  533 -> L
-  534 -> I
-  535 -> I
-  536 -> R
-  537 -> L
-  538 -> I
-  539 -> I
-  540 -> I
-  541 -> L
-  542 -> I
-  543 -> I
-  544 -> I
-  545 -> L
-  546 -> I
-  547 -> I
-  548 -> I
-  549 -> L
-  550 -> I
-  551 -> I
-  552 -> I
-  553 -> I
-  554 -> I
 
 #####################
 # Annotated program #
 #####################
 
-constructor Nat :I Type.
+mutual {
+  constructor Nat :E Type.
+  
+  constructor Z :R Nat.
+  
+  constructor S :R (n :L Nat) -> Nat.
+}
 
-constructor Z :I Nat.
+mutual {
+  constructor Fin :E (_ :E Nat) -> Type.
+  
+  constructor FZ :R (n :I Nat) -> Fin (S n).
+  
+  constructor FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+}
 
-constructor S :I (n :I Nat) -> Nat.
+mutual {
+  constructor Vect :E (_ :E Nat) -> (_ :E Type) -> Type.
+  
+  constructor VN :R (a :I Type) -> Vect Z a.
+  
+  constructor VC :R (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+}
 
-constructor Fin :I (_ :I Nat) -> Type.
-
-constructor FZ :R (n :I Nat) -> Fin (S n).
-
-constructor FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
-
-constructor Vect :I (_ :I Nat) -> (_ :I Type) -> Type.
-
-constructor VN :R (a :I Type) -> Vect Z a.
-
-constructor VC :R (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
-
-constructor TT :I (_ :I Nat) -> Type.
-
-constructor V :R (n :I Nat) -> (_ :L Fin n) -> TT n.
-
-constructor Lam :R (n :I Nat) -> (_ :L TT (S n)) -> TT n.
-
-constructor App :R (n :I Nat) -> (_ :L TT n) -> (_ :R TT n) -> TT n.
+mutual {
+  constructor TT :E (_ :E Nat) -> Type.
+  
+  constructor V :R (n :I Nat) -> (_ :L Fin n) -> TT n.
+  
+  constructor Lam :R (n :I Nat) -> (_ :L TT (S n)) -> TT n.
+  
+  constructor App :R (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
+}
 
 env :R (m :I Nat) -> (n :I Nat) -> (_ :R Vect m (TT n)) -> (_ :L Fin m) -> TT n {
   forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n))
@@ -1915,7 +2140,7 @@ mapVars :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L TT 
   forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (x :L TT (S m))
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :R TT m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :L TT m)
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
@@ -1934,7 +2159,7 @@ substVars :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L TT
   forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (x :L TT (S m))
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :R TT m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :L TT m)
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -1954,54 +2179,69 @@ substTop :R (n :I Nat) -> (_ :R TT n) -> (_ :L Fin (S n)) -> TT n {
   substTop n tm (FS [n] i) ~> V n i
 }
 
-redex :L (m :I Nat) -> (_ :L TT m) -> (_ :R TT m) -> TT m {
-  forall (m :I Nat) (y :L TT (S m)) (x :R TT m)
-  redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+mutual {
+  redex :L (m :I Nat) -> (_ :R TT m) -> (_ :R TT m) -> TT m {
+    forall (m :I Nat) (y :R TT (S m)) (x :R TT m)
+    redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+    
+    forall (m :I Nat) (f' :R TT m) (x :R TT m)
+    redex m f' x ~> App m f' (nf m x)
+  }
   
-  forall (m :I Nat) (f' :L TT m) (x :R TT m)
-  redex m f' x ~> App m f' (nf m x)
-}
-
-nf :R (m :I Nat) -> (_ :L TT m) -> TT m {
-  forall (m :I Nat) (i :L Fin m)
-  nf m (V [m] i) ~> V m i
-  
-  forall (m :I Nat) (x :L TT (S m))
-  nf m (Lam [m] x) ~> Lam m (nf (S m) x)
-  
-  forall (m :I Nat) (f :L TT m) (x :R TT m)
-  nf m (App [m] f x) ~> redex m f x
+  nf :R (m :I Nat) -> (_ :R TT m) -> TT m {
+    forall (m :I Nat) (i :R Fin m)
+    nf m (V [m] i) ~> V m i
+    
+    forall (m :I Nat) (x :R TT (S m))
+    nf m (Lam [m] x) ~> Lam m (nf (S m) x)
+    
+    forall (m :I Nat) (f :R TT m) (x :R TT m)
+    nf m (App [m] f x) ~> redex m f x
+  }
 }
 
 example2 :L TT (S Z) {
   example2  ~> nf (S Z) testTm
 }
 
-constructor Result :I Type.
-
-constructor R :L (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+mutual {
+  constructor Result :E Type.
+  
+  constructor R :R (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+}
 
 main :L Result {
   main  ~> R example1 example2
 }
-
 ##########
 # Erased #
 ##########
 
-constructor FZ : Fin.
+mutual {
+  constructor Z : Nat.
+  
+  constructor S : (n) -> Nat.
+}
 
-constructor FS : (_) -> Fin.
+mutual {
+  constructor FZ : Fin.
+  
+  constructor FS : (_) -> Fin.
+}
 
-constructor VN : Vect.
+mutual {
+  constructor VN : Vect.
+  
+  constructor VC : (_) -> (_) -> Vect.
+}
 
-constructor VC : (_) -> (_) -> Vect.
-
-constructor V : (_) -> TT.
-
-constructor Lam : (_) -> TT.
-
-constructor App : (_) -> (_) -> TT.
+mutual {
+  constructor V : (_) -> TT.
+  
+  constructor Lam : (_) -> TT.
+  
+  constructor App : (_) -> (_) -> TT.
+}
 
 env : (_) -> (_) -> TT {
   forall (x) (xs)
@@ -2065,23 +2305,25 @@ substTop : (_) -> (_) -> TT {
   substTop tm (FS i) ~> V i
 }
 
-redex : (_) -> (_) -> TT {
-  forall (y) (x)
-  redex (Lam y) x ~> nf (substVars (substTop (nf x)) y)
+mutual {
+  redex : (_) -> (_) -> TT {
+    forall (y) (x)
+    redex (Lam y) x ~> nf (substVars (substTop (nf x)) y)
+    
+    forall (f') (x)
+    redex f' x ~> App f' (nf x)
+  }
   
-  forall (f') (x)
-  redex f' x ~> App f' (nf x)
-}
-
-nf : (_) -> TT {
-  forall (i)
-  nf (V i) ~> V i
-  
-  forall (x)
-  nf (Lam x) ~> Lam (nf x)
-  
-  forall (f) (x)
-  nf (App f x) ~> redex f x
+  nf : (_) -> TT {
+    forall (i)
+    nf (V i) ~> V i
+    
+    forall (x)
+    nf (Lam x) ~> Lam (nf x)
+    
+    forall (f) (x)
+    nf (App f x) ~> redex f x
+  }
 }
 
 example2 : TT {
@@ -2093,7 +2335,6 @@ constructor R : (x) -> (y) -> Result.
 main : Result {
   main  ~> R example1 example2
 }
-
 ################
 # NF of `main` #
 ################

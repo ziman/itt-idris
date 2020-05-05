@@ -2,15 +2,19 @@
 # Desugared #
 #############
 
-constructor Bool : Type.
+mutual {
+  constructor Bool : Type.
+  
+  constructor True : Bool.
+  
+  constructor False : Bool.
+}
 
-constructor True : Bool.
-
-constructor False : Bool.
-
-constructor Pair : Type.
-
-constructor P : (x :L Bool) -> (y :L Bool) -> Pair.
+mutual {
+  constructor Pair : Type.
+  
+  constructor P : (x :L Bool) -> (y :L Bool) -> Pair.
+}
 
 not : (x : Bool) -> Bool {
   not True ~> False
@@ -36,20 +40,23 @@ apply : (f : (_ : Bool) -> Bool) -> (y : Bool) -> Bool {
 main :L Pair {
   main  ~> P (apply not (true False)) (apply false (true False))
 }
-
 #############
 # Evarified #
 #############
 
-constructor Bool :0 Type.
+mutual {
+  constructor Bool :0 Type.
+  
+  constructor True :4 Bool.
+  
+  constructor False :1 Bool.
+}
 
-constructor True :4 Bool.
-
-constructor False :1 Bool.
-
-constructor Pair :3 Type.
-
-constructor P :2 (x :L Bool) -> (y :L Bool) -> Pair.
+mutual {
+  constructor Pair :3 Type.
+  
+  constructor P :2 (x :L Bool) -> (y :L Bool) -> Pair.
+}
 
 not :27 (x :28 Bool) -> Bool {
   not True ~> False
@@ -75,7 +82,6 @@ apply :5 (f :6 (_ :7 Bool) -> Bool) -> (y :8 Bool) -> Bool {
 main :L Pair {
   main  ~> P (apply not (true False)) (apply false (true False))
 }
-
 Running erasure inference...
 
 ########################
@@ -141,9 +147,12 @@ L ~ 19
 #######################
 
 
-  -> iteration 1
-    -> No more equalities, fixed point reached.
+#####################
+# Variance of evars #
+#####################
 
+covariant: [7]
+contravariant: [6, 8, 16, 28, 32]
 ###################
 # Final valuation #
 ###################
@@ -152,28 +161,28 @@ L ~ 19
   2 -> L
   4 -> R
   5 -> R
-  6 -> L
+  6 -> R
   7 -> R
   8 -> R
   9 -> R
-  10 -> L
+  10 -> R
   11 -> R
-  12 -> L
+  12 -> R
   13 -> R
   14 -> R
-  15 -> L
+  15 -> R
   16 -> R
   17 -> R
   18 -> R
   19 -> L
   20 -> L
   21 -> R
-  22 -> L
+  22 -> R
   23 -> I
   24 -> R
-  25 -> L
+  25 -> R
   26 -> I
-  27 -> L
+  27 -> R
   28 -> R
   29 -> R
   30 -> R
@@ -186,23 +195,27 @@ L ~ 19
 # Annotated program #
 #####################
 
-constructor Bool :I Type.
+mutual {
+  constructor Bool :I Type.
+  
+  constructor True :R Bool.
+  
+  constructor False :R Bool.
+}
 
-constructor True :R Bool.
+mutual {
+  constructor Pair :I Type.
+  
+  constructor P :L (x :L Bool) -> (y :L Bool) -> Pair.
+}
 
-constructor False :R Bool.
-
-constructor Pair :I Type.
-
-constructor P :L (x :L Bool) -> (y :L Bool) -> Pair.
-
-not :L (x :R Bool) -> Bool {
+not :R (x :R Bool) -> Bool {
   not True ~> False
   
   not False ~> True
 }
 
-false :L (x :R Bool) -> Bool {
+false :R (x :R Bool) -> Bool {
   forall (x :R Bool)
   false x ~> False
 }
@@ -212,22 +225,23 @@ true :R (x :I Bool) -> Bool {
   true x ~> True
 }
 
-apply :R (f :L (_ :R Bool) -> Bool) -> (y :R Bool) -> Bool {
-  forall (f :L (_ :R Bool) -> Bool) (y :R Bool)
+apply :R (f :R (_ :R Bool) -> Bool) -> (y :R Bool) -> Bool {
+  forall (f :R (_ :R Bool) -> Bool) (y :R Bool)
   apply f y ~> f y
 }
 
 main :L Pair {
   main  ~> P (apply not (true False)) (apply false (true False))
 }
-
 ##########
 # Erased #
 ##########
 
-constructor True : Bool.
-
-constructor False : Bool.
+mutual {
+  constructor True : Bool.
+  
+  constructor False : Bool.
+}
 
 constructor P : (x) -> (y) -> Pair.
 
@@ -254,7 +268,6 @@ apply : (f) -> (y) -> Bool {
 main : Pair {
   main  ~> P (apply not true) (apply false true)
 }
-
 ################
 # NF of `main` #
 ################

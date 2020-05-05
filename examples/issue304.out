@@ -2,43 +2,55 @@
 # Desugared #
 #############
 
-constructor Nat : Type.
+mutual {
+  constructor Nat : Type.
+  
+  constructor Z : Nat.
+  
+  constructor S : (_ : Nat) -> Nat.
+}
 
-constructor Z : Nat.
+mutual {
+  constructor Fin : (_ : Nat) -> Type.
+  
+  constructor FZ : (n : Nat) -> Fin (S n).
+  
+  constructor FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
+}
 
-constructor S : (_ : Nat) -> Nat.
+mutual {
+  constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
+  
+  constructor Nil : (a : Type) -> Vect Z a.
+  
+  constructor Cons : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+}
 
-constructor Fin : (_ : Nat) -> Type.
+mutual {
+  constructor Elem : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Type.
+  
+  constructor Here : (a : Type) -> (n : Nat) -> (x : a) -> (xs : Vect n a) -> Elem a n x (Cons a n x xs).
+  
+  constructor There : (a : Type) -> (n : Nat) -> (x : a) -> (y : a) -> (xs : Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+}
 
-constructor FZ : (n : Nat) -> Fin (S n).
+mutual {
+  constructor Typ : Type.
+  
+  constructor TLam : (_ : Typ) -> (_ : Typ) -> Typ.
+  
+  constructor TNat : Typ.
+}
 
-constructor FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
-
-constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
-
-constructor Nil : (a : Type) -> Vect Z a.
-
-constructor Cons : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
-
-constructor Elem : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Type.
-
-constructor Here : (a : Type) -> (n : Nat) -> (x : a) -> (xs : Vect n a) -> Elem a n x (Cons a n x xs).
-
-constructor There : (a : Type) -> (n : Nat) -> (x : a) -> (y : a) -> (xs : Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
-
-constructor Typ : Type.
-
-constructor TLam : (_ : Typ) -> (_ : Typ) -> Typ.
-
-constructor TNat : Typ.
-
-constructor Term : (n : Nat) -> (_ : Typ) -> (_ : Vect n Typ) -> Type.
-
-constructor Var : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Elem Typ n a ctx) -> Term n a ctx.
-
-constructor Lam : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (b : Typ) -> (_ : Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
-
-constructor Fix : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+mutual {
+  constructor Term : (n : Nat) -> (_ : Typ) -> (_ : Vect n Typ) -> Type.
+  
+  constructor Var : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Elem Typ n a ctx) -> Term n a ctx.
+  
+  constructor Lam : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (b : Typ) -> (_ : Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  
+  constructor Fix : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+}
 
 lookup : (n : Nat) -> (_ : Vect n Typ) -> (_ : Fin n) -> Typ {
   forall (a : Typ) (n : Nat) (ctx : Vect n Typ)
@@ -59,48 +71,59 @@ count : (n : Nat) -> (ctx : Vect n Typ) -> (i : Fin n) -> Elem Typ n (lookup n c
 main : Type {
   main  ~> Type
 }
-
 #############
 # Evarified #
 #############
 
-constructor Nat :83 Type.
+mutual {
+  constructor Nat :83 Type.
+  
+  constructor Z :138 Nat.
+  
+  constructor S :88 (_ :89 Nat) -> Nat.
+}
 
-constructor Z :138 Nat.
+mutual {
+  constructor Fin :27 (_ :28 Nat) -> Type.
+  
+  constructor FZ :23 (n :24 Nat) -> Fin (S n).
+  
+  constructor FS :17 (n :18 Nat) -> (_ :19 Fin n) -> Fin (S n).
+}
 
-constructor S :88 (_ :89 Nat) -> Nat.
+mutual {
+  constructor Vect :135 (_ :136 Nat) -> (_ :137 Type) -> Type.
+  
+  constructor Nil :84 (a :85 Type) -> Vect Z a.
+  
+  constructor Cons :0 (a :1 Type) -> (n :2 Nat) -> (_ :3 a) -> (_ :4 Vect n a) -> Vect (S n) a.
+}
 
-constructor Fin :27 (_ :28 Nat) -> Type.
+mutual {
+  constructor Elem :10 (a :11 Type) -> (n :12 Nat) -> (_ :13 a) -> (_ :14 Vect n a) -> Type.
+  
+  constructor Here :47 (a :48 Type) -> (n :49 Nat) -> (x :50 a) -> (xs :51 Vect n a) -> Elem a n x (Cons a n x xs).
+  
+  constructor There :100 (a :101 Type) -> (n :102 Nat) -> (x :103 a) -> (y :104 a) -> (xs :105 Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+}
 
-constructor FZ :23 (n :24 Nat) -> Fin (S n).
+mutual {
+  constructor Typ :120 Type.
+  
+  constructor TLam :90 (_ :91 Typ) -> (_ :92 Typ) -> Typ.
+  
+  constructor TNat :93 Typ.
+}
 
-constructor FS :17 (n :18 Nat) -> (_ :19 Fin n) -> Fin (S n).
-
-constructor Vect :135 (_ :136 Nat) -> (_ :137 Type) -> Type.
-
-constructor Nil :84 (a :85 Type) -> Vect Z a.
-
-constructor Cons :0 (a :1 Type) -> (n :2 Nat) -> (_ :3 a) -> (_ :4 Vect n a) -> Vect (S n) a.
-
-constructor Elem :10 (a :11 Type) -> (n :12 Nat) -> (_ :13 a) -> (_ :14 Vect n a) -> Type.
-
-constructor Here :47 (a :48 Type) -> (n :49 Nat) -> (x :50 a) -> (xs :51 Vect n a) -> Elem a n x (Cons a n x xs).
-
-constructor There :100 (a :101 Type) -> (n :102 Nat) -> (x :103 a) -> (y :104 a) -> (xs :105 Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
-
-constructor Typ :120 Type.
-
-constructor TLam :90 (_ :91 Typ) -> (_ :92 Typ) -> Typ.
-
-constructor TNat :93 Typ.
-
-constructor Term :94 (n :95 Nat) -> (_ :96 Typ) -> (_ :97 Vect n Typ) -> Type.
-
-constructor Var :121 (a :122 Typ) -> (n :123 Nat) -> (ctx :124 Vect n Typ) -> (_ :127 Elem Typ n a ctx) -> Term n a ctx.
-
-constructor Lam :62 (a :63 Typ) -> (n :64 Nat) -> (ctx :65 Vect n Typ) -> (b :68 Typ) -> (_ :69 Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
-
-constructor Fix :29 (a :30 Typ) -> (n :31 Nat) -> (ctx :32 Vect n Typ) -> (_ :35 Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+mutual {
+  constructor Term :94 (n :95 Nat) -> (_ :96 Typ) -> (_ :97 Vect n Typ) -> Type.
+  
+  constructor Var :121 (a :122 Typ) -> (n :123 Nat) -> (ctx :124 Vect n Typ) -> (_ :127 Elem Typ n a ctx) -> Term n a ctx.
+  
+  constructor Lam :62 (a :63 Typ) -> (n :64 Nat) -> (ctx :65 Vect n Typ) -> (b :68 Typ) -> (_ :69 Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  
+  constructor Fix :29 (a :30 Typ) -> (n :31 Nat) -> (ctx :32 Vect n Typ) -> (_ :35 Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+}
 
 lookup :200 (n :201 Nat) -> (_ :202 Vect n Typ) -> (_ :205 Fin n) -> Typ {
   forall (a :211 Typ) (n :210 Nat) (ctx :207 Vect n Typ)
@@ -121,7 +144,6 @@ count :139 (n :140 Nat) -> (ctx :141 Vect n Typ) -> (i :144 Fin n) -> Elem Typ n
 main :241 Type {
   main  ~> Type
 }
-
 Running erasure inference...
 
 ########################
@@ -469,9 +491,12 @@ L ~ 188
 147 -> lookup (S n) (Cons Typ n a ctx) (FS n i) ~ lookup n ctx i
 146 -> Cons Typ n a ctx ~ Cons Typ n a ctx
 
-  -> iteration 1
-    -> No more equalities, fixed point reached.
+#####################
+# Variance of evars #
+#####################
 
+covariant: []
+contravariant: [1, 2, 3, 4, 11, 12, 13, 14, 18, 19, 24, 28, 30, 31, 32, 35, 48, 49, 50, 51, 63, 64, 65, 68, 69, 85, 89, 91, 92, 95, 96, 97, 101, 102, 103, 104, 105, 122, 123, 124, 127, 136, 137, 140, 141, 144, 201, 202, 205]
 ###################
 # Final valuation #
 ###################
@@ -500,8 +525,12 @@ L ~ 188
   25 -> I
   26 -> I
   28 -> I
+  30 -> I
+  31 -> I
+  32 -> I
   33 -> I
   34 -> I
+  35 -> I
   36 -> I
   37 -> I
   38 -> I
@@ -528,8 +557,13 @@ L ~ 188
   59 -> L
   60 -> I
   61 -> I
+  63 -> I
+  64 -> I
+  65 -> I
   66 -> I
   67 -> I
+  68 -> I
+  69 -> I
   70 -> I
   71 -> I
   72 -> I
@@ -543,6 +577,7 @@ L ~ 188
   80 -> I
   81 -> I
   82 -> I
+  85 -> I
   86 -> I
   87 -> I
   89 -> I
@@ -574,8 +609,12 @@ L ~ 188
   118 -> I
   119 -> I
   120 -> I
+  122 -> I
+  123 -> I
+  124 -> I
   125 -> I
   126 -> I
+  127 -> I
   128 -> I
   129 -> I
   130 -> I
@@ -646,7 +685,7 @@ L ~ 188
   197 -> L
   198 -> I
   199 -> I
-  200 -> L
+  200 -> R
   201 -> I
   202 -> R
   203 -> I
@@ -693,45 +732,57 @@ L ~ 188
 # Annotated program #
 #####################
 
-constructor Nat :I Type.
+mutual {
+  constructor Nat :I Type.
+  
+  constructor Z :I Nat.
+  
+  constructor S :I (_ :I Nat) -> Nat.
+}
 
-constructor Z :I Nat.
+mutual {
+  constructor Fin :I (_ :I Nat) -> Type.
+  
+  constructor FZ :I (n :I Nat) -> Fin (S n).
+  
+  constructor FS :I (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+}
 
-constructor S :I (_ :I Nat) -> Nat.
+mutual {
+  constructor Vect :I (_ :I Nat) -> (_ :I Type) -> Type.
+  
+  constructor Nil :I (a :I Type) -> Vect Z a.
+  
+  constructor Cons :I (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+}
 
-constructor Fin :I (_ :I Nat) -> Type.
+mutual {
+  constructor Elem :I (a :I Type) -> (n :I Nat) -> (_ :I a) -> (_ :I Vect n a) -> Type.
+  
+  constructor Here :L (a :I Type) -> (n :I Nat) -> (x :I a) -> (xs :I Vect n a) -> Elem a n x (Cons a n x xs).
+  
+  constructor There :L (a :I Type) -> (n :I Nat) -> (x :I a) -> (y :I a) -> (xs :I Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+}
 
-constructor FZ :I (n :I Nat) -> Fin (S n).
+mutual {
+  constructor Typ :I Type.
+  
+  constructor TLam :I (_ :I Typ) -> (_ :I Typ) -> Typ.
+  
+  constructor TNat :I Typ.
+}
 
-constructor FS :I (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+mutual {
+  constructor Term :I (n :I Nat) -> (_ :I Typ) -> (_ :I Vect n Typ) -> Type.
+  
+  constructor Var :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Elem Typ n a ctx) -> Term n a ctx.
+  
+  constructor Lam :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (b :I Typ) -> (_ :I Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  
+  constructor Fix :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+}
 
-constructor Vect :I (_ :I Nat) -> (_ :I Type) -> Type.
-
-constructor Nil :I (a :I Type) -> Vect Z a.
-
-constructor Cons :I (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
-
-constructor Elem :I (a :I Type) -> (n :I Nat) -> (_ :I a) -> (_ :I Vect n a) -> Type.
-
-constructor Here :L (a :I Type) -> (n :I Nat) -> (x :I a) -> (xs :I Vect n a) -> Elem a n x (Cons a n x xs).
-
-constructor There :L (a :I Type) -> (n :I Nat) -> (x :I a) -> (y :I a) -> (xs :I Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
-
-constructor Typ :I Type.
-
-constructor TLam :I (_ :I Typ) -> (_ :I Typ) -> Typ.
-
-constructor TNat :I Typ.
-
-constructor Term :I (n :I Nat) -> (_ :I Typ) -> (_ :I Vect n Typ) -> Type.
-
-constructor Var :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Elem Typ n a ctx) -> Term n a ctx.
-
-constructor Lam :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (b :I Typ) -> (_ :I Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
-
-constructor Fix :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
-
-lookup :L (n :I Nat) -> (_ :R Vect n Typ) -> (_ :L Fin n) -> Typ {
+lookup :R (n :I Nat) -> (_ :R Vect n Typ) -> (_ :L Fin n) -> Typ {
   forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ)
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
   
@@ -750,14 +801,30 @@ count :L (n :I Nat) -> (ctx :I Vect n Typ) -> (i :L Fin n) -> Elem Typ n (lookup
 main :L Type {
   main  ~> Type
 }
-
 ##########
 # Erased #
 ##########
 
-constructor Here : Elem.
+mutual {
+}
 
-constructor There : (t) -> Elem.
+mutual {
+}
+
+mutual {
+}
+
+mutual {
+  constructor Here : Elem.
+  
+  constructor There : (t) -> Elem.
+}
+
+mutual {
+}
+
+mutual {
+}
 
 lookup : (_) -> (_) -> Typ {
   forall (a) (ctx)
@@ -777,7 +844,6 @@ count : (i) -> Elem {
 main : Type {
   main  ~> Type
 }
-
 ################
 # NF of `main` #
 ################
