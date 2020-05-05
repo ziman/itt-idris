@@ -58,7 +58,6 @@ inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (ds :: dss) = do
           $$ text ""
     )
 
-  log "  variance of evars:"
   let var = concatMap (variance . .binding.type) ds
   prd . indent $
     text "variance of evars:"

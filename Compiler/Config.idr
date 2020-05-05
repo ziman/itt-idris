@@ -19,7 +19,6 @@ export
 parse : List String -> Either String (Config -> Config)
 parse = \case
   [] => Right id
-  [fname] => Right (record { fnameInput = Just fname })
   "--disable-L" :: args =>
     (record { disableL = True } .) <$> parse args
   "--default-constructor-quantities" :: args =>
@@ -27,7 +26,9 @@ parse = \case
   "--prune-clauses" :: args =>
     (record { pruneClauses = True } .) <$> parse args
   "--incremental" :: args =>
-    (record { incrementalInference = True} .) <$> parse args
+    (record { incrementalInference = True } .) <$> parse args
+  [fname] =>
+    Right (record { fnameInput = Just fname })
   arg :: _ =>
     Left $ "unknown argument: " ++ show arg
 
