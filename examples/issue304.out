@@ -151,17 +151,17 @@ Running erasure inference...
 ########################
 
 47 ≥ sum
-  product []
+  product [139]
 100 ≥ sum
-  product []
+  product [139]
 120 ≥ sum
-  product [48]
-  product [101]
+  product [139, 48]
+  product [139, 101]
 139 ≥ sum
-  product [L]
+  product [139, L]
 200 ≥ sum
-  product []
-  product [103]
+  product [200]
+  product [139, 103]
 241 ≥ sum
   product []
 28 ~ 25
@@ -542,7 +542,7 @@ contravariant: [1, 2, 3, 4, 11, 12, 13, 14, 18, 19, 24, 28, 30, 31, 32, 35, 48, 
   44 -> I
   45 -> I
   46 -> I
-  47 -> L
+  47 -> I
   48 -> I
   49 -> I
   50 -> I
@@ -588,7 +588,7 @@ contravariant: [1, 2, 3, 4, 11, 12, 13, 14, 18, 19, 24, 28, 30, 31, 32, 35, 48, 
   97 -> I
   98 -> I
   99 -> I
-  100 -> L
+  100 -> I
   101 -> I
   102 -> I
   103 -> I
@@ -624,7 +624,7 @@ contravariant: [1, 2, 3, 4, 11, 12, 13, 14, 18, 19, 24, 28, 30, 31, 32, 35, 48, 
   134 -> I
   136 -> I
   137 -> I
-  139 -> L
+  139 -> I
   140 -> I
   141 -> I
   142 -> I
@@ -685,7 +685,7 @@ contravariant: [1, 2, 3, 4, 11, 12, 13, 14, 18, 19, 24, 28, 30, 31, 32, 35, 48, 
   197 -> L
   198 -> I
   199 -> I
-  200 -> R
+  200 -> I
   201 -> I
   202 -> R
   203 -> I
@@ -759,9 +759,9 @@ mutual {
 mutual {
   constructor Elem :I (a :I Type) -> (n :I Nat) -> (_ :I a) -> (_ :I Vect n a) -> Type.
   
-  constructor Here :L (a :I Type) -> (n :I Nat) -> (x :I a) -> (xs :I Vect n a) -> Elem a n x (Cons a n x xs).
+  constructor Here :I (a :I Type) -> (n :I Nat) -> (x :I a) -> (xs :I Vect n a) -> Elem a n x (Cons a n x xs).
   
-  constructor There :L (a :I Type) -> (n :I Nat) -> (x :I a) -> (y :I a) -> (xs :I Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+  constructor There :I (a :I Type) -> (n :I Nat) -> (x :I a) -> (y :I a) -> (xs :I Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
 }
 
 mutual {
@@ -782,7 +782,7 @@ mutual {
   constructor Fix :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
 }
 
-lookup :R (n :I Nat) -> (_ :R Vect n Typ) -> (_ :L Fin n) -> Typ {
+lookup :I (n :I Nat) -> (_ :R Vect n Typ) -> (_ :L Fin n) -> Typ {
   forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ)
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
   
@@ -790,7 +790,7 @@ lookup :R (n :I Nat) -> (_ :R Vect n Typ) -> (_ :L Fin n) -> Typ {
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
 }
 
-count :L (n :I Nat) -> (ctx :I Vect n Typ) -> (i :L Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+count :I (n :I Nat) -> (ctx :I Vect n Typ) -> (i :L Fin n) -> Elem Typ n (lookup n ctx i) ctx {
   forall (n :I Nat) (ctx :I Vect n Typ) (a :I Typ)
   count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
   
@@ -804,42 +804,6 @@ main :L Type {
 ##########
 # Erased #
 ##########
-
-mutual {
-}
-
-mutual {
-}
-
-mutual {
-}
-
-mutual {
-  constructor Here : Elem.
-  
-  constructor There : (t) -> Elem.
-}
-
-mutual {
-}
-
-mutual {
-}
-
-lookup : (_) -> (_) -> Typ {
-  forall (a) (ctx)
-  lookup ({Cons} a ctx) FZ ~> a
-  
-  forall (a) (ctx) (i)
-  lookup ({Cons} a ctx) (FS i) ~> lookup ctx i
-}
-
-count : (i) -> Elem {
-  count FZ ~> Here
-  
-  forall (i)
-  count (FS i) ~> There (count i)
-}
 
 main : Type {
   main  ~> Type

@@ -1879,7 +1879,7 @@ inferring  main :197 Result {
   318 -> R
   319 -> R
   320 -> I
-  321 -> L
+  321 -> R
   322 -> I
   323 -> R
   324 -> E
@@ -2180,7 +2180,7 @@ substTop :R (n :I Nat) -> (_ :R TT n) -> (_ :L Fin (S n)) -> TT n {
 }
 
 mutual {
-  redex :L (m :I Nat) -> (_ :R TT m) -> (_ :R TT m) -> TT m {
+  redex :R (m :I Nat) -> (_ :R TT m) -> (_ :R TT m) -> TT m {
     forall (m :I Nat) (y :R TT (S m)) (x :R TT m)
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
     

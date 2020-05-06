@@ -85,13 +85,13 @@ Running erasure inference...
 ########################
 
 2 ≥ sum
-  product []
+  product [25]
 4 ≥ sum
-  product []
+  product [25]
 7 ≥ sum
-  product [21]
+  product [L, 21]
 10 ≥ sum
-  product []
+  product [L]
 L ≥ sum
   product []
 E ~ 11
@@ -140,8 +140,8 @@ contravariant: [14, 15, 26]
 # Final valuation #
 ###################
 
-  2 -> L
-  4 -> L
+  2 -> I
+  4 -> I
   7 -> R
   8 -> E
   9 -> I
@@ -154,11 +154,12 @@ contravariant: [14, 15, 26]
   17 -> I
   18 -> I
   19 -> L
-  20 -> L
-  21 -> L
+  20 -> R
+  21 -> R
   22 -> E
   23 -> I
   24 -> L
+  25 -> I
   26 -> L
   27 -> L
   28 -> L
@@ -170,9 +171,9 @@ contravariant: [14, 15, 26]
 mutual {
   constructor Bool :I Type.
   
-  constructor True :L Bool.
+  constructor True :I Bool.
   
-  constructor False :L Bool.
+  constructor False :I Bool.
 }
 
 mutual {
@@ -201,36 +202,15 @@ id :I (a :I Type) -> (x :L a) -> a {
 }
 
 main :L Bool {
-  main  ~> (\x :L U (C False). g x) d
+  main  ~> (\x :R U (C False). g x) d
 }
 ##########
 # Erased #
 ##########
 
-mutual {
-  constructor True : Bool.
-  
-  constructor False : Bool.
-}
-
-mutual {
-}
-
-mutual {
-}
-
 postulate g : (x) -> Bool.
 
-mutual {
-}
-
 postulate d : U.
-
-mutual {
-}
-
-mutual {
-}
 
 main : Bool {
   main  ~> (\x. g x) d

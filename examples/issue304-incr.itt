@@ -1,5 +1,5 @@
 -- https://github.com/edwinb/Idris2/issues/304
-%options "--incremental" "--default-constructor-quantities"
+-- %options "--incremental" "--default-constructor-quantities"
 
 data Nat : Type {
   Z : Nat,
@@ -20,7 +20,7 @@ data Elem : (a : Type) -> (n : Nat) -> a -> Vect n a -> Type {
   Here : (a :I Type) -> (n :I Nat) -> (x : a) -> (xs : Vect n a)
     -> Elem a n x (Cons a n x xs),
   There : (a :I Type) -> (n :I Nat) -> (x : a) -> (y : a) -> (xs : Vect n a)
-    -> (t :L Elem a n x xs)
+    -> (t : Elem a n x xs)
     -> Elem a n x (Cons a n y xs)
 }
 
@@ -41,6 +41,7 @@ data Term : (n : Nat) -> Typ -> Vect n Typ -> Type {
     -> Term n a ctx
 }
 
+-- TODO: lookup is inferred as R, wth??
 lookup : (n : Nat) -> Vect n Typ -> Fin n -> Typ {
   forall (a : Typ) (n : Nat) (ctx : Vect n Typ)
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a,

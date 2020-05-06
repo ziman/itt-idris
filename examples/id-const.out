@@ -89,27 +89,27 @@ Running erasure inference...
 ########################
 
 1 ≥ sum
-  product []
-  product []
-  product [32, 8, L]
-  product [32, 8, L]
+  product [27]
+  product [15]
+  product [L, 32, 8, L]
+  product [L, 32, 8, L]
 2 ≥ sum
-  product []
+  product [L]
 4 ≥ sum
-  product []
-  product []
+  product [27]
+  product [31]
 5 ≥ sum
-  product [L]
-  product [L]
+  product [L, L]
+  product [L, L]
 15 ≥ sum
-  product [6, L]
+  product [L, 6, L]
 L ≥ sum
   product []
 27 ≥ sum
-  product [6, L]
+  product [L, 6, L]
 31 ≥ sum
-  product [8, L]
-  product [8, L]
+  product [L, 8, L]
+  product [L, 8, L]
 28 ~ 29
 product [28] ≥ sum
   product [L]
@@ -161,26 +161,26 @@ contravariant: [6, 8, 16, 28, 32]
   2 -> L
   4 -> R
   5 -> R
-  6 -> R
+  6 -> L
   7 -> R
   8 -> R
   9 -> R
-  10 -> R
+  10 -> L
   11 -> R
-  12 -> R
+  12 -> L
   13 -> R
   14 -> R
-  15 -> R
+  15 -> L
   16 -> R
   17 -> R
   18 -> R
   19 -> L
   20 -> L
   21 -> R
-  22 -> R
+  22 -> L
   23 -> I
   24 -> R
-  25 -> R
+  25 -> L
   26 -> I
   27 -> R
   28 -> R
@@ -215,7 +215,7 @@ not :R (x :R Bool) -> Bool {
   not False ~> True
 }
 
-false :R (x :R Bool) -> Bool {
+false :L (x :R Bool) -> Bool {
   forall (x :R Bool)
   false x ~> False
 }
@@ -225,8 +225,8 @@ true :R (x :I Bool) -> Bool {
   true x ~> True
 }
 
-apply :R (f :R (_ :R Bool) -> Bool) -> (y :R Bool) -> Bool {
-  forall (f :R (_ :R Bool) -> Bool) (y :R Bool)
+apply :R (f :L (_ :R Bool) -> Bool) -> (y :R Bool) -> Bool {
+  forall (f :L (_ :R Bool) -> Bool) (y :R Bool)
   apply f y ~> f y
 }
 

@@ -81,21 +81,21 @@ Running erasure inference...
 ########################
 
 1 ≥ sum
-  product [19]
+  product [36, 19]
 9 ≥ sum
-  product [3, 19]
+  product [36, 3, 19]
 11 ≥ sum
-  product []
-  product [18]
+  product [17]
+  product [36, 18]
 13 ≥ sum
-  product [2, 19]
+  product [36, 2, 19]
 16 ≥ sum
-  product []
-  product [12, 18]
-  product [I, 19]
+  product [17]
+  product [36, 12, 18]
+  product [36, I, 19]
 17 ≥ sum
-  product [12]
-  product []
+  product [17, 12]
+  product [36]
 36 ≥ sum
   product []
 15 ~ 10
@@ -192,7 +192,7 @@ contravariant: [2, 3, 12, 15, 18, 19]
   33 -> I
   34 -> L
   35 -> I
-  36 -> L
+  36 -> R
   37 -> L
   38 -> I
   39 -> I
@@ -235,15 +235,12 @@ length :R (n :I Nat) -> (_ :L Vect n) -> Nat {
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
-main :L Nat {
+main :R Nat {
   main  ~> length (S Z) (Cons Z True Nil)
 }
 ##########
 # Erased #
 ##########
-
-mutual {
-}
 
 mutual {
   constructor Z : Nat.

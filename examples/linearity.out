@@ -107,15 +107,15 @@ Running erasure inference...
 ########################
 
 2 ≥ sum
-  product []
-  product []
-  product []
+  product [5]
+  product [5]
+  product [5]
 4 ≥ sum
-  product []
-  product []
-  product []
+  product [5]
+  product [19]
+  product [16]
 5 ≥ sum
-  product []
+  product [25]
 30 ≥ sum
   product []
 6 ~ 8
@@ -186,9 +186,9 @@ contravariant: [6, 7]
 # Final valuation #
 ###################
 
-  2 -> R
-  4 -> R
-  5 -> L
+  2 -> I
+  4 -> I
+  5 -> I
   6 -> L
   7 -> L
   8 -> L
@@ -199,12 +199,15 @@ contravariant: [6, 7]
   13 -> L
   14 -> L
   15 -> L
+  16 -> I
   17 -> E
   18 -> L
+  19 -> I
   20 -> I
   21 -> L
   23 -> L
   24 -> L
+  25 -> I
   26 -> R
   27 -> L
   28 -> L
@@ -218,12 +221,12 @@ contravariant: [6, 7]
 mutual {
   constructor Bool :I Type.
   
-  constructor True :R Bool.
+  constructor True :I Bool.
   
-  constructor False :R Bool.
+  constructor False :I Bool.
 }
 
-and :L (_ :L Bool) -> (_ :L Bool) -> Bool {
+and :I (_ :L Bool) -> (_ :L Bool) -> Bool {
   and True True ~> True
   
   and True False ~> False
@@ -265,37 +268,6 @@ main :L Type {
 ##########
 # Erased #
 ##########
-
-mutual {
-  constructor True : Bool.
-  
-  constructor False : Bool.
-}
-
-and : (_) -> (_) -> Bool {
-  and True True ~> True
-  
-  and True False ~> False
-  
-  and False True ~> False
-  
-  and False False ~> False
-}
-
-mutual {
-}
-
-mutual {
-}
-
-mutual {
-}
-
-mutual {
-}
-
-mutual {
-}
 
 main : Type {
   main  ~> Type
