@@ -234,6 +234,16 @@ withGuard : Evar -> TC lu n a -> TC lu n a
 withGuard q (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
     => f (MkE (q :: gs) globs ctx bt) st
 
+addGlobalGuard : Evar -> SortedMap Name (List (List Evar)) -> SortedMap Name (List (List Evar))
+addGlobalGuard q = map (map (q ::))
+
+withGlobalGuard : Evar -> TC lu n a -> TC lu n a
+withGlobalGuard q (MkTC f) = MkTC $ \env, st =>
+  case f env st of
+    Left fail => Left fail
+    Right (MkR st cs eqs lu gu x) =>
+      Right (MkR st cs eqs lu (addGlobalGuard q gu) x)
+
 use : Fin n -> TCR n ()
 use i = MkTC $ \env, st =>
   Right (MkR st [] [] (mkLU (Just ([env.guards], i)) env.context) empty ())
@@ -521,7 +531,8 @@ covering export
 inferDefinition : Definition Evar -> TCC Z ()
 inferDefinition d@(MkDef bnd body) = traceDoc (pretty () d) "DEF" $ do
   inferBinding bnd
-  inferBody bnd body
+  withGlobalGuard bnd.qv $
+    inferBody bnd body
 
 covering export
 inferDefinitions : List (List (Definition Evar)) -> TCC Z ()
