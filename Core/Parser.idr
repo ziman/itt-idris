@@ -285,8 +285,8 @@ mutual
 
   atom : Vect n String -> Rule (Term n)
   atom ns = 
-    (token Underscore *> pure (Meta 0))
-    <|> var ns
+    var ns
+    <|> erased
     <|> natSugar
     <|> ref ns
     <|> (kwd "Type" *> pure Type_)
@@ -304,7 +304,6 @@ mutual
   term ns
     = lam ns
     <|> pi ns
-    <|> erased
     <|> app ns
 
   erased : Rule (Term n)
