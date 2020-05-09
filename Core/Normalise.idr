@@ -100,7 +100,7 @@ mutual
     case unApply tm of
       (P cn, args) =>
         case .body <$> lookup cn gs of
-          Just Constructor  =>
+          Just (Constructor arity) =>
             if ctorMatches ctor cn
               then case zipMatch (snd <$> ps) (snd <$> args) of
                 Just psArgs =>

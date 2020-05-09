@@ -25,6 +25,11 @@ mkApp : TT q n -> List (q, TT q n) -> TT q n
 mkApp f = foldl (\g, (q, x) => App q g x) f
 
 export
+piDepth : TT q n -> Nat
+piDepth (Pi b rhs) = S (piDepth rhs)
+piDepth _ = Z
+
+export
 hasTypeTarget : TT q n -> Bool
 hasTypeTarget (Pi b rhs) = hasTypeTarget rhs
 hasTypeTarget Type_ = True

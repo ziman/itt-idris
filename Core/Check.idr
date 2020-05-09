@@ -41,6 +41,7 @@ data ErrorMessage : Nat -> Type where
   NotImplemented : ErrorMessage n
   WHNFError : EvalError -> ErrorMessage n
   UnknownGlobal : Name -> ErrorMessage n
+  ConstructorArityMismatch : Binding Q Z -> Nat -> ErrorMessage n
   Debug : Doc -> ErrorMessage n
 
 showEM : Context Q n -> ErrorMessage n -> String
@@ -64,6 +65,8 @@ showEM ctx CantCheckWildcard
     = "can't check wildcard patterns"
 showEM ctx NotImplemented
     = "not implemented yet"
+showEM ctx (ConstructorArityMismatch b arity)
+    = "constructor arity " ++ show arity ++ " wrong for " ++ prettyShow (Context.Nil {q=Q}) b
 showEM ctx (Debug doc)
     = render "  " (text ">>> DEBUG <<< " $$ indent doc)
 
@@ -409,7 +412,10 @@ checkClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN fbnd.name) c) "C
 covering
 checkBody : Binding Q Z -> Body Q -> TC Z ()
 checkBody bnd Postulate = pure ()
-checkBody bnd Constructor = pure ()
+checkBody bnd (Constructor arity) =
+  if arity == piDepth bnd.type
+    then pure ()
+    else throw $ ConstructorArityMismatch bnd arity
 checkBody bnd (Foreign code) = pure ()
 checkBody bnd (Clauses argn cs) = traverse_ (checkClause bnd) cs
 

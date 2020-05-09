@@ -46,6 +46,7 @@ data ErrorMessage : Nat -> Type where
   UnknownGlobal : Name -> ErrorMessage n
   OverconstrainedBinding : Fin n -> ErrorMessage n
   UnderconstrainedBinding : Fin n -> ErrorMessage n
+  ConstructorArityMismatch : Binding Evar Z -> Nat -> ErrorMessage n
   Debug : Doc -> ErrorMessage n
 
 showEM : Context Evar n -> ErrorMessage n -> String
@@ -69,6 +70,8 @@ showEM ctx (OverconstrainedBinding i)
     = "conflicting constraints for " ++ show (lookup i ctx).name
 showEM ctx (UnderconstrainedBinding i)
     = "underconstrained binder: " ++ show (lookup i ctx).name
+showEM ctx (ConstructorArityMismatch b arity)
+    = "constructor arity " ++ show arity ++ " wrong for " ++ prettyShow (Context.Nil {q=Evar}) b
 showEM ctx (Debug doc)
     = render "  " (text ">>> DEBUG <<< " $$ indent doc)
 
@@ -521,7 +524,10 @@ inferClause fbnd c@(MkClause pi lhs rhs) = traceDoc (pretty (UN fbnd.name) c) "C
 covering export
 inferBody : Binding Evar Z -> Body Evar -> TCC Z ()
 inferBody fbnd Postulate = pure ()
-inferBody fbnd Constructor = pure ()
+inferBody fbnd (Constructor arity) =
+  if arity == piDepth fbnd.type
+    then pure ()
+    else throw $ ConstructorArityMismatch fbnd arity
 inferBody fbnd (Foreign _) = pure ()
 inferBody fbnd (Clauses argn cs) = traverse_ (inferClause fbnd) cs
 

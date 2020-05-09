@@ -154,3 +154,7 @@ render ind = concat . intersperse "\n" . render' ind
 export
 Show Doc where
   show = render "  "
+
+export
+prettyShow : Pretty ctx a => ctx -> a -> String
+prettyShow ctx = render "  " . pretty ctx

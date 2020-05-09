@@ -13,14 +13,14 @@ import Data.SortedMap
 public export
 data Body : (q : Type) -> Type where
   Postulate : Body q
-  Constructor : Body q
+  Constructor : (arity : Nat) -> Body q
   Foreign : String -> Body q
   Clauses : (argn : Nat) -> List (Clause q argn) -> Body q
 
 export
 ShowQ q => Pretty Name (Body q) where
   pretty n Postulate = text "postulate"
-  pretty n Constructor = text "constructor"
+  pretty n (Constructor arity) = text "constructor/" <+> show arity
   pretty n (Foreign code) = text "foreign" <++> text (show code)
   pretty n (Clauses argn cs) = vcat (map (pretty n) cs)
 
@@ -35,8 +35,9 @@ ShowQ q => Pretty () (Definition q) where
   pretty () (MkDef b Postulate) =
     text "postulate" <++> pretty (Context.Nil {q}) b <+> text "."
 
-  pretty () (MkDef b Constructor) =
-    text "constructor" <++> pretty (Context.Nil {q}) b <+> text "."
+  pretty () (MkDef b (Constructor arity)) =
+    text "constructor" <++> pretty (Context.Nil {q}) b
+        <++> text "/" <+> show arity <+> text "."
 
   pretty () (MkDef b (Foreign code)) =
     text "foreign" <++> pretty (Context.Nil {q}) b
@@ -116,7 +117,7 @@ ShowQ q => Show (Globals q) where
 export
 bodyQ : Traversal (Body q) (Body q') q q'
 bodyQ f Postulate = pure Postulate
-bodyQ f Constructor = pure Constructor
+bodyQ f (Constructor arity) = pure (Constructor arity)
 bodyQ f (Foreign code) = pure $ Foreign code
 bodyQ f (Clauses argn cs) = Clauses argn <$> traverse (clauseQ f) cs
 

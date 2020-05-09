@@ -82,24 +82,27 @@ eraseClause (MkClause pi lhs rhs) =
     (eraseArgs pi $ toList lhs)
     (eraseTm pi rhs)
 
-eraseBody : Body Q -> Body ()
-eraseBody Postulate = Postulate
-eraseBody Constructor = Constructor
-eraseBody (Foreign code) = Foreign code
-eraseBody (Clauses argn cs) =
+eraseBody : Binding Q Z -> Body Q -> Body ()
+eraseBody b Postulate = Postulate
+eraseBody b (Constructor arity) =
+  Constructor $ piDepth (eraseTm [] b.type)
+eraseBody b (Foreign code) = Foreign code
+eraseBody b (Clauses argn cs) =
   case fromRaw $ map eraseClause cs of
     Nothing => Clauses Z []  -- should never happen
     Just (argn' ** cs) => Clauses argn' cs
 
 eraseDefs : List (Definition Q) -> List (Definition ())
 eraseDefs [] = []
-eraseDefs ((MkDef (B n I ty) body) :: ds) = eraseDefs ds
-eraseDefs ((MkDef (B n E ty) body) :: ds) = eraseDefs ds
-eraseDefs ((MkDef (B n _ ty) body) :: ds) =
-  MkDef
-    (B n () Erased)
-    (eraseBody body)
-  :: eraseDefs ds
+eraseDefs ((MkDef b@(B n q ty) body) :: ds) =
+  case q of
+    I => eraseDefs ds
+    E => eraseDefs ds
+    _ =>
+        MkDef
+          (B n () Erased)
+          (eraseBody b body)
+        :: eraseDefs ds
 
 export
 eraseGlobals : (gs : Globals Q) -> Globals ()

@@ -354,7 +354,7 @@ dataDecl = do
   token BraceL
   bnds <- sepBy (token Comma) (binding [])
   token BraceR
-  pure [MkDef b Constructor | b <- bnd :: bnds]
+  pure [MkDef b (Constructor (piDepth b.type)) | b <- bnd :: bnds]
 
 context : {k : Nat} -> Vect k String -> Context (Maybe Q) k
     -> Grammar (TokenData Token) False (n ** Context (Maybe Q) n)

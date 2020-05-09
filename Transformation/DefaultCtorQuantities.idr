@@ -10,8 +10,8 @@ byDefault q (Pi b rhs) = Pi b $ byDefault q rhs
 byDefault q tm = tm
 
 fixup : Definition (Maybe Q) -> Definition (Maybe Q)
-fixup (MkDef (B n q ty) Constructor) =
-  MkDef (B n q (byDefault L ty)) Constructor
+fixup (MkDef (B n q ty) (Constructor arity)) =
+  MkDef (B n q (byDefault L ty)) (Constructor arity)
 fixup d = d
 
 public export
