@@ -40,11 +40,11 @@ mutual
   nrTm : TT q n -> State Int (TT q n)
   nrTm (P gn) = pure $ P gn
   nrTm (V i) = pure $ V i
-  nrTm (Lam b rhs) = ?rhsA_3
-  nrTm (Pi b rhs) = ?rhsA_4
-  nrTm (App x f y) = ?rhsA_5
-  nrTm Type_ = ?rhsA_6
-  nrTm Erased = ?rhsA_7
+  nrTm (Lam b rhs) = Lam <$> nrBnd b <*> nrTm rhs
+  nrTm (Pi b rhs) = Pi <$> nrBnd b <*> nrTm rhs
+  nrTm (App q f x) = App q <$> nrTm f <*> nrTm x
+  nrTm Type_ = pure Type_
+  nrTm Erased = pure Erased
 
 mutual
   nrPat : Pat q n -> State Int (Pat q n)
