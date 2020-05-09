@@ -1,6 +1,5 @@
 -- https://github.com/edwinb/Idris2/issues/304
-%options "--default-constructor-quantities"
--- %options "--incremental" "--default-constructor-quantities"
+%options "--incremental" "--default-constructor-quantities"
 
 data Nat : Type {
   Z : Nat,

@@ -144,398 +144,553 @@ count :98 (n :99 Nat) -> (ctx :100 Vect n Typ) -> (i :103 Fin n) -> Elem Typ n (
 main :200 Type {
   main  ~> Type
 }
-Running erasure inference...
+inferring  mutual {
+    constructor/0 Nat :59 Type.
+    
+    constructor/0 Z :97 Nat.
+    
+    constructor/1 S :63 (_ :L Nat) -> Nat.
+  }
 
-########################
-# Inferred constraints #
-########################
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor/0 Nat :I Type.
+    
+    constructor/0 Z :I Nat.
+    
+    constructor/1 S :I (_ :L Nat) -> Nat.
+  }
 
-31 ≥ sum
-  product [98]
-69 ≥ sum
-  product [98]
-85 ≥ sum
-  product [98, I]
-  product [98, I]
-98 ≥ sum
-  product [98, L]
-159 ≥ sum
-  product [159]
-  product [98, L]
-200 ≥ sum
-  product []
-L ~ 14
-L ~ 15
-L ~ 10
-L ~ 11
-L ~ 12
-L ~ 62
-L ~ 61
-L ~ 2
-L ~ 1
-L ~ 4
-L ~ 5
-L ~ 3
-L ~ 8
-L ~ 7
-L ~ 33
-L ~ 32
-L ~ 37
-L ~ 36
-L ~ 38
-L ~ 35
-L ~ 34
-I ~ 42
-I ~ 41
-L ~ 40
-L ~ 39
-1 ~ 32
-2 ~ 33
-7 ~ 3
-8 ~ 4
-L ~ 71
-L ~ 70
-L ~ 75
-L ~ 74
-L ~ 73
-L ~ 72
-7 ~ 70
-8 ~ 71
-L ~ 79
-L ~ 78
-L ~ 80
-L ~ 77
-L ~ 76
-I ~ 84
-I ~ 83
-L ~ 82
-L ~ 81
-1 ~ 70
-2 ~ 71
-7 ~ 3
-8 ~ 4
-L ~ 68
-L ~ 67
-L ~ 88
-L ~ 87
-L ~ 92
-L ~ 91
-L ~ 90
-L ~ 89
-7 ~ 87
-8 ~ 88
-L ~ 95
-L ~ 94
-L ~ 93
-67 ~ 87
-68 ~ 88
-L ~ 45
-L ~ 44
-L ~ 48
-L ~ 49
-L ~ 47
-L ~ 46
-I ~ 53
-I ~ 52
-L ~ 51
-L ~ 50
-1 ~ 44
-2 ~ 45
-67 ~ 3
-68 ~ 4
-L ~ 56
-L ~ 55
-L ~ 58
-L ~ 57
-L ~ 54
-67 ~ 44
-68 ~ 45
-L ~ 19
-L ~ 18
-L ~ 22
-L ~ 23
-L ~ 21
-L ~ 20
-I ~ 27
-I ~ 26
-L ~ 25
-L ~ 24
-1 ~ 18
-2 ~ 19
-67 ~ 3
-68 ~ 4
-L ~ 30
-L ~ 29
-L ~ 28
-67 ~ 18
-68 ~ 19
-L ~ 163
-L ~ 162
-L ~ 165
-L ~ 168
-L ~ 167
-170 ~ product [L, 161]
-169 ~ product [L, 160]
-166 ~ product [L, 161]
-160 ~ 171
-product [160] ≥ sum
-  product [I]
-L ~ 172
-161 ~ 173
-product [161] ≥ sum
-  product [I]
-I ~ 174
-I ~ 175
-L ~ 176
-L ~ 177
-1 ~ 167
-2 ~ 168
-162 ~ 3
-163 ~ 4
-164 ~ 178
-product [164] ≥ sum
-  product [L]
-I ~ 179
-165 ~ 14
-170 ≥ sum
-  product []
-169 ≥ sum
-166 ≥ sum
-L ~ 184
-L ~ 183
-L ~ 181
-186 ~ product [L, 161]
-185 ~ product [L, 160]
-182 ~ product [L, 161]
-180 ~ product [L, 164]
-160 ~ 187
-product [160] ≥ sum
-  product [I]
-L ~ 188
-161 ~ 189
-product [161] ≥ sum
-  product [I]
-I ~ 190
-I ~ 191
-L ~ 192
-L ~ 193
-1 ~ 183
-2 ~ 184
-162 ~ 3
-163 ~ 4
-164 ~ 194
-product [164] ≥ sum
-  product [L]
-I ~ 195
-L ~ 196
-10 ~ 181
-165 ~ 11
-186 ≥ sum
-185 ≥ sum
-  product [160]
-182 ≥ sum
-  product [161]
-180 ≥ sum
-  product [164]
-160 ~ 199
-161 ~ 198
-162 ~ 183
-163 ~ 184
-164 ~ 197
-165 ~ 181
-L ~ 102
-L ~ 101
-L ~ 104
-L ~ 108
-L ~ 107
-L ~ 106
-160 ~ 111
-161 ~ 110
-162 ~ 101
-163 ~ 102
-164 ~ 109
-165 ~ 104
-L ~ 105
-7 ~ 101
-8 ~ 102
-L ~ 115
-L ~ 114
-116 ~ product [L, 99]
-113 ~ product [L, 100]
-112 ~ product [L, 100]
-99 ~ 117
-product [99] ≥ sum
-  product [I]
-L ~ 118
-100 ~ 119
-product [100] ≥ sum
-  product [I]
-I ~ 120
-I ~ 121
-L ~ 122
-L ~ 123
-1 ~ 114
-2 ~ 115
-101 ~ 3
-102 ~ 4
-103 ~ 124
-product [103] ≥ sum
-  product [L]
-I ~ 125
-104 ~ 14
-116 ≥ sum
-  product [I]
-113 ≥ sum
-  product [L]
-112 ≥ sum
-  product [L]
-I ~ 129
-I ~ 128
-L ~ 127
-L ~ 126
-32 ~ 114
-33 ~ 115
-34 ~ 105
-35 ~ 106
-36 ~ 107
-37 ~ 108
-L ~ 135
-L ~ 134
-L ~ 131
-136 ~ product [L, 99]
-133 ~ product [L, 100]
-132 ~ product [L, 100]
-130 ~ product [L, 103]
-99 ~ 137
-product [99] ≥ sum
-  product [I]
-L ~ 138
-100 ~ 139
-product [100] ≥ sum
-  product [I]
-I ~ 140
-I ~ 141
-L ~ 142
-L ~ 143
-1 ~ 134
-2 ~ 135
-101 ~ 3
-102 ~ 4
-103 ~ 144
-product [103] ≥ sum
-  product [L]
-I ~ 145
-L ~ 146
-10 ~ 131
-104 ~ 11
-136 ≥ sum
-  product [I]
-  product [160, L]
-  product [99, L]
-133 ≥ sum
-  product [161, L]
-  product [L]
-  product [100, L]
-132 ≥ sum
-  product [L]
-130 ≥ sum
-  product [164, L]
-  product [103, L]
-I ~ 152
-I ~ 151
-L ~ 150
-160 ~ 155
-161 ~ 154
-162 ~ 134
-163 ~ 135
-164 ~ 153
-165 ~ 131
-L ~ 149
-L ~ 148
-70 ~ 134
-71 ~ 135
-L ~ 147
-99 ~ 158
-100 ~ 157
-101 ~ 134
-102 ~ 135
-103 ~ 156
-104 ~ 131
-72 ~ 105
-73 ~ 106
-74 ~ 107
-75 ~ 108
-76 ~ 105
-77 ~ 106
-78 ~ 107
-79 ~ 108
-#######################
-# Deferred equalities #
-#######################
+inferring  mutual {
+    constructor/1 Fin :16 (_ :L Nat) -> Type.
+    
+    constructor/1 FZ :13 (n :I Nat) -> Fin (S n).
+    
+    constructor/2 FS :9 (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+  }
 
-4 -> S n ~ S n
-4 -> S n ~ S n
-4 -> S n ~ S n
-4 -> S n ~ S n
-4 -> S n ~ S n
-14 -> S n ~ S n
-4 -> S n ~ S n
-11 -> S n ~ S n
-4 -> S n ~ S n
-14 -> S n ~ S n
-107 -> S n ~ S n
-106 -> lookup (S n) (Cons Typ n a ctx) (FZ n) ~ a
-105 -> Cons Typ n a ctx ~ Cons Typ n a ctx
-4 -> S n ~ S n
-11 -> S n ~ S n
-106 -> lookup n ctx i ~ lookup n ctx i
-107 -> S n ~ S n
-106 -> lookup (S n) (Cons Typ n a ctx) (FS n i) ~ lookup n ctx i
-105 -> Cons Typ n a ctx ~ Cons Typ n a ctx
+  inferred constraints: 
+    L ~ 14
+    L ~ 15
+    L ~ 10
+    L ~ 11
+    L ~ 12
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor/1 Fin :I (_ :L Nat) -> Type.
+    
+    constructor/1 FZ :I (n :I Nat) -> Fin (S n).
+    
+    constructor/2 FS :I (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+  }
 
-#####################
-# Variance of evars #
-#####################
+inferring  mutual {
+    constructor/2 Vect :96 (_ :L Nat) -> (_ :L Type) -> Type.
+    
+    constructor/1 Nil :60 (a :I Type) -> Vect Z a.
+    
+    constructor/4 Cons :0 (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+  }
 
-covariant: []
-contravariant: [99, 100, 103, 160, 161, 164]
+  inferred constraints: 
+    L ~ 62
+    L ~ 61
+    L ~ 2
+    L ~ 1
+    L ~ 4
+    L ~ 5
+    L ~ 3
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor/2 Vect :I (_ :L Nat) -> (_ :L Type) -> Type.
+    
+    constructor/1 Nil :I (a :I Type) -> Vect Z a.
+    
+    constructor/4 Cons :I (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+  }
+
+inferring  mutual {
+    constructor/4 Elem :6 (a :L Type) -> (n :L Nat) -> (_ :L a) -> (_ :L Vect n a) -> Type.
+    
+    constructor/4 Here :31 (a :I Type) -> (n :I Nat) -> (x :L a) -> (xs :L Vect n a) -> Elem a (S n) x (Cons a n x xs).
+    
+    constructor/6 There :69 (a :I Type) -> (n :I Nat) -> (x :L a) -> (y :L a) -> (xs :L Vect n a) -> (t :L Elem a n x xs) -> Elem a (S n) x (Cons a n y xs).
+  }
+
+  inferred constraints: 
+    L ~ 8
+    L ~ 7
+    L ~ 33
+    L ~ 32
+    L ~ 37
+    L ~ 36
+    L ~ 38
+    L ~ 35
+    L ~ 34
+    I ~ 42
+    I ~ 41
+    L ~ 40
+    L ~ 39
+    L ~ 32
+    L ~ 33
+    7 ~ L
+    8 ~ L
+    38 ~ L
+    L ~ 71
+    L ~ 70
+    L ~ 75
+    L ~ 74
+    L ~ 73
+    L ~ 72
+    7 ~ 70
+    8 ~ 71
+    L ~ 79
+    L ~ 78
+    L ~ 80
+    L ~ 77
+    L ~ 76
+    I ~ 84
+    I ~ 83
+    L ~ 82
+    L ~ 81
+    L ~ 70
+    L ~ 71
+    7 ~ L
+    8 ~ L
+    80 ~ L
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor/4 Elem :I (a :L Type) -> (n :L Nat) -> (_ :L a) -> (_ :L Vect n a) -> Type.
+    
+    constructor/4 Here :I (a :I Type) -> (n :I Nat) -> (x :L a) -> (xs :L Vect n a) -> Elem a (S n) x (Cons a n x xs).
+    
+    constructor/6 There :I (a :I Type) -> (n :I Nat) -> (x :L a) -> (y :L a) -> (xs :L Vect n a) -> (t :L Elem a n x xs) -> Elem a (S n) x (Cons a n y xs).
+  }
+
+inferring  mutual {
+    constructor/0 Typ :85 Type.
+    
+    constructor/2 TLam :64 (_ :L Typ) -> (_ :L Typ) -> Typ.
+    
+    constructor/0 TNat :65 Typ.
+  }
+
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor/0 Typ :I Type.
+    
+    constructor/2 TLam :I (_ :L Typ) -> (_ :L Typ) -> Typ.
+    
+    constructor/0 TNat :I Typ.
+  }
+
+inferring  mutual {
+    constructor/3 Term :66 (n :L Nat) -> (_ :L Typ) -> (_ :L Vect n Typ) -> Type.
+    
+    constructor/4 Var :86 (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Elem Typ n a ctx) -> Term n a ctx.
+    
+    constructor/5 Lam :43 (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (b :L Typ) -> (_ :L Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+    
+    constructor/4 Fix :17 (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+  }
+
+  inferred constraints: 
+    L ~ 68
+    L ~ 67
+    L ~ 88
+    L ~ 87
+    L ~ 92
+    L ~ 91
+    L ~ 90
+    L ~ 89
+    L ~ 87
+    L ~ 88
+    L ~ 95
+    L ~ 94
+    L ~ 93
+    67 ~ 87
+    68 ~ 88
+    L ~ 45
+    L ~ 44
+    L ~ 48
+    L ~ 49
+    L ~ 47
+    L ~ 46
+    I ~ 53
+    I ~ 52
+    L ~ 51
+    L ~ 50
+    L ~ 44
+    L ~ 45
+    67 ~ L
+    68 ~ L
+    49 ~ L
+    L ~ 56
+    L ~ 55
+    L ~ 58
+    L ~ 57
+    L ~ 54
+    67 ~ 44
+    68 ~ 45
+    L ~ 19
+    L ~ 18
+    L ~ 22
+    L ~ 23
+    L ~ 21
+    L ~ 20
+    I ~ 27
+    I ~ 26
+    L ~ 25
+    L ~ 24
+    L ~ 18
+    L ~ 19
+    67 ~ L
+    68 ~ L
+    23 ~ L
+    L ~ 30
+    L ~ 29
+    L ~ 28
+    67 ~ 18
+    68 ~ 19
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor/3 Term :I (n :L Nat) -> (_ :L Typ) -> (_ :L Vect n Typ) -> Type.
+    
+    constructor/4 Var :I (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Elem Typ n a ctx) -> Term n a ctx.
+    
+    constructor/5 Lam :I (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (b :L Typ) -> (_ :L Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+    
+    constructor/4 Fix :I (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+  }
+
+inferring  lookup :159 (n :160 Nat) -> (_ :161 Vect n Typ) -> (_ :164 Fin n) -> Typ {
+    forall (a :170 Typ) (n :169 Nat) (ctx :166 Vect n Typ)
+    lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
+    
+    forall (a :186 Typ) (n :185 Nat) (ctx :182 Vect n Typ) (i :180 Fin n)
+    lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
+  }
+
+  inferred constraints: 
+    L ~ 163
+    L ~ 162
+    L ~ 165
+    L ~ 168
+    L ~ 167
+    170 ~ product [L, 161]
+    169 ~ product [L, 160]
+    166 ~ product [L, 161]
+    160 ~ 171
+    product [160] ≥ sum
+      product [I]
+    L ~ 172
+    161 ~ 173
+    product [161] ≥ sum
+      product [I]
+    I ~ 174
+    I ~ 175
+    L ~ 176
+    L ~ 177
+    L ~ 167
+    L ~ 168
+    162 ~ L
+    163 ~ L
+    172 ~ L
+    164 ~ 178
+    product [164] ≥ sum
+      product [L]
+    I ~ 179
+    165 ~ L
+    172 ~ L
+    170 ≥ sum
+      product []
+    169 ≥ sum
+    166 ≥ sum
+    L ~ 184
+    L ~ 183
+    L ~ 181
+    186 ~ product [L, 161]
+    185 ~ product [L, 160]
+    182 ~ product [L, 161]
+    180 ~ product [L, 164]
+    160 ~ 187
+    product [160] ≥ sum
+      product [I]
+    L ~ 188
+    161 ~ 189
+    product [161] ≥ sum
+      product [I]
+    I ~ 190
+    I ~ 191
+    L ~ 192
+    L ~ 193
+    L ~ 183
+    L ~ 184
+    162 ~ L
+    163 ~ L
+    188 ~ L
+    164 ~ 194
+    product [164] ≥ sum
+      product [L]
+    I ~ 195
+    L ~ 196
+    L ~ 181
+    165 ~ L
+    188 ~ L
+    186 ≥ sum
+    185 ≥ sum
+      product [160]
+    182 ≥ sum
+      product [161]
+    180 ≥ sum
+      product [164]
+    160 ~ 199
+    161 ~ 198
+    162 ~ 183
+    163 ~ 184
+    164 ~ 197
+    165 ~ 181
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: [160, 161, 164]
+  lookup :I (n :I Nat) -> (_ :R Vect n Typ) -> (_ :L Fin n) -> Typ {
+    forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ)
+    lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
+    
+    forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ) (i :L Fin n)
+    lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
+  }
+
+inferring  count :98 (n :99 Nat) -> (ctx :100 Vect n Typ) -> (i :103 Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+    forall (n :116 Nat) (ctx :113 Vect n Typ) (a :112 Typ)
+    count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
+    
+    forall (n :136 Nat) (ctx :133 Vect n Typ) (a :132 Typ) (i :130 Fin n)
+    count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
+  }
+
+  inferred constraints: 
+    L ~ 102
+    L ~ 101
+    L ~ 104
+    L ~ 108
+    L ~ 107
+    L ~ 106
+    I ~ 111
+    R ~ 110
+    L ~ 101
+    L ~ 102
+    L ~ 109
+    L ~ 104
+    L ~ 105
+    L ~ 101
+    L ~ 102
+    L ~ 115
+    L ~ 114
+    116 ~ product [L, 99]
+    113 ~ product [L, 100]
+    112 ~ product [L, 100]
+    99 ~ 117
+    product [99] ≥ sum
+      product [I]
+    L ~ 118
+    100 ~ 119
+    product [100] ≥ sum
+      product [I]
+    I ~ 120
+    I ~ 121
+    L ~ 122
+    L ~ 123
+    L ~ 114
+    L ~ 115
+    101 ~ L
+    102 ~ L
+    118 ~ L
+    103 ~ 124
+    product [103] ≥ sum
+      product [L]
+    I ~ 125
+    104 ~ L
+    118 ~ L
+    116 ≥ sum
+      product [I]
+    113 ≥ sum
+      product [L]
+    112 ≥ sum
+      product [L]
+    I ~ 129
+    I ~ 128
+    L ~ 127
+    L ~ 126
+    L ~ 114
+    L ~ 115
+    L ~ 105
+    L ~ 106
+    L ~ 107
+    L ~ 108
+    L ~ 135
+    L ~ 134
+    L ~ 131
+    136 ~ product [L, 99]
+    133 ~ product [L, 100]
+    132 ~ product [L, 100]
+    130 ~ product [L, 103]
+    99 ~ 137
+    product [99] ≥ sum
+      product [I]
+    L ~ 138
+    100 ~ 139
+    product [100] ≥ sum
+      product [I]
+    I ~ 140
+    I ~ 141
+    L ~ 142
+    L ~ 143
+    L ~ 134
+    L ~ 135
+    101 ~ L
+    102 ~ L
+    138 ~ L
+    103 ~ 144
+    product [103] ≥ sum
+      product [L]
+    I ~ 145
+    L ~ 146
+    L ~ 131
+    104 ~ L
+    138 ~ L
+    136 ≥ sum
+      product [I]
+      product [I, L]
+      product [99, L]
+    133 ≥ sum
+      product [R, L]
+      product [L]
+      product [100, L]
+    132 ≥ sum
+      product [L]
+    130 ≥ sum
+      product [L, L]
+      product [103, L]
+    I ~ 152
+    I ~ 151
+    L ~ 150
+    I ~ 155
+    R ~ 154
+    L ~ 134
+    L ~ 135
+    L ~ 153
+    L ~ 131
+    L ~ 149
+    L ~ 148
+    L ~ 134
+    L ~ 135
+    L ~ 147
+    99 ~ 158
+    100 ~ 157
+    101 ~ 134
+    102 ~ 135
+    103 ~ 156
+    104 ~ 131
+    L ~ 105
+    L ~ 106
+    L ~ 107
+    L ~ 108
+    L ~ 105
+    L ~ 106
+    L ~ 107
+    L ~ 108
+  
+  deferred equalities: 
+    107 -> S n ~ S n
+    106 -> lookup (S n) (Cons Typ n a ctx) (FZ n) ~ a
+    105 -> Cons Typ n a ctx ~ Cons Typ n a ctx
+    106 -> lookup n ctx i ~ lookup n ctx i
+    107 -> S n ~ S n
+    106 -> lookup (S n) (Cons Typ n a ctx) (FS n i) ~ lookup n ctx i
+    105 -> Cons Typ n a ctx ~ Cons Typ n a ctx
+  
+  variance of evars:
+    covariant: []
+    contravariant: [99, 100, 103]
   -> iteration 1
-    S n ~ S n
-    S n ~ S n
-    S n ~ S n
-    S n ~ S n
-    S n ~ S n
-    S n ~ S n
-    S n ~ S n
-    S n ~ S n
-    S n ~ S n
-    S n ~ S n
     S n ~ S n
     lookup (S n) (Cons Typ n a ctx) (FZ n) ~ a
     Cons Typ n a ctx ~ Cons Typ n a ctx
-    S n ~ S n
-    S n ~ S n
     lookup n ctx i ~ lookup n ctx i
     S n ~ S n
     lookup (S n) (Cons Typ n a ctx) (FS n i) ~ lookup n ctx i
     Cons Typ n a ctx ~ Cons Typ n a ctx
 
+  count :I (n :I Nat) -> (ctx :R Vect n Typ) -> (i :R Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+    forall (n :I Nat) (ctx :R Vect n Typ) (a :R Typ)
+    count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
+    
+    forall (n :I Nat) (ctx :R Vect n Typ) (a :R Typ) (i :R Fin n)
+    count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
+  }
+
+inferring  main :200 Type {
+    main  ~> Type
+  }
+
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  main :I Type {
+    main  ~> Type
+  }
+
 ###################
 # Final valuation #
 ###################
 
+  0 -> I
   1 -> L
   2 -> L
   3 -> L
   4 -> L
   5 -> L
+  6 -> I
   7 -> L
   8 -> L
+  9 -> I
   10 -> L
   11 -> L
   12 -> L
+  13 -> I
   14 -> L
   15 -> L
+  16 -> I
+  17 -> I
   18 -> L
   19 -> L
   20 -> L
@@ -561,6 +716,7 @@ contravariant: [99, 100, 103, 160, 161, 164]
   40 -> L
   41 -> I
   42 -> I
+  43 -> I
   44 -> L
   45 -> L
   46 -> L
@@ -576,8 +732,14 @@ contravariant: [99, 100, 103, 160, 161, 164]
   56 -> L
   57 -> L
   58 -> L
+  59 -> I
+  60 -> I
   61 -> L
   62 -> L
+  63 -> I
+  64 -> I
+  65 -> I
+  66 -> I
   67 -> L
   68 -> L
   69 -> I
@@ -597,6 +759,7 @@ contravariant: [99, 100, 103, 160, 161, 164]
   83 -> I
   84 -> I
   85 -> I
+  86 -> I
   87 -> L
   88 -> L
   89 -> L
@@ -606,6 +769,8 @@ contravariant: [99, 100, 103, 160, 161, 164]
   93 -> L
   94 -> L
   95 -> L
+  96 -> I
+  97 -> I
   98 -> I
   99 -> I
   100 -> R
@@ -617,7 +782,7 @@ contravariant: [99, 100, 103, 160, 161, 164]
   106 -> L
   107 -> L
   108 -> L
-  109 -> R
+  109 -> L
   110 -> R
   111 -> I
   112 -> R
@@ -661,7 +826,7 @@ contravariant: [99, 100, 103, 160, 161, 164]
   150 -> L
   151 -> I
   152 -> I
-  153 -> R
+  153 -> L
   154 -> R
   155 -> I
   156 -> R
@@ -672,7 +837,7 @@ contravariant: [99, 100, 103, 160, 161, 164]
   161 -> R
   162 -> L
   163 -> L
-  164 -> R
+  164 -> L
   165 -> L
   166 -> R
   167 -> L
@@ -686,9 +851,9 @@ contravariant: [99, 100, 103, 160, 161, 164]
   175 -> I
   176 -> L
   177 -> L
-  178 -> R
+  178 -> L
   179 -> I
-  180 -> R
+  180 -> L
   181 -> L
   182 -> R
   183 -> L
@@ -702,10 +867,10 @@ contravariant: [99, 100, 103, 160, 161, 164]
   191 -> I
   192 -> L
   193 -> L
-  194 -> R
+  194 -> L
   195 -> I
   196 -> L
-  197 -> R
+  197 -> L
   198 -> R
   199 -> I
   200 -> L
@@ -764,11 +929,11 @@ mutual {
   constructor/4 Fix :I (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
 }
 
-lookup :I (n :I Nat) -> (_ :R Vect n Typ) -> (_ :R Fin n) -> Typ {
+lookup :I (n :I Nat) -> (_ :R Vect n Typ) -> (_ :L Fin n) -> Typ {
   forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ)
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
   
-  forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ) (i :R Fin n)
+  forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ) (i :L Fin n)
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
 }
 
