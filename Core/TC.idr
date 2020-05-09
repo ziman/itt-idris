@@ -102,6 +102,11 @@ withBnd : Binding q n -> TC e w q (S n) a -> TC e w q n a
 withBnd b = withEnv record { context $= (b ::) }
 
 export
+withCtx : Context q n -> TC e w q n a -> TC e w q Z a
+withCtx [] tc = tc
+withCtx (b :: bs) tc = withCtx bs $ withBnd b tc
+
+export
 redTC : (Error e, Monoid w) => Form -> TT q n -> TC e w q n (TT q n)
 redTC form tm = do
   gs <- getGlobals

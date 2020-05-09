@@ -6,6 +6,7 @@ import Core.TC
 import Core.Normalise
 import Elab.Lens
 
+import Data.List
 import Control.Monad.State
 
 %default total
@@ -63,13 +64,43 @@ mutual
   eqsTm : TT q n -> TC q n (TT q n)
   eqsTm tm = ?rhs_eqsTy
 
-eqsBody : Body q -> TC q Z ()
-eqsBody b = ?rhs
+mutual
+  eqsPat : Pat q n -> TC q n (TT q n)
+  eqsPat pat = ?rhs_eqsPat
+
+  eqsPatApp : TT q n -> List (q, Pat q n) -> TC q n (TT q n)
+  eqsPatApp fty [] = pure fty
+  eqsPatApp fty ((q,x) :: xs) = do
+    xTy <- eqsPat x
+    redTC WHNF fty >>= \case
+      Pi (B piN piQ piTy) piRhs => do
+        piTy ~= xTy
+        eqsPatApp (subst (substFZ $ patToTm x) piRhs) xs
+
+eqsCtx : Context q n -> TC q Z ()
+eqsCtx [] = pure ()
+eqsCtx (b :: bs) = do
+  eqsCtx bs
+  withCtx bs $ eqsBnd b
+
+eqsClause : Binding q Z -> Clause q argn -> TC q Z ()
+eqsClause fbnd (MkClause pi lhs rhs) = do
+  eqsCtx pi
+  withCtx pi $ do
+    lhsTy <- eqsPatApp (weakenClosed fbnd.type) (toList lhs)
+    rhsTy <- eqsTm rhs
+    lhsTy ~= rhsTy
+
+eqsBody : Binding q Z -> Body q -> TC q Z ()
+eqsBody fbnd Postulate = pure ()
+eqsBody fbnd (Constructor arity) = pure ()
+eqsBody fbnd (Foreign code) = pure ()
+eqsBody fbnd (Clauses argn cs) = traverse_ (eqsClause fbnd) cs
 
 eqsDef : Definition q -> TC q Z ()
 eqsDef (MkDef b body) = do
   eqsBnd b
-  eqsBody body
+  eqsBody b body
 
 eqsGlobals : TC q Z ()
 eqsGlobals = do
