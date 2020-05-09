@@ -805,7 +805,7 @@ main :L Type {
 # Erased #
 ##########
 
-main : Type {
+main {
   main  ~> Type
 }
 ################

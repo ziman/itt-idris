@@ -208,11 +208,11 @@ main :L Bool {
 # Erased #
 ##########
 
-postulate g : (x) -> Bool.
+postulate g.
 
-postulate d : U.
+postulate d.
 
-main : Bool {
+main {
   main  ~> (\x. g x) d
 }
 ################

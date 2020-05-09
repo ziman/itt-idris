@@ -238,34 +238,34 @@ main :L Pair {
 ##########
 
 mutual {
-  constructor True : Bool.
+  constructor True.
   
-  constructor False : Bool.
+  constructor False.
 }
 
-constructor P : (x) -> (y) -> Pair.
+constructor P.
 
-not : (x) -> Bool {
+not {
   not True ~> False
   
   not False ~> True
 }
 
-false : (x) -> Bool {
+false {
   forall (x)
   false x ~> False
 }
 
-true : Bool {
+true {
   true  ~> True
 }
 
-apply : (f) -> (y) -> Bool {
+apply {
   forall (f) (y)
   apply f y ~> f y
 }
 
-main : Pair {
+main {
   main  ~> P (apply not true) (apply false true)
 }
 ################

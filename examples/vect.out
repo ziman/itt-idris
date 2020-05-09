@@ -243,25 +243,25 @@ main :L Nat {
 ##########
 
 mutual {
-  constructor Z : Nat.
+  constructor Z.
   
-  constructor S : (n) -> Nat.
+  constructor S.
 }
 
 mutual {
-  constructor Nil : Vect.
+  constructor Nil.
   
-  constructor Cons : (_) -> Vect.
+  constructor Cons.
 }
 
-length : (_) -> Nat {
+length {
   length Nil ~> Z
   
   forall (xs)
   length (Cons xs) ~> S (length xs)
 }
 
-main : Nat {
+main {
   main  ~> length (Cons Nil)
 }
 ################

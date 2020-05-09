@@ -97,7 +97,7 @@ eraseDefs ((MkDef (B n I ty) body) :: ds) = eraseDefs ds
 eraseDefs ((MkDef (B n E ty) body) :: ds) = eraseDefs ds
 eraseDefs ((MkDef (B n _ ty) body) :: ds) =
   MkDef
-    (B n () $ eraseTm [] ty)
+    (B n () Erased)
     (eraseBody body)
   :: eraseDefs ds
 

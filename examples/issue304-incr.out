@@ -29,9 +29,9 @@ mutual {
 mutual {
   constructor Elem : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Type.
   
-  constructor Here : (a :I Type) -> (n :I Nat) -> (x : a) -> (xs : Vect n a) -> Elem a n x (Cons a n x xs).
+  constructor Here : (a :I Type) -> (n :I Nat) -> (x : a) -> (xs : Vect n a) -> Elem a (S n) x (Cons a n x xs).
   
-  constructor There : (a :I Type) -> (n :I Nat) -> (x : a) -> (y : a) -> (xs : Vect n a) -> (t : Elem a n x xs) -> Elem a n x (Cons a n y xs).
+  constructor There : (a :I Type) -> (n :I Nat) -> (x : a) -> (y : a) -> (xs : Vect n a) -> (t : Elem a n x xs) -> Elem a (S n) x (Cons a n y xs).
 }
 
 mutual {
@@ -76,72 +76,72 @@ main : Type {
 #############
 
 mutual {
-  constructor Nat :77 Type.
+  constructor Nat :59 Type.
   
-  constructor Z :130 Nat.
+  constructor Z :97 Nat.
   
-  constructor S :81 (_ :82 Nat) -> Nat.
+  constructor S :63 (_ :L Nat) -> Nat.
 }
 
 mutual {
-  constructor Fin :23 (_ :24 Nat) -> Type.
+  constructor Fin :16 (_ :L Nat) -> Type.
   
-  constructor FZ :20 (n :I Nat) -> Fin (S n).
+  constructor FZ :13 (n :I Nat) -> Fin (S n).
   
-  constructor FS :15 (n :I Nat) -> (_ :16 Fin n) -> Fin (S n).
+  constructor FS :9 (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
 }
 
 mutual {
-  constructor Vect :127 (_ :128 Nat) -> (_ :129 Type) -> Type.
+  constructor Vect :96 (_ :L Nat) -> (_ :L Type) -> Type.
   
-  constructor Nil :78 (a :I Type) -> Vect Z a.
+  constructor Nil :60 (a :I Type) -> Vect Z a.
   
-  constructor Cons :0 (a :I Type) -> (n :I Nat) -> (_ :1 a) -> (_ :2 Vect n a) -> Vect (S n) a.
+  constructor Cons :0 (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
 }
 
 mutual {
-  constructor Elem :8 (a :9 Type) -> (n :10 Nat) -> (_ :11 a) -> (_ :12 Vect n a) -> Type.
+  constructor Elem :6 (a :L Type) -> (n :L Nat) -> (_ :L a) -> (_ :L Vect n a) -> Type.
   
-  constructor Here :43 (a :I Type) -> (n :I Nat) -> (x :44 a) -> (xs :45 Vect n a) -> Elem a n x (Cons a n x xs).
+  constructor Here :31 (a :I Type) -> (n :I Nat) -> (x :L a) -> (xs :L Vect n a) -> Elem a (S n) x (Cons a n x xs).
   
-  constructor There :93 (a :I Type) -> (n :I Nat) -> (x :94 a) -> (y :95 a) -> (xs :96 Vect n a) -> (t :99 Elem a n x xs) -> Elem a n x (Cons a n y xs).
+  constructor There :69 (a :I Type) -> (n :I Nat) -> (x :L a) -> (y :L a) -> (xs :L Vect n a) -> (t :L Elem a n x xs) -> Elem a (S n) x (Cons a n y xs).
 }
 
 mutual {
-  constructor Typ :112 Type.
+  constructor Typ :85 Type.
   
-  constructor TLam :83 (_ :84 Typ) -> (_ :85 Typ) -> Typ.
+  constructor TLam :64 (_ :L Typ) -> (_ :L Typ) -> Typ.
   
-  constructor TNat :86 Typ.
+  constructor TNat :65 Typ.
 }
 
 mutual {
-  constructor Term :87 (n :88 Nat) -> (_ :89 Typ) -> (_ :90 Vect n Typ) -> Type.
+  constructor Term :66 (n :L Nat) -> (_ :L Typ) -> (_ :L Vect n Typ) -> Type.
   
-  constructor Var :113 (a :114 Typ) -> (n :115 Nat) -> (ctx :116 Vect n Typ) -> (_ :119 Elem Typ n a ctx) -> Term n a ctx.
+  constructor Var :86 (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Elem Typ n a ctx) -> Term n a ctx.
   
-  constructor Lam :56 (a :57 Typ) -> (n :58 Nat) -> (ctx :59 Vect n Typ) -> (b :62 Typ) -> (_ :63 Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  constructor Lam :43 (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (b :L Typ) -> (_ :L Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
   
-  constructor Fix :25 (a :26 Typ) -> (n :27 Nat) -> (ctx :28 Vect n Typ) -> (_ :31 Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+  constructor Fix :17 (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
 }
 
-lookup :192 (n :193 Nat) -> (_ :194 Vect n Typ) -> (_ :197 Fin n) -> Typ {
-  forall (a :203 Typ) (n :202 Nat) (ctx :199 Vect n Typ)
+lookup :159 (n :160 Nat) -> (_ :161 Vect n Typ) -> (_ :164 Fin n) -> Typ {
+  forall (a :170 Typ) (n :169 Nat) (ctx :166 Vect n Typ)
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
   
-  forall (a :219 Typ) (n :218 Nat) (ctx :215 Vect n Typ) (i :213 Fin n)
+  forall (a :186 Typ) (n :185 Nat) (ctx :182 Vect n Typ) (i :180 Fin n)
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
 }
 
-count :131 (n :132 Nat) -> (ctx :133 Vect n Typ) -> (i :136 Fin n) -> Elem Typ n (lookup n ctx i) ctx {
-  forall (n :149 Nat) (ctx :146 Vect n Typ) (a :145 Typ)
+count :98 (n :99 Nat) -> (ctx :100 Vect n Typ) -> (i :103 Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+  forall (n :116 Nat) (ctx :113 Vect n Typ) (a :112 Typ)
   count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
   
-  forall (n :169 Nat) (ctx :166 Vect n Typ) (a :165 Typ) (i :163 Fin n)
+  forall (n :136 Nat) (ctx :133 Vect n Typ) (a :132 Typ) (i :130 Fin n)
   count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
 }
 
-main :233 Type {
+main :200 Type {
   main  ~> Type
 }
 Running erasure inference...
@@ -150,575 +150,565 @@ Running erasure inference...
 # Inferred constraints #
 ########################
 
-43 ≥ sum
-  product [131]
-93 ≥ sum
-  product [131]
-112 ≥ sum
-  product [131, I]
-  product [131, I]
-131 ≥ sum
-  product [131, 99]
-192 ≥ sum
-  product [192]
-  product [131, 94]
-233 ≥ sum
+31 ≥ sum
+  product [98]
+69 ≥ sum
+  product [98]
+85 ≥ sum
+  product [98, I]
+  product [98, I]
+98 ≥ sum
+  product [98, L]
+159 ≥ sum
+  product [159]
+  product [98, L]
+200 ≥ sum
   product []
-24 ~ 21
-82 ~ 22
-24 ~ 17
-24 ~ 18
-82 ~ 19
-128 ~ 80
-129 ~ 79
-128 ~ 4
-129 ~ 3
-128 ~ 6
-82 ~ 7
-129 ~ 5
-128 ~ 14
-129 ~ 13
-128 ~ 47
-129 ~ 46
-9 ~ 51
-10 ~ 50
-11 ~ 49
-12 ~ 48
-I ~ 55
-I ~ 54
-1 ~ 53
-2 ~ 52
-3 ~ 46
-4 ~ 47
-13 ~ 5
-14 ~ 6
-128 ~ 98
-129 ~ 97
-9 ~ 103
-10 ~ 102
-11 ~ 101
-12 ~ 100
-13 ~ 97
-14 ~ 98
-9 ~ 107
-10 ~ 106
-11 ~ 105
-12 ~ 104
-I ~ 111
-I ~ 110
-1 ~ 109
-2 ~ 108
-3 ~ 97
-4 ~ 98
-13 ~ 5
-14 ~ 6
-128 ~ 92
-129 ~ 91
-128 ~ 118
-129 ~ 117
-9 ~ 123
-10 ~ 122
-11 ~ 121
-12 ~ 120
-13 ~ 117
-14 ~ 118
-88 ~ 126
-89 ~ 125
-90 ~ 124
-91 ~ 117
-92 ~ 118
-128 ~ 61
-129 ~ 60
-88 ~ 66
-82 ~ 67
-89 ~ 65
-90 ~ 64
-I ~ 71
-I ~ 70
-1 ~ 69
-2 ~ 68
-3 ~ 60
-4 ~ 61
-91 ~ 5
-92 ~ 6
-88 ~ 74
-89 ~ 73
-84 ~ 76
-85 ~ 75
-90 ~ 72
-91 ~ 60
-92 ~ 61
-128 ~ 30
-129 ~ 29
-88 ~ 34
-82 ~ 35
-89 ~ 33
-90 ~ 32
-I ~ 39
-I ~ 38
-1 ~ 37
-2 ~ 36
-3 ~ 29
-4 ~ 30
-91 ~ 5
-92 ~ 6
-88 ~ 42
-89 ~ 41
-90 ~ 40
-91 ~ 29
-92 ~ 30
-128 ~ 196
-129 ~ 195
-24 ~ 198
-128 ~ 201
-129 ~ 200
-203 ~ product [1, 194]
-202 ~ product [82, 193]
-199 ~ product [2, 194]
-193 ~ 204
-product [193] ≥ sum
+L ~ 14
+L ~ 15
+L ~ 10
+L ~ 11
+L ~ 12
+L ~ 62
+L ~ 61
+L ~ 2
+L ~ 1
+L ~ 4
+L ~ 5
+L ~ 3
+L ~ 8
+L ~ 7
+L ~ 33
+L ~ 32
+L ~ 37
+L ~ 36
+L ~ 38
+L ~ 35
+L ~ 34
+I ~ 42
+I ~ 41
+L ~ 40
+L ~ 39
+1 ~ 32
+2 ~ 33
+7 ~ 3
+8 ~ 4
+L ~ 71
+L ~ 70
+L ~ 75
+L ~ 74
+L ~ 73
+L ~ 72
+7 ~ 70
+8 ~ 71
+L ~ 79
+L ~ 78
+L ~ 80
+L ~ 77
+L ~ 76
+I ~ 84
+I ~ 83
+L ~ 82
+L ~ 81
+1 ~ 70
+2 ~ 71
+7 ~ 3
+8 ~ 4
+L ~ 68
+L ~ 67
+L ~ 88
+L ~ 87
+L ~ 92
+L ~ 91
+L ~ 90
+L ~ 89
+7 ~ 87
+8 ~ 88
+L ~ 95
+L ~ 94
+L ~ 93
+67 ~ 87
+68 ~ 88
+L ~ 45
+L ~ 44
+L ~ 48
+L ~ 49
+L ~ 47
+L ~ 46
+I ~ 53
+I ~ 52
+L ~ 51
+L ~ 50
+1 ~ 44
+2 ~ 45
+67 ~ 3
+68 ~ 4
+L ~ 56
+L ~ 55
+L ~ 58
+L ~ 57
+L ~ 54
+67 ~ 44
+68 ~ 45
+L ~ 19
+L ~ 18
+L ~ 22
+L ~ 23
+L ~ 21
+L ~ 20
+I ~ 27
+I ~ 26
+L ~ 25
+L ~ 24
+1 ~ 18
+2 ~ 19
+67 ~ 3
+68 ~ 4
+L ~ 30
+L ~ 29
+L ~ 28
+67 ~ 18
+68 ~ 19
+L ~ 163
+L ~ 162
+L ~ 165
+L ~ 168
+L ~ 167
+170 ~ product [L, 161]
+169 ~ product [L, 160]
+166 ~ product [L, 161]
+160 ~ 171
+product [160] ≥ sum
   product [I]
-82 ~ 205
-194 ~ 206
-product [194] ≥ sum
+L ~ 172
+161 ~ 173
+product [161] ≥ sum
   product [I]
-I ~ 207
-I ~ 208
-1 ~ 209
-2 ~ 210
-3 ~ 200
-4 ~ 201
-195 ~ 5
-196 ~ 6
-197 ~ 211
-product [197] ≥ sum
-  product [L]
-I ~ 212
-198 ~ 21
-203 ≥ sum
-  product []
-202 ≥ sum
-199 ≥ sum
-128 ~ 217
-129 ~ 216
-24 ~ 214
-219 ~ product [1, 194]
-218 ~ product [82, 193]
-215 ~ product [2, 194]
-213 ~ product [16, 197]
-193 ~ 220
-product [193] ≥ sum
-  product [I]
-82 ~ 221
-194 ~ 222
-product [194] ≥ sum
-  product [I]
-I ~ 223
-I ~ 224
-1 ~ 225
-2 ~ 226
-3 ~ 216
-4 ~ 217
-195 ~ 5
-196 ~ 6
-197 ~ 227
-product [197] ≥ sum
-  product [L]
-I ~ 228
-16 ~ 229
-17 ~ 214
-198 ~ 18
-219 ≥ sum
-218 ≥ sum
-  product [193]
-215 ≥ sum
-  product [194]
-213 ≥ sum
-  product [197]
-193 ~ 232
-194 ~ 231
-195 ~ 216
-196 ~ 217
-197 ~ 230
-198 ~ 214
-128 ~ 135
-129 ~ 134
-24 ~ 137
-9 ~ 141
-10 ~ 140
-11 ~ 139
-193 ~ 144
-194 ~ 143
-195 ~ 134
-196 ~ 135
-197 ~ 142
-198 ~ 137
-12 ~ 138
-13 ~ 134
-14 ~ 135
-128 ~ 148
-129 ~ 147
-149 ~ product [82, 132]
-146 ~ product [2, 133]
-145 ~ product [1, 133]
-132 ~ 150
-product [132] ≥ sum
-  product [I]
-82 ~ 151
-133 ~ 152
-product [133] ≥ sum
-  product [I]
-I ~ 153
-I ~ 154
-1 ~ 155
-2 ~ 156
-3 ~ 147
-4 ~ 148
-134 ~ 5
-135 ~ 6
-136 ~ 157
-product [136] ≥ sum
-  product [L]
-I ~ 158
-137 ~ 21
-149 ≥ sum
-  product [I]
-146 ≥ sum
-  product [45]
-145 ≥ sum
-  product [44]
-I ~ 162
-I ~ 161
-44 ~ 160
-45 ~ 159
-46 ~ 147
-47 ~ 148
-48 ~ 138
-49 ~ 139
-50 ~ 140
-51 ~ 141
-128 ~ 168
-129 ~ 167
-24 ~ 164
-169 ~ product [82, 132]
-166 ~ product [2, 133]
-165 ~ product [1, 133]
-163 ~ product [16, 136]
-132 ~ 170
-product [132] ≥ sum
-  product [I]
-82 ~ 171
-133 ~ 172
-product [133] ≥ sum
-  product [I]
-I ~ 173
 I ~ 174
-1 ~ 175
-2 ~ 176
-3 ~ 167
-4 ~ 168
-134 ~ 5
-135 ~ 6
-136 ~ 177
-product [136] ≥ sum
+I ~ 175
+L ~ 176
+L ~ 177
+1 ~ 167
+2 ~ 168
+162 ~ 3
+163 ~ 4
+164 ~ 178
+product [164] ≥ sum
   product [L]
-I ~ 178
-16 ~ 179
-17 ~ 164
-137 ~ 18
+I ~ 179
+165 ~ 14
+170 ≥ sum
+  product []
 169 ≥ sum
-  product [I]
-  product [193, 94]
-  product [132, 99]
 166 ≥ sum
-  product [194, 94]
-  product [96]
-  product [133, 99]
-165 ≥ sum
-  product [95]
-163 ≥ sum
-  product [197, 94]
-  product [136, 99]
-I ~ 185
-I ~ 184
-94 ~ 183
-193 ~ 188
-194 ~ 187
-195 ~ 167
-196 ~ 168
-197 ~ 186
-198 ~ 164
-95 ~ 182
-96 ~ 181
-97 ~ 167
-98 ~ 168
-99 ~ 180
-132 ~ 191
-133 ~ 190
-134 ~ 167
-135 ~ 168
-136 ~ 189
-137 ~ 164
-100 ~ 138
-101 ~ 139
-102 ~ 140
-103 ~ 141
-104 ~ 138
-105 ~ 139
-106 ~ 140
-107 ~ 141
+L ~ 184
+L ~ 183
+L ~ 181
+186 ~ product [L, 161]
+185 ~ product [L, 160]
+182 ~ product [L, 161]
+180 ~ product [L, 164]
+160 ~ 187
+product [160] ≥ sum
+  product [I]
+L ~ 188
+161 ~ 189
+product [161] ≥ sum
+  product [I]
+I ~ 190
+I ~ 191
+L ~ 192
+L ~ 193
+1 ~ 183
+2 ~ 184
+162 ~ 3
+163 ~ 4
+164 ~ 194
+product [164] ≥ sum
+  product [L]
+I ~ 195
+L ~ 196
+10 ~ 181
+165 ~ 11
+186 ≥ sum
+185 ≥ sum
+  product [160]
+182 ≥ sum
+  product [161]
+180 ≥ sum
+  product [164]
+160 ~ 199
+161 ~ 198
+162 ~ 183
+163 ~ 184
+164 ~ 197
+165 ~ 181
+L ~ 102
+L ~ 101
+L ~ 104
+L ~ 108
+L ~ 107
+L ~ 106
+160 ~ 111
+161 ~ 110
+162 ~ 101
+163 ~ 102
+164 ~ 109
+165 ~ 104
+L ~ 105
+7 ~ 101
+8 ~ 102
+L ~ 115
+L ~ 114
+116 ~ product [L, 99]
+113 ~ product [L, 100]
+112 ~ product [L, 100]
+99 ~ 117
+product [99] ≥ sum
+  product [I]
+L ~ 118
+100 ~ 119
+product [100] ≥ sum
+  product [I]
+I ~ 120
+I ~ 121
+L ~ 122
+L ~ 123
+1 ~ 114
+2 ~ 115
+101 ~ 3
+102 ~ 4
+103 ~ 124
+product [103] ≥ sum
+  product [L]
+I ~ 125
+104 ~ 14
+116 ≥ sum
+  product [I]
+113 ≥ sum
+  product [L]
+112 ≥ sum
+  product [L]
+I ~ 129
+I ~ 128
+L ~ 127
+L ~ 126
+32 ~ 114
+33 ~ 115
+34 ~ 105
+35 ~ 106
+36 ~ 107
+37 ~ 108
+L ~ 135
+L ~ 134
+L ~ 131
+136 ~ product [L, 99]
+133 ~ product [L, 100]
+132 ~ product [L, 100]
+130 ~ product [L, 103]
+99 ~ 137
+product [99] ≥ sum
+  product [I]
+L ~ 138
+100 ~ 139
+product [100] ≥ sum
+  product [I]
+I ~ 140
+I ~ 141
+L ~ 142
+L ~ 143
+1 ~ 134
+2 ~ 135
+101 ~ 3
+102 ~ 4
+103 ~ 144
+product [103] ≥ sum
+  product [L]
+I ~ 145
+L ~ 146
+10 ~ 131
+104 ~ 11
+136 ≥ sum
+  product [I]
+  product [160, L]
+  product [99, L]
+133 ≥ sum
+  product [161, L]
+  product [L]
+  product [100, L]
+132 ≥ sum
+  product [L]
+130 ≥ sum
+  product [164, L]
+  product [103, L]
+I ~ 152
+I ~ 151
+L ~ 150
+160 ~ 155
+161 ~ 154
+162 ~ 134
+163 ~ 135
+164 ~ 153
+165 ~ 131
+L ~ 149
+L ~ 148
+70 ~ 134
+71 ~ 135
+L ~ 147
+99 ~ 158
+100 ~ 157
+101 ~ 134
+102 ~ 135
+103 ~ 156
+104 ~ 131
+72 ~ 105
+73 ~ 106
+74 ~ 107
+75 ~ 108
+76 ~ 105
+77 ~ 106
+78 ~ 107
+79 ~ 108
 #######################
 # Deferred equalities #
 #######################
 
-6 -> S n ~ n
-6 -> S n ~ n
-6 -> S n ~ S n
-6 -> S n ~ S n
-6 -> S n ~ S n
-21 -> S n ~ S n
-6 -> S n ~ S n
-18 -> S n ~ S n
-6 -> S n ~ S n
-21 -> S n ~ S n
-140 -> S n ~ n
-139 -> lookup (S n) (Cons Typ n a ctx) (FZ n) ~ a
-138 -> Cons Typ n a ctx ~ Cons Typ n a ctx
-6 -> S n ~ S n
-18 -> S n ~ S n
-139 -> lookup n ctx i ~ lookup n ctx i
-140 -> S n ~ n
-139 -> lookup (S n) (Cons Typ n a ctx) (FS n i) ~ lookup n ctx i
-138 -> Cons Typ n a ctx ~ Cons Typ n a ctx
+4 -> S n ~ S n
+4 -> S n ~ S n
+4 -> S n ~ S n
+4 -> S n ~ S n
+4 -> S n ~ S n
+14 -> S n ~ S n
+4 -> S n ~ S n
+11 -> S n ~ S n
+4 -> S n ~ S n
+14 -> S n ~ S n
+107 -> S n ~ S n
+106 -> lookup (S n) (Cons Typ n a ctx) (FZ n) ~ a
+105 -> Cons Typ n a ctx ~ Cons Typ n a ctx
+4 -> S n ~ S n
+11 -> S n ~ S n
+106 -> lookup n ctx i ~ lookup n ctx i
+107 -> S n ~ S n
+106 -> lookup (S n) (Cons Typ n a ctx) (FS n i) ~ lookup n ctx i
+105 -> Cons Typ n a ctx ~ Cons Typ n a ctx
 
 #####################
 # Variance of evars #
 #####################
 
 covariant: []
-contravariant: [1, 2, 9, 10, 11, 12, 16, 24, 26, 27, 28, 31, 44, 45, 57, 58, 59, 62, 63, 82, 84, 85, 88, 89, 90, 94, 95, 96, 99, 114, 115, 116, 119, 128, 129, 132, 133, 136, 193, 194, 197]
+contravariant: [99, 100, 103, 160, 161, 164]
+  -> iteration 1
+    S n ~ S n
+    S n ~ S n
+    S n ~ S n
+    S n ~ S n
+    S n ~ S n
+    S n ~ S n
+    S n ~ S n
+    S n ~ S n
+    S n ~ S n
+    S n ~ S n
+    S n ~ S n
+    lookup (S n) (Cons Typ n a ctx) (FZ n) ~ a
+    Cons Typ n a ctx ~ Cons Typ n a ctx
+    S n ~ S n
+    S n ~ S n
+    lookup n ctx i ~ lookup n ctx i
+    S n ~ S n
+    lookup (S n) (Cons Typ n a ctx) (FS n i) ~ lookup n ctx i
+    Cons Typ n a ctx ~ Cons Typ n a ctx
+
 ###################
 # Final valuation #
 ###################
 
   1 -> L
   2 -> L
-  3 -> I
-  4 -> I
-  5 -> I
-  6 -> I
-  7 -> I
-  9 -> I
-  10 -> I
-  11 -> I
-  12 -> I
-  13 -> I
-  14 -> I
-  16 -> L
-  17 -> I
-  18 -> I
-  19 -> I
-  21 -> I
-  22 -> I
-  24 -> I
+  3 -> L
+  4 -> L
+  5 -> L
+  7 -> L
+  8 -> L
+  10 -> L
+  11 -> L
+  12 -> L
+  14 -> L
+  15 -> L
+  18 -> L
+  19 -> L
+  20 -> L
+  21 -> L
+  22 -> L
+  23 -> L
+  24 -> L
+  25 -> L
   26 -> I
   27 -> I
-  28 -> I
-  29 -> I
-  30 -> I
+  28 -> L
+  29 -> L
+  30 -> L
   31 -> I
-  32 -> I
-  33 -> I
-  34 -> I
-  35 -> I
+  32 -> L
+  33 -> L
+  34 -> L
+  35 -> L
   36 -> L
   37 -> L
-  38 -> I
-  39 -> I
-  40 -> I
+  38 -> L
+  39 -> L
+  40 -> L
   41 -> I
   42 -> I
-  43 -> I
-  44 -> I
-  45 -> I
-  46 -> I
-  47 -> I
-  48 -> I
-  49 -> I
-  50 -> I
-  51 -> I
-  52 -> L
-  53 -> L
-  54 -> I
-  55 -> I
-  57 -> I
-  58 -> I
-  59 -> I
-  60 -> I
-  61 -> I
-  62 -> I
-  63 -> I
-  64 -> I
-  65 -> I
-  66 -> I
-  67 -> I
+  44 -> L
+  45 -> L
+  46 -> L
+  47 -> L
+  48 -> L
+  49 -> L
+  50 -> L
+  51 -> L
+  52 -> I
+  53 -> I
+  54 -> L
+  55 -> L
+  56 -> L
+  57 -> L
+  58 -> L
+  61 -> L
+  62 -> L
+  67 -> L
   68 -> L
-  69 -> L
-  70 -> I
-  71 -> I
-  72 -> I
-  73 -> I
-  74 -> I
-  75 -> I
-  76 -> I
-  79 -> I
-  80 -> I
-  82 -> I
+  69 -> I
+  70 -> L
+  71 -> L
+  72 -> L
+  73 -> L
+  74 -> L
+  75 -> L
+  76 -> L
+  77 -> L
+  78 -> L
+  79 -> L
+  80 -> L
+  81 -> L
+  82 -> L
+  83 -> I
   84 -> I
   85 -> I
-  88 -> I
-  89 -> I
-  90 -> I
-  91 -> I
-  92 -> I
-  93 -> I
-  94 -> I
-  95 -> I
-  96 -> I
-  97 -> I
+  87 -> L
+  88 -> L
+  89 -> L
+  90 -> L
+  91 -> L
+  92 -> L
+  93 -> L
+  94 -> L
+  95 -> L
   98 -> I
   99 -> I
-  100 -> I
-  101 -> I
-  102 -> I
-  103 -> I
-  104 -> I
-  105 -> I
-  106 -> I
-  107 -> I
+  100 -> R
+  101 -> L
+  102 -> L
+  103 -> R
+  104 -> L
+  105 -> L
+  106 -> L
+  107 -> L
   108 -> L
-  109 -> L
-  110 -> I
+  109 -> R
+  110 -> R
   111 -> I
-  112 -> I
-  114 -> I
-  115 -> I
+  112 -> R
+  113 -> R
+  114 -> L
+  115 -> L
   116 -> I
   117 -> I
-  118 -> I
-  119 -> I
+  118 -> L
+  119 -> R
   120 -> I
   121 -> I
-  122 -> I
-  123 -> I
-  124 -> I
+  122 -> L
+  123 -> L
+  124 -> R
   125 -> I
-  126 -> I
+  126 -> L
+  127 -> L
   128 -> I
   129 -> I
-  131 -> I
-  132 -> I
-  133 -> I
-  134 -> I
-  135 -> I
-  136 -> R
+  130 -> R
+  131 -> L
+  132 -> R
+  133 -> R
+  134 -> L
+  135 -> L
+  136 -> I
   137 -> I
-  138 -> I
-  139 -> I
+  138 -> L
+  139 -> R
   140 -> I
   141 -> I
   142 -> L
-  143 -> R
-  144 -> I
+  143 -> L
+  144 -> R
   145 -> I
-  146 -> I
-  147 -> I
-  148 -> I
-  149 -> I
-  150 -> I
+  146 -> L
+  147 -> L
+  148 -> L
+  149 -> L
+  150 -> L
   151 -> I
   152 -> I
-  153 -> I
-  154 -> I
-  155 -> L
-  156 -> L
+  153 -> R
+  154 -> R
+  155 -> I
+  156 -> R
   157 -> R
   158 -> I
   159 -> I
   160 -> I
-  161 -> I
-  162 -> I
-  163 -> R
-  164 -> I
-  165 -> I
-  166 -> I
-  167 -> I
-  168 -> I
+  161 -> R
+  162 -> L
+  163 -> L
+  164 -> R
+  165 -> L
+  166 -> R
+  167 -> L
+  168 -> L
   169 -> I
-  170 -> I
+  170 -> R
   171 -> I
-  172 -> I
-  173 -> I
+  172 -> L
+  173 -> R
   174 -> I
-  175 -> L
+  175 -> I
   176 -> L
-  177 -> R
-  178 -> I
-  179 -> L
-  180 -> I
-  181 -> I
-  182 -> I
-  183 -> I
-  184 -> I
+  177 -> L
+  178 -> R
+  179 -> I
+  180 -> R
+  181 -> L
+  182 -> R
+  183 -> L
+  184 -> L
   185 -> I
-  186 -> L
-  187 -> R
-  188 -> I
+  186 -> R
+  187 -> I
+  188 -> L
   189 -> R
   190 -> I
   191 -> I
-  192 -> I
-  193 -> I
+  192 -> L
+  193 -> L
   194 -> R
   195 -> I
-  196 -> I
-  197 -> L
-  198 -> I
-  199 -> R
-  200 -> I
-  201 -> I
-  202 -> I
-  203 -> R
-  204 -> I
-  205 -> I
-  206 -> R
-  207 -> I
-  208 -> I
-  209 -> L
-  210 -> L
-  211 -> L
-  212 -> I
-  213 -> L
-  214 -> I
-  215 -> R
-  216 -> I
-  217 -> I
-  218 -> I
-  219 -> R
-  220 -> I
-  221 -> I
-  222 -> R
-  223 -> I
-  224 -> I
-  225 -> L
-  226 -> L
-  227 -> L
-  228 -> I
-  229 -> L
-  230 -> L
-  231 -> R
-  232 -> I
-  233 -> L
+  196 -> L
+  197 -> R
+  198 -> R
+  199 -> I
+  200 -> L
 
 #####################
 # Annotated program #
@@ -729,11 +719,11 @@ mutual {
   
   constructor Z :I Nat.
   
-  constructor S :I (_ :I Nat) -> Nat.
+  constructor S :I (_ :L Nat) -> Nat.
 }
 
 mutual {
-  constructor Fin :I (_ :I Nat) -> Type.
+  constructor Fin :I (_ :L Nat) -> Type.
   
   constructor FZ :I (n :I Nat) -> Fin (S n).
   
@@ -741,7 +731,7 @@ mutual {
 }
 
 mutual {
-  constructor Vect :I (_ :I Nat) -> (_ :I Type) -> Type.
+  constructor Vect :I (_ :L Nat) -> (_ :L Type) -> Type.
   
   constructor Nil :I (a :I Type) -> Vect Z a.
   
@@ -749,44 +739,44 @@ mutual {
 }
 
 mutual {
-  constructor Elem :I (a :I Type) -> (n :I Nat) -> (_ :I a) -> (_ :I Vect n a) -> Type.
+  constructor Elem :I (a :L Type) -> (n :L Nat) -> (_ :L a) -> (_ :L Vect n a) -> Type.
   
-  constructor Here :I (a :I Type) -> (n :I Nat) -> (x :I a) -> (xs :I Vect n a) -> Elem a n x (Cons a n x xs).
+  constructor Here :I (a :I Type) -> (n :I Nat) -> (x :L a) -> (xs :L Vect n a) -> Elem a (S n) x (Cons a n x xs).
   
-  constructor There :I (a :I Type) -> (n :I Nat) -> (x :I a) -> (y :I a) -> (xs :I Vect n a) -> (t :I Elem a n x xs) -> Elem a n x (Cons a n y xs).
+  constructor There :I (a :I Type) -> (n :I Nat) -> (x :L a) -> (y :L a) -> (xs :L Vect n a) -> (t :L Elem a n x xs) -> Elem a (S n) x (Cons a n y xs).
 }
 
 mutual {
   constructor Typ :I Type.
   
-  constructor TLam :I (_ :I Typ) -> (_ :I Typ) -> Typ.
+  constructor TLam :I (_ :L Typ) -> (_ :L Typ) -> Typ.
   
   constructor TNat :I Typ.
 }
 
 mutual {
-  constructor Term :I (n :I Nat) -> (_ :I Typ) -> (_ :I Vect n Typ) -> Type.
+  constructor Term :I (n :L Nat) -> (_ :L Typ) -> (_ :L Vect n Typ) -> Type.
   
-  constructor Var :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Elem Typ n a ctx) -> Term n a ctx.
+  constructor Var :I (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Elem Typ n a ctx) -> Term n a ctx.
   
-  constructor Lam :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (b :I Typ) -> (_ :I Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  constructor Lam :I (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (b :L Typ) -> (_ :L Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
   
-  constructor Fix :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+  constructor Fix :I (a :L Typ) -> (n :L Nat) -> (ctx :L Vect n Typ) -> (_ :L Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
 }
 
-lookup :I (n :I Nat) -> (_ :R Vect n Typ) -> (_ :L Fin n) -> Typ {
+lookup :I (n :I Nat) -> (_ :R Vect n Typ) -> (_ :R Fin n) -> Typ {
   forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ)
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
   
-  forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ) (i :L Fin n)
+  forall (a :R Typ) (n :I Nat) (ctx :R Vect n Typ) (i :R Fin n)
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
 }
 
-count :I (n :I Nat) -> (ctx :I Vect n Typ) -> (i :R Fin n) -> Elem Typ n (lookup n ctx i) ctx {
-  forall (n :I Nat) (ctx :I Vect n Typ) (a :I Typ)
+count :I (n :I Nat) -> (ctx :R Vect n Typ) -> (i :R Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+  forall (n :I Nat) (ctx :R Vect n Typ) (a :R Typ)
   count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
   
-  forall (n :I Nat) (ctx :I Vect n Typ) (a :I Typ) (i :R Fin n)
+  forall (n :I Nat) (ctx :R Vect n Typ) (a :R Typ) (i :R Fin n)
   count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
 }
 
@@ -797,7 +787,7 @@ main :L Type {
 # Erased #
 ##########
 
-main : Type {
+main {
   main  ~> Type
 }
 ################
