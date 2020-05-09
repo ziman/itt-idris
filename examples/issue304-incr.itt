@@ -1,4 +1,5 @@
 -- https://github.com/edwinb/Idris2/issues/304
+%options "--default-constructor-quantities"
 -- %options "--incremental" "--default-constructor-quantities"
 
 data Nat : Type {
@@ -18,7 +19,7 @@ data Vect : Nat -> Type -> Type {
 
 data Elem : (a : Type) -> (n : Nat) -> a -> Vect n a -> Type {
   Here : (a :I Type) -> (n :I Nat) -> (x : a) -> (xs : Vect n a)
-    -> Elem a n x (Cons a n x xs),
+    -> Elem a (S n) x (Cons a n x xs),
   There : (a :I Type) -> (n :I Nat) -> (x : a) -> (y : a) -> (xs : Vect n a)
     -> (t : Elem a n x xs)
     -> Elem a (S n) x (Cons a n y xs)
