@@ -20,9 +20,16 @@ Show Error where
   show NotImplementedYet = "not implemented yet"
   show (OtherError msg) = "error: " ++ msg
 
+data Certainty = Certain | Uncertain
+
+Semigroup Certainty where
+  Certain <+> Certain = Certain
+  _ <+> _ = Uncertain
+
 record Equality (q : Type) where
   constructor MkE
   {0 n : Nat}
+  certainty : Certainty
   lhs : TT q n
   rhs : TT q n
 
