@@ -10,7 +10,7 @@ import public Core.TT
 import public Compiler.Monad
 import public Compiler.Config
 
-import Inference.Elab
+import Elab.Core
 import Inference.Incremental
 import Inference.WholeProgram
 
