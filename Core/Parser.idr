@@ -212,11 +212,6 @@ ident = terminal "identifier" $ \t => case tok t of
   Ident n => Just n
   _ => Nothing
 
-hole : Rule ()
-hole = terminal "identifier" $ \t => case tok t of
-  Ident "_" => Just ()
-  _ => Nothing
-
 pragma : String -> Rule ()
 pragma s = terminal ("%" ++ s) $ \t => case tok t of
   Pragma pn =>
@@ -290,7 +285,7 @@ mutual
 
   atom : Vect n String -> Rule (Term n)
   atom ns = 
-    (hole *> pure (Meta 0))
+    (token Underscore *> pure (Meta 0))
     <|> var ns
     <|> natSugar
     <|> ref ns
