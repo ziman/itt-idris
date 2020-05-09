@@ -3,11 +3,11 @@
 #############
 
 mutual {
-  constructor Bool : Type.
+  constructor/0 Bool : Type.
   
-  constructor True : Bool.
+  constructor/0 True : Bool.
   
-  constructor False : Bool.
+  constructor/0 False : Bool.
 }
 
 and : (_ : Bool) -> (_ : Bool) -> Bool {
@@ -21,9 +21,9 @@ and : (_ : Bool) -> (_ : Bool) -> Bool {
 }
 
 mutual {
-  constructor T : Type.
+  constructor/0 T : Type.
   
-  constructor C : (x :L Bool) -> T.
+  constructor/1 C : (x :L Bool) -> T.
 }
 
 fI : (x :I T) -> Bool {
@@ -54,11 +54,11 @@ main : Type {
 #############
 
 mutual {
-  constructor Bool :0 Type.
+  constructor/0 Bool :0 Type.
   
-  constructor True :4 Bool.
+  constructor/0 True :4 Bool.
   
-  constructor False :2 Bool.
+  constructor/0 False :2 Bool.
 }
 
 and :5 (_ :6 Bool) -> (_ :7 Bool) -> Bool {
@@ -72,9 +72,9 @@ and :5 (_ :6 Bool) -> (_ :7 Bool) -> Bool {
 }
 
 mutual {
-  constructor T :3 Type.
+  constructor/0 T :3 Type.
   
-  constructor C :1 (x :L Bool) -> T.
+  constructor/1 C :1 (x :L Bool) -> T.
 }
 
 fI :19 (x :I T) -> Bool {
@@ -219,11 +219,11 @@ contravariant: [6, 7]
 #####################
 
 mutual {
-  constructor Bool :I Type.
+  constructor/0 Bool :I Type.
   
-  constructor True :I Bool.
+  constructor/0 True :I Bool.
   
-  constructor False :I Bool.
+  constructor/0 False :I Bool.
 }
 
 and :I (_ :L Bool) -> (_ :L Bool) -> Bool {
@@ -237,9 +237,9 @@ and :I (_ :L Bool) -> (_ :L Bool) -> Bool {
 }
 
 mutual {
-  constructor T :I Type.
+  constructor/0 T :I Type.
   
-  constructor C :I (x :L Bool) -> T.
+  constructor/1 C :I (x :L Bool) -> T.
 }
 
 fI :I (x :I T) -> Bool {

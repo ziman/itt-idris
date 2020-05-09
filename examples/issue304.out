@@ -3,53 +3,53 @@
 #############
 
 mutual {
-  constructor Nat : Type.
+  constructor/0 Nat : Type.
   
-  constructor Z : Nat.
+  constructor/0 Z : Nat.
   
-  constructor S : (_ : Nat) -> Nat.
+  constructor/1 S : (_ : Nat) -> Nat.
 }
 
 mutual {
-  constructor Fin : (_ : Nat) -> Type.
+  constructor/1 Fin : (_ : Nat) -> Type.
   
-  constructor FZ : (n : Nat) -> Fin (S n).
+  constructor/1 FZ : (n : Nat) -> Fin (S n).
   
-  constructor FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
+  constructor/2 FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
 }
 
 mutual {
-  constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
+  constructor/2 Vect : (_ : Nat) -> (_ : Type) -> Type.
   
-  constructor Nil : (a : Type) -> Vect Z a.
+  constructor/1 Nil : (a : Type) -> Vect Z a.
   
-  constructor Cons : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+  constructor/4 Cons : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
 }
 
 mutual {
-  constructor Elem : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Type.
+  constructor/4 Elem : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Type.
   
-  constructor Here : (a : Type) -> (n : Nat) -> (x : a) -> (xs : Vect n a) -> Elem a n x (Cons a n x xs).
+  constructor/4 Here : (a : Type) -> (n : Nat) -> (x : a) -> (xs : Vect n a) -> Elem a n x (Cons a n x xs).
   
-  constructor There : (a : Type) -> (n : Nat) -> (x : a) -> (y : a) -> (xs : Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+  constructor/6 There : (a : Type) -> (n : Nat) -> (x : a) -> (y : a) -> (xs : Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
 }
 
 mutual {
-  constructor Typ : Type.
+  constructor/0 Typ : Type.
   
-  constructor TLam : (_ : Typ) -> (_ : Typ) -> Typ.
+  constructor/2 TLam : (_ : Typ) -> (_ : Typ) -> Typ.
   
-  constructor TNat : Typ.
+  constructor/0 TNat : Typ.
 }
 
 mutual {
-  constructor Term : (n : Nat) -> (_ : Typ) -> (_ : Vect n Typ) -> Type.
+  constructor/3 Term : (n : Nat) -> (_ : Typ) -> (_ : Vect n Typ) -> Type.
   
-  constructor Var : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Elem Typ n a ctx) -> Term n a ctx.
+  constructor/4 Var : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Elem Typ n a ctx) -> Term n a ctx.
   
-  constructor Lam : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (b : Typ) -> (_ : Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  constructor/5 Lam : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (b : Typ) -> (_ : Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
   
-  constructor Fix : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+  constructor/4 Fix : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
 }
 
 lookup : (n : Nat) -> (_ : Vect n Typ) -> (_ : Fin n) -> Typ {
@@ -76,53 +76,53 @@ main : Type {
 #############
 
 mutual {
-  constructor Nat :83 Type.
+  constructor/0 Nat :83 Type.
   
-  constructor Z :138 Nat.
+  constructor/0 Z :138 Nat.
   
-  constructor S :88 (_ :89 Nat) -> Nat.
+  constructor/1 S :88 (_ :89 Nat) -> Nat.
 }
 
 mutual {
-  constructor Fin :27 (_ :28 Nat) -> Type.
+  constructor/1 Fin :27 (_ :28 Nat) -> Type.
   
-  constructor FZ :23 (n :24 Nat) -> Fin (S n).
+  constructor/1 FZ :23 (n :24 Nat) -> Fin (S n).
   
-  constructor FS :17 (n :18 Nat) -> (_ :19 Fin n) -> Fin (S n).
+  constructor/2 FS :17 (n :18 Nat) -> (_ :19 Fin n) -> Fin (S n).
 }
 
 mutual {
-  constructor Vect :135 (_ :136 Nat) -> (_ :137 Type) -> Type.
+  constructor/2 Vect :135 (_ :136 Nat) -> (_ :137 Type) -> Type.
   
-  constructor Nil :84 (a :85 Type) -> Vect Z a.
+  constructor/1 Nil :84 (a :85 Type) -> Vect Z a.
   
-  constructor Cons :0 (a :1 Type) -> (n :2 Nat) -> (_ :3 a) -> (_ :4 Vect n a) -> Vect (S n) a.
+  constructor/4 Cons :0 (a :1 Type) -> (n :2 Nat) -> (_ :3 a) -> (_ :4 Vect n a) -> Vect (S n) a.
 }
 
 mutual {
-  constructor Elem :10 (a :11 Type) -> (n :12 Nat) -> (_ :13 a) -> (_ :14 Vect n a) -> Type.
+  constructor/4 Elem :10 (a :11 Type) -> (n :12 Nat) -> (_ :13 a) -> (_ :14 Vect n a) -> Type.
   
-  constructor Here :47 (a :48 Type) -> (n :49 Nat) -> (x :50 a) -> (xs :51 Vect n a) -> Elem a n x (Cons a n x xs).
+  constructor/4 Here :47 (a :48 Type) -> (n :49 Nat) -> (x :50 a) -> (xs :51 Vect n a) -> Elem a n x (Cons a n x xs).
   
-  constructor There :100 (a :101 Type) -> (n :102 Nat) -> (x :103 a) -> (y :104 a) -> (xs :105 Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+  constructor/6 There :100 (a :101 Type) -> (n :102 Nat) -> (x :103 a) -> (y :104 a) -> (xs :105 Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
 }
 
 mutual {
-  constructor Typ :120 Type.
+  constructor/0 Typ :120 Type.
   
-  constructor TLam :90 (_ :91 Typ) -> (_ :92 Typ) -> Typ.
+  constructor/2 TLam :90 (_ :91 Typ) -> (_ :92 Typ) -> Typ.
   
-  constructor TNat :93 Typ.
+  constructor/0 TNat :93 Typ.
 }
 
 mutual {
-  constructor Term :94 (n :95 Nat) -> (_ :96 Typ) -> (_ :97 Vect n Typ) -> Type.
+  constructor/3 Term :94 (n :95 Nat) -> (_ :96 Typ) -> (_ :97 Vect n Typ) -> Type.
   
-  constructor Var :121 (a :122 Typ) -> (n :123 Nat) -> (ctx :124 Vect n Typ) -> (_ :127 Elem Typ n a ctx) -> Term n a ctx.
+  constructor/4 Var :121 (a :122 Typ) -> (n :123 Nat) -> (ctx :124 Vect n Typ) -> (_ :127 Elem Typ n a ctx) -> Term n a ctx.
   
-  constructor Lam :62 (a :63 Typ) -> (n :64 Nat) -> (ctx :65 Vect n Typ) -> (b :68 Typ) -> (_ :69 Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  constructor/5 Lam :62 (a :63 Typ) -> (n :64 Nat) -> (ctx :65 Vect n Typ) -> (b :68 Typ) -> (_ :69 Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
   
-  constructor Fix :29 (a :30 Typ) -> (n :31 Nat) -> (ctx :32 Vect n Typ) -> (_ :35 Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+  constructor/4 Fix :29 (a :30 Typ) -> (n :31 Nat) -> (ctx :32 Vect n Typ) -> (_ :35 Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
 }
 
 lookup :200 (n :201 Nat) -> (_ :202 Vect n Typ) -> (_ :205 Fin n) -> Typ {
@@ -733,53 +733,53 @@ contravariant: [1, 2, 3, 4, 11, 12, 13, 14, 18, 19, 24, 28, 30, 31, 32, 35, 48, 
 #####################
 
 mutual {
-  constructor Nat :I Type.
+  constructor/0 Nat :I Type.
   
-  constructor Z :I Nat.
+  constructor/0 Z :I Nat.
   
-  constructor S :I (_ :I Nat) -> Nat.
+  constructor/1 S :I (_ :I Nat) -> Nat.
 }
 
 mutual {
-  constructor Fin :I (_ :I Nat) -> Type.
+  constructor/1 Fin :I (_ :I Nat) -> Type.
   
-  constructor FZ :I (n :I Nat) -> Fin (S n).
+  constructor/1 FZ :I (n :I Nat) -> Fin (S n).
   
-  constructor FS :I (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+  constructor/2 FS :I (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
 }
 
 mutual {
-  constructor Vect :I (_ :I Nat) -> (_ :I Type) -> Type.
+  constructor/2 Vect :I (_ :I Nat) -> (_ :I Type) -> Type.
   
-  constructor Nil :I (a :I Type) -> Vect Z a.
+  constructor/1 Nil :I (a :I Type) -> Vect Z a.
   
-  constructor Cons :I (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+  constructor/4 Cons :I (a :I Type) -> (n :I Nat) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
 }
 
 mutual {
-  constructor Elem :I (a :I Type) -> (n :I Nat) -> (_ :I a) -> (_ :I Vect n a) -> Type.
+  constructor/4 Elem :I (a :I Type) -> (n :I Nat) -> (_ :I a) -> (_ :I Vect n a) -> Type.
   
-  constructor Here :I (a :I Type) -> (n :I Nat) -> (x :I a) -> (xs :I Vect n a) -> Elem a n x (Cons a n x xs).
+  constructor/4 Here :I (a :I Type) -> (n :I Nat) -> (x :I a) -> (xs :I Vect n a) -> Elem a n x (Cons a n x xs).
   
-  constructor There :I (a :I Type) -> (n :I Nat) -> (x :I a) -> (y :I a) -> (xs :I Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+  constructor/6 There :I (a :I Type) -> (n :I Nat) -> (x :I a) -> (y :I a) -> (xs :I Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
 }
 
 mutual {
-  constructor Typ :I Type.
+  constructor/0 Typ :I Type.
   
-  constructor TLam :I (_ :I Typ) -> (_ :I Typ) -> Typ.
+  constructor/2 TLam :I (_ :I Typ) -> (_ :I Typ) -> Typ.
   
-  constructor TNat :I Typ.
+  constructor/0 TNat :I Typ.
 }
 
 mutual {
-  constructor Term :I (n :I Nat) -> (_ :I Typ) -> (_ :I Vect n Typ) -> Type.
+  constructor/3 Term :I (n :I Nat) -> (_ :I Typ) -> (_ :I Vect n Typ) -> Type.
   
-  constructor Var :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Elem Typ n a ctx) -> Term n a ctx.
+  constructor/4 Var :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Elem Typ n a ctx) -> Term n a ctx.
   
-  constructor Lam :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (b :I Typ) -> (_ :I Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  constructor/5 Lam :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (b :I Typ) -> (_ :I Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
   
-  constructor Fix :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+  constructor/4 Fix :I (a :I Typ) -> (n :I Nat) -> (ctx :I Vect n Typ) -> (_ :I Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
 }
 
 lookup :I (n :I Nat) -> (_ :R Vect n Typ) -> (_ :L Fin n) -> Typ {

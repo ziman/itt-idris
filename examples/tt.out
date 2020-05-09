@@ -3,37 +3,37 @@
 #############
 
 mutual {
-  constructor Nat : Type.
+  constructor/0 Nat : Type.
   
-  constructor Z : Nat.
+  constructor/0 Z : Nat.
   
-  constructor S : (n : Nat) -> Nat.
+  constructor/1 S : (n : Nat) -> Nat.
 }
 
 mutual {
-  constructor Fin : (_ : Nat) -> Type.
+  constructor/1 Fin : (_ : Nat) -> Type.
   
-  constructor FZ : (n :I Nat) -> Fin (S n).
+  constructor/1 FZ : (n :I Nat) -> Fin (S n).
   
-  constructor FS : (n :I Nat) -> (_ : Fin n) -> Fin (S n).
+  constructor/2 FS : (n :I Nat) -> (_ : Fin n) -> Fin (S n).
 }
 
 mutual {
-  constructor Vect : (_ : Nat) -> (_ : Type) -> Type.
+  constructor/2 Vect : (_ : Nat) -> (_ : Type) -> Type.
   
-  constructor VN : (a :I Type) -> Vect Z a.
+  constructor/1 VN : (a :I Type) -> Vect Z a.
   
-  constructor VC : (n :I Nat) -> (a :I Type) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+  constructor/4 VC : (n :I Nat) -> (a :I Type) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
 }
 
 mutual {
-  constructor TT : (_ : Nat) -> Type.
+  constructor/1 TT : (_ : Nat) -> Type.
   
-  constructor V : (n :I Nat) -> (_ : Fin n) -> TT n.
+  constructor/2 V : (n :I Nat) -> (_ : Fin n) -> TT n.
   
-  constructor Lam : (n :I Nat) -> (_ : TT (S n)) -> TT n.
+  constructor/2 Lam : (n :I Nat) -> (_ : TT (S n)) -> TT n.
   
-  constructor App : (n :I Nat) -> (_ : TT n) -> (_ : TT n) -> TT n.
+  constructor/3 App : (n :I Nat) -> (_ : TT n) -> (_ : TT n) -> TT n.
 }
 
 env : (m : Nat) -> (n : Nat) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
@@ -124,9 +124,9 @@ example2 : TT (S Z) {
 }
 
 mutual {
-  constructor Result : Type.
+  constructor/0 Result : Type.
   
-  constructor R : (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  constructor/2 R : (x :L TT Z) -> (y :L TT (S Z)) -> Result.
 }
 
 main : Result {
@@ -137,37 +137,37 @@ main : Result {
 #############
 
 mutual {
-  constructor Nat :16 Type.
+  constructor/0 Nat :16 Type.
   
-  constructor Z :37 Nat.
+  constructor/0 Z :37 Nat.
   
-  constructor S :22 (n :L Nat) -> Nat.
+  constructor/1 S :22 (n :L Nat) -> Nat.
 }
 
 mutual {
-  constructor Fin :11 (_ :L Nat) -> Type.
+  constructor/1 Fin :11 (_ :L Nat) -> Type.
   
-  constructor FZ :8 (n :I Nat) -> Fin (S n).
+  constructor/1 FZ :8 (n :I Nat) -> Fin (S n).
   
-  constructor FS :4 (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+  constructor/2 FS :4 (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
 }
 
 mutual {
-  constructor Vect :36 (_ :L Nat) -> (_ :L Type) -> Type.
+  constructor/2 Vect :36 (_ :L Nat) -> (_ :L Type) -> Type.
   
-  constructor VN :33 (a :I Type) -> Vect Z a.
+  constructor/1 VN :33 (a :I Type) -> Vect Z a.
   
-  constructor VC :27 (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+  constructor/4 VC :27 (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
 }
 
 mutual {
-  constructor TT :23 (_ :L Nat) -> Type.
+  constructor/1 TT :23 (_ :L Nat) -> Type.
   
-  constructor V :24 (n :I Nat) -> (_ :L Fin n) -> TT n.
+  constructor/2 V :24 (n :I Nat) -> (_ :L Fin n) -> TT n.
   
-  constructor Lam :12 (n :I Nat) -> (_ :L TT (S n)) -> TT n.
+  constructor/2 Lam :12 (n :I Nat) -> (_ :L TT (S n)) -> TT n.
   
-  constructor App :0 (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
+  constructor/3 App :0 (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
 }
 
 env :38 (m :39 Nat) -> (n :40 Nat) -> (_ :41 Vect m (TT n)) -> (_ :45 Fin m) -> TT n {
@@ -258,20 +258,20 @@ example2 :117 TT (S Z) {
 }
 
 mutual {
-  constructor Result :21 Type.
+  constructor/0 Result :21 Type.
   
-  constructor R :17 (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  constructor/2 R :17 (x :L TT Z) -> (y :L TT (S Z)) -> Result.
 }
 
 main :212 Result {
   main  ~> R example1 example2
 }
 inferring  mutual {
-    constructor Nat :16 Type.
+    constructor/0 Nat :16 Type.
     
-    constructor Z :37 Nat.
+    constructor/0 Z :37 Nat.
     
-    constructor S :22 (n :L Nat) -> Nat.
+    constructor/1 S :22 (n :L Nat) -> Nat.
   }
 
   
@@ -280,19 +280,19 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor Nat :I Type.
+    constructor/0 Nat :I Type.
     
-    constructor Z :I Nat.
+    constructor/0 Z :I Nat.
     
-    constructor S :I (n :L Nat) -> Nat.
+    constructor/1 S :I (n :L Nat) -> Nat.
   }
 
 inferring  mutual {
-    constructor Fin :11 (_ :L Nat) -> Type.
+    constructor/1 Fin :11 (_ :L Nat) -> Type.
     
-    constructor FZ :8 (n :I Nat) -> Fin (S n).
+    constructor/1 FZ :8 (n :I Nat) -> Fin (S n).
     
-    constructor FS :4 (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+    constructor/2 FS :4 (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
   }
 
   inferred constraints: 
@@ -307,19 +307,19 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor Fin :I (_ :L Nat) -> Type.
+    constructor/1 Fin :I (_ :L Nat) -> Type.
     
-    constructor FZ :I (n :I Nat) -> Fin (S n).
+    constructor/1 FZ :I (n :I Nat) -> Fin (S n).
     
-    constructor FS :I (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+    constructor/2 FS :I (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
   }
 
 inferring  mutual {
-    constructor Vect :36 (_ :L Nat) -> (_ :L Type) -> Type.
+    constructor/2 Vect :36 (_ :L Nat) -> (_ :L Type) -> Type.
     
-    constructor VN :33 (a :I Type) -> Vect Z a.
+    constructor/1 VN :33 (a :I Type) -> Vect Z a.
     
-    constructor VC :27 (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+    constructor/4 VC :27 (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
   }
 
   inferred constraints: 
@@ -336,21 +336,21 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor Vect :I (_ :L Nat) -> (_ :L Type) -> Type.
+    constructor/2 Vect :I (_ :L Nat) -> (_ :L Type) -> Type.
     
-    constructor VN :I (a :I Type) -> Vect Z a.
+    constructor/1 VN :I (a :I Type) -> Vect Z a.
     
-    constructor VC :I (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+    constructor/4 VC :I (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
   }
 
 inferring  mutual {
-    constructor TT :23 (_ :L Nat) -> Type.
+    constructor/1 TT :23 (_ :L Nat) -> Type.
     
-    constructor V :24 (n :I Nat) -> (_ :L Fin n) -> TT n.
+    constructor/2 V :24 (n :I Nat) -> (_ :L Fin n) -> TT n.
     
-    constructor Lam :12 (n :I Nat) -> (_ :L TT (S n)) -> TT n.
+    constructor/2 Lam :12 (n :I Nat) -> (_ :L TT (S n)) -> TT n.
     
-    constructor App :0 (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
+    constructor/3 App :0 (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
   }
 
   inferred constraints: 
@@ -368,13 +368,13 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor TT :I (_ :L Nat) -> Type.
+    constructor/1 TT :I (_ :L Nat) -> Type.
     
-    constructor V :I (n :I Nat) -> (_ :L Fin n) -> TT n.
+    constructor/2 V :I (n :I Nat) -> (_ :L Fin n) -> TT n.
     
-    constructor Lam :I (n :I Nat) -> (_ :L TT (S n)) -> TT n.
+    constructor/2 Lam :I (n :I Nat) -> (_ :L TT (S n)) -> TT n.
     
-    constructor App :I (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
+    constructor/3 App :I (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
   }
 
 inferring  env :38 (m :39 Nat) -> (n :40 Nat) -> (_ :41 Vect m (TT n)) -> (_ :45 Fin m) -> TT n {
@@ -1518,9 +1518,9 @@ inferring  example2 :117 TT (S Z) {
   }
 
 inferring  mutual {
-    constructor Result :21 Type.
+    constructor/0 Result :21 Type.
     
-    constructor R :17 (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+    constructor/2 R :17 (x :L TT Z) -> (y :L TT (S Z)) -> Result.
   }
 
   inferred constraints: 
@@ -1533,9 +1533,9 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor Result :I Type.
+    constructor/0 Result :I Type.
     
-    constructor R :I (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+    constructor/2 R :I (x :L TT Z) -> (y :L TT (S Z)) -> Result.
   }
 
 inferring  main :212 Result {
@@ -2099,37 +2099,37 @@ inferring  main :212 Result {
 #####################
 
 mutual {
-  constructor Nat :I Type.
+  constructor/0 Nat :I Type.
   
-  constructor Z :I Nat.
+  constructor/0 Z :I Nat.
   
-  constructor S :I (n :L Nat) -> Nat.
+  constructor/1 S :I (n :L Nat) -> Nat.
 }
 
 mutual {
-  constructor Fin :I (_ :L Nat) -> Type.
+  constructor/1 Fin :I (_ :L Nat) -> Type.
   
-  constructor FZ :R (n :I Nat) -> Fin (S n).
+  constructor/1 FZ :R (n :I Nat) -> Fin (S n).
   
-  constructor FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+  constructor/2 FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
 }
 
 mutual {
-  constructor Vect :I (_ :L Nat) -> (_ :L Type) -> Type.
+  constructor/2 Vect :I (_ :L Nat) -> (_ :L Type) -> Type.
   
-  constructor VN :R (a :I Type) -> Vect Z a.
+  constructor/1 VN :R (a :I Type) -> Vect Z a.
   
-  constructor VC :R (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+  constructor/4 VC :R (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
 }
 
 mutual {
-  constructor TT :I (_ :L Nat) -> Type.
+  constructor/1 TT :I (_ :L Nat) -> Type.
   
-  constructor V :R (n :I Nat) -> (_ :L Fin n) -> TT n.
+  constructor/2 V :R (n :I Nat) -> (_ :L Fin n) -> TT n.
   
-  constructor Lam :R (n :I Nat) -> (_ :L TT (S n)) -> TT n.
+  constructor/2 Lam :R (n :I Nat) -> (_ :L TT (S n)) -> TT n.
   
-  constructor App :R (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
+  constructor/3 App :R (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
 }
 
 env :R (m :I Nat) -> (n :I Nat) -> (_ :R Vect m (TT n)) -> (_ :L Fin m) -> TT n {
@@ -2220,9 +2220,9 @@ example2 :L TT (S Z) {
 }
 
 mutual {
-  constructor Result :I Type.
+  constructor/0 Result :I Type.
   
-  constructor R :L (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  constructor/2 R :L (x :L TT Z) -> (y :L TT (S Z)) -> Result.
 }
 
 main :L Result {
@@ -2233,23 +2233,23 @@ main :L Result {
 ##########
 
 mutual {
-  constructor FZ.
+  constructor/0 FZ.
   
-  constructor FS.
+  constructor/1 FS.
 }
 
 mutual {
-  constructor VN.
+  constructor/0 VN.
   
-  constructor VC.
+  constructor/2 VC.
 }
 
 mutual {
-  constructor V.
+  constructor/1 V.
   
-  constructor Lam.
+  constructor/1 Lam.
   
-  constructor App.
+  constructor/2 App.
 }
 
 env {
@@ -2339,7 +2339,7 @@ example2 {
   example2  ~> nf testTm
 }
 
-constructor R.
+constructor/2 R.
 
 main {
   main  ~> R example1 example2

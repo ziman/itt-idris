@@ -3,27 +3,27 @@
 #############
 
 mutual {
-  constructor Bool : Type.
+  constructor/0 Bool : Type.
   
-  constructor True : Bool.
+  constructor/0 True : Bool.
   
-  constructor False : Bool.
+  constructor/0 False : Bool.
 }
 
 mutual {
-  constructor Nat : Type.
+  constructor/0 Nat : Type.
   
-  constructor Z : Nat.
+  constructor/0 Z : Nat.
   
-  constructor S : (n :L Nat) -> Nat.
+  constructor/1 S : (n :L Nat) -> Nat.
 }
 
 mutual {
-  constructor Vect : (_ : Nat) -> Type.
+  constructor/1 Vect : (_ : Nat) -> Type.
   
-  constructor Nil : Vect Z.
+  constructor/0 Nil : Vect Z.
   
-  constructor Cons : (n : Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
+  constructor/3 Cons : (n : Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
 }
 
 length : (n : Nat) -> (_ : Vect n) -> Nat {
@@ -41,27 +41,27 @@ main : Nat {
 #############
 
 mutual {
-  constructor Bool :0 Type.
+  constructor/0 Bool :0 Type.
   
-  constructor True :13 Bool.
+  constructor/0 True :13 Bool.
   
-  constructor False :8 Bool.
+  constructor/0 False :8 Bool.
 }
 
 mutual {
-  constructor Nat :9 Type.
+  constructor/0 Nat :9 Type.
   
-  constructor Z :16 Nat.
+  constructor/0 Z :16 Nat.
   
-  constructor S :12 (n :L Nat) -> Nat.
+  constructor/1 S :12 (n :L Nat) -> Nat.
 }
 
 mutual {
-  constructor Vect :14 (_ :15 Nat) -> Type.
+  constructor/1 Vect :14 (_ :15 Nat) -> Type.
   
-  constructor Nil :10 Vect Z.
+  constructor/0 Nil :10 Vect Z.
   
-  constructor Cons :1 (n :2 Nat) -> (_ :3 Bool) -> (_ :4 Vect n) -> Vect (S n).
+  constructor/3 Cons :1 (n :2 Nat) -> (_ :3 Bool) -> (_ :4 Vect n) -> Vect (S n).
 }
 
 length :17 (n :18 Nat) -> (_ :19 Vect n) -> Nat {
@@ -205,27 +205,27 @@ contravariant: [2, 3, 4, 15, 18, 19]
 #####################
 
 mutual {
-  constructor Bool :I Type.
+  constructor/0 Bool :I Type.
   
-  constructor True :I Bool.
+  constructor/0 True :I Bool.
   
-  constructor False :I Bool.
+  constructor/0 False :I Bool.
 }
 
 mutual {
-  constructor Nat :I Type.
+  constructor/0 Nat :I Type.
   
-  constructor Z :R Nat.
+  constructor/0 Z :R Nat.
   
-  constructor S :R (n :L Nat) -> Nat.
+  constructor/1 S :R (n :L Nat) -> Nat.
 }
 
 mutual {
-  constructor Vect :I (_ :I Nat) -> Type.
+  constructor/1 Vect :I (_ :I Nat) -> Type.
   
-  constructor Nil :R Vect Z.
+  constructor/0 Nil :R Vect Z.
   
-  constructor Cons :R (n :I Nat) -> (_ :I Bool) -> (_ :L Vect n) -> Vect (S n).
+  constructor/3 Cons :R (n :I Nat) -> (_ :I Bool) -> (_ :L Vect n) -> Vect (S n).
 }
 
 length :R (n :I Nat) -> (_ :L Vect n) -> Nat {
@@ -243,15 +243,15 @@ main :L Nat {
 ##########
 
 mutual {
-  constructor Z.
+  constructor/0 Z.
   
-  constructor S.
+  constructor/1 S.
 }
 
 mutual {
-  constructor Nil.
+  constructor/0 Nil.
   
-  constructor Cons.
+  constructor/1 Cons.
 }
 
 length {

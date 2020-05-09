@@ -36,8 +36,8 @@ ShowQ q => Pretty () (Definition q) where
     text "postulate" <++> pretty (Context.Nil {q}) b <+> text "."
 
   pretty () (MkDef b (Constructor arity)) =
-    text "constructor" <++> pretty (Context.Nil {q}) b
-        <++> text "/" <+> show arity <+> text "."
+    text "constructor/" <+> show arity
+        <++> pretty (Context.Nil {q}) b <+> text "."
 
   pretty () (MkDef b (Foreign code)) =
     text "foreign" <++> pretty (Context.Nil {q}) b

@@ -3,17 +3,17 @@
 #############
 
 mutual {
-  constructor Bool : Type.
+  constructor/0 Bool : Type.
   
-  constructor True : Bool.
+  constructor/0 True : Bool.
   
-  constructor False : Bool.
+  constructor/0 False : Bool.
 }
 
 mutual {
-  constructor Pair : Type.
+  constructor/0 Pair : Type.
   
-  constructor P : (x :L Bool) -> (y :L Bool) -> Pair.
+  constructor/2 P : (x :L Bool) -> (y :L Bool) -> Pair.
 }
 
 not : (x : Bool) -> Bool {
@@ -45,17 +45,17 @@ main :L Pair {
 #############
 
 mutual {
-  constructor Bool :0 Type.
+  constructor/0 Bool :0 Type.
   
-  constructor True :4 Bool.
+  constructor/0 True :4 Bool.
   
-  constructor False :1 Bool.
+  constructor/0 False :1 Bool.
 }
 
 mutual {
-  constructor Pair :3 Type.
+  constructor/0 Pair :3 Type.
   
-  constructor P :2 (x :L Bool) -> (y :L Bool) -> Pair.
+  constructor/2 P :2 (x :L Bool) -> (y :L Bool) -> Pair.
 }
 
 not :27 (x :28 Bool) -> Bool {
@@ -196,17 +196,17 @@ contravariant: [6, 8, 16, 28, 32]
 #####################
 
 mutual {
-  constructor Bool :I Type.
+  constructor/0 Bool :I Type.
   
-  constructor True :R Bool.
+  constructor/0 True :R Bool.
   
-  constructor False :R Bool.
+  constructor/0 False :R Bool.
 }
 
 mutual {
-  constructor Pair :I Type.
+  constructor/0 Pair :I Type.
   
-  constructor P :L (x :L Bool) -> (y :L Bool) -> Pair.
+  constructor/2 P :L (x :L Bool) -> (y :L Bool) -> Pair.
 }
 
 not :R (x :R Bool) -> Bool {
@@ -238,12 +238,12 @@ main :L Pair {
 ##########
 
 mutual {
-  constructor True.
+  constructor/0 True.
   
-  constructor False.
+  constructor/0 False.
 }
 
-constructor P.
+constructor/2 P.
 
 not {
   not True ~> False

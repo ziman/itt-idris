@@ -3,35 +3,35 @@
 #############
 
 mutual {
-  constructor N : Type.
+  constructor/0 N : Type.
   
-  constructor Z : N.
+  constructor/0 Z : N.
   
-  constructor S : (_ : N) -> N.
+  constructor/1 S : (_ : N) -> N.
 }
 
 mutual {
-  constructor B : Type.
+  constructor/0 B : Type.
   
-  constructor T : B.
+  constructor/0 T : B.
   
-  constructor F : B.
+  constructor/0 F : B.
 }
 
 mutual {
-  constructor List : Type.
+  constructor/0 List : Type.
   
-  constructor Cons : (_ : B) -> (_ : List) -> List.
+  constructor/2 Cons : (_ : B) -> (_ : List) -> List.
   
-  constructor Nil : List.
+  constructor/0 Nil : List.
 }
 
 mutual {
-  constructor Maybe : (_ : Type) -> Type.
+  constructor/1 Maybe : (_ : Type) -> Type.
   
-  constructor Nothing : (a :I Type) -> Maybe a.
+  constructor/1 Nothing : (a :I Type) -> Maybe a.
   
-  constructor Just : (a :I Type) -> (x : a) -> Maybe a.
+  constructor/2 Just : (a :I Type) -> (x : a) -> Maybe a.
 }
 
 not : (_ : B) -> B {
@@ -41,9 +41,9 @@ not : (_ : B) -> B {
 }
 
 mutual {
-  constructor Id : (a : Type) -> (x : a) -> (y : a) -> Type.
+  constructor/3 Id : (a : Type) -> (x : a) -> (y : a) -> Type.
   
-  constructor Refl : (a :I Type) -> (x :I a) -> Id a x x.
+  constructor/2 Refl : (a :I Type) -> (x :I a) -> Id a x x.
 }
 
 id : (a : Type) -> (_ : a) -> a {
@@ -92,11 +92,11 @@ appAssoc : (xs : List) -> (ys : List) -> (zs : List) -> Id List (app (app xs ys)
 }
 
 mutual {
-  constructor Rev : (_ : List) -> Type.
+  constructor/1 Rev : (_ : List) -> Type.
   
-  constructor RNil : Rev Nil.
+  constructor/0 RNil : Rev Nil.
   
-  constructor RSnoc : (xs :I List) -> (x : B) -> (rxs : Rev xs) -> Rev (app xs (one x)).
+  constructor/3 RSnoc : (xs :I List) -> (x : B) -> (rxs : Rev xs) -> Rev (app xs (one x)).
 }
 
 rev' : (xs : List) -> (rxs : Rev xs) -> (ys : List) -> Rev (app xs ys) {
@@ -125,13 +125,13 @@ reverse : (_ : List) -> List {
 }
 
 mutual {
-  constructor V : (_ : List) -> Type.
+  constructor/1 V : (_ : List) -> Type.
   
-  constructor VNil : V Nil.
+  constructor/0 VNil : V Nil.
   
-  constructor VOne : (x : B) -> V (Cons x Nil).
+  constructor/1 VOne : (x : B) -> V (Cons x Nil).
   
-  constructor VTwo : (x : B) -> (xs :I List) -> (u : V xs) -> (y : B) -> V (Cons x (app xs (one y))).
+  constructor/4 VTwo : (x : B) -> (xs :I List) -> (u : V xs) -> (y : B) -> V (Cons x (app xs (one y))).
 }
 
 length : (_ : List) -> N {
@@ -177,13 +177,13 @@ toV : (xs : List) -> V xs {
 }
 
 mutual {
-  constructor IsPalindrome : (_ : List) -> Type.
+  constructor/1 IsPalindrome : (_ : List) -> Type.
   
-  constructor PNil : IsPalindrome Nil.
+  constructor/0 PNil : IsPalindrome Nil.
   
-  constructor POne : (b : B) -> IsPalindrome (Cons b Nil).
+  constructor/1 POne : (b : B) -> IsPalindrome (Cons b Nil).
   
-  constructor PTwo : (b : B) -> (xs :I List) -> (pf : IsPalindrome xs) -> IsPalindrome (Cons b (app xs (one b))).
+  constructor/3 PTwo : (b : B) -> (xs :I List) -> (pf : IsPalindrome xs) -> IsPalindrome (Cons b (app xs (one b))).
 }
 
 decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
@@ -247,35 +247,35 @@ main : Maybe (IsPalindrome testList) {
 #############
 
 mutual {
-  constructor N :9 Type.
+  constructor/0 N :9 Type.
   
-  constructor Z :57 N.
+  constructor/0 Z :57 N.
   
-  constructor S :40 (_ :L N) -> N.
+  constructor/1 S :40 (_ :L N) -> N.
 }
 
 mutual {
-  constructor B :0 Type.
+  constructor/0 B :0 Type.
   
-  constructor T :41 B.
+  constructor/0 T :41 B.
   
-  constructor F :2 B.
+  constructor/0 F :2 B.
 }
 
 mutual {
-  constructor List :7 Type.
+  constructor/0 List :7 Type.
   
-  constructor Cons :1 (_ :L B) -> (_ :L List) -> List.
+  constructor/2 Cons :1 (_ :L B) -> (_ :L List) -> List.
   
-  constructor Nil :10 List.
+  constructor/0 Nil :10 List.
 }
 
 mutual {
-  constructor Maybe :8 (_ :L Type) -> Type.
+  constructor/1 Maybe :8 (_ :L Type) -> Type.
   
-  constructor Nothing :11 (a :I Type) -> Maybe a.
+  constructor/1 Nothing :11 (a :I Type) -> Maybe a.
   
-  constructor Just :5 (a :I Type) -> (x :L a) -> Maybe a.
+  constructor/2 Just :5 (a :I Type) -> (x :L a) -> Maybe a.
 }
 
 not :521 (_ :522 B) -> B {
@@ -285,9 +285,9 @@ not :521 (_ :522 B) -> B {
 }
 
 mutual {
-  constructor Id :3 (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+  constructor/3 Id :3 (a :L Type) -> (x :L a) -> (y :L a) -> Type.
   
-  constructor Refl :35 (a :I Type) -> (x :I a) -> Id a x x.
+  constructor/2 Refl :35 (a :I Type) -> (x :I a) -> Id a x x.
 }
 
 id :300 (a :301 Type) -> (_ :302 a) -> a {
@@ -336,11 +336,11 @@ appAssoc :75 (xs :76 List) -> (ys :77 List) -> (zs :78 List) -> Id List (app (ap
 }
 
 mutual {
-  constructor Rev :39 (_ :L List) -> Type.
+  constructor/1 Rev :39 (_ :L List) -> Type.
   
-  constructor RNil :27 Rev Nil.
+  constructor/0 RNil :27 Rev Nil.
   
-  constructor RSnoc :29 (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
+  constructor/3 RSnoc :29 (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
 }
 
 rev' :539 (xs :540 List) -> (rxs :541 Rev xs) -> (ys :543 List) -> Rev (app xs ys) {
@@ -369,13 +369,13 @@ reverse :600 (_ :601 List) -> List {
 }
 
 mutual {
-  constructor V :42 (_ :L List) -> Type.
+  constructor/1 V :42 (_ :L List) -> Type.
   
-  constructor VNil :43 V Nil.
+  constructor/0 VNil :43 V Nil.
   
-  constructor VOne :45 (x :L B) -> V (Cons x Nil).
+  constructor/1 VOne :45 (x :L B) -> V (Cons x Nil).
   
-  constructor VTwo :49 (x :L B) -> (xs :I List) -> (u :L V xs) -> (y :L B) -> V (Cons x (app xs (one y))).
+  constructor/4 VTwo :49 (x :L B) -> (xs :I List) -> (u :L V xs) -> (y :L B) -> V (Cons x (app xs (one y))).
 }
 
 length :507 (_ :508 List) -> N {
@@ -421,13 +421,13 @@ toV :669 (xs :670 List) -> V xs {
 }
 
 mutual {
-  constructor IsPalindrome :4 (_ :L List) -> Type.
+  constructor/1 IsPalindrome :4 (_ :L List) -> Type.
   
-  constructor PNil :13 IsPalindrome Nil.
+  constructor/0 PNil :13 IsPalindrome Nil.
   
-  constructor POne :15 (b :L B) -> IsPalindrome (Cons b Nil).
+  constructor/1 POne :15 (b :L B) -> IsPalindrome (Cons b Nil).
   
-  constructor PTwo :19 (b :L B) -> (xs :I List) -> (pf :L IsPalindrome xs) -> IsPalindrome (Cons b (app xs (one b))).
+  constructor/3 PTwo :19 (b :L B) -> (xs :I List) -> (pf :L IsPalindrome xs) -> IsPalindrome (Cons b (app xs (one b))).
 }
 
 decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
@@ -487,11 +487,11 @@ main :517 Maybe (IsPalindrome testList) {
   main  ~> isPalindrome testList
 }
 inferring  mutual {
-    constructor N :9 Type.
+    constructor/0 N :9 Type.
     
-    constructor Z :57 N.
+    constructor/0 Z :57 N.
     
-    constructor S :40 (_ :L N) -> N.
+    constructor/1 S :40 (_ :L N) -> N.
   }
 
   
@@ -500,19 +500,19 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor N :I Type.
+    constructor/0 N :I Type.
     
-    constructor Z :I N.
+    constructor/0 Z :I N.
     
-    constructor S :I (_ :L N) -> N.
+    constructor/1 S :I (_ :L N) -> N.
   }
 
 inferring  mutual {
-    constructor B :0 Type.
+    constructor/0 B :0 Type.
     
-    constructor T :41 B.
+    constructor/0 T :41 B.
     
-    constructor F :2 B.
+    constructor/0 F :2 B.
   }
 
   
@@ -521,19 +521,19 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor B :I Type.
+    constructor/0 B :I Type.
     
-    constructor T :I B.
+    constructor/0 T :I B.
     
-    constructor F :I B.
+    constructor/0 F :I B.
   }
 
 inferring  mutual {
-    constructor List :7 Type.
+    constructor/0 List :7 Type.
     
-    constructor Cons :1 (_ :L B) -> (_ :L List) -> List.
+    constructor/2 Cons :1 (_ :L B) -> (_ :L List) -> List.
     
-    constructor Nil :10 List.
+    constructor/0 Nil :10 List.
   }
 
   
@@ -542,19 +542,19 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor List :I Type.
+    constructor/0 List :I Type.
     
-    constructor Cons :I (_ :L B) -> (_ :L List) -> List.
+    constructor/2 Cons :I (_ :L B) -> (_ :L List) -> List.
     
-    constructor Nil :I List.
+    constructor/0 Nil :I List.
   }
 
 inferring  mutual {
-    constructor Maybe :8 (_ :L Type) -> Type.
+    constructor/1 Maybe :8 (_ :L Type) -> Type.
     
-    constructor Nothing :11 (a :I Type) -> Maybe a.
+    constructor/1 Nothing :11 (a :I Type) -> Maybe a.
     
-    constructor Just :5 (a :I Type) -> (x :L a) -> Maybe a.
+    constructor/2 Just :5 (a :I Type) -> (x :L a) -> Maybe a.
   }
 
   inferred constraints: 
@@ -566,11 +566,11 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor Maybe :I (_ :L Type) -> Type.
+    constructor/1 Maybe :I (_ :L Type) -> Type.
     
-    constructor Nothing :I (a :I Type) -> Maybe a.
+    constructor/1 Nothing :I (a :I Type) -> Maybe a.
     
-    constructor Just :I (a :I Type) -> (x :L a) -> Maybe a.
+    constructor/2 Just :I (a :I Type) -> (x :L a) -> Maybe a.
   }
 
 inferring  not :521 (_ :522 B) -> B {
@@ -598,9 +598,9 @@ inferring  not :521 (_ :522 B) -> B {
   }
 
 inferring  mutual {
-    constructor Id :3 (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+    constructor/3 Id :3 (a :L Type) -> (x :L a) -> (y :L a) -> Type.
     
-    constructor Refl :35 (a :I Type) -> (x :I a) -> Id a x x.
+    constructor/2 Refl :35 (a :I Type) -> (x :I a) -> Id a x x.
   }
 
   inferred constraints: 
@@ -613,9 +613,9 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor Id :I (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+    constructor/3 Id :I (a :L Type) -> (x :L a) -> (y :L a) -> Type.
     
-    constructor Refl :I (a :I Type) -> (x :I a) -> Id a x x.
+    constructor/2 Refl :I (a :I Type) -> (x :I a) -> Id a x x.
   }
 
 inferring  id :300 (a :301 Type) -> (_ :302 a) -> a {
@@ -1013,11 +1013,11 @@ inferring  appAssoc :75 (xs :76 List) -> (ys :77 List) -> (zs :78 List) -> Id Li
   }
 
 inferring  mutual {
-    constructor Rev :39 (_ :L List) -> Type.
+    constructor/1 Rev :39 (_ :L List) -> Type.
     
-    constructor RNil :27 Rev Nil.
+    constructor/0 RNil :27 Rev Nil.
     
-    constructor RSnoc :29 (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
+    constructor/3 RSnoc :29 (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
   }
 
   inferred constraints: 
@@ -1033,11 +1033,11 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor Rev :I (_ :L List) -> Type.
+    constructor/1 Rev :I (_ :L List) -> Type.
     
-    constructor RNil :I Rev Nil.
+    constructor/0 RNil :I Rev Nil.
     
-    constructor RSnoc :I (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
+    constructor/3 RSnoc :I (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
   }
 
 inferring  rev' :539 (xs :540 List) -> (rxs :541 Rev xs) -> (ys :543 List) -> Rev (app xs ys) {
