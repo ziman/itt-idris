@@ -1,6 +1,7 @@
 %options
   "--incremental"
   "--default-constructor-quantities"
+  "--prune-clauses"
 
 data Nat : Type {
   Z : Nat,

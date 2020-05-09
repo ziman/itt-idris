@@ -1,6 +1,7 @@
 %options
   "--incremental"
   "--default-constructor-quantities"
+  "--prune-clauses"
 
 -- The prelude
 

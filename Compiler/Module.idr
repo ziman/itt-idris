@@ -64,11 +64,17 @@ processModule cfg raw = do
       log "** OK **\n"
   -}
 
+  pruned <- case cfg.pruneClauses of
+    False => pure annotated
+    True => do
+      log ""
+      banner "# Pruned #"
+      let pruned = PruneClauses.pruneGlobals annotated
+      prn pruned
+      pure pruned
+
   banner "# Erased #"
-  let erased = eraseGlobals $
-        if cfg.pruneClauses
-          then PruneClauses.pruneGlobals annotated
-          else annotated
+  let erased = eraseGlobals pruned
   prn erased
 
   banner "# NF of `main` #"

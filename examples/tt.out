@@ -2228,6 +2228,141 @@ mutual {
 main :L Result {
   main  ~> R example1 example2
 }
+
+##########
+# Pruned #
+##########
+
+mutual {
+  constructor/0 Nat :I Type.
+  
+  constructor/0 Z :I Nat.
+  
+  constructor/1 S :I (n :L Nat) -> Nat.
+}
+
+mutual {
+  constructor/1 Fin :I (_ :L Nat) -> Type.
+  
+  constructor/1 FZ :R (n :I Nat) -> Fin (S n).
+  
+  constructor/2 FS :R (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+}
+
+mutual {
+  constructor/2 Vect :I (_ :L Nat) -> (_ :L Type) -> Type.
+  
+  constructor/1 VN :R (a :I Type) -> Vect Z a.
+  
+  constructor/4 VC :R (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+}
+
+mutual {
+  constructor/1 TT :I (_ :L Nat) -> Type.
+  
+  constructor/2 V :R (n :I Nat) -> (_ :L Fin n) -> TT n.
+  
+  constructor/2 Lam :R (n :I Nat) -> (_ :L TT (S n)) -> TT n.
+  
+  constructor/3 App :R (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
+}
+
+env :R (m :I Nat) -> (n :I Nat) -> (_ :R Vect m (TT n)) -> (_ :L Fin m) -> TT n {
+  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n))
+  env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
+  
+  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)) (i :L Fin m)
+  env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
+}
+
+extendMap :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L Fin (S m)) -> Fin (S n) {
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n)
+  extendMap m n f (FZ [m]) ~> FZ n
+  
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
+  extendMap m n f (FS [m] i) ~> FS n (f i)
+}
+
+mapVars :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L TT m) -> TT n {
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
+  mapVars m n f (V [m] i) ~> V n (f i)
+  
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (x :L TT (S m))
+  mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
+  
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :L TT m)
+  mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
+}
+
+extendSubst :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L Fin (S m)) -> TT (S n) {
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n)
+  extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
+  
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
+  extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
+}
+
+substVars :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L TT m) -> TT n {
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
+  substVars m n f (V [m] i) ~> f i
+  
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (x :L TT (S m))
+  substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
+  
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :L TT m)
+  substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
+}
+
+testTm :R TT (S Z) {
+  testTm  ~> App (S Z) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FZ (S Z))) (V (S (S Z)) (FS (S Z) (FZ Z))))) (Lam (S Z) (App (S (S Z)) (V (S (S Z)) (FS (S Z) (FZ Z))) (V (S (S Z)) (FZ (S Z)))))
+}
+
+example1 :L TT Z {
+  example1  ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
+}
+
+substTop :R (n :I Nat) -> (_ :R TT n) -> (_ :L Fin (S n)) -> TT n {
+  forall (n :I Nat) (tm :R TT n)
+  substTop n tm (FZ [n]) ~> tm
+  
+  forall (n :I Nat) (tm :R TT n) (i :L Fin n)
+  substTop n tm (FS [n] i) ~> V n i
+}
+
+mutual {
+  redex :R (m :I Nat) -> (_ :R TT m) -> (_ :R TT m) -> TT m {
+    forall (m :I Nat) (y :R TT (S m)) (x :R TT m)
+    redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
+    
+    forall (m :I Nat) (f' :R TT m) (x :R TT m)
+    redex m f' x ~> App m f' (nf m x)
+  }
+  
+  nf :R (m :I Nat) -> (_ :R TT m) -> TT m {
+    forall (m :I Nat) (i :R Fin m)
+    nf m (V [m] i) ~> V m i
+    
+    forall (m :I Nat) (x :R TT (S m))
+    nf m (Lam [m] x) ~> Lam m (nf (S m) x)
+    
+    forall (m :I Nat) (f :R TT m) (x :R TT m)
+    nf m (App [m] f x) ~> redex m f x
+  }
+}
+
+example2 :L TT (S Z) {
+  example2  ~> nf (S Z) testTm
+}
+
+mutual {
+  constructor/0 Result :I Type.
+  
+  constructor/2 R :L (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+}
+
+main :L Result {
+  main  ~> R example1 example2
+}
 ##########
 # Erased #
 ##########

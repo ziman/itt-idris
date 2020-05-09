@@ -14,13 +14,13 @@ mutual
     case .binding.qv <$> lookup cn gs of
       Just I => True
       Just E => True
-      Just _ => prunePatArgs gs args
+      _ => prunePatArgs gs args
   prunePat gs (PCtorApp (Forced _) args) = prunePatArgs gs args
   prunePat gs (PForced _) = False
   prunePat gs PWildcard = False
 
   prunePatArgs : Globals Q -> List (Q, Pat Q n) -> Bool
-  prunePatArgs gs args = or $ map (prunePat gs . snd) args
+  prunePatArgs gs args = or $ map (\arg => Delay (prunePat gs $ snd arg)) args
 
 pruneClause : Globals Q -> Clause Q argn -> List (Clause Q argn)
 pruneClause gs c@(MkClause pi lhs rhs) =
