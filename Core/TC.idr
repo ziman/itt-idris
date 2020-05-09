@@ -3,6 +3,9 @@ module Core.TC
 import public Core.Context
 import public Core.Globals
 
+%default total
+%undotted_record_projections off
+
 public export
 Backtrace : Type
 Backtrace = List Doc
@@ -24,6 +27,13 @@ record Failure (e : Type) where
   constructor MkF
   backtrace : Backtrace
   error : e
+
+export
+Show e => Show (Failure e) where
+  show (MkF bt err) = render "  " $
+    text "With backtrace:"
+    $$ indentBlock bt
+    $$ show err
 
 export
 Functor (TCResult w) where
