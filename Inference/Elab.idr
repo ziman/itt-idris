@@ -33,51 +33,52 @@ fresh = do
   put (i+1)
   pure i
 
-mutual
-  nrBnd : Binding q n -> State Int (Binding q n)
-  nrBnd (B n q ty) = B n q <$> nrTm ty
-
-  nrTm : TT q n -> State Int (TT q n)
-  nrTm (P gn) = pure $ P gn
-  nrTm (V i) = pure $ V i
-  nrTm (Lam b rhs) = Lam <$> nrBnd b <*> nrTm rhs
-  nrTm (Pi b rhs) = Pi <$> nrBnd b <*> nrTm rhs
-  nrTm (App q f x) = App q <$> nrTm f <*> nrTm x
-  nrTm Type_ = pure Type_
-  nrTm Erased = pure Erased
+MetaLens : Type -> Type -> Type
+MetaLens q a = Traversal a a Int (Either Int (n ** TT q n))
 
 mutual
-  nrPat : Pat q n -> State Int (Pat q n)
-  nrPat (PV pv) = pure $ PV pv
-  nrPat (PCtorApp f args) = PCtorApp f <$> traverse nrQPat args
-  nrPat (PForced tm) = PForced <$> nrTm tm
-  nrPat PWildcard = pure PWildcard
+  mlBnd : {n : Nat} -> MetaLens q (Binding q n)
+  mlBnd f (B n q ty) = B n q <$> mlTm f ty
 
-  nrQPat : (q, Pat q n) -> State Int (q, Pat q n)
-  nrQPat (q, pat) = do
-    pat' <- nrPat pat
-    pure (q, pat')
+  mlTm : {n : Nat} -> MetaLens q (TT q n)
+  mlTm f (P gn) = pure $ P gn
+  mlTm f (V i) = pure $ V i
+  mlTm f (Lam b rhs) = Lam <$> mlBnd f b <*> mlTm f rhs
+  mlTm f (Pi b rhs) = Pi <$> mlBnd f b <*> mlTm f rhs
+  mlTm f (App q g x) = App q <$> mlTm f g <*> mlTm f x
+  mlTm f Type_ = pure Type_
+  mlTm f Erased = pure Erased
 
-nrCtx : Context q n -> State Int (Context q n)
-nrCtx [] = pure []
-nrCtx (b :: bs) = [| nrBnd b :: nrCtx bs |]
+mutual
+  mlPat : {n : Nat} -> MetaLens q (Pat q n)
+  mlPat f (PV pv) = pure $ PV pv
+  mlPat f (PCtorApp g args) = PCtorApp g <$> traverse (mlQPat f) args
+  mlPat f (PForced tm) = PForced <$> mlTm f tm
+  mlPat f PWildcard = pure PWildcard
 
-nrClause : Clause q argn -> State Int (Clause q argn)
-nrClause (MkClause pi lhs rhs) =
-  MkClause <$> nrCtx pi <*> traverse nrQPat lhs <*> nrTm rhs
+  mlQPat : {n : Nat} -> MetaLens q (q, Pat q n)
+  mlQPat f (q, pat) = (\pat' => (q, pat')) <$> mlPat f pat
 
-nrBody : Body q -> State Int (Body q)
-nrBody Postulate = pure Postulate
-nrBody (Constructor arity) = pure $ Constructor arity
-nrBody (Foreign code) = pure $ Foreign code
-nrBody (Clauses argn cs) = Clauses argn <$> traverse nrClause cs
+mlCtx : {n : Nat} -> MetaLens q (Context q n)
+mlCtx f [] = pure []
+mlCtx f (b :: bs) = [| mlBnd f b :: mlCtx f bs |]
 
-nrDef : Definition q -> State Int (Definition q)
-nrDef (MkDef b body) = MkDef <$> nrBnd b <*> nrBody body
+mlClause : MetaLens q (Clause q argn)
+mlClause f (MkClause pi lhs rhs) =
+  MkClause <$> mlCtx f pi <*> traverse (mlQPat f) lhs <*> mlTm f rhs
 
-nrGlobals : Globals q -> State Int (Globals q)
-nrGlobals = map fromBlocks . traverse (traverse nrDef) . toBlocks
+mlBody : MetaLens q (Body q)
+mlBody f Postulate = pure Postulate
+mlBody f (Constructor arity) = pure $ Constructor arity
+mlBody f (Foreign code) = pure $ Foreign code
+mlBody f (Clauses argn cs) = Clauses argn <$> traverse (mlClause f) cs
+
+mlDef : MetaLens q (Definition q)
+mlDef f (MkDef b body) = MkDef <$> mlBnd f b <*> mlBody f body
+
+mlGlobals : MetaLens q (Globals q)
+mlGlobals f = map fromBlocks . traverse (traverse (mlDef f)) . toBlocks
 
 export
 elab : Globals q -> Either Error (Globals q)
-elab gs = ?rhs
+elab gs = ?rhsElab
