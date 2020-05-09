@@ -41,7 +41,6 @@ data Term : (n : Nat) -> Typ -> Vect n Typ -> Type {
     -> Term n a ctx
 }
 
--- TODO: lookup is inferred as R, wth??
 lookup : (n : Nat) -> Vect n Typ -> Fin n -> Typ {
   forall (a : Typ) (n : Nat) (ctx : Vect n Typ)
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a,
