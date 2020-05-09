@@ -10,6 +10,7 @@ import public Core.TT
 import public Compiler.Monad
 import public Compiler.Config
 
+import Inference.Elab
 import Inference.Incremental
 import Inference.WholeProgram
 
@@ -35,8 +36,14 @@ processModule cfg raw = do
           then applyDefaultCtorQuantities raw
           else raw
 
+  banner "# Elaborated #"
+  elaborated <- case elab rawCQ of
+    Right gs => pure gs
+    Left err => throw $ "could not elaborate: " ++ show err
+  prn elaborated
+
   banner "# Evarified #"
-  let evarified = evarify globalsQ rawCQ
+  let evarified = evarify globalsQ elaborated
   prn evarified
 
   vals <- case cfg.incrementalInference of
