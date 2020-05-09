@@ -21,7 +21,7 @@ data Elem : (a : Type) -> (n : Nat) -> a -> Vect n a -> Type {
     -> Elem a n x (Cons a n x xs),
   There : (a :I Type) -> (n :I Nat) -> (x : a) -> (y : a) -> (xs : Vect n a)
     -> (t : Elem a n x xs)
-    -> Elem a n x (Cons a n y xs)
+    -> Elem a (S n) x (Cons a n y xs)
 }
 
 data Typ : Type {

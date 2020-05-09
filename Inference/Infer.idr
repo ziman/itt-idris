@@ -298,24 +298,22 @@ lookupGlobal n =
     Nothing => throw $ UnknownGlobal n
     Just d => pure $ weakenClosedBinding d.binding
 
-trace : Show tr => tr -> TC lu n a -> TC lu n a
-trace t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
-  => f (MkE gs globs ctx (show t :: bt)) st
+trace : String -> TC lu n a -> TC lu n a
+trace msg (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
+  => f (MkE gs globs ctx (msg :: bt)) st
 
 traceDoc : Show tr => Doc -> tr -> TC lu n a -> TC lu n a
-traceDoc doc t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
-  => let msg = render "  " (text (show t) <+> text ": " <++> doc)
-      in f (MkE gs globs ctx (msg :: bt)) st
+traceDoc doc t = trace $ render "  " (text (show t) <+> text ": " <++> doc)
 
 traceTm : Show tr => Term n -> tr -> TC lu n a -> TC lu n a
-traceTm tm t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
-  => let msg = show t ++ ": " ++ showTm ctx tm
-      in f (MkE gs globs ctx (msg :: bt)) st
+traceTm tm t rhs = do
+  ctx <- getCtx
+  trace (show t ++ ": " ++ showTm ctx tm) rhs
 
 traceCtx : (Show tr, Pretty (Context Evar n) b) => b -> tr -> TC lu n a -> TC lu n a
-traceCtx bv t (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st
-  => let msg = show t ++ ": " ++ (render "  " $ pretty ctx bv)
-      in f (MkE gs globs ctx (msg :: bt)) st
+traceCtx bv t rhs = do
+  ctx <- getCtx
+  trace (show t ++ ": " ++ (render "  " $ pretty ctx bv)) rhs
 
 deferEq : Evar -> Term n -> Term n -> TC lu n ()
 deferEq g x y =
