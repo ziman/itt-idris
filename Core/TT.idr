@@ -55,6 +55,7 @@ mutual
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Type_ : TT q n
     Erased : TT q n
+    Meta : Int -> TT q n
 
 mutual
   export
@@ -70,4 +71,5 @@ mutual
     App q f x == App q' f' x' = (q == q') && (f == f') && (x == x')
     Type_ == Type_ = True
     Erased == Erased = True
+    Meta i == Meta j = i == j
     _ == _ = False

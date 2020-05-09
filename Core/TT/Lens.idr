@@ -35,6 +35,7 @@ mutual
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
   ttQ g Type_ = pure Type_
   ttQ g Erased = pure Erased
+  ttQ g (Meta i) = pure $ Meta i
 
 mutual
   -- repeated weakening, identity at runtime
@@ -61,6 +62,7 @@ mutual
   ttVars g (App q f x) = App q <$> ttVars g f <*> ttVars g x
   ttVars g Type_ = pure Type_
   ttVars g Erased = pure Erased
+  ttVars g (Meta i) = pure $ Meta i
 
   export
   subst : (Fin n -> TT q m) -> TT q n -> TT q m
