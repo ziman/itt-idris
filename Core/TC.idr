@@ -1,4 +1,4 @@
-module Utils.TC
+module Core.TC
 
 import public Core.Context
 import public Core.Globals

@@ -2,6 +2,7 @@ module Inference.Elab
 
 import public Core.Globals
 
+import Core.TC
 import Control.Monad.State
 
 %default total
@@ -22,6 +23,9 @@ record Equality (q : Type) where
   {0 n : Nat}
   lhs : TT q n
   rhs : TT q n
+
+TC : Type -> Nat -> Type -> Type
+TC q n a = Core.TC.TC Error (List (Equality q)) q n a
 
 export
 elab : Globals q -> Either Error (Globals q)
