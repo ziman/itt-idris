@@ -10,11 +10,13 @@ import Elab.Check
 
 public export
 data Error
-  = MultipleSolutions MetaNum
+  = Impossible String
+  | CantUnify Equality
 
 export
 Show Solve.Error where
-  show (MultipleSolutions mn) = "multiple solutions for " ++ show mn
+  show (Impossible msg) = "impossible: " ++ msg
+  show (CantUnify eq) = "can't unify: " ++ show (pretty () eq)
 
 public export
 Subst : Type
@@ -23,14 +25,24 @@ Subst = DepSortedMap (MetaNum, Nat) (\(mn,n) => TT (Maybe Q) n)
 Term : Nat -> Type
 Term = TT (Maybe Q)
 
-data Solution : Nat -> Type where
-  Unique : Term n -> Solution n
-  Conflict : Solution n
+data Outcome : Nat -> Type where
+  Solved : MetaNum -> Term n -> Outcome n
+  Progress : List Equality -> Outcome n
+  Stuck : Equality -> Outcome n
 
 Uncertains : Type
-Uncertains = DepSortedMap (MetaNum, Nat) (\(mn,n) => Solution n)
+Uncertains = DepSortedMap (MetaNum, Nat) (\(mn,n) => List (Term n))
 
-solveOne : Certainty -> Suspended (Maybe Q) n -> Term n -> Term n -> Either (MetaNum, Term n) (List Equality)
+substC : MetaNum -> (n : Nat) -> Term n -> Subst -> Subst
+substC mn n tm s = ?rhs_substC
+
+substU : MetaNum -> (n : Nat) -> Term n -> Uncertains -> Uncertains
+substU mn n tm us = ?rhs_substU
+
+addCandidate : MetaNum -> (n : Nat) -> Term n -> Uncertains -> Uncertains
+addCandidate mn n tm us = ?rhs_addCandidate
+
+solveOne : Certainty -> Suspended (Maybe Q) n -> Term n -> Term n -> Outcome n
 solveOne c ts lhs rhs = ?rhs_solveOne
 
 covering
@@ -38,22 +50,15 @@ solveMany : Subst -> Uncertains -> List Equality -> Either Solve.Error Subst
 solveMany s us [] = Right s
 solveMany s us (MkE {n} c ts lhs rhs :: eqs) =
   case solveOne c ts lhs rhs of
-    Left (mn, tm) => case c of
-      Certain => case lookup (mn, n) s of
-        Just _ => Left $ MultipleSolutions mn
-        Nothing =>
-          solveMany
-            (insert (mn, n) tm s)
-            (insert (mn, n) Conflict us)  -- let's ignore uncertains because we have a certain solution
-            eqs
-      Uncertain => case lookup (mn, n) us of
-        Just Conflict => solveMany s us eqs  -- nothing to do here
-        Just (Unique tm') =>
-          if tm' == tm
-            then solveMany s us eqs  -- the same solution
-            else solveMany s (insert (mn, n) Conflict us) eqs  -- conflicting solutions
-        Nothing => solveMany s (insert (mn, n) (Unique tm) us) eqs  -- first solution
-    Right moreEqs => solveMany s us (moreEqs ++ eqs)
+    Solved mn tm => case c of
+      Uncertain => solveMany s (addCandidate mn n tm us) eqs
+      Certain =>
+        solveMany
+          (insert (mn, n)  tm  $ substC mn n tm  s)
+          (delete (mn, n)      $ substU mn n tm us)
+          eqs
+    Progress moreEqs => solveMany s us (moreEqs ++ eqs)
+    Stuck eq => Left $ CantUnify eq
 
 covering export
 solve : List Equality -> Either Solve.Error Subst
