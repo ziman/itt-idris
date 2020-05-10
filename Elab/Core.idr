@@ -77,9 +77,9 @@ Just q ~~ Just q' =
 _ ~~ _ = pure ()
 
 censorEqs : Maybe Q -> List Equality -> List Equality
-censorEqs (Just I) _ = []
-censorEqs Nothing eqs = map record{ certainty = Uncertain } eqs
-censorEqs _ eqs = eqs
+censorEqs (Just I) = const []
+censorEqs Nothing  = map record{ certainty = Uncertain }
+censorEqs _        = id
 
 mutual
   infix 3 ~=
