@@ -8,8 +8,18 @@ import public Core.Normalise
 %undotted_record_projections off
 
 public export
+data TCError
+  = UnknownGlobal Name
+  | EvalError EvalError
+
+export
+Show TCError where
+  show (UnknownGlobal n) = "unknown global: " ++ show n
+  show (EvalError e) = "normalisation error: " ++ show e
+
+public export
 interface Error e where
-  fromEvalError : Normalise.EvalError -> e
+  tcError : TCError -> e
 
 public export
 Backtrace : Type
@@ -106,10 +116,28 @@ withCtx : Context q n -> TC e w q n a -> TC e w q Z a
 withCtx [] tc = tc
 withCtx (b :: bs) tc = withCtx bs $ withBnd b tc
 
+throwTC : Error e => TCError -> TC e w q n a
+throwTC = throw . tcError
+
 export
 redTC : (Error e, Monoid w) => Form -> TT q n -> TC e w q n (TT q n)
 redTC form tm = do
   gs <- getGlobals
   case red form gs tm of
-    Left e => throw $ fromEvalError e
+    Left e => throwTC $ EvalError e
     Right tm' => pure tm'
+
+export
+lookup : Monoid w => Fin n -> TC e w q n (Binding q n)
+lookup i = lookup i <$> getEnv (.context)
+
+export
+lookupGlobal : (Monoid w, Error e) => Name -> TC e w q n (Binding q n)
+lookupGlobal n = 
+  (lookup n <$> getEnv (.globals)) >>= \case
+    Nothing => throwTC $ UnknownGlobal n
+    Just d  => pure $ weakenClosedBinding d.binding
+
+export
+prettyCtx : Pretty (Context q n) a => Monoid w => a -> TC e w q n Doc
+prettyCtx x = pretty <$> getEnv (.context) <*> pure x

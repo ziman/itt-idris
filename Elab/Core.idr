@@ -3,8 +3,11 @@ module Elab.Core
 import public Core.Globals
 
 import Core.TC
+import Core.TT
+import Core.TT.Pretty
 import Core.Normalise
 import Elab.Lens
+import Utils.Pretty
 
 import Data.List
 import Control.Monad.State
@@ -16,16 +19,22 @@ public export
 data Error
   = NotImplementedYet
   | OtherError String
-  | EvalError Normalise.EvalError
+  | TCError TCError
+  | NotPi Doc
+  | CantInferWildcard
+  | CantInfer Doc
 
 export
 Show Error where
   show NotImplementedYet = "not implemented yet"
   show (OtherError msg) = "error: " ++ msg
-  show (EvalError e) = show e
+  show (TCError e) = show e
+  show (NotPi ty) = "not a pi type:" ++ render "  " ty
+  show CantInferWildcard = "can't infer _"
+  show (CantInfer tm) = "can't infer: " ++ render "  " tm
 
 TC.Error Error where
-  fromEvalError = EvalError
+  tcError = TCError
 
 data Certainty = Certain | Uncertain
 
@@ -56,34 +65,66 @@ mutual
   conv lhs rhs = ?rhs_conv
 
 mutual
-  eqsBnd : Binding q n -> TC q n ()
+  eqsBnd : ShowQ q => Binding q n -> TC q n ()
   eqsBnd (B n q ty) = do
     tyTy <- eqsTm ty
     tyTy ~= Type_
 
-  eqsTm : TT q n -> TC q n (TT q n)
-  eqsTm tm = ?rhs_eqsTy
+  eqsTm : ShowQ q => TT q n -> TC q n (TT q n)
+  eqsTm (P n) = lookupGlobal n <&> .type
+  eqsTm (V i) = lookup i <&> .type
+  eqsTm (Lam b rhs) = do
+    eqsBnd b
+    Pi b <$> withBnd b (eqsTm rhs)
+  eqsTm (Pi b rhs) = do
+    eqsBnd b
+    withBnd b $ do
+      rhsTy <- eqsTm rhs
+      rhsTy ~= Type_
+    pure Type_
+  eqsTm (App q f x) = do
+    fTy <- redTC WHNF =<< eqsTm f
+    xTy <- eqsTm x
+    case fTy of
+      Pi (B piN piQ piTy) piRhs => do
+        piTy ~= xTy
+        pure $ subst (substFZ x) piRhs
+
+      _ => throw . NotPi =<< prettyCtx fTy
+
+  eqsTm Type_ = pure Type_
+  eqsTm tm = throw . CantInfer =<< prettyCtx tm
 
 mutual
-  eqsPat : Pat q n -> TC q n (TT q n)
-  eqsPat pat = ?rhs_eqsPat
+  eqsPat : ShowQ q => Pat q n -> TC q n (TT q n)
+  eqsPat (PV i) = lookup i <&> .type
+  eqsPat (PCtorApp (Forced cn) args) = do
+    cTy <- lookupGlobal cn <&> .type
+    eqsPatApp cTy args
+  eqsPat (PCtorApp (Checked cn) args) = do
+    cTy <- lookupGlobal cn <&> .type
+    eqsPatApp cTy args
+  eqsPat (PForced tm) = eqsTm tm
+  eqsPat PWildcard = throw CantInferWildcard
 
-  eqsPatApp : TT q n -> List (q, Pat q n) -> TC q n (TT q n)
-  eqsPatApp fty [] = pure fty
-  eqsPatApp fty ((q,x) :: xs) = do
+  eqsPatApp : ShowQ q => TT q n -> List (q, Pat q n) -> TC q n (TT q n)
+  eqsPatApp fTy [] = pure fTy
+  eqsPatApp fTy ((q,x) :: xs) = do
     xTy <- eqsPat x
-    redTC WHNF fty >>= \case
+    redTC WHNF fTy >>= \case
       Pi (B piN piQ piTy) piRhs => do
         piTy ~= xTy
         eqsPatApp (subst (substFZ $ patToTm x) piRhs) xs
 
-eqsCtx : Context q n -> TC q Z ()
+      fTyWHNF => throw . NotPi =<< prettyCtx fTyWHNF
+
+eqsCtx : ShowQ q => Context q n -> TC q Z ()
 eqsCtx [] = pure ()
 eqsCtx (b :: bs) = do
   eqsCtx bs
   withCtx bs $ eqsBnd b
 
-eqsClause : Binding q Z -> Clause q argn -> TC q Z ()
+eqsClause : ShowQ q => Binding q Z -> Clause q argn -> TC q Z ()
 eqsClause fbnd (MkClause pi lhs rhs) = do
   eqsCtx pi
   withCtx pi $ do
@@ -91,18 +132,18 @@ eqsClause fbnd (MkClause pi lhs rhs) = do
     rhsTy <- eqsTm rhs
     lhsTy ~= rhsTy
 
-eqsBody : Binding q Z -> Body q -> TC q Z ()
+eqsBody : ShowQ q => Binding q Z -> Body q -> TC q Z ()
 eqsBody fbnd Postulate = pure ()
 eqsBody fbnd (Constructor arity) = pure ()
 eqsBody fbnd (Foreign code) = pure ()
 eqsBody fbnd (Clauses argn cs) = traverse_ (eqsClause fbnd) cs
 
-eqsDef : Definition q -> TC q Z ()
+eqsDef : ShowQ q => Definition q -> TC q Z ()
 eqsDef (MkDef b body) = do
   eqsBnd b
   eqsBody b body
 
-eqsGlobals : TC q Z ()
+eqsGlobals : ShowQ q => TC q Z ()
 eqsGlobals = do
   gs <- getGlobals
   traverse_ (traverse_ eqsDef) $ toBlocks gs
@@ -117,5 +158,5 @@ numberMetas gs = evalState (mlGlobals numberMeta gs) 0
       pure $ Left i
 
 export
-elab : Globals q -> Either Error (Globals q)
+elab : ShowQ q => Globals q -> Either Error (Globals q)
 elab gs = ?rhsElab
