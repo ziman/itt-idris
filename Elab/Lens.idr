@@ -2,8 +2,10 @@ module Elab.Lens
 
 import public Core.TT.Lens
 import public Core.Globals
+import public Data.SortedMap
 
 import Core.TT
+import Core.TT.Lens
 import Core.Pattern
 import Core.Clause
 import Control.Monad.Identity
@@ -70,7 +72,7 @@ subst {a} trav mn n tm rhs = runIdentity $ trav f rhs
 
 public export
 Subst : Type -> Type
-Subst q = DepSortedMap (MetaNum, Nat) (\mnn => TT q (snd mnn))
+Subst q = SortedMap MetaNum (n ** TT q n)
 
 export
 substMany :
@@ -79,6 +81,6 @@ substMany :
 substMany trav s tm = runIdentity $ trav f tm
   where
     f : (n' : Nat) -> MetaNum -> Identity (TT q n')
-    f n' mn' = pure $ case lookup (mn', n') s of
+    f n' mn' = pure $ case lookup mn' s of
       Nothing => Meta mn'
-      Just tm => tm
+      Just tm => ?rhs_substMany
