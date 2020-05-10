@@ -36,18 +36,28 @@ processModule cfg raw = do
           then applyDefaultCtorQuantities raw
           else raw
 
-  banner "# Elaborated #"
-  eqs <- case gatherEqualities rawCQ of
+  banner "# Elaboration #"
+  let numbered = numberMetas rawCQ
+  prn numbered
+
+  eqs <- case gatherEqualities numbered of
     Left e => throw $ "could not gather equalities: " ++ show e
     Right eqs => pure eqs
-  let elaborated = rawCQ
+
+  log ""
+  log "Equalities:"
   prn $ indentBlock (map (pretty ()) eqs)
+
+  let elaborated = numbered
   {-
   elaborated <- case elab rawCQ of
     Right gs => pure gs
     Left err => throw $ "could not elaborate: " ++ show err
   prn elaborated
   -}
+
+  banner "# Elaborated #"
+  prn elaborated
 
   banner "# Evarified #"
   let evarified = evarify globalsQ elaborated

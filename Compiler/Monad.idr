@@ -55,7 +55,7 @@ throw = MkITT . pure . Left
 
 export
 banner : String -> ITT ()
-banner s = log hrule *> log s *> log hrule *> log ""
+banner s = log "" *> log hrule *> log s *> log hrule *> log ""
   where
     hrule : String
     hrule = pack $ List.replicate (length s) '#'

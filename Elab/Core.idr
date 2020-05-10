@@ -215,6 +215,7 @@ eqsGlobals = do
   gs <- getGlobals
   traverse_ (traverse_ eqsDef) $ toBlocks gs
 
+export
 numberMetas : Globals (Maybe Q) -> Globals (Maybe Q)
 numberMetas gs = evalState (mlGlobals numberMeta gs) 0
   where
@@ -226,7 +227,7 @@ numberMetas gs = evalState (mlGlobals numberMeta gs) 0
 
 export
 gatherEqualities : Globals (Maybe Q) -> Either (Failure Error) (List Equality)
-gatherEqualities gs = run (numberMetas gs) [] eqsGlobals <&> .output
+gatherEqualities gs = run gs [] eqsGlobals <&> .output
 
 export
 elab : Globals (Maybe Q) -> Either (Failure Error) (Globals (Maybe Q))
