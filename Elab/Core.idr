@@ -76,57 +76,56 @@ Just q ~~ Just q' =
     else throw $ QuantityMismatch q q'
 _ ~~ _ = pure ()
 
-censorEqs : Maybe Q -> List Equality -> List Equality
-censorEqs (Just I) = const []
-censorEqs Nothing  = map record{ certainty = Uncertain }
-censorEqs _        = id
-
 mutual
   infix 3 ~=
-  (~=) : Term n -> Term n -> TC n ()
-  lhs ~= rhs = do
+  (~=) : Term n -> Term n -> Certainty -> TC n ()
+  (lhs ~= rhs) c = do
     lhsWHNF <- redTC WHNF lhs
     rhsWHNF <- redTC WHNF rhs
-    conv lhsWHNF rhsWHNF
+    conv c lhsWHNF rhsWHNF
 
-  conv : Term n -> Term n -> TC n ()
-  conv (V i) (V j) =
+  conv : Certainty -> Term n -> Term n -> TC n ()
+  conv c (V i) (V j) =
     if i == j
       then pure ()
       else cantConvert (V i) (V j)
-  conv (P n) (P n') =
+  conv c (P n) (P n') =
     if n == n'
       then pure ()
       else cantConvert (P n) (P n')
-  conv (Lam b@(B n q ty) rhs) (Lam (B n' q' ty') rhs') = do
+  conv c (Lam b@(B n q ty) rhs) (Lam (B n' q' ty') rhs') = do
     q ~~ q'
-    ty ~= ty'
+    (ty ~= ty') c
     withBnd b $
-      rhs ~= rhs'
-  conv (Pi b@(B n q ty) rhs) (Pi (B n' q' ty') rhs') = do
+      (rhs ~= rhs') c
+  conv c (Pi b@(B n q ty) rhs) (Pi (B n' q' ty') rhs') = do
     q ~~ q'
-    ty ~= ty'
+    (ty ~= ty') c
     withBnd b $
-      rhs ~= rhs'
-  conv (App q f x) (App q' f' x') = do
-    q ~~ q'
-    f ~= f'
-    censor (censorEqs q) $
-      x ~= x'
-  conv Type_ Type_ = pure ()
-  conv (Meta i) tm = do
+      (rhs ~= rhs') c
+  conv c (App Nothing f x) (App Nothing f' x') = do
+    (f ~= f') c
+    (x ~= x') Uncertain
+  conv c (App (Just I) f x) (App (Just I) f' x') = do
+    (f ~= f') c
+  conv c (App (Just q) f x) (App (Just q') f' x') = do
+    Just q ~~ Just q'
+    (f ~= f') c
+    (x ~= x') c
+  conv c Type_ Type_ = pure ()
+  conv c (Meta i) tm = do
     ctx <- getCtx
-    emit [MkE Certain ctx (Meta i) tm]
-  conv tm (Meta i) = do
+    emit [MkE c ctx (Meta i) tm]
+  conv c tm (Meta i) = do
     ctx <- getCtx
-    emit [MkE Certain ctx (Meta i) tm]
-  conv lhs rhs = cantConvert lhs rhs
+    emit [MkE c ctx (Meta i) tm]
+  conv c lhs rhs = cantConvert lhs rhs
 
 mutual
   eqsBnd : Binding (Maybe Q) n -> TC n ()
   eqsBnd (B n q ty) = do
     tyTy <- eqsTm ty
-    tyTy ~= Type_
+    (tyTy ~= Type_) Certain
 
   eqsTm : Term n -> TC n (Ty n)
   eqsTm (P n) = lookupGlobal n <&> .type
@@ -138,14 +137,14 @@ mutual
     eqsBnd b
     withBnd b $ do
       rhsTy <- eqsTm rhs
-      rhsTy ~= Type_
+      (rhsTy ~= Type_) Certain
     pure Type_
   eqsTm (App q f x) = do
     fTy <- redTC WHNF =<< eqsTm f
     xTy <- eqsTm x
     case fTy of
       Pi (B piN piQ piTy) piRhs => do
-        piTy ~= xTy
+        (piTy ~= xTy) Certain
         pure $ subst (substFZ x) piRhs
 
       _ => throw . NotPi =<< prettyCtx fTy
@@ -171,7 +170,7 @@ mutual
     xTy <- eqsPat x
     redTC WHNF fTy >>= \case
       Pi (B piN piQ piTy) piRhs => do
-        piTy ~= xTy
+        (piTy ~= xTy) Certain
         eqsPatApp (subst (substFZ $ patToTm x) piRhs) xs
 
       fTyWHNF => throw . NotPi =<< prettyCtx fTyWHNF
@@ -188,7 +187,7 @@ eqsClause fbnd (MkClause pi lhs rhs) = do
   withCtx pi $ do
     lhsTy <- eqsPatApp (weakenClosed fbnd.type) (toList lhs)
     rhsTy <- eqsTm rhs
-    lhsTy ~= rhsTy
+    (lhsTy ~= rhsTy) Certain
 
 eqsBody : Binding (Maybe Q) Z -> Body (Maybe Q) -> TC Z ()
 eqsBody fbnd Postulate = pure ()
