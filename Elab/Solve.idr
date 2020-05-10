@@ -21,23 +21,23 @@ Show Solve.Error where
   show (Impossible msg) = "impossible: " ++ msg
   show (CantUnify eq) = "can't unify: " ++ show (pretty () eq)
 
-public export
-Subst : Type
-Subst = DepSortedMap (MetaNum, Nat) (\(mn,n) => TT (Maybe Q) n)
-
 Term : Nat -> Type
 Term = TT (Maybe Q)
+
+public export
+Subst : Type
+Subst = DepSortedMap (MetaNum, Nat) (\mnn => Term (snd mnn))
+
+Uncertains : Type
+Uncertains = DepSortedMap (MetaNum, Nat) (\mnn => List (Term (snd mnn)))
 
 data Outcome : Nat -> Type where
   Solved : MetaNum -> Term n -> Outcome n
   Progress : List Equality -> Outcome n
   Stuck : Equality -> Outcome n
 
-Uncertains : Type
-Uncertains = DepSortedMap (MetaNum, Nat) (\mnn => List (Term (snd mnn)))
-
 substC : MetaNum -> (n : Nat) -> Term n -> Subst -> Subst
-substC mn n tm s = ?rhs_substC
+substC mn n tm = map (subst mlTm mn n tm)
 
 substU : MetaNum -> (n : Nat) -> Term n -> Uncertains -> Uncertains
 substU mn n tm = map (map $ subst mlTm mn n tm)
