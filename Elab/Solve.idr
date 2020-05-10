@@ -14,12 +14,16 @@ import Control.Monad.Identity
 public export
 data Error
   = Impossible String
-  | CantUnify Equality
+  | CantUnify Equality (Failure Check.Error)
 
 export
 Show Solve.Error where
   show (Impossible msg) = "impossible: " ++ msg
-  show (CantUnify eq) = "can't unify: " ++ show (pretty () eq)
+  show (CantUnify eq err) = show $
+    text "can't unify: "
+    $$ indent (pretty () eq)
+    $$ text "because: "
+    $$ indent (show err)
 
 Term : Nat -> Type
 Term = TT (Maybe Q)
@@ -34,7 +38,7 @@ Uncertains = DepSortedMap (MetaNum, Nat) (\mnn => List (Term (snd mnn)))
 data Outcome : Nat -> Type where
   Solved : MetaNum -> Term n -> Outcome n
   Progress : List Equality -> Outcome n
-  Stuck : Equality -> Outcome n
+  Stuck : Equality -> Failure Check.Error -> Outcome n
 
 substC : MetaNum -> (n : Nat) -> Term n -> Subst -> Subst
 substC mn n tm = map (subst mlTm mn n tm)
@@ -47,8 +51,13 @@ addCandidate mn n tm = insertWith (mn, n) $ \case
   Nothing => [tm]
   Just tms => tm :: tms
 
-solveOne : Certainty -> Suspended (Maybe Q) n -> Term n -> Term n -> Outcome n
-solveOne c ts lhs rhs = ?rhs_solveOne
+solveOne : {n : Nat} -> Certainty -> Suspended (Maybe Q) n -> Term n -> Term n -> Outcome n
+solveOne c ts (Meta mn) rhs = Solved mn rhs
+solveOne c ts lhs (Meta mn) = Solved mn lhs
+solveOne c ts lhs rhs =
+  case resume {q = Maybe Q} {w = List Equality} ts $ (lhs ~= rhs) c of
+    Left e => Stuck (MkE c ts lhs rhs) e
+    Right (MkR eqs ()) => Progress eqs
 
 covering
 solveMany : Subst -> Uncertains -> List Equality -> Either Solve.Error Subst
@@ -63,7 +72,7 @@ solveMany s us (MkE {n} c ts lhs rhs :: eqs) =
           (delete (mn, n)      $ substU mn n tm us)
           eqs
     Progress moreEqs => solveMany s us (moreEqs ++ eqs)
-    Stuck eq => Left $ CantUnify eq
+    Stuck eq err => Left $ CantUnify eq err
 
 covering export
 solve : List Equality -> Either Solve.Error Subst

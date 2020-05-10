@@ -23,7 +23,7 @@ record Equality where
   constructor MkE
   {n : Nat}
   certainty : Certainty
-  tc : TC.Suspend.Suspended (Maybe Q) n
+  tc : Suspended (Maybe Q) n
   lhs : TT (Maybe Q) n
   rhs : TT (Maybe Q) n
 

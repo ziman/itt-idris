@@ -111,24 +111,24 @@ namespace Core
   throw : e -> TC e w q n a
   throw err = MkTC $ \env => Left (MkF env.backtrace err)
 
-namespace Suspend
-  export  -- ssh, don't tell anyone
-  Suspended : Type -> Nat -> Type
-  Suspended = Env
+  namespace Suspend
+    export  -- ssh, don't tell anyone
+    Suspended : Type -> Nat -> Type
+    Suspended = Env
 
-  export
-  suspend : Monoid w => TC e w q n (Suspended q n)
-  suspend = getEnv id
+    export
+    suspend : Monoid w => TC e w q n (Suspended q n)
+    suspend = getEnv id
 
-  export
-  resume : Suspended q n -> TC e w q n a -> TC e w q n' a
-  resume = withEnv . const
+    export
+    resume : Monoid w => Suspended q n -> TC e w q n a -> Either (Failure e) (TCResult w a)
+    resume env (MkTC f) = f env
 
-  -- this breaks the opaqueness of Suspended a bit
-  -- but it's a pragmatic solution to the need to print suspended terms
-  export
-  getCtx : Suspended q n -> Context q n
-  getCtx = .context
+    -- this breaks the opaqueness of Suspended a bit
+    -- but it's a pragmatic solution to the need to print suspended terms
+    export
+    getCtx : Suspended q n -> Context q n
+    getCtx = .context
 
 export
 getGlobals : Monoid w => TC e w q n (Globals q)

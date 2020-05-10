@@ -67,7 +67,8 @@ _ ~~ _ = pure ()
 mutual
   infix 3 ~=
   export
-  (~=) : {n : Nat} -> Term n -> Term n -> Certainty -> TC n ()
+  -- expand the type synonyms so we don't have to export them
+  (~=) : {n : Nat} -> TT (Maybe Q) n -> TT (Maybe Q) n -> Certainty -> TC Error (List Equality) (Maybe Q) n ()
   (lhs ~= rhs) c = do
     lhsWHNF <- redTC WHNF lhs
     rhsWHNF <- redTC WHNF rhs
