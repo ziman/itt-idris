@@ -66,6 +66,7 @@ _ ~~ _ = pure ()
 
 mutual
   infix 3 ~=
+  export
   (~=) : Term n -> Term n -> Certainty -> TC n ()
   (lhs ~= rhs) c = do
     lhsWHNF <- redTC WHNF lhs
