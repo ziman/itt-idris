@@ -32,6 +32,10 @@ record Failure (e : Type) where
   error : e
 
 export
+Functor Failure where
+  map f (MkF bt e) = MkF bt (f e)
+
+export
 Show e => Show (Failure e) where
   show (MkF bt err) = render "  " $
     text "With backtrace:"

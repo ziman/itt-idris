@@ -11,6 +11,9 @@ import public Compiler.Monad
 import public Compiler.Config
 
 import Elab.Core
+import Elab.Check
+import Elab.Equality
+
 import Inference.Incremental
 import Inference.WholeProgram
 
