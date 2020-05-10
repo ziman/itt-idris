@@ -48,11 +48,18 @@ record Equality (q : Type) where
   constructor MkE
   {0 n : Nat}
   certainty : Certainty
+  context : Context q n
   lhs : TT q n
   rhs : TT q n
 
 TC : Type -> Nat -> Type -> Type
 TC q n a = TC Error (List (Equality q)) q n a
+
+cantConvert : ShowQ q => TT q n -> TT q n -> TC q n a
+cantConvert lhs rhs = do
+  lhsD <- prettyCtx lhs
+  rhsD <- prettyCtx rhs
+  throw $ CantConvert lhsD rhsD
 
 mutual
   infix 3 ~=
@@ -60,13 +67,33 @@ mutual
   lhs ~= rhs = do
     lhsWHNF <- redTC WHNF lhs
     rhsWHNF <- redTC WHNF rhs
-    conv lhsWHNF rhsWHNF
+    conv Certain lhsWHNF rhsWHNF
 
-  conv : ShowQ q => TT q n -> TT q n -> TC q n ()
-  conv lhs rhs = do
-    lhsD <- prettyCtx lhs
-    rhsD <- prettyCtx rhs
-    throw $ CantConvert lhsD rhsD
+  conv : ShowQ q => Certainty -> TT q n -> TT q n -> TC q n ()
+  conv c (V i) (V j) =
+    if i == j
+      then pure ()
+      else cantConvert (V i) (V j)
+  conv c (P n) (P n')
+    if n == n'
+      then pure ()
+      else cantConvert (P n) (P n')
+  conv c (Lam b@(B n q ty) rhs) (Lam (B n' q' ty') rhs') = do
+    ty ~= ty'
+    withBnd b $
+      rhs ~= rhs'
+  conv c (Pi b@(B n q ty) rhs) (Pi (B n' q' ty') rhs') = do
+    ty ~= ty'
+    withBnd b $
+      rhs ~= rhs'
+  conv c (App q f x) (App q' f' x') =
+    
+
+  conv c Type_ Type_ = pure ()
+  conv c (Meta i) tm = do
+    ctx <- getCtx
+    emit [MkE c ctx (Meta i) tm]
+  conv c lhs rhs = cantConvert lhs rhs
 
 mutual
   eqsBnd : ShowQ q => Binding q n -> TC q n ()

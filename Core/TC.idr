@@ -128,6 +128,10 @@ redTC form tm = do
     Right tm' => pure tm'
 
 export
+getCtx : TC e w q n (Context q n)
+getCtx = getEnv (.context)
+
+export
 lookup : Monoid w => Fin n -> TC e w q n (Binding q n)
 lookup i = lookup i <$> getEnv (.context)
 
