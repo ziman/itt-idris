@@ -30,14 +30,14 @@ data Solution : Nat -> Type where
 Uncertains : Type
 Uncertains = DepSortedMap (MetaNum, Nat) (\(mn,n) => Solution n)
 
-solveOne : Certainty -> Term n -> Term n -> Either (MetaNum, Term n) (List Equality)
-solveOne c lhs rhs = ?rhs_solveOne
+solveOne : Certainty -> Suspended (Maybe Q) n -> Term n -> Term n -> Either (MetaNum, Term n) (List Equality)
+solveOne c ts lhs rhs = ?rhs_solveOne
 
 covering
 solveMany : Subst -> Uncertains -> List Equality -> Either Solve.Error Subst
 solveMany s us [] = Right s
-solveMany s us (MkE {n} c ctx lhs rhs :: eqs) =
-  case solveOne c lhs rhs of
+solveMany s us (MkE {n} c ts lhs rhs :: eqs) =
+  case solveOne c ts lhs rhs of
     Left (mn, tm) => case c of
       Certain => case lookup (mn, n) s of
         Just _ => Left $ MultipleSolutions mn
