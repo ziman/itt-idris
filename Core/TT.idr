@@ -3,6 +3,7 @@ module Core.TT
 import public Utils.Misc
 import public Utils.Pretty
 import public Utils.OrdSemiring
+import public Utils.DepSortedMap
 import public Core.Quantity
 import public Data.Nat
 import public Data.Fin
@@ -57,6 +58,22 @@ Ord MetaNum where
   compare (MNType _) MNUnknown = LT
   compare MNUnknown MNUnknown = EQ
   compare MNUnknown _ = GT
+
+export
+DecOrd MetaNum where
+  decCmp (MNValue i) (MNValue j) with (decCmp i j)
+    decCmp (MNValue i) (MNValue j) | LT = LT
+    decCmp (MNValue i) (MNValue i) | EQ Refl = EQ Refl
+    decCmp (MNValue i) (MNValue j) | GT = GT
+  decCmp (MNValue _) _ = LT
+  decCmp (MNType i) (MNValue _) = GT
+  decCmp (MNType i) (MNType j) with (decCmp i j)
+    decCmp (MNType i) (MNType j) | LT = LT
+    decCmp (MNType i) (MNType i) | EQ Refl = EQ Refl
+    decCmp (MNType i) (MNType j) | GT = GT
+  decCmp (MNType _) MNUnknown = LT
+  decCmp MNUnknown MNUnknown = EQ Refl
+  decCmp MNUnknown _ = GT
 
 export
 Show MetaNum where

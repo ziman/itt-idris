@@ -4,23 +4,51 @@ module Utils.DepSortedMap
 
 import Decidable.Equality
 
-public export
-data DecOrdOutcome : (x, y : a) -> Type where
-  LT : DecOrdOutcome x y
-  EQ : x = y -> DecOrdOutcome x y
-  GT : DecOrdOutcome x y
+namespace DecOrd
+  public export
+  data DecOrdOutcome : (x, y : a) -> Type where
+    LT : DecOrdOutcome x y
+    EQ : x = y -> DecOrdOutcome x y
+    GT : DecOrdOutcome x y
 
-public export
-interface DecOrd a where
-  decCmp : (x, y : a) -> DecOrdOutcome x y
+  public export
+  interface DecOrd a where
+    decCmp : (x, y : a) -> DecOrdOutcome x y
 
-infix 3 .<=
-export
-(.<=) : DecOrd a => a -> a -> Bool
-x .<= y = case decCmp x y of
-  LT   => True
-  EQ _ => True
-  GT   => False
+  export
+  (DecOrd a, DecOrd b) => DecOrd (a,b) where
+    decCmp (x,y) (x', y') with (decCmp x x', decCmp y y')
+      decCmp (x,y) (x',y') | (LT, _) = LT
+      decCmp (x,y) (x ,y') | (EQ Refl, LT) = LT
+      decCmp (x,y) (x ,y ) | (EQ Refl, EQ Refl) = EQ Refl
+      decCmp (x,y) (x ,y') | (EQ Refl, GT) = GT
+      decCmp (x,y) (x',y') | (GT, _) = GT
+
+  export
+  DecOrd Nat where
+    decCmp Z Z = EQ Refl
+    decCmp Z (S _) = LT
+    decCmp (S _) Z = GT
+    decCmp (S m) (S n) with (decCmp m n)
+      decCmp (S m) (S n) | LT = LT
+      decCmp (S n) (S n) | EQ Refl = EQ Refl
+      decCmp (S m) (S n) | GT = GT
+
+  export
+  DecOrd Int where
+    decCmp x y =
+      case compare x y of
+        LT => LT
+        EQ => EQ (believe_me $ Refl {x})
+        GT => GT
+
+  infix 3 .<=
+  export
+  (.<=) : DecOrd a => a -> a -> Bool
+  x .<= y = case decCmp x y of
+    LT   => True
+    EQ _ => True
+    GT   => False
 
 private
 data Tree : Nat -> (k : Type) -> (k -> Type) -> DecOrd k -> Type where

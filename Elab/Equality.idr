@@ -20,7 +20,7 @@ Semigroup Certainty where
 public export
 record Equality where
   constructor MkE
-  {0 n : Nat}
+  {n : Nat}
   certainty : Certainty
   context : Context (Maybe Q) n
   lhs : TT (Maybe Q) n

@@ -67,13 +67,13 @@ _ ~~ _ = pure ()
 mutual
   infix 3 ~=
   export
-  (~=) : Term n -> Term n -> Certainty -> TC n ()
+  (~=) : {n : Nat} -> Term n -> Term n -> Certainty -> TC n ()
   (lhs ~= rhs) c = do
     lhsWHNF <- redTC WHNF lhs
     rhsWHNF <- redTC WHNF rhs
     conv c lhsWHNF rhsWHNF
 
-  conv : Certainty -> Term n -> Term n -> TC n ()
+  conv : {n : Nat} -> Certainty -> Term n -> Term n -> TC n ()
   conv c (V i) (V j) =
     if i == j
       then pure ()
@@ -111,12 +111,12 @@ mutual
   conv c lhs rhs = cantConvert lhs rhs
 
 mutual
-  eqsBnd : Binding (Maybe Q) n -> TC n ()
+  eqsBnd : {n : Nat} -> Binding (Maybe Q) n -> TC n ()
   eqsBnd (B n q ty) = do
     tyTy <- eqsTm ty
     (tyTy ~= Type_) Certain
 
-  eqsTm : Term n -> TC n (Ty n)
+  eqsTm : {n : Nat} -> Term n -> TC n (Ty n)
   eqsTm (P n) = lookupGlobal n <&> .type
   eqsTm (V i) = lookup i <&> .type
   eqsTm (Lam b rhs) = do
@@ -144,7 +144,7 @@ mutual
   eqsTm tm = throw . CantInfer =<< prettyCtx tm
 
 mutual
-  eqsPat : Pat (Maybe Q) n -> TC n (Ty n)
+  eqsPat : {n : Nat} -> Pat (Maybe Q) n -> TC n (Ty n)
   eqsPat (PV i) = lookup i <&> .type
   eqsPat (PCtorApp (Forced cn) args) = do
     cTy <- lookupGlobal cn <&> .type
@@ -155,7 +155,7 @@ mutual
   eqsPat (PForced tm) = eqsTm tm
   eqsPat PWildcard = throw CantInferWildcard
 
-  eqsPatApp : Term n -> List (Maybe Q, Pat (Maybe Q) n) -> TC n (Ty n)
+  eqsPatApp : {n : Nat} -> Term n -> List (Maybe Q, Pat (Maybe Q) n) -> TC n (Ty n)
   eqsPatApp fTy [] = pure fTy
   eqsPatApp fTy ((q,x) :: xs) = do
     xTy <- eqsPat x
@@ -166,7 +166,7 @@ mutual
 
       fTyWHNF => throw . NotPi =<< prettyCtx fTyWHNF
 
-eqsCtx : Context (Maybe Q) n -> TC Z ()
+eqsCtx : {n : Nat} -> Context (Maybe Q) n -> TC Z ()
 eqsCtx [] = pure ()
 eqsCtx (b :: bs) = do
   eqsCtx bs
