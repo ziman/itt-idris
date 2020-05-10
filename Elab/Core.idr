@@ -23,15 +23,17 @@ data Error
   | NotPi Doc
   | CantInferWildcard
   | CantInfer Doc
+  | CantConvert Doc Doc
 
 export
 Show Error where
   show NotImplementedYet = "not implemented yet"
   show (OtherError msg) = "error: " ++ msg
   show (TCError e) = show e
-  show (NotPi ty) = "not a pi type:" ++ render "  " ty
+  show (NotPi ty) = "not a pi type:" ++ show ty
   show CantInferWildcard = "can't infer _"
-  show (CantInfer tm) = "can't infer: " ++ render "  " tm
+  show (CantInfer tm) = "can't infer: " ++ show tm
+  show (CantConvert lhs rhs) = "can't convert " ++ show lhs ++ " with " ++ show rhs
 
 TC.Error Error where
   tcError = TCError
@@ -52,17 +54,19 @@ record Equality (q : Type) where
 TC : Type -> Nat -> Type -> Type
 TC q n a = TC Error (List (Equality q)) q n a
 
-
 mutual
   infix 3 ~=
-  (~=) : TT q n -> TT q n -> TC q n ()
+  (~=) : ShowQ q => TT q n -> TT q n -> TC q n ()
   lhs ~= rhs = do
     lhsWHNF <- redTC WHNF lhs
     rhsWHNF <- redTC WHNF rhs
     conv lhsWHNF rhsWHNF
 
-  conv : TT q n -> TT q n -> TC q n ()
-  conv lhs rhs = ?rhs_conv
+  conv : ShowQ q => TT q n -> TT q n -> TC q n ()
+  conv lhs rhs = do
+    lhsD <- prettyCtx lhs
+    rhsD <- prettyCtx rhs
+    throw $ CantConvert lhsD rhsD
 
 mutual
   eqsBnd : ShowQ q => Binding q n -> TC q n ()
