@@ -2,8 +2,8 @@ module Elab.Core
 
 import public Core.Globals
 import public Core.Quantity
+import public Elab.Lens
 
-import Elab.Lens
 import Elab.Check
 import Elab.Equality
 import Utils.Pretty
@@ -30,3 +30,7 @@ numberMetas gs = evalState (mlGlobals numberMeta gs) 0
       i <- get
       put (i+1)
       pure $ Meta (MNValue i)
+
+export
+fill : Subst (Maybe Q) -> Globals (Maybe Q) -> Globals (Maybe Q)
+fill s = substMany mlGlobals s

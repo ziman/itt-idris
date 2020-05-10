@@ -11,6 +11,7 @@ import public Compiler.Monad
 import public Compiler.Config
 
 import Elab.Core
+import Elab.Lens
 import Elab.Check
 import Elab.Solve
 import Elab.Equality
@@ -56,15 +57,8 @@ processModule cfg raw = do
     Left e => throw $ "could not solve equalities: " ++ show e
     Right s => pure s
 
-  let elaborated = numbered
-  {-
-  elaborated <- case elab rawCQ of
-    Right gs => pure gs
-    Left err => throw $ "could not elaborate: " ++ show err
-  prn elaborated
-  -}
-
   banner "# Elaborated #"
+  let elaborated = fill solution numbered
   prn elaborated
 
   banner "# Evarified #"

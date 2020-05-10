@@ -58,9 +58,17 @@ solveOne c ts lhs rhs =
     Left e => Stuck (MkE c ts lhs rhs) e
     Right (MkR eqs ()) => Progress eqs
 
+-- TODO: deal with uncertains properly
+addU : Subst -> List (mnn ** List (Term $ Builtin.snd mnn)) -> Subst
+addU s us = s
+{-
+addU s (((mn, n) ** [tm]) :: xs) = addU (insert (mn, n) tm s) xs -- only one solution, just use it
+addU s (((mn, n) ** tm) :: xs) = addU s xs
+-}
+
 covering
 solveMany : Subst -> Uncertains -> List Equality -> Either Solve.Error Subst
-solveMany s us [] = Right s  -- TODO: add the uncertains here
+solveMany s us [] = Right (addU s $ toList us)
 solveMany s us (MkE {n} c ts lhs rhs :: eqs) =
   case solveOne c ts (substMany mlTm s lhs) (substMany mlTm s rhs) of
     Solved mn tm => case c of
@@ -74,5 +82,5 @@ solveMany s us (MkE {n} c ts lhs rhs :: eqs) =
     Stuck eq err => Left $ CantUnify eq err
 
 covering export
-solve : List Equality -> Either Solve.Error Subst
+solve : List Equality -> Either Solve.Error (Lens.Subst (Maybe Q))
 solve = solveMany empty empty
