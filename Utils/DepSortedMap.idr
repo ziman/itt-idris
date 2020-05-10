@@ -133,39 +133,41 @@ treeLookup k (Branch3 t1 k1 t2 k2 t3) =
   else
     treeLookup k t3
 
-treeInsert' : DecOrd k => (kv : k) -> v kv -> Tree n k v o -> Either (Tree n k v o) (Tree n k v o, k, Tree n k v o)
-treeInsert' k v (Leaf k' v') =
+treeInsertWith' : DecOrd k => (kv : k) -> (Maybe (v kv) -> v kv) -> Tree n k v o
+    -> Either (Tree n k v o) (Tree n k v o, k, Tree n k v o)
+treeInsertWith' k v (Leaf k' v') =
   case decCmp k k' of
-    LT => Right (Leaf k v, k, Leaf k' v')
-    EQ Refl => Left (Leaf k v)
-    GT => Right (Leaf k' v', k', Leaf k v)
-treeInsert' k v (Branch2 t1 k' t2) =
+    LT => Right (Leaf k (v Nothing), k, Leaf k' v')
+    EQ Refl => Left (Leaf k (v $ Just v'))
+    GT => Right (Leaf k' v', k', Leaf k (v Nothing))
+treeInsertWith' k v (Branch2 t1 k' t2) =
   if k .<= k' then
-    case treeInsert' k v t1 of
+    case treeInsertWith' k v t1 of
       Left t1' => Left (Branch2 t1' k' t2)
       Right (a, b, c) => Left (Branch3 a b c k' t2)
   else
-    case treeInsert' k v t2 of
+    case treeInsertWith' k v t2 of
       Left t2' => Left (Branch2 t1 k' t2')
       Right (a, b, c) => Left (Branch3 t1 k' a b c)
-treeInsert' k v (Branch3 t1 k1 t2 k2 t3) =
+treeInsertWith' k v (Branch3 t1 k1 t2 k2 t3) =
   if k .<= k1 then
-    case treeInsert' k v t1 of
+    case treeInsertWith' k v t1 of
       Left t1' => Left (Branch3 t1' k1 t2 k2 t3)
       Right (a, b, c) => Right (Branch2 a b c, k1, Branch2 t2 k2 t3)
   else
     if k .<= k2 then
-      case treeInsert' k v t2 of
+      case treeInsertWith' k v t2 of
         Left t2' => Left (Branch3 t1 k1 t2' k2 t3)
         Right (a, b, c) => Right (Branch2 t1 k1 a, b, Branch2 c k2 t3)
     else
-      case treeInsert' k v t3 of
+      case treeInsertWith' k v t3 of
         Left t3' => Left (Branch3 t1 k1 t2 k2 t3')
         Right (a, b, c) => Right (Branch2 t1 k1 t2, k2, Branch2 a b c)
 
-treeInsert : DecOrd k => (kv : k) -> v kv -> Tree n k v o -> Either (Tree n k v o) (Tree (S n) k v o)
-treeInsert k v t =
-  case treeInsert' k v t of
+treeInsertWith : DecOrd k => (kv : k) -> (Maybe (v kv) -> v kv)
+    -> Tree n k v o -> Either (Tree n k v o) (Tree (S n) k v o)
+treeInsertWith k v t =
+  case treeInsertWith' k v t of
     Left t' => Left t'
     Right (a, b, c) => Right (Branch2 a b c)
 
@@ -251,13 +253,18 @@ lookup : (kv : k) -> DepSortedMap k v -> Maybe (v kv)
 lookup _ Empty = Nothing
 lookup k (M _ t) = treeLookup k t
 
+
 export
-insert : (kv : k) -> v kv -> DepSortedMap k v -> DepSortedMap k v
-insert k v Empty = M Z (Leaf k v)
-insert k v (M _ t) =
-  case treeInsert k v t of
+insertWith : (kv : k) -> (Maybe (v kv) -> v kv) -> DepSortedMap k v -> DepSortedMap k v
+insertWith k v Empty = M Z (Leaf k (v Nothing))
+insertWith k v (M _ t) =
+  case treeInsertWith k v t of
     Left t' => (M _ t')
     Right t' => (M _ t')
+
+export
+insert : (kv : k) -> v kv -> DepSortedMap k v -> DepSortedMap k v
+insert kv vkv = insertWith kv (const vkv)
 
 export
 insertFrom : Foldable f => f (kv ** v kv) -> DepSortedMap k v -> DepSortedMap k v
