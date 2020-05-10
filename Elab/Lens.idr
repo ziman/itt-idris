@@ -67,3 +67,18 @@ subst {a} trav mn n tm rhs = runIdentity $ trav f rhs
     f n' mn' = pure $ case (decEq n n', decEq mn mn') of
       (Yes Refl, Yes Refl) => tm
       _ => Meta mn'
+
+public export
+Subst : Type -> Type
+Subst q = DepSortedMap (MetaNum, Nat) (\mnn => TT q (snd mnn))
+
+export
+substMany :
+    (trav : (f : (n : Nat) -> MetaNum -> Identity (TT q n)) -> a -> Identity a)
+    -> Subst q -> a -> a
+substMany trav s tm = runIdentity $ trav f tm
+  where
+    f : (n' : Nat) -> MetaNum -> Identity (TT q n')
+    f n' mn' = pure $ case lookup (mn', n') s of
+      Nothing => Meta mn'
+      Just tm => tm

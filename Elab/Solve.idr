@@ -28,9 +28,8 @@ Show Solve.Error where
 Term : Nat -> Type
 Term = TT (Maybe Q)
 
-public export
 Subst : Type
-Subst = DepSortedMap (MetaNum, Nat) (\mnn => Term (snd mnn))
+Subst = Lens.Subst (Maybe Q)
 
 Uncertains : Type
 Uncertains = DepSortedMap (MetaNum, Nat) (\mnn => List (Term (snd mnn)))
@@ -61,9 +60,9 @@ solveOne c ts lhs rhs =
 
 covering
 solveMany : Subst -> Uncertains -> List Equality -> Either Solve.Error Subst
-solveMany s us [] = Right s
+solveMany s us [] = Right s  -- TODO: add the uncertains here
 solveMany s us (MkE {n} c ts lhs rhs :: eqs) =
-  case solveOne c ts lhs rhs of
+  case solveOne c ts (substMany mlTm s lhs) (substMany mlTm s rhs) of
     Solved mn tm => case c of
       Uncertain => solveMany s (addCandidate mn n tm us) eqs
       Certain =>

@@ -52,6 +52,10 @@ processModule cfg raw = do
   log "Equalities:"
   prn $ indentBlock (map (pretty ()) eqs)
 
+  solution <- case solve eqs of
+    Left e => throw $ "could not solve equalities: " ++ show e
+    Right s => pure s
+
   let elaborated = numbered
   {-
   elaborated <- case elab rawCQ of
