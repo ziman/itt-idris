@@ -5,6 +5,7 @@ import public Core.Quantity
 import public Elab.Equality
 import public Utils.DepSortedMap
 
+import Core.TC
 import Elab.Check
 
 public export

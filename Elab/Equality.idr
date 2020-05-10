@@ -4,6 +4,7 @@ import public Core.Context
 import public Core.Quantity
 import public Core.TT
 
+import Core.TC
 import Core.TT.Pretty
 
 %default total
@@ -22,13 +23,13 @@ record Equality where
   constructor MkE
   {n : Nat}
   certainty : Certainty
-  context : Context (Maybe Q) n
+  tc : TC.Suspend.Suspended (Maybe Q) n
   lhs : TT (Maybe Q) n
   rhs : TT (Maybe Q) n
 
 export
 Pretty () Equality where
-  pretty () (MkE Certain ctx lhs rhs) =
-    pretty ctx lhs <++> text "=" <++> pretty ctx rhs
-  pretty () (MkE Uncertain ctx lhs rhs) =
-    pretty ctx lhs <++> text "=?" <++> pretty ctx rhs
+  pretty () (MkE Certain tc lhs rhs) =
+    pretty (getCtx {q=Maybe Q} tc) lhs <++> text "=" <++> pretty (getCtx {q=Maybe Q} tc) rhs
+  pretty () (MkE Uncertain tc lhs rhs) =
+    pretty (getCtx {q=Maybe Q} tc) lhs <++> text "=?" <++> pretty (getCtx {q=Maybe Q} tc) rhs

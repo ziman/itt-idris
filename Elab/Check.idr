@@ -103,11 +103,11 @@ mutual
     (x ~= x') c
   conv c Type_ Type_ = pure ()
   conv c (Meta i) tm = do
-    ctx <- getCtx
-    emit [MkE c ctx (Meta i) tm]
+    tc <- suspend
+    emit [MkE c tc (Meta i) tm]
   conv c tm (Meta i) = do
-    ctx <- getCtx
-    emit [MkE c ctx (Meta i) tm]
+    tc <- suspend
+    emit [MkE c tc (Meta i) tm]
   conv c lhs rhs = cantConvert lhs rhs
 
 mutual
