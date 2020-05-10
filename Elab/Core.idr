@@ -25,7 +25,7 @@ export
 numberMetas : Globals (Maybe Q) -> Globals (Maybe Q)
 numberMetas gs = evalState (mlGlobals numberMeta gs) 0
   where
-    numberMeta : MetaNum -> State Int (Either MetaNum (n ** TT (Maybe Q) n))
+    numberMeta : (Nat, MetaNum) -> State Int (Either MetaNum (n ** TT (Maybe Q) n))
     numberMeta _ = do
       i <- get
       put (i+1)
