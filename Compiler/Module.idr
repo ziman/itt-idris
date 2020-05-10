@@ -12,6 +12,7 @@ import public Compiler.Config
 
 import Elab.Core
 import Elab.Check
+import Elab.Solve
 import Elab.Equality
 
 import Inference.Incremental
