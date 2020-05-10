@@ -98,6 +98,10 @@ namespace Core
   export
   emit : w -> TC e w q n ()
   emit w = MkTC $ \env => Right (MkR w ())
+  
+  export
+  censor : (w -> w) -> TC e w q n a -> TC e w q n a
+  censor f (MkTC g) = MkTC $ \env => g env <&> \(MkR w x) => MkR (f w) x
 
   export
   throw : e -> TC e w q n a
@@ -128,7 +132,7 @@ redTC form tm = do
     Right tm' => pure tm'
 
 export
-getCtx : TC e w q n (Context q n)
+getCtx : Monoid w => TC e w q n (Context q n)
 getCtx = getEnv (.context)
 
 export

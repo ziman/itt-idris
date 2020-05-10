@@ -24,6 +24,7 @@ data Error
   | CantInferWildcard
   | CantInfer Doc
   | CantConvert Doc Doc
+  | QuantityMismatch Q Q
 
 export
 Show Error where
@@ -44,64 +45,90 @@ Semigroup Certainty where
   Certain <+> Certain = Certain
   _ <+> _ = Uncertain
 
-record Equality (q : Type) where
+record Equality where
   constructor MkE
   {0 n : Nat}
   certainty : Certainty
-  context : Context q n
-  lhs : TT q n
-  rhs : TT q n
+  context : Context (Maybe Q) n
+  lhs : TT (Maybe Q) n
+  rhs : TT (Maybe Q) n
 
-TC : Type -> Nat -> Type -> Type
-TC q n a = TC Error (List (Equality q)) q n a
+TC : Nat -> Type -> Type
+TC n a = TC Error (List Equality) (Maybe Q) n a
 
-cantConvert : ShowQ q => TT q n -> TT q n -> TC q n a
+Term : Nat -> Type
+Term = TT (Maybe Q)
+
+Ty : Nat -> Type
+Ty = TT (Maybe Q)
+
+cantConvert : Term n -> Term n -> TC n a
 cantConvert lhs rhs = do
   lhsD <- prettyCtx lhs
   rhsD <- prettyCtx rhs
   throw $ CantConvert lhsD rhsD
 
+infix 3 ~~
+(~~) : Maybe Q -> Maybe Q -> TC n ()
+Just q ~~ Just q' =
+  if q == q'
+    then pure ()
+    else throw $ QuantityMismatch q q'
+_ ~~ _ = pure ()
+
+censorEqs : Maybe Q -> List Equality -> List Equality
+censorEqs (Just I) _ = []
+censorEqs Nothing eqs = map record{ certainty = Uncertain } eqs
+censorEqs _ eqs = eqs
+
 mutual
   infix 3 ~=
-  (~=) : ShowQ q => TT q n -> TT q n -> TC q n ()
+  (~=) : Term n -> Term n -> TC n ()
   lhs ~= rhs = do
     lhsWHNF <- redTC WHNF lhs
     rhsWHNF <- redTC WHNF rhs
-    conv Certain lhsWHNF rhsWHNF
+    conv lhsWHNF rhsWHNF
 
-  conv : ShowQ q => Certainty -> TT q n -> TT q n -> TC q n ()
-  conv c (V i) (V j) =
+  conv : Term n -> Term n -> TC n ()
+  conv (V i) (V j) =
     if i == j
       then pure ()
       else cantConvert (V i) (V j)
-  conv c (P n) (P n')
+  conv (P n) (P n') =
     if n == n'
       then pure ()
       else cantConvert (P n) (P n')
-  conv c (Lam b@(B n q ty) rhs) (Lam (B n' q' ty') rhs') = do
+  conv (Lam b@(B n q ty) rhs) (Lam (B n' q' ty') rhs') = do
+    q ~~ q'
     ty ~= ty'
     withBnd b $
       rhs ~= rhs'
-  conv c (Pi b@(B n q ty) rhs) (Pi (B n' q' ty') rhs') = do
+  conv (Pi b@(B n q ty) rhs) (Pi (B n' q' ty') rhs') = do
+    q ~~ q'
     ty ~= ty'
     withBnd b $
       rhs ~= rhs'
-  conv c (App q f x) (App q' f' x') =
-    
-
-  conv c Type_ Type_ = pure ()
-  conv c (Meta i) tm = do
+  conv (App q f x) (App q' f' x') = do
+    q ~~ q'
+    f ~= f'
+    censor (censorEqs q) $
+      x ~= x'
+  conv Type_ Type_ = pure ()
+  conv (Meta i) tm = do
     ctx <- getCtx
-    emit [MkE c ctx (Meta i) tm]
-  conv c lhs rhs = cantConvert lhs rhs
+    emit [MkE Certain ctx (Meta i) tm]
+  conv tm (Meta i) = do
+    ctx <- getCtx
+    emit [MkE Certain ctx (Meta i) tm]
+  conv lhs rhs = cantConvert lhs rhs
 
 mutual
-  eqsBnd : ShowQ q => Binding q n -> TC q n ()
+  eqsBnd : Binding (Maybe Q) n -> TC n ()
   eqsBnd (B n q ty) = do
     tyTy <- eqsTm ty
     tyTy ~= Type_
 
-  eqsTm : ShowQ q => TT q n -> TC q n (TT q n)
+  eqsTm : Term n -> TC n (Ty n)
   eqsTm (P n) = lookupGlobal n <&> .type
   eqsTm (V i) = lookup i <&> .type
   eqsTm (Lam b rhs) = do
@@ -127,7 +154,7 @@ mutual
   eqsTm tm = throw . CantInfer =<< prettyCtx tm
 
 mutual
-  eqsPat : ShowQ q => Pat q n -> TC q n (TT q n)
+  eqsPat : Pat (Maybe Q) n -> TC n (Ty n)
   eqsPat (PV i) = lookup i <&> .type
   eqsPat (PCtorApp (Forced cn) args) = do
     cTy <- lookupGlobal cn <&> .type
@@ -138,7 +165,7 @@ mutual
   eqsPat (PForced tm) = eqsTm tm
   eqsPat PWildcard = throw CantInferWildcard
 
-  eqsPatApp : ShowQ q => TT q n -> List (q, Pat q n) -> TC q n (TT q n)
+  eqsPatApp : Term n -> List (Maybe Q, Pat (Maybe Q) n) -> TC n (Ty n)
   eqsPatApp fTy [] = pure fTy
   eqsPatApp fTy ((q,x) :: xs) = do
     xTy <- eqsPat x
@@ -149,13 +176,13 @@ mutual
 
       fTyWHNF => throw . NotPi =<< prettyCtx fTyWHNF
 
-eqsCtx : ShowQ q => Context q n -> TC q Z ()
+eqsCtx : Context (Maybe Q) n -> TC Z ()
 eqsCtx [] = pure ()
 eqsCtx (b :: bs) = do
   eqsCtx bs
   withCtx bs $ eqsBnd b
 
-eqsClause : ShowQ q => Binding q Z -> Clause q argn -> TC q Z ()
+eqsClause : Binding (Maybe Q) Z -> Clause (Maybe Q) argn -> TC Z ()
 eqsClause fbnd (MkClause pi lhs rhs) = do
   eqsCtx pi
   withCtx pi $ do
@@ -163,31 +190,31 @@ eqsClause fbnd (MkClause pi lhs rhs) = do
     rhsTy <- eqsTm rhs
     lhsTy ~= rhsTy
 
-eqsBody : ShowQ q => Binding q Z -> Body q -> TC q Z ()
+eqsBody : Binding (Maybe Q) Z -> Body (Maybe Q) -> TC Z ()
 eqsBody fbnd Postulate = pure ()
 eqsBody fbnd (Constructor arity) = pure ()
 eqsBody fbnd (Foreign code) = pure ()
 eqsBody fbnd (Clauses argn cs) = traverse_ (eqsClause fbnd) cs
 
-eqsDef : ShowQ q => Definition q -> TC q Z ()
+eqsDef : Definition (Maybe Q) -> TC Z ()
 eqsDef (MkDef b body) = do
   eqsBnd b
   eqsBody b body
 
-eqsGlobals : ShowQ q => TC q Z ()
+eqsGlobals : TC Z ()
 eqsGlobals = do
   gs <- getGlobals
   traverse_ (traverse_ eqsDef) $ toBlocks gs
 
-numberMetas : Globals q -> Globals q
+numberMetas : Globals (Maybe Q) -> Globals (Maybe Q)
 numberMetas gs = evalState (mlGlobals numberMeta gs) 0
   where
-    numberMeta : Int -> State Int (Either Int (n ** TT q n))
+    numberMeta : Int -> State Int (Either Int (n ** Term n))
     numberMeta _ = do
       i <- get
       put (i+1)
       pure $ Left i
 
 export
-elab : ShowQ q => Globals q -> Either Error (Globals q)
+elab : Globals (Maybe Q) -> Either Error (Globals (Maybe Q))
 elab gs = ?rhsElab
