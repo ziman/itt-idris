@@ -45,6 +45,7 @@ Semigroup Certainty where
   Certain <+> Certain = Certain
   _ <+> _ = Uncertain
 
+export
 record Equality where
   constructor MkE
   {0 n : Nat}
@@ -52,6 +53,13 @@ record Equality where
   context : Context (Maybe Q) n
   lhs : TT (Maybe Q) n
   rhs : TT (Maybe Q) n
+
+export
+Pretty () Equality where
+  pretty () (MkE Certain ctx lhs rhs) =
+    pretty ctx lhs <++> text "=" <++> pretty ctx rhs
+  pretty () (MkE Uncertain ctx lhs rhs) =
+    pretty ctx lhs <++> text "=?" <++> pretty ctx rhs
 
 TC : Nat -> Type -> Type
 TC n a = TC Error (List Equality) (Maybe Q) n a
@@ -150,6 +158,8 @@ mutual
       _ => throw . NotPi =<< prettyCtx fTy
 
   eqsTm Type_ = pure Type_
+  eqsTm (Meta (MNValue i)) = pure $ Meta (MNType i)
+  eqsTm (Meta (MNType _)) = pure Type_
   eqsTm tm = throw . CantInfer =<< prettyCtx tm
 
 mutual
@@ -208,12 +218,16 @@ eqsGlobals = do
 numberMetas : Globals (Maybe Q) -> Globals (Maybe Q)
 numberMetas gs = evalState (mlGlobals numberMeta gs) 0
   where
-    numberMeta : Int -> State Int (Either Int (n ** Term n))
+    numberMeta : MetaNum -> State Int (Either MetaNum (n ** Term n))
     numberMeta _ = do
       i <- get
       put (i+1)
-      pure $ Left i
+      pure $ Left (MNValue i)
 
 export
-elab : Globals (Maybe Q) -> Either Error (Globals (Maybe Q))
+gatherEqualities : Globals (Maybe Q) -> Either (Failure Error) (List Equality)
+gatherEqualities gs = run (numberMetas gs) [] eqsGlobals <&> .output
+
+export
+elab : Globals (Maybe Q) -> Either (Failure Error) (Globals (Maybe Q))
 elab gs = ?rhsElab

@@ -38,6 +38,32 @@ Show Name where
   show (UN s) = s
   show (MN s i) = "{" ++ s ++ show i ++ "}"
 
+public export
+data MetaNum = MNValue Int | MNType Int | MNUnknown
+
+export
+Eq MetaNum where
+  MNValue i == MNValue j = i == j
+  MNType i == MNType j = i == j
+  MNUnknown == MNUnknown = True
+  _ == _ = False
+
+export
+Ord MetaNum where
+  compare (MNValue i) (MNValue j) = compare i j
+  compare (MNValue _) _ = LT
+  compare (MNType i) (MNValue _) = GT
+  compare (MNType i) (MNType j) = compare i j
+  compare (MNType _) MNUnknown = LT
+  compare MNUnknown MNUnknown = EQ
+  compare MNUnknown _ = GT
+
+export
+Show MetaNum where
+  show (MNValue i) = "_" ++ show i
+  show (MNType i) = "_ty" ++ show i
+  show MNUnknown = "_"
+
 mutual
   public export
   record Binding (q : Type) (n : Nat) where
@@ -55,7 +81,7 @@ mutual
     App : q -> (f : TT q n) -> (x : TT q n) -> TT q n
     Type_ : TT q n
     Erased : TT q n
-    Meta : Int -> TT q n
+    Meta : MetaNum -> TT q n
 
 mutual
   export

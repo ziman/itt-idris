@@ -11,7 +11,7 @@ import Decidable.Equality
 
 public export
 MetaLens : Type -> Type -> Type
-MetaLens q a = Traversal a a Int (Either Int (n ** TT q n))
+MetaLens q a = Traversal a a MetaNum (Either MetaNum (n ** TT q n))
 
 mutual
   mlBnd : {n : Nat} -> MetaLens q (Binding q n)
