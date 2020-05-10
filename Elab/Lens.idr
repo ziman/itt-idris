@@ -6,6 +6,7 @@ import public Core.Globals
 import Core.TT
 import Core.Pattern
 import Core.Clause
+import Control.Monad.Identity
 
 import Decidable.Equality
 
@@ -13,6 +14,7 @@ mutual
   mlBnd : Applicative t => {n : Nat} -> ((n : Nat) -> MetaNum -> t (TT q n)) -> (Binding q n) -> t (Binding q n)
   mlBnd f (B n q ty) = B n q <$> mlTm f ty
 
+  export
   mlTm : Applicative t => {n : Nat} -> ((n : Nat) -> MetaNum -> t (TT q n)) -> (TT q n) -> t (TT q n)
   mlTm f (P gn) = pure $ P gn
   mlTm f (V i) = pure $ V i
@@ -53,3 +55,15 @@ mlDef f (MkDef b body) = MkDef <$> mlBnd f b <*> mlBody f body
 export
 mlGlobals : Applicative t => ((n : Nat) -> MetaNum -> t (TT q n)) -> (Globals q) -> t (Globals q)
 mlGlobals f = map fromBlocks . traverse (traverse (mlDef f)) . toBlocks
+
+export
+subst :
+    (trav : (f : (n : Nat) -> MetaNum -> Identity (TT q n)) -> a -> Identity a)
+    -> MetaNum -> (n : Nat) -> TT q n
+    -> a -> a
+subst {a} trav mn n tm rhs = runIdentity $ trav f rhs
+  where
+    f : (n' : Nat) -> (mn' : MetaNum) -> Identity (TT q n')
+    f n' mn' = pure $ case (decEq n n', decEq mn mn') of
+      (Yes Refl, Yes Refl) => tm
+      _ => Meta mn'

@@ -8,6 +8,8 @@ import public Core.Quantity
 import public Data.Nat
 import public Data.Fin
 import public Data.Vect
+
+import Decidable.Equality
 import Control.Monad.Identity
 
 %default total
@@ -58,6 +60,22 @@ Ord MetaNum where
   compare (MNType _) MNUnknown = LT
   compare MNUnknown MNUnknown = EQ
   compare MNUnknown _ = GT
+
+export
+DecEq MetaNum where
+  decEq (MNValue i) (MNValue j) with (decEq i j)
+    decEq (MNValue i) (MNValue i) | Yes Refl = Yes Refl
+    decEq (MNValue i) (MNValue j) | No contra = No $ \case Refl => contra Refl
+  decEq (MNType i) (MNType j) with (decEq i j)
+    decEq (MNType i) (MNType i) | Yes Refl = Yes Refl
+    decEq (MNType i) (MNType j) | No contra = No $ \case Refl => contra Refl
+  decEq MNUnknown MNUnknown = Yes Refl
+  decEq (MNValue i) (MNType j) = No $ \case Refl impossible
+  decEq (MNValue i) MNUnknown = No $ \case Refl impossible
+  decEq (MNType i) (MNValue j) = No $ \case Refl impossible
+  decEq (MNType i) MNUnknown = No $ \case Refl impossible
+  decEq MNUnknown (MNType i) = No $ \case Refl impossible
+  decEq MNUnknown (MNValue i) = No $ \case Refl impossible
 
 export
 DecOrd MetaNum where

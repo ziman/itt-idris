@@ -6,7 +6,10 @@ import public Elab.Equality
 import public Utils.DepSortedMap
 
 import Core.TC
+import Elab.Lens
 import Elab.Check
+
+import Control.Monad.Identity
 
 public export
 data Error
@@ -31,16 +34,18 @@ data Outcome : Nat -> Type where
   Stuck : Equality -> Outcome n
 
 Uncertains : Type
-Uncertains = DepSortedMap (MetaNum, Nat) (\(mn,n) => List (Term n))
+Uncertains = DepSortedMap (MetaNum, Nat) (\mnn => List (Term (snd mnn)))
 
 substC : MetaNum -> (n : Nat) -> Term n -> Subst -> Subst
 substC mn n tm s = ?rhs_substC
 
 substU : MetaNum -> (n : Nat) -> Term n -> Uncertains -> Uncertains
-substU mn n tm us = ?rhs_substU
+substU mn n tm = map (map $ subst mlTm mn n tm)
 
 addCandidate : MetaNum -> (n : Nat) -> Term n -> Uncertains -> Uncertains
-addCandidate mn n tm us = ?rhs_addCandidate
+addCandidate mn n tm = insertWith (mn, n) $ \case
+  Nothing => [tm]
+  Just tms => tm :: tms
 
 solveOne : Certainty -> Suspended (Maybe Q) n -> Term n -> Term n -> Outcome n
 solveOne c ts lhs rhs = ?rhs_solveOne
