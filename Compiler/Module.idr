@@ -57,6 +57,9 @@ processModule cfg raw = do
     Left e => throw $ "could not solve equalities: " ++ show e
     Right s => pure s
 
+  log ""
+  log $ "Solved metas: " ++ show (keys solution)
+
   banner "# Elaborated #"
   let elaborated = fill solution numbered
   prn elaborated
