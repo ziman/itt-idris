@@ -39,14 +39,15 @@ data Outcome : Type where
   Progress : List Equality -> Outcome
   Unsolvable : Equality -> Failure Check.Error -> Outcome
 
-substC : MetaNum -> (n : Nat) -> Term n -> Subst -> Subst
-substC mn n tm = ?rhs_substC
+substC : MetaNum -> (n ** Term n) -> Subst -> Subst
+substC mn ntm = map $ \case
+  (n' ** tm') => ?rhs_substC
 
-substU : MetaNum -> (n : Nat) -> Term n -> Uncertains -> Uncertains
-substU mn n tm = ?rhs_substU
+substU : MetaNum -> (n ** Term n) -> Uncertains -> Uncertains
+substU mn ntm = ?rhs_substU
 
-addCandidate : MetaNum -> (n : Nat) -> Term n -> Uncertains -> Uncertains
-addCandidate mn n tm = merge (insert mn [(n ** tm)] empty)
+addCandidate : MetaNum -> (n ** Term n) -> Uncertains -> Uncertains
+addCandidate mn ntm = merge (insert mn [ntm] empty)
 
 solveOne : {n : Nat} -> Certainty -> Suspended (Maybe Q) n -> Term n -> Term n -> Outcome
 solveOne c ts (Meta mn) rhs = Solved mn (strengthenMax _ rhs)
@@ -65,12 +66,12 @@ solveMany : Subst -> Uncertains -> List Equality -> Either Solve.Error Subst
 solveMany s us [] = Right (addU s $ toList us)  -- add uncertains
 solveMany s us (MkE {n} c ts lhs rhs :: eqs) =
   case solveOne c ts (substMany mlTm s lhs) (substMany mlTm s rhs) of
-    Solved mn (n' ** tm') => case c of
-      Uncertain => solveMany s (addCandidate mn n' tm' us) eqs
+    Solved mn ntm => case c of
+      Uncertain => solveMany s (addCandidate mn ntm us) eqs
       Certain =>
         solveMany
-          (insert mn (n ** tm) $ substC mn n tm  s)
-          (delete mn           $ substU mn n tm us)
+          (insert mn ntm $ substC mn ntm  s)
+          (delete mn     $ substU mn ntm us)
           eqs
     Progress moreEqs => solveMany s us (moreEqs ++ eqs)
     Unsolvable eq err => case c of
