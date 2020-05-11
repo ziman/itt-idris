@@ -35,16 +35,18 @@ Uncertains : Type
 Uncertains = SortedMap MetaNum (List (n ** Term n))
 
 data Outcome : Type where
-  Solved : MetaNum -> (n' ** Term n') -> Outcome
+  Solved : MetaNum -> (n ** Term n) -> Outcome
   Progress : List Equality -> Outcome
   Unsolvable : Equality -> Failure Check.Error -> Outcome
 
+substScope : MetaNum -> (n ** Term n) -> (n' ** Term n') -> (n'' ** Term n'')
+substScope mn ntm ntm' = ?rhs_substScope
+
 substC : MetaNum -> (n ** Term n) -> Subst -> Subst
-substC mn ntm = map $ \case
-  (n' ** tm') => ?rhs_substC
+substC mn ntm = map (substScope mn ntm)
 
 substU : MetaNum -> (n ** Term n) -> Uncertains -> Uncertains
-substU mn ntm = ?rhs_substU
+substU mn ntm = map (map $ substScope mn ntm)
 
 addCandidate : MetaNum -> (n ** Term n) -> Uncertains -> Uncertains
 addCandidate mn ntm = merge (insert mn [ntm] empty)
