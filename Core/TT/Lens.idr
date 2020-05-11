@@ -35,6 +35,7 @@ mutual
   ttQ g (App q f x) = App <$> g q <*> ttQ g f <*> ttQ g x
   ttQ g Type_ = pure Type_
   ttQ g Erased = pure Erased
+  ttQ g (Meta i) = pure $ Meta i
 
 mutual
   -- repeated weakening, identity at runtime
@@ -61,6 +62,7 @@ mutual
   ttVars g (App q f x) = App q <$> ttVars g f <*> ttVars g x
   ttVars g Type_ = pure Type_
   ttVars g Erased = pure Erased
+  ttVars g (Meta i) = pure $ Meta i
 
   export
   subst : (Fin n -> TT q m) -> TT q n -> TT q m
@@ -89,3 +91,19 @@ mapQ f g = runIdentity . f (pure . g)
 export
 eraseQ : Traversal a b q () -> a -> b
 eraseQ f = mapQ f (const ())
+
+export
+strengthenVar : Fin (S n) -> Maybe (TT q n)
+strengthenVar  FZ    = Nothing
+strengthenVar (FS i) = Just (V i)
+
+export
+strengthen : TT q (S n) -> Maybe (TT q n)
+strengthen = ttVars strengthenVar
+
+export
+strengthenMax : (n : Nat) -> TT q n -> (n' ** TT q n')
+strengthenMax Z tm = (Z ** tm)
+strengthenMax (S n) tm with (strengthen tm)
+  strengthenMax (S n) tm | Just tm' = strengthenMax n tm'
+  strengthenMax (S n) tm | Nothing  = (S n ** tm)

@@ -205,6 +205,7 @@ mutual
         (f, args) => stuckTm rf gs f args  -- not an application of a global
   red rf gs Type_ = pure Type_
   red rf gs Erased = pure Erased
+  red rf gs (Meta i) = pure $ Meta i
 
   covering
   stuckTm : Form -> Globals q -> TT q n -> List (q, TT q n) -> Either EvalError (TT q n)

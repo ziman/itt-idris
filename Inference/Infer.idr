@@ -38,7 +38,7 @@ public export
 data ErrorMessage : Nat -> Type where
   CantConvert : TT Evar n -> TT Evar n -> ErrorMessage n
   NotPi : TT Evar n -> ErrorMessage n
-  CantInferErased : ErrorMessage n
+  CantInfer : TT Evar n -> ErrorMessage n
   CantInferWildcard : ErrorMessage n
   NotImplemented : ErrorMessage n
   QuantityMismatch : Q -> Q -> ErrorMessage n
@@ -54,8 +54,8 @@ showEM ctx (CantConvert x y)
     = "can't convert: " ++ showTm ctx x ++ " with " ++ showTm ctx y
 showEM ctx (NotPi x)
     = "not a pi: " ++ showTm ctx x
-showEM ctx CantInferErased
-    = "can't infer types for erased terms"
+showEM ctx (CantInfer tm)
+    = "can't infer type for " ++ showTm ctx tm
 showEM ctx CantInferWildcard
     = "can't infer types for pattern wildcards"
 showEM ctx NotImplemented
@@ -428,7 +428,7 @@ inferTm tm@(App appQ f x) = traceTm tm "APP" $ do
     _ => throw $ NotPi fTy
 
 inferTm Type_ = pure Type_
-inferTm Erased = throw CantInferErased
+inferTm tm = throw $ CantInfer tm
 
 mutual
   covering export

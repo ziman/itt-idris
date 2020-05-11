@@ -76,6 +76,7 @@ mutual
       <+> pretty (PTT False UseParens, ctx) x
     pretty (PTT top nl, ctx) Type_ = text "Type"
     pretty (PTT top nl, ctx) Erased = text "_"
+    pretty (PTT top nl, ctx) (Meta i) = show i
 
 export
 ShowQ q => Pretty (Context q n) (TT q n) where

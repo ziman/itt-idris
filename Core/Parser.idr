@@ -214,7 +214,10 @@ ident = terminal "identifier" $ \t => case tok t of
 
 pragma : String -> Rule ()
 pragma s = terminal ("%" ++ s) $ \t => case tok t of
-  Pragma s => Just ()
+  Pragma pn =>
+    if pn == s
+      then Just ()
+      else Nothing
   _ => Nothing
 
 stringLit : Rule String
@@ -283,6 +286,7 @@ mutual
   atom : Vect n String -> Rule (Term n)
   atom ns = 
     var ns
+    <|> meta
     <|> natSugar
     <|> ref ns
     <|> (kwd "Type" *> pure Type_)
@@ -300,11 +304,10 @@ mutual
   term ns
     = lam ns
     <|> pi ns
-    <|> erased
     <|> app ns
 
-  erased : Rule (Term n)
-  erased = token Underscore *> pure Erased
+  meta : Rule (Term n)
+  meta = token Underscore *> pure (Meta MNUnknown)
 
 patVar : Vect n String -> Rule (Pat (Maybe Q) n)
 patVar ns = PV <$> varName ns

@@ -36,7 +36,7 @@ data ErrorMessage : Nat -> Type where
   QuantityMismatch : (dn : String) -> (dq : Q) -> (inferredQ : Q) -> ErrorMessage n
   AppQuantityMismatch : (fTy : Ty n) -> (tm : Term n) -> ErrorMessage n
   NotPi : Ty n -> ErrorMessage n
-  CantCheckErased : ErrorMessage n
+  CantCheck : TT Q n -> ErrorMessage n
   CantCheckWildcard : ErrorMessage n
   NotImplemented : ErrorMessage n
   WHNFError : EvalError -> ErrorMessage n
@@ -59,8 +59,8 @@ showEM ctx (WHNFError e)
     = "normalisation error: " ++ show e
 showEM ctx (UnknownGlobal n)
     = "unknown global: " ++ show n
-showEM ctx CantCheckErased
-    = "can't check erased terms"
+showEM ctx (CantCheck tm)
+    = "can't check: " ++ showTm ctx tm
 showEM ctx CantCheckWildcard
     = "can't check wildcard patterns"
 showEM ctx NotImplemented
@@ -326,7 +326,7 @@ mutual
       _ => throw $ NotPi fTy
 
   checkTm Type_ = pure Type_
-  checkTm Erased = throw CantCheckErased
+  checkTm tm = throw $ CantCheck tm
 
 mutual
   -- (how many times we inspect, type)

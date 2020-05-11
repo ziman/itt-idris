@@ -48,6 +48,7 @@ eraseTm ctx (App L f x) = App () (eraseTm ctx f) (eraseTm ctx x)
 eraseTm ctx (App R f x) = App () (eraseTm ctx f) (eraseTm ctx x)
 eraseTm ctx Type_ = Type_
 eraseTm ctx Erased = Erased
+eraseTm ctx (Meta i) = Meta i  -- should never happen
 
 mutual
   eraseArgs : (ctx : Context Q n) -> List (Q, Pat Q n) -> List ((), Pat () (eraseN ctx))

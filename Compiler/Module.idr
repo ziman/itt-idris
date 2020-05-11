@@ -10,6 +10,12 @@ import public Core.TT
 import public Compiler.Monad
 import public Compiler.Config
 
+import Elab.Core
+import Elab.Lens
+import Elab.Check
+import Elab.Solve
+import Elab.Equality
+
 import Inference.Incremental
 import Inference.WholeProgram
 
@@ -35,8 +41,31 @@ processModule cfg raw = do
           then applyDefaultCtorQuantities raw
           else raw
 
+  banner "# Elaboration #"
+  let numbered = numberMetas rawCQ
+  prn numbered
+
+  eqs <- case gatherEqualities numbered of
+    Left e => throw $ "could not gather equalities: " ++ show e
+    Right eqs => pure eqs
+
+  log ""
+  log "Equalities:"
+  prn $ indentBlock (map (pretty ()) eqs)
+
+  solution <- case solve eqs of
+    Left e => throw $ "could not solve equalities: " ++ show e
+    Right s => pure s
+
+  log ""
+  log $ "Solved metas: " ++ show (keys solution)
+
+  banner "# Elaborated #"
+  let elaborated = fill solution numbered
+  prn elaborated
+
   banner "# Evarified #"
-  let evarified = evarify globalsQ rawCQ
+  let evarified = evarify globalsQ elaborated
   prn evarified
 
   vals <- case cfg.incrementalInference of
