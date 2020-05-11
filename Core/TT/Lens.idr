@@ -91,3 +91,19 @@ mapQ f g = runIdentity . f (pure . g)
 export
 eraseQ : Traversal a b q () -> a -> b
 eraseQ f = mapQ f (const ())
+
+export
+strengthenVar : Fin (S n) -> Maybe (TT q n)
+strengthenVar  FZ    = Nothing
+strengthenVar (FS i) = Just (V i)
+
+export
+strengthen : TT q (S n) -> Maybe (TT q n)
+strengthen = ttVars strengthenVar
+
+export
+strengthenMax : (n : Nat) -> TT q n -> (n' ** TT q n')
+strengthenMax Z tm = (Z ** tm)
+strengthenMax (S n) tm with (strengthen tm)
+  strengthenMax (S n) tm | Just tm' = strengthenMax n tm'
+  strengthenMax (S n) tm | Nothing  = (S n ** tm)

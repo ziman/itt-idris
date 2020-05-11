@@ -34,10 +34,10 @@ Subst = Lens.Subst (Maybe Q)
 Uncertains : Type
 Uncertains = DepSortedMap (MetaNum, Nat) (\mnn => List (Term (snd mnn)))
 
-data Outcome : Nat -> Type where
-  Solved : MetaNum -> Term n -> Outcome n
-  Progress : List Equality -> Outcome n
-  Stuck : Equality -> Failure Check.Error -> Outcome n
+data Outcome : Type where
+  Solved : MetaNum -> (n' ** Term n') -> Outcome
+  Progress : List Equality -> Outcome
+  Stuck : Equality -> Failure Check.Error -> Outcome
 
 substC : MetaNum -> (n : Nat) -> Term n -> Subst -> Subst
 substC mn n tm = map (subst mlTm mn n tm)
@@ -50,9 +50,9 @@ addCandidate mn n tm = insertWith (mn, n) $ \case
   Nothing => [tm]
   Just tms => tm :: tms
 
-solveOne : {n : Nat} -> Certainty -> Suspended (Maybe Q) n -> Term n -> Term n -> Outcome n
-solveOne c ts (Meta mn) rhs = Solved mn rhs
-solveOne c ts lhs (Meta mn) = Solved mn lhs
+solveOne : {n : Nat} -> Certainty -> Suspended (Maybe Q) n -> Term n -> Term n -> Outcome
+solveOne c ts (Meta mn) rhs = Solved mn (strengthenMax _ rhs)
+solveOne c ts lhs (Meta mn) = Solved mn (strengthenMax _ lhs)
 solveOne c ts lhs rhs =
   case resume {q = Maybe Q} {w = List Equality} ts $ (lhs ~= rhs) c of
     Left e => Stuck (MkE c ts lhs rhs) e
@@ -71,12 +71,12 @@ solveMany : Subst -> Uncertains -> List Equality -> Either Solve.Error Subst
 solveMany s us [] = Right (addU s $ toList us)
 solveMany s us (MkE {n} c ts lhs rhs :: eqs) =
   case solveOne c ts (substMany mlTm s lhs) (substMany mlTm s rhs) of
-    Solved mn tm => case c of
-      Uncertain => solveMany s (addCandidate mn n tm us) eqs
+    Solved mn (n' ** tm') => case c of
+      Uncertain => solveMany s (addCandidate mn n' tm' us) eqs
       Certain =>
         solveMany
-          (insert (mn, n)  tm  $ substC mn n tm  s)
-          (delete (mn, n)      $ substU mn n tm us)
+          (insert (mn, n')  tm'  $ substC mn n' tm'  s)
+          (delete (mn, n')       $ substU mn n' tm' us)
           eqs
     Progress moreEqs => solveMany s us (moreEqs ++ eqs)
     Stuck eq err => Left $ CantUnify eq err
