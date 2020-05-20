@@ -14,6 +14,11 @@ public export
 data Certainty = Certain | Uncertain
 
 export
+symbol : Certainty -> Doc
+symbol Certain = text "="
+symbol Uncertain = text "=?"
+
+export
 Semigroup Certainty where
   Certain <+> Certain = Certain
   _ <+> _ = Uncertain
@@ -29,7 +34,5 @@ record Equality where
 
 export
 Pretty () Equality where
-  pretty () (MkE Certain tc lhs rhs) =
-    pretty (getCtx {q=Maybe Q} tc) lhs <++> text "=" <++> pretty (getCtx {q=Maybe Q} tc) rhs
-  pretty () (MkE Uncertain tc lhs rhs) =
-    pretty (getCtx {q=Maybe Q} tc) lhs <++> text "=?" <++> pretty (getCtx {q=Maybe Q} tc) rhs
+  pretty () (MkE c tc lhs rhs) =
+    pretty (getCtx {q=Maybe Q} tc) lhs <++> symbol c <++> pretty (getCtx {q=Maybe Q} tc) rhs

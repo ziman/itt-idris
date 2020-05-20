@@ -50,8 +50,9 @@ Term = TT (Maybe Q)
 Ty : Nat -> Type
 Ty = TT (Maybe Q)
 
-cantConvert : Term n -> Term n -> TC n a
-cantConvert lhs rhs = do
+cantConvert : Certainty -> Term n -> Term n -> TC n ()
+cantConvert Uncertain _ _ = pure ()
+cantConvert Certain lhs rhs = do
   lhsD <- prettyCtx lhs
   rhsD <- prettyCtx rhs
   throw $ CantConvert lhsD rhsD
@@ -72,17 +73,20 @@ mutual
   (lhs ~= rhs) c = do
     lhsWHNF <- redTC WHNF lhs
     rhsWHNF <- redTC WHNF rhs
-    conv c lhsWHNF rhsWHNF
+    ld <- prettyCtx lhsWHNF
+    rd <- prettyCtx rhsWHNF
+    withBt (text "when converting" <++> ld <++> symbol c <++> rd) $
+      conv c lhsWHNF rhsWHNF
 
   conv : {n : Nat} -> Certainty -> Term n -> Term n -> TC n ()
   conv c (V i) (V j) =
     if i == j
       then pure ()
-      else cantConvert (V i) (V j)
+      else cantConvert c (V i) (V j)
   conv c (P n) (P n') =
     if n == n'
       then pure ()
-      else cantConvert (P n) (P n')
+      else cantConvert c (P n) (P n')
   conv c (Lam b@(B n q ty) rhs) (Lam (B n' q' ty') rhs') = do
     q ~~ q'
     (ty ~= ty') c
@@ -109,7 +113,7 @@ mutual
   conv c tm (Meta i) = do
     tc <- suspend
     emit [MkE c tc (Meta i) tm]
-  conv c lhs rhs = cantConvert lhs rhs
+  conv c lhs rhs = cantConvert c lhs rhs
 
 mutual
   eqsBnd : {n : Nat} -> Binding (Maybe Q) n -> TC n ()
