@@ -102,7 +102,7 @@ namespace Core
   export
   emit : w -> TC e w q n ()
   emit w = MkTC $ \env => Right (MkR w ())
-  
+
   export
   censor : (w -> w) -> TC e w q n a -> TC e w q n a
   censor f (MkTC g) = MkTC $ \env => g env <&> \(MkR w x) => MkR (f w) x
@@ -110,6 +110,10 @@ namespace Core
   export
   throw : e -> TC e w q n a
   throw err = MkTC $ \env => Left (MkF env.backtrace err)
+
+  export
+  withBt : Doc -> TC e w q n a -> TC e w q n a
+  withBt doc = withEnv record{ backtrace $= (doc ::) }
 
   namespace Suspend
     export  -- ssh, don't tell anyone
@@ -172,3 +176,9 @@ lookupGlobal n =
 export
 prettyCtx : Pretty (Context q n) a => Monoid w => a -> TC e w q n Doc
 prettyCtx x = pretty <$> getEnv (.context) <*> pure x
+
+export
+withBtCtx : Pretty (Context q n) a => Monoid w => String -> a -> TC e w q n b -> TC e w q n b
+withBtCtx msg x tc = do
+  ctx <- getCtx
+  withBt (text msg <++> pretty ctx x) tc

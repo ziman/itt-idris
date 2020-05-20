@@ -118,31 +118,35 @@ mutual
     (tyTy ~= Type_) Certain
 
   eqsTm : {n : Nat} -> Term n -> TC n (Ty n)
-  eqsTm (P n) = lookupGlobal n <&> .type
-  eqsTm (V i) = lookup i <&> .type
-  eqsTm (Lam b rhs) = do
-    eqsBnd b
-    Pi b <$> withBnd b (eqsTm rhs)
-  eqsTm (Pi b rhs) = do
-    eqsBnd b
-    withBnd b $ do
-      rhsTy <- eqsTm rhs
-      (rhsTy ~= Type_) Certain
-    pure Type_
-  eqsTm (App q f x) = do
-    fTy <- redTC WHNF =<< eqsTm f
-    xTy <- eqsTm x
-    case fTy of
-      Pi (B piN piQ piTy) piRhs => do
-        (piTy ~= xTy) Certain
-        pure $ subst (substFZ x) piRhs
+  eqsTm tm = withBtCtx "when checking term" tm $ case tm of
+    P n => lookupGlobal n <&> .type
+    V i => lookup i <&> .type
 
-      _ => throw . NotPi =<< prettyCtx fTy
+    Lam b rhs => do
+      eqsBnd b
+      Pi b <$> withBnd b (eqsTm rhs)
 
-  eqsTm Type_ = pure Type_
-  eqsTm (Meta (MNValue i)) = pure $ Meta (MNType i)
-  eqsTm (Meta (MNType _)) = pure Type_
-  eqsTm tm = throw . CantInfer =<< prettyCtx tm
+    Pi b rhs => do
+      eqsBnd b
+      withBnd b $ do
+        rhsTy <- eqsTm rhs
+        (rhsTy ~= Type_) Certain
+      pure Type_
+
+    App q f x => do
+      fTy <- redTC WHNF =<< eqsTm f
+      xTy <- eqsTm x
+      case fTy of
+        Pi (B piN piQ piTy) piRhs => do
+          (piTy ~= xTy) Certain
+          pure $ subst (substFZ x) piRhs
+
+        _ => throw . NotPi =<< prettyCtx fTy
+
+    Type_ => pure Type_
+    Meta (MNValue i) => pure $ Meta (MNType i)
+    Meta (MNType _) => pure Type_
+    _ => throw . CantInfer =<< prettyCtx tm
 
 mutual
   eqsPat : {n : Nat} -> Pat (Maybe Q) n -> TC n (Ty n)
