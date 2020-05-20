@@ -1,0 +1,4 @@
+package itt
+depends = contrib
+main = Compiler.Main
+executable = itt
