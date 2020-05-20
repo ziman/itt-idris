@@ -1,3 +1,4 @@
+
 #############
 # Desugared #
 #############
@@ -38,6 +39,94 @@ id : (a : Type) -> (x : a) -> a {
 main :L Bool {
   main  ~> (\x : U (C False). g x) d
 }
+
+###############
+# Elaboration #
+###############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+mutual {
+  constructor/0 T : Type.
+  
+  constructor/1 C : (pf :I Bool) -> T.
+}
+
+postulate U : (t :E T) -> Type.
+
+postulate g : (x :L U (C True)) -> Bool.
+
+postulate b : Bool.
+
+postulate d : U (C b).
+
+not : (x : Bool) -> Bool {
+  not True ~> False
+  
+  not False ~> True
+}
+
+id : (a : Type) -> (x : a) -> a {
+  forall (a : Type) (x : a)
+  id a x ~> x
+}
+
+main :L Bool {
+  main  ~> (\x : U (C False). g x) d
+}
+
+Equalities:
+
+
+Solved metas: []
+
+##############
+# Elaborated #
+##############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+mutual {
+  constructor/0 T : Type.
+  
+  constructor/1 C : (pf :I Bool) -> T.
+}
+
+postulate U : (t :E T) -> Type.
+
+postulate g : (x :L U (C True)) -> Bool.
+
+postulate b : Bool.
+
+postulate d : U (C b).
+
+not : (x : Bool) -> Bool {
+  not True ~> False
+  
+  not False ~> True
+}
+
+id : (a : Type) -> (x : a) -> a {
+  forall (a : Type) (x : a)
+  id a x ~> x
+}
+
+main :L Bool {
+  main  ~> (\x : U (C False). g x) d
+}
+
 #############
 # Evarified #
 #############
@@ -80,6 +169,7 @@ main :L Bool {
 }
 Running erasure inference...
 
+
 ########################
 # Inferred constraints #
 ########################
@@ -119,12 +209,14 @@ L ~ 24
 11 ~ 22
 21 ~ 20
 22 ~ 8
+
 #######################
 # Deferred equalities #
 #######################
 
 22 -> C False ~ C True
 8 -> C b ~ C False
+
 
 #####################
 # Variance of evars #
@@ -135,6 +227,7 @@ contravariant: [14, 15, 26]
   -> iteration 1
     C False ~ C True
     C b ~ C False
+
 
 ###################
 # Final valuation #
@@ -163,6 +256,7 @@ contravariant: [14, 15, 26]
   26 -> L
   27 -> L
   28 -> L
+
 
 #####################
 # Annotated program #
@@ -204,6 +298,7 @@ id :I (a :I Type) -> (x :L a) -> a {
 main :L Bool {
   main  ~> (\x :R U (C False). g x) d
 }
+
 ##########
 # Erased #
 ##########
@@ -215,6 +310,7 @@ postulate d.
 main {
   main  ~> (\x. g x) d
 }
+
 ################
 # NF of `main` #
 ################

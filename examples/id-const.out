@@ -1,3 +1,4 @@
+
 #############
 # Desugared #
 #############
@@ -40,6 +41,98 @@ apply : (f : (_ : Bool) -> Bool) -> (y : Bool) -> Bool {
 main :L Pair {
   main  ~> P (apply not (true False)) (apply false (true False))
 }
+
+###############
+# Elaboration #
+###############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+mutual {
+  constructor/0 Pair : Type.
+  
+  constructor/2 P : (x :L Bool) -> (y :L Bool) -> Pair.
+}
+
+not : (x : Bool) -> Bool {
+  not True ~> False
+  
+  not False ~> True
+}
+
+false : (x : Bool) -> Bool {
+  forall (x : Bool)
+  false x ~> False
+}
+
+true : (x : Bool) -> Bool {
+  forall (x : Bool)
+  true x ~> True
+}
+
+apply : (f : (_ : Bool) -> Bool) -> (y : Bool) -> Bool {
+  forall (f : (_ : Bool) -> Bool) (y : Bool)
+  apply f y ~> f y
+}
+
+main :L Pair {
+  main  ~> P (apply not (true False)) (apply false (true False))
+}
+
+Equalities:
+
+
+Solved metas: []
+
+##############
+# Elaborated #
+##############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+mutual {
+  constructor/0 Pair : Type.
+  
+  constructor/2 P : (x :L Bool) -> (y :L Bool) -> Pair.
+}
+
+not : (x : Bool) -> Bool {
+  not True ~> False
+  
+  not False ~> True
+}
+
+false : (x : Bool) -> Bool {
+  forall (x : Bool)
+  false x ~> False
+}
+
+true : (x : Bool) -> Bool {
+  forall (x : Bool)
+  true x ~> True
+}
+
+apply : (f : (_ : Bool) -> Bool) -> (y : Bool) -> Bool {
+  forall (f : (_ : Bool) -> Bool) (y : Bool)
+  apply f y ~> f y
+}
+
+main :L Pair {
+  main  ~> P (apply not (true False)) (apply false (true False))
+}
+
 #############
 # Evarified #
 #############
@@ -83,6 +176,7 @@ main :L Pair {
   main  ~> P (apply not (true False)) (apply false (true False))
 }
 Running erasure inference...
+
 
 ########################
 # Inferred constraints #
@@ -142,9 +236,11 @@ L ~ 19
 7 ~ 16
 8 ~ 24
 32 ~ 26
+
 #######################
 # Deferred equalities #
 #######################
+
 
 
 #####################
@@ -153,6 +249,7 @@ L ~ 19
 
 covariant: [7]
 contravariant: [6, 8, 16, 28, 32]
+
 ###################
 # Final valuation #
 ###################
@@ -190,6 +287,7 @@ contravariant: [6, 8, 16, 28, 32]
   32 -> I
   33 -> I
   34 -> I
+
 
 #####################
 # Annotated program #
@@ -233,6 +331,7 @@ apply :R (f :L (_ :R Bool) -> Bool) -> (y :R Bool) -> Bool {
 main :L Pair {
   main  ~> P (apply not (true False)) (apply false (true False))
 }
+
 ##########
 # Erased #
 ##########
@@ -268,6 +367,7 @@ apply {
 main {
   main  ~> P (apply not true) (apply false true)
 }
+
 ################
 # NF of `main` #
 ################

@@ -1,3 +1,4 @@
+
 #############
 # Desugared #
 #############
@@ -49,6 +50,116 @@ fR : (x :R T) -> Bool {
 main : Type {
   main  ~> Type
 }
+
+###############
+# Elaboration #
+###############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+and : (_ : Bool) -> (_ : Bool) -> Bool {
+  and True True ~> True
+  
+  and True False ~> False
+  
+  and False True ~> False
+  
+  and False False ~> False
+}
+
+mutual {
+  constructor/0 T : Type.
+  
+  constructor/1 C : (x :L Bool) -> T.
+}
+
+fI : (x :I T) -> Bool {
+  forall (x :I Bool)
+  fI ({C} x) ~> True
+}
+
+fE : (x :E T) -> Bool {
+  forall (x :E Bool)
+  fE ({C} x) ~> True
+}
+
+fL : (x :L T) -> Bool {
+  forall (x :L Bool)
+  fL (C x) ~> x
+}
+
+fR : (x :R T) -> Bool {
+  forall (x :R Bool)
+  fR (C x) ~> and x x
+}
+
+main : Type {
+  main  ~> Type
+}
+
+Equalities:
+
+
+Solved metas: []
+
+##############
+# Elaborated #
+##############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+and : (_ : Bool) -> (_ : Bool) -> Bool {
+  and True True ~> True
+  
+  and True False ~> False
+  
+  and False True ~> False
+  
+  and False False ~> False
+}
+
+mutual {
+  constructor/0 T : Type.
+  
+  constructor/1 C : (x :L Bool) -> T.
+}
+
+fI : (x :I T) -> Bool {
+  forall (x :I Bool)
+  fI ({C} x) ~> True
+}
+
+fE : (x :E T) -> Bool {
+  forall (x :E Bool)
+  fE ({C} x) ~> True
+}
+
+fL : (x :L T) -> Bool {
+  forall (x :L Bool)
+  fL (C x) ~> x
+}
+
+fR : (x :R T) -> Bool {
+  forall (x :R Bool)
+  fR (C x) ~> and x x
+}
+
+main : Type {
+  main  ~> Type
+}
+
 #############
 # Evarified #
 #############
@@ -101,6 +212,7 @@ main :30 Type {
   main  ~> Type
 }
 Running erasure inference...
+
 
 ########################
 # Inferred constraints #
@@ -171,9 +283,11 @@ R ≥ sum
   product [7]
 6 ~ 29
 7 ~ 28
+
 #######################
 # Deferred equalities #
 #######################
+
 
 
 #####################
@@ -182,6 +296,7 @@ R ≥ sum
 
 covariant: []
 contravariant: [6, 7]
+
 ###################
 # Final valuation #
 ###################
@@ -213,6 +328,7 @@ contravariant: [6, 7]
   28 -> L
   29 -> L
   30 -> L
+
 
 #####################
 # Annotated program #
@@ -265,6 +381,7 @@ fR :I (x :R T) -> Bool {
 main :L Type {
   main  ~> Type
 }
+
 ##########
 # Erased #
 ##########
@@ -272,6 +389,7 @@ main :L Type {
 main {
   main  ~> Type
 }
+
 ################
 # NF of `main` #
 ################

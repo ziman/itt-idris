@@ -1,4 +1,4 @@
-%incremental
+%options "--incremental"
 
 data Bool : Type {
   True : Bool,

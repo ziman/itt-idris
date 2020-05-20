@@ -1,3 +1,4 @@
+
 #############
 # Desugared #
 #############
@@ -242,6 +243,502 @@ testList : List {
 main : Maybe (IsPalindrome testList) {
   main  ~> isPalindrome testList
 }
+
+###############
+# Elaboration #
+###############
+
+mutual {
+  constructor/0 N : Type.
+  
+  constructor/0 Z : N.
+  
+  constructor/1 S : (_ :L N) -> N.
+}
+
+mutual {
+  constructor/0 B : Type.
+  
+  constructor/0 T : B.
+  
+  constructor/0 F : B.
+}
+
+mutual {
+  constructor/0 List : Type.
+  
+  constructor/2 Cons : (_ :L B) -> (_ :L List) -> List.
+  
+  constructor/0 Nil : List.
+}
+
+mutual {
+  constructor/1 Maybe : (_ :L Type) -> Type.
+  
+  constructor/1 Nothing : (a :I Type) -> Maybe a.
+  
+  constructor/2 Just : (a :I Type) -> (x :L a) -> Maybe a.
+}
+
+not : (_ : B) -> B {
+  not T ~> F
+  
+  not F ~> T
+}
+
+mutual {
+  constructor/3 Id : (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+  
+  constructor/2 Refl : (a :I Type) -> (x :I a) -> Id a x x.
+}
+
+id : (a : Type) -> (_ : a) -> a {
+  id  ~> \a : Type.
+      \x : a.
+        x
+}
+
+subst : (a : Type) -> (P : (_ : a) -> Type) -> (x : a) -> (y : a) -> (eq : Id a x y) -> (w : P x) -> P y {
+  forall (a : Type) (P : (x :L a) -> Type) (x : a)
+  subst a P x [x] ({Refl} [a] [x]) ~> \w : P x.
+      w
+}
+
+cong : (a : Type) -> (b : Type) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (eq : Id a x y) -> Id b (f x) (f y) {
+  forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a)
+  cong a b f x [x] [Refl a x] ~> Refl b (f x)
+}
+
+one : (x : B) -> List {
+  forall (x : B)
+  one x ~> Cons x Nil
+}
+
+app : (_ : List) -> (_ : List) -> List {
+  forall (ys : List)
+  app Nil ys ~> ys
+  
+  forall (x : B) (xs : List) (ys : List)
+  app (Cons x xs) ys ~> Cons x (app xs ys)
+}
+
+appRightNeutral : (ys : List) -> Id List ys (app ys Nil) {
+  appRightNeutral Nil ~> Refl List Nil
+  
+  forall (x : B) (xs : List)
+  appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
+}
+
+appAssoc : (xs : List) -> (ys : List) -> (zs : List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
+  forall (ys : List) (zs : List)
+  appAssoc Nil ys zs ~> Refl List (app ys zs)
+  
+  forall (x : B) (xs : List) (ys : List) (zs : List)
+  appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
+}
+
+mutual {
+  constructor/1 Rev : (_ :L List) -> Type.
+  
+  constructor/0 RNil : Rev Nil.
+  
+  constructor/3 RSnoc : (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
+}
+
+rev' : (xs : List) -> (rxs : Rev xs) -> (ys : List) -> Rev (app xs ys) {
+  forall (xs : List) (rxs : Rev xs)
+  rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
+  
+  forall (xs : List) (rxs : Rev xs) (y : B) (ys : List)
+  rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
+}
+
+rev : (xs : List) -> Rev xs {
+  forall (xs : List)
+  rev xs ~> rev' Nil RNil xs
+}
+
+reverse' : (xs : List) -> (rxs : Rev xs) -> List {
+  reverse' [Nil] RNil ~> Nil
+  
+  forall (xs : List) (x : B) (rxs : Rev xs)
+  reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
+}
+
+reverse : (_ : List) -> List {
+  forall (xs : List)
+  reverse xs ~> reverse' xs (rev xs)
+}
+
+mutual {
+  constructor/1 V : (_ :L List) -> Type.
+  
+  constructor/0 VNil : V Nil.
+  
+  constructor/1 VOne : (x :L B) -> V (Cons x Nil).
+  
+  constructor/4 VTwo : (x :L B) -> (xs :I List) -> (u :L V xs) -> (y :L B) -> V (Cons x (app xs (one y))).
+}
+
+length : (_ : List) -> N {
+  length Nil ~> Z
+  
+  forall (x : B) (xs : List)
+  length (Cons x xs) ~> S (length xs)
+}
+
+index : (_ : N) -> (_ : List) -> (_ : List) -> List {
+  forall (xs : List) (ys : List)
+  index Z xs ys ~> Nil
+  
+  forall (x : B) (xs : List) (y : B) (ys : List)
+  index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
+  
+  forall (n : N) (x : B) (xs : List) (y : B) (ys : List)
+  index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
+  
+  forall (n : N)
+  index (S n) Nil Nil ~> Nil
+}
+
+build : (n : N) -> (xs : List) -> (ys : List) -> V (index n xs ys) {
+  forall (xs : List) (ys : List)
+  build Z xs ys ~> VNil
+  
+  forall (x : B) (xs : List) (y : B) (ys : List)
+  build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
+  
+  forall (n : N) (x : B) (xs : List) (y : B) (ys : List)
+  build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
+  
+  forall (n : N)
+  build (S n) Nil Nil ~> VNil
+}
+
+postulate eq : (xs : List) -> Id List (index (length xs) xs (reverse xs)) xs.
+
+toV : (xs : List) -> V xs {
+  forall (xs : List)
+  toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
+}
+
+mutual {
+  constructor/1 IsPalindrome : (_ :L List) -> Type.
+  
+  constructor/0 PNil : IsPalindrome Nil.
+  
+  constructor/1 POne : (b :L B) -> IsPalindrome (Cons b Nil).
+  
+  constructor/3 PTwo : (b :L B) -> (xs :I List) -> (pf :L IsPalindrome xs) -> IsPalindrome (Cons b (app xs (one b))).
+}
+
+decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
+  decEq T T ~> Just (Id B T T) (Refl B T)
+  
+  decEq F F ~> Just (Id B F F) (Refl B F)
+  
+  decEq T F ~> Nothing (Id B T F)
+  
+  decEq F T ~> Nothing (Id B F T)
+}
+
+isPalinV' : (x : B) -> (y : B) -> (xs : List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
+  forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs)
+  isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
+  
+  forall (x : B) (y : B) (xs : List) (v : V xs) (pfB : Maybe (Id B x y)) (pfV : Maybe (IsPalindrome xs))
+  isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
+}
+
+isPalinV : (xs : List) -> (v : V xs) -> Maybe (IsPalindrome xs) {
+  isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
+  
+  forall (x : B)
+  isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
+  
+  forall (x : B) (xs : List) (y : B) (v : V xs)
+  isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
+}
+
+isPalindrome : (xs : List) -> Maybe (IsPalindrome xs) {
+  forall (xs : List)
+  isPalindrome xs ~> isPalinV xs (toV xs)
+}
+
+genList : (_ : B) -> (_ : N) -> List {
+  forall (b : B)
+  genList b Z ~> Nil
+  
+  forall (b : B) (n : N)
+  genList b (S n) ~> Cons b (genList (not b) n)
+}
+
+isJust : (a : Type) -> (x : Maybe a) -> B {
+  forall (a : Type) (x : a)
+  isJust a (Just [a] x) ~> T
+  
+  forall (a : Type)
+  isJust a (Nothing [a]) ~> F
+}
+
+testList : List {
+  testList  ~> Cons T (Cons F (Cons F (Cons T (Cons F (Cons F (Cons T Nil))))))
+}
+
+main : Maybe (IsPalindrome testList) {
+  main  ~> isPalindrome testList
+}
+
+Equalities:
+
+
+Solved metas: []
+
+##############
+# Elaborated #
+##############
+
+mutual {
+  constructor/0 N : Type.
+  
+  constructor/0 Z : N.
+  
+  constructor/1 S : (_ :L N) -> N.
+}
+
+mutual {
+  constructor/0 B : Type.
+  
+  constructor/0 T : B.
+  
+  constructor/0 F : B.
+}
+
+mutual {
+  constructor/0 List : Type.
+  
+  constructor/2 Cons : (_ :L B) -> (_ :L List) -> List.
+  
+  constructor/0 Nil : List.
+}
+
+mutual {
+  constructor/1 Maybe : (_ :L Type) -> Type.
+  
+  constructor/1 Nothing : (a :I Type) -> Maybe a.
+  
+  constructor/2 Just : (a :I Type) -> (x :L a) -> Maybe a.
+}
+
+not : (_ : B) -> B {
+  not T ~> F
+  
+  not F ~> T
+}
+
+mutual {
+  constructor/3 Id : (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+  
+  constructor/2 Refl : (a :I Type) -> (x :I a) -> Id a x x.
+}
+
+id : (a : Type) -> (_ : a) -> a {
+  id  ~> \a : Type.
+      \x : a.
+        x
+}
+
+subst : (a : Type) -> (P : (_ : a) -> Type) -> (x : a) -> (y : a) -> (eq : Id a x y) -> (w : P x) -> P y {
+  forall (a : Type) (P : (x :L a) -> Type) (x : a)
+  subst a P x [x] ({Refl} [a] [x]) ~> \w : P x.
+      w
+}
+
+cong : (a : Type) -> (b : Type) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (eq : Id a x y) -> Id b (f x) (f y) {
+  forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a)
+  cong a b f x [x] [Refl a x] ~> Refl b (f x)
+}
+
+one : (x : B) -> List {
+  forall (x : B)
+  one x ~> Cons x Nil
+}
+
+app : (_ : List) -> (_ : List) -> List {
+  forall (ys : List)
+  app Nil ys ~> ys
+  
+  forall (x : B) (xs : List) (ys : List)
+  app (Cons x xs) ys ~> Cons x (app xs ys)
+}
+
+appRightNeutral : (ys : List) -> Id List ys (app ys Nil) {
+  appRightNeutral Nil ~> Refl List Nil
+  
+  forall (x : B) (xs : List)
+  appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
+}
+
+appAssoc : (xs : List) -> (ys : List) -> (zs : List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
+  forall (ys : List) (zs : List)
+  appAssoc Nil ys zs ~> Refl List (app ys zs)
+  
+  forall (x : B) (xs : List) (ys : List) (zs : List)
+  appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
+}
+
+mutual {
+  constructor/1 Rev : (_ :L List) -> Type.
+  
+  constructor/0 RNil : Rev Nil.
+  
+  constructor/3 RSnoc : (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
+}
+
+rev' : (xs : List) -> (rxs : Rev xs) -> (ys : List) -> Rev (app xs ys) {
+  forall (xs : List) (rxs : Rev xs)
+  rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
+  
+  forall (xs : List) (rxs : Rev xs) (y : B) (ys : List)
+  rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
+}
+
+rev : (xs : List) -> Rev xs {
+  forall (xs : List)
+  rev xs ~> rev' Nil RNil xs
+}
+
+reverse' : (xs : List) -> (rxs : Rev xs) -> List {
+  reverse' [Nil] RNil ~> Nil
+  
+  forall (xs : List) (x : B) (rxs : Rev xs)
+  reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
+}
+
+reverse : (_ : List) -> List {
+  forall (xs : List)
+  reverse xs ~> reverse' xs (rev xs)
+}
+
+mutual {
+  constructor/1 V : (_ :L List) -> Type.
+  
+  constructor/0 VNil : V Nil.
+  
+  constructor/1 VOne : (x :L B) -> V (Cons x Nil).
+  
+  constructor/4 VTwo : (x :L B) -> (xs :I List) -> (u :L V xs) -> (y :L B) -> V (Cons x (app xs (one y))).
+}
+
+length : (_ : List) -> N {
+  length Nil ~> Z
+  
+  forall (x : B) (xs : List)
+  length (Cons x xs) ~> S (length xs)
+}
+
+index : (_ : N) -> (_ : List) -> (_ : List) -> List {
+  forall (xs : List) (ys : List)
+  index Z xs ys ~> Nil
+  
+  forall (x : B) (xs : List) (y : B) (ys : List)
+  index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
+  
+  forall (n : N) (x : B) (xs : List) (y : B) (ys : List)
+  index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
+  
+  forall (n : N)
+  index (S n) Nil Nil ~> Nil
+}
+
+build : (n : N) -> (xs : List) -> (ys : List) -> V (index n xs ys) {
+  forall (xs : List) (ys : List)
+  build Z xs ys ~> VNil
+  
+  forall (x : B) (xs : List) (y : B) (ys : List)
+  build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
+  
+  forall (n : N) (x : B) (xs : List) (y : B) (ys : List)
+  build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
+  
+  forall (n : N)
+  build (S n) Nil Nil ~> VNil
+}
+
+postulate eq : (xs : List) -> Id List (index (length xs) xs (reverse xs)) xs.
+
+toV : (xs : List) -> V xs {
+  forall (xs : List)
+  toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
+}
+
+mutual {
+  constructor/1 IsPalindrome : (_ :L List) -> Type.
+  
+  constructor/0 PNil : IsPalindrome Nil.
+  
+  constructor/1 POne : (b :L B) -> IsPalindrome (Cons b Nil).
+  
+  constructor/3 PTwo : (b :L B) -> (xs :I List) -> (pf :L IsPalindrome xs) -> IsPalindrome (Cons b (app xs (one b))).
+}
+
+decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
+  decEq T T ~> Just (Id B T T) (Refl B T)
+  
+  decEq F F ~> Just (Id B F F) (Refl B F)
+  
+  decEq T F ~> Nothing (Id B T F)
+  
+  decEq F T ~> Nothing (Id B F T)
+}
+
+isPalinV' : (x : B) -> (y : B) -> (xs : List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
+  forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs)
+  isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
+  
+  forall (x : B) (y : B) (xs : List) (v : V xs) (pfB : Maybe (Id B x y)) (pfV : Maybe (IsPalindrome xs))
+  isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
+}
+
+isPalinV : (xs : List) -> (v : V xs) -> Maybe (IsPalindrome xs) {
+  isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
+  
+  forall (x : B)
+  isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
+  
+  forall (x : B) (xs : List) (y : B) (v : V xs)
+  isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
+}
+
+isPalindrome : (xs : List) -> Maybe (IsPalindrome xs) {
+  forall (xs : List)
+  isPalindrome xs ~> isPalinV xs (toV xs)
+}
+
+genList : (_ : B) -> (_ : N) -> List {
+  forall (b : B)
+  genList b Z ~> Nil
+  
+  forall (b : B) (n : N)
+  genList b (S n) ~> Cons b (genList (not b) n)
+}
+
+isJust : (a : Type) -> (x : Maybe a) -> B {
+  forall (a : Type) (x : a)
+  isJust a (Just [a] x) ~> T
+  
+  forall (a : Type)
+  isJust a (Nothing [a]) ~> F
+}
+
+testList : List {
+  testList  ~> Cons T (Cons F (Cons F (Cons T (Cons F (Cons F (Cons T Nil))))))
+}
+
+main : Maybe (IsPalindrome testList) {
+  main  ~> isPalindrome testList
+}
+
 #############
 # Evarified #
 #############
@@ -2308,6 +2805,7 @@ inferring  main :517 Maybe (IsPalindrome testList) {
     main  ~> isPalindrome testList
   }
 
+
 ###################
 # Final valuation #
 ###################
@@ -3004,6 +3502,7 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   689 -> R
   690 -> R
 
+
 #####################
 # Annotated program #
 #####################
@@ -3249,6 +3748,7 @@ main :L Maybe (IsPalindrome testList) {
   main  ~> isPalindrome testList
 }
 
+
 ##########
 # Pruned #
 ##########
@@ -3493,6 +3993,7 @@ testList :R List {
 main :L Maybe (IsPalindrome testList) {
   main  ~> isPalindrome testList
 }
+
 ##########
 # Erased #
 ##########
@@ -3641,6 +4142,7 @@ testList {
 main {
   main  ~> isPalindrome testList
 }
+
 ################
 # NF of `main` #
 ################

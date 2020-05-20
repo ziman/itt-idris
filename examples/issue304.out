@@ -1,3 +1,4 @@
+
 #############
 # Desugared #
 #############
@@ -71,6 +72,160 @@ count : (n : Nat) -> (ctx : Vect n Typ) -> (i : Fin n) -> Elem Typ n (lookup n c
 main : Type {
   main  ~> Type
 }
+
+###############
+# Elaboration #
+###############
+
+mutual {
+  constructor/0 Nat : Type.
+  
+  constructor/0 Z : Nat.
+  
+  constructor/1 S : (_ : Nat) -> Nat.
+}
+
+mutual {
+  constructor/1 Fin : (_ : Nat) -> Type.
+  
+  constructor/1 FZ : (n : Nat) -> Fin (S n).
+  
+  constructor/2 FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
+}
+
+mutual {
+  constructor/2 Vect : (_ : Nat) -> (_ : Type) -> Type.
+  
+  constructor/1 Nil : (a : Type) -> Vect Z a.
+  
+  constructor/4 Cons : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+}
+
+mutual {
+  constructor/4 Elem : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Type.
+  
+  constructor/4 Here : (a : Type) -> (n : Nat) -> (x : a) -> (xs : Vect n a) -> Elem a n x (Cons a n x xs).
+  
+  constructor/6 There : (a : Type) -> (n : Nat) -> (x : a) -> (y : a) -> (xs : Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+}
+
+mutual {
+  constructor/0 Typ : Type.
+  
+  constructor/2 TLam : (_ : Typ) -> (_ : Typ) -> Typ.
+  
+  constructor/0 TNat : Typ.
+}
+
+mutual {
+  constructor/3 Term : (n : Nat) -> (_ : Typ) -> (_ : Vect n Typ) -> Type.
+  
+  constructor/4 Var : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Elem Typ n a ctx) -> Term n a ctx.
+  
+  constructor/5 Lam : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (b : Typ) -> (_ : Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  
+  constructor/4 Fix : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+}
+
+lookup : (n : Nat) -> (_ : Vect n Typ) -> (_ : Fin n) -> Typ {
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
+  
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ) (i : Fin n)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
+}
+
+count : (n : Nat) -> (ctx : Vect n Typ) -> (i : Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
+  
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ) (i : Fin n)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
+}
+
+main : Type {
+  main  ~> Type
+}
+
+Equalities:
+
+
+Solved metas: []
+
+##############
+# Elaborated #
+##############
+
+mutual {
+  constructor/0 Nat : Type.
+  
+  constructor/0 Z : Nat.
+  
+  constructor/1 S : (_ : Nat) -> Nat.
+}
+
+mutual {
+  constructor/1 Fin : (_ : Nat) -> Type.
+  
+  constructor/1 FZ : (n : Nat) -> Fin (S n).
+  
+  constructor/2 FS : (n : Nat) -> (_ : Fin n) -> Fin (S n).
+}
+
+mutual {
+  constructor/2 Vect : (_ : Nat) -> (_ : Type) -> Type.
+  
+  constructor/1 Nil : (a : Type) -> Vect Z a.
+  
+  constructor/4 Cons : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+}
+
+mutual {
+  constructor/4 Elem : (a : Type) -> (n : Nat) -> (_ : a) -> (_ : Vect n a) -> Type.
+  
+  constructor/4 Here : (a : Type) -> (n : Nat) -> (x : a) -> (xs : Vect n a) -> Elem a n x (Cons a n x xs).
+  
+  constructor/6 There : (a : Type) -> (n : Nat) -> (x : a) -> (y : a) -> (xs : Vect n a) -> (t :L Elem a n x xs) -> Elem a n x (Cons a n y xs).
+}
+
+mutual {
+  constructor/0 Typ : Type.
+  
+  constructor/2 TLam : (_ : Typ) -> (_ : Typ) -> Typ.
+  
+  constructor/0 TNat : Typ.
+}
+
+mutual {
+  constructor/3 Term : (n : Nat) -> (_ : Typ) -> (_ : Vect n Typ) -> Type.
+  
+  constructor/4 Var : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Elem Typ n a ctx) -> Term n a ctx.
+  
+  constructor/5 Lam : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (b : Typ) -> (_ : Term (S n) b (Cons Typ n a ctx)) -> Term n (TLam a b) ctx.
+  
+  constructor/4 Fix : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (_ : Term (S n) a (Cons Typ n a ctx)) -> Term n a ctx.
+}
+
+lookup : (n : Nat) -> (_ : Vect n Typ) -> (_ : Fin n) -> Typ {
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a
+  
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ) (i : Fin n)
+  lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
+}
+
+count : (n : Nat) -> (ctx : Vect n Typ) -> (i : Fin n) -> Elem Typ n (lookup n ctx i) ctx {
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx
+  
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ) (i : Fin n)
+  count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
+}
+
+main : Type {
+  main  ~> Type
+}
+
 #############
 # Evarified #
 #############
@@ -145,6 +300,7 @@ main :241 Type {
   main  ~> Type
 }
 Running erasure inference...
+
 
 ########################
 # Inferred constraints #
@@ -467,6 +623,7 @@ L ~ 188
 113 ~ 147
 114 ~ 148
 115 ~ 149
+
 #######################
 # Deferred equalities #
 #######################
@@ -491,12 +648,14 @@ L ~ 188
 147 -> lookup (S n) (Cons Typ n a ctx) (FS n i) ~ lookup n ctx i
 146 -> Cons Typ n a ctx ~ Cons Typ n a ctx
 
+
 #####################
 # Variance of evars #
 #####################
 
 covariant: []
 contravariant: [1, 2, 3, 4, 11, 12, 13, 14, 18, 19, 24, 28, 30, 31, 32, 35, 48, 49, 50, 51, 63, 64, 65, 68, 69, 85, 89, 91, 92, 95, 96, 97, 101, 102, 103, 104, 105, 122, 123, 124, 127, 136, 137, 140, 141, 144, 201, 202, 205]
+
 ###################
 # Final valuation #
 ###################
@@ -728,6 +887,7 @@ contravariant: [1, 2, 3, 4, 11, 12, 13, 14, 18, 19, 24, 28, 30, 31, 32, 35, 48, 
   240 -> I
   241 -> L
 
+
 #####################
 # Annotated program #
 #####################
@@ -801,6 +961,7 @@ count :I (n :I Nat) -> (ctx :I Vect n Typ) -> (i :L Fin n) -> Elem Typ n (lookup
 main :L Type {
   main  ~> Type
 }
+
 ##########
 # Erased #
 ##########
@@ -808,6 +969,7 @@ main :L Type {
 main {
   main  ~> Type
 }
+
 ################
 # NF of `main` #
 ################

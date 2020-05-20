@@ -1,6 +1,94 @@
+
 #############
 # Desugared #
 #############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+mutual {
+  constructor/0 Nat : Type.
+  
+  constructor/0 Z : Nat.
+  
+  constructor/1 S : (n :L Nat) -> Nat.
+}
+
+mutual {
+  constructor/1 Vect : (_ : Nat) -> Type.
+  
+  constructor/0 Nil : Vect Z.
+  
+  constructor/3 Cons : (n : Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
+}
+
+length : (n : Nat) -> (_ : Vect n) -> Nat {
+  length {Z} Nil ~> Z
+  
+  forall (n : _) (x : Bool) (xs : Vect n)
+  length ({S} n) (Cons [n] x xs) ~> S (length n xs)
+}
+
+main : Nat {
+  main  ~> length (S Z) (Cons Z True Nil)
+}
+
+###############
+# Elaboration #
+###############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+mutual {
+  constructor/0 Nat : Type.
+  
+  constructor/0 Z : Nat.
+  
+  constructor/1 S : (n :L Nat) -> Nat.
+}
+
+mutual {
+  constructor/1 Vect : (_ : Nat) -> Type.
+  
+  constructor/0 Nil : Vect Z.
+  
+  constructor/3 Cons : (n : Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
+}
+
+length : (n : Nat) -> (_ : Vect n) -> Nat {
+  length {Z} Nil ~> Z
+  
+  forall (n : _0) (x : Bool) (xs : Vect n)
+  length ({S} n) (Cons [n] x xs) ~> S (length n xs)
+}
+
+main : Nat {
+  main  ~> length (S Z) (Cons Z True Nil)
+}
+
+Equalities:
+  _ty0 = Type
+  _0 = Nat
+  _0 = Nat
+  _0 = Nat
+  _0 = Nat
+
+Solved metas: [(_0, 0), (_ty0, 0)]
+
+##############
+# Elaborated #
+##############
 
 mutual {
   constructor/0 Bool : Type.
@@ -36,6 +124,7 @@ length : (n : Nat) -> (_ : Vect n) -> Nat {
 main : Nat {
   main  ~> length (S Z) (Cons Z True Nil)
 }
+
 #############
 # Evarified #
 #############
@@ -75,6 +164,7 @@ main :36 Nat {
   main  ~> length (S Z) (Cons Z True Nil)
 }
 Running erasure inference...
+
 
 ########################
 # Inferred constraints #
@@ -143,6 +233,7 @@ L ~ 39
 4 ~ 40
 5 ~ 11
 20 ~ 6
+
 #######################
 # Deferred equalities #
 #######################
@@ -150,12 +241,14 @@ L ~ 39
 6 -> S n ~ S n
 6 -> S Z ~ S Z
 
+
 #####################
 # Variance of evars #
 #####################
 
 covariant: []
 contravariant: [2, 3, 4, 15, 18, 19]
+
 ###################
 # Final valuation #
 ###################
@@ -200,6 +293,7 @@ contravariant: [2, 3, 4, 15, 18, 19]
   41 -> I
   42 -> I
 
+
 #####################
 # Annotated program #
 #####################
@@ -238,6 +332,7 @@ length :R (n :I Nat) -> (_ :L Vect n) -> Nat {
 main :L Nat {
   main  ~> length (S Z) (Cons Z True Nil)
 }
+
 ##########
 # Erased #
 ##########
@@ -264,6 +359,7 @@ length {
 main {
   main  ~> length (Cons Nil)
 }
+
 ################
 # NF of `main` #
 ################
