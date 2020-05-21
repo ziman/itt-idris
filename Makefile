@@ -1,6 +1,6 @@
 ITT = build/exec/itt
 
-.PHONY: clean recheck install all
+.PHONY: clean check install all
 
 all: $(ITT)
 
@@ -13,7 +13,7 @@ install: $(ITT)
 examples/%.out: examples/%.itt $(ITT)
 	$(ITT) $< > $@
 
-recheck: $(wildcard examples/*.out)
+check: $(wildcard examples/*.out)
 
 clean:
 	idris2 --clean itt.ipkg
