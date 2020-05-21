@@ -148,7 +148,7 @@ mutual
         _ => throw . NotPi =<< prettyCtx fTy
 
     Type_ => pure Type_
-    Meta (MNValue i) => pure $ Meta (MNType i)
+    Meta mn => pure $ Meta (MNType mn)
     Meta (MNType _) => pure Type_
     _ => throw . CantInfer =<< prettyCtx tm
 
