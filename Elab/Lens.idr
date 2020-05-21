@@ -2,13 +2,16 @@ module Elab.Lens
 
 import public Core.TT.Lens
 import public Core.Globals
+import public Data.SortedMap
 
 import Core.TT
+import Core.TT.Lens
 import Core.Pattern
 import Core.Clause
-import Control.Monad.Identity
 
+import Data.Maybe
 import Decidable.Equality
+import Control.Monad.Identity
 
 mutual
   mlBnd : Applicative t => {n : Nat} -> ((n : Nat) -> MetaNum -> t (TT q n)) -> (Binding q n) -> t (Binding q n)
@@ -70,7 +73,20 @@ subst {a} trav mn n tm rhs = runIdentity $ trav f rhs
 
 public export
 Subst : Type -> Type
-Subst q = DepSortedMap (MetaNum, Nat) (\mnn => TT q (snd mnn))
+Subst q = SortedMap MetaNum (n ** TT q n)
+
+export
+substOne :
+    (trav : (f : (n : Nat) -> MetaNum -> Identity (TT q n)) -> a -> Identity a)
+    -> MetaNum -> (n' ** TT q n')
+    -> a -> a
+substOne trav mn' (n' ** tm') tm = runIdentity $ trav f tm
+  where
+    f : (n : Nat) -> MetaNum -> Identity (TT q n)
+    f n mn = pure $
+      if mn == mn'
+        then fromMaybe (Meta mn) (rescope ttVars tm')
+        else Meta mn  -- don't do anything
 
 export
 substMany :
@@ -78,7 +94,7 @@ substMany :
     -> Subst q -> a -> a
 substMany trav s tm = runIdentity $ trav f tm
   where
-    f : (n' : Nat) -> MetaNum -> Identity (TT q n')
-    f n' mn' = pure $ case lookup (mn', n') s of
-      Nothing => Meta mn'
-      Just tm => tm
+    f : (n : Nat) -> MetaNum -> Identity (TT q n)
+    f n mn = pure $ case lookup mn s of
+      Nothing => Meta mn
+      Just (n' ** tm') => fromMaybe (Meta mn) (rescope ttVars tm')
