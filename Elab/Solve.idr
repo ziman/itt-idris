@@ -39,8 +39,8 @@ data Outcome : Type where
   Progress : List Equality -> Outcome
   Unsolvable : Equality -> Failure Check.Error -> Outcome
 
-substScope : MetaNum -> (n ** Term n) -> (n' ** Term n') -> (n'' ** Term n'')
-substScope mn ntm ntm' = ?rhs_substScope
+substScope : MetaNum -> (n ** Term n) -> (n' ** Term n') -> (n' ** Term n')
+substScope mn ntm (n' ** tm') = (n' ** substOne mlTm mn ntm tm')
 
 substC : MetaNum -> (n ** Term n) -> Subst -> Subst
 substC mn ntm = map (substScope mn ntm)
@@ -52,8 +52,8 @@ addCandidate : MetaNum -> (n ** Term n) -> Uncertains -> Uncertains
 addCandidate mn ntm = merge (insert mn [ntm] empty)
 
 solveOne : {n : Nat} -> Certainty -> Suspended (Maybe Q) n -> Term n -> Term n -> Outcome
-solveOne c ts (Meta mn) rhs = Solved mn (strengthenMax _ rhs)
-solveOne c ts lhs (Meta mn) = Solved mn (strengthenMax _ lhs)
+solveOne c ts (Meta mn) rhs = Solved mn (_ ** rhs)
+solveOne c ts lhs (Meta mn) = Solved mn (_ ** lhs)
 solveOne c ts lhs rhs =
   case resume ts $ (lhs ~= rhs) c of
     Left e => Unsolvable (MkE c ts lhs rhs) e
