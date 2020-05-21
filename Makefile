@@ -1,12 +1,20 @@
-.PHONY: clean
+ITT = build/exec/itt
 
-all: build/exec/itt
+.PHONY: clean recheck install all
 
-build/exec/itt: $(shell find -name \*.idr) itt.ipkg
+all: $(ITT)
+
+$(ITT): $(shell find -name \*.idr) itt.ipkg
 	idris2 --build itt.ipkg
 
-install: build/exec/itt
+install: $(ITT)
 	idris2 --install itt.ipkg
 
+examples/%.out: examples/%.itt $(ITT)
+	$(ITT) $< > $@
+
+recheck: $(wildcard examples/*.out)
+
 clean:
+	idris2 --clean itt.ipkg
 	-rm -rf build
