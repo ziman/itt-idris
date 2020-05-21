@@ -19,9 +19,9 @@ data Vect : Nat -> Type -> Type {
 -- we need to give explicit types here
 -- until the handling of soft unification constraints is fixed
 data Elem : forall a n. a -> Vect n a -> Type {
-  Here : forall a n (x : a) xs.
+  Here : forall a n (x :I a) xs.
     Elem a (S n) x (Cons a n x xs),
-  There : forall a n (x : a) (y : a) xs.
+  There : forall a n (x :I a) (y :I a) xs.
     Elem a n x xs -> Elem a (S n) x (Cons a n y xs)
 }
 
