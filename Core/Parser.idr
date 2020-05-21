@@ -361,9 +361,15 @@ dataDecl = do
 
 context : {k : Nat} -> Vect k String -> Context (Maybe Q) k
     -> Grammar (TokenData Token) False (n ** Context (Maybe Q) n)
-context {k} ns ctx = option (k ** ctx) $ do
-  b <- parens $ binding ns
-  context (b.name :: ns) (b :: ctx)
+context {k} ns ctx = 
+  token Dot *> pure (k ** ctx)
+  <|> do
+    b <- parens $ binding ns
+    context (b.name :: ns) (b :: ctx)
+  <|> do
+    n <- ident
+    context (n :: ns) (B n Nothing (Meta MNUnknown) :: ctx)
+  <|> pure (k ** ctx)
 
 names : Context q n -> Vect n String
 names [] = []
