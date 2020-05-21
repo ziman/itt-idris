@@ -24,13 +24,13 @@ mutual {
   
   constructor/0 Nil : Vect Z.
   
-  constructor/3 Cons : (n :I Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
+  constructor/3 Cons : (n : _) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
 }
 
-length : (n : Nat) -> (_ : Vect n) -> Nat {
+length : (n : _) -> (_ : Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n : Nat) (x : Bool) (xs : Vect n).
+  forall (n : _) (x : _) (xs : _).
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
@@ -55,21 +55,21 @@ mutual {
   
   constructor/0 Z : Nat.
   
-  constructor/1 S : (n : Nat) -> Nat.
+  constructor/1 S : (n :L Nat) -> Nat.
 }
 
 mutual {
-  constructor/1 Vect : (_ : Nat) -> Type.
+  constructor/1 Vect : (_ :L Nat) -> Type.
   
   constructor/0 Nil : Vect Z.
   
-  constructor/3 Cons : (n :I Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
+  constructor/3 Cons : (n :I _0) -> (_ :L Bool) -> (_ :L Vect n) -> Vect (S n).
 }
 
-length : (n : Nat) -> (_ : Vect n) -> Nat {
+length : (n : _1) -> (_ : Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n : Nat) (x : Bool) (xs : Vect n).
+  forall (n : _4) (x : _3) (xs : _2).
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
@@ -78,9 +78,26 @@ main : Nat {
 }
 
 Equalities:
+  _ty0 = Type
+  _0 = Nat
+  _0 = Nat
+  _ty1 = Type
+  _1 = Nat
+  _1 = Nat
+  _ty4 = Type
+  _ty3 = Type
+  _ty2 = Type
+  _4 = Nat
+  _1 = Nat
+  _0 = _4
+  _3 = Bool
+  _2 = Vect n
+  _1 = _4
+  _2 = Vect n
+  _1 = Nat
+  _0 = Nat
 
-
-Solved metas: []
+Solved metas: [_0, _1, _2, _3, _4, _ty0, _ty1, _ty2, _ty3, _ty4]
 
 ##############
 # Elaborated #
@@ -99,15 +116,15 @@ mutual {
   
   constructor/0 Z : Nat.
   
-  constructor/1 S : (n : Nat) -> Nat.
+  constructor/1 S : (n :L Nat) -> Nat.
 }
 
 mutual {
-  constructor/1 Vect : (_ : Nat) -> Type.
+  constructor/1 Vect : (_ :L Nat) -> Type.
   
   constructor/0 Nil : Vect Z.
   
-  constructor/3 Cons : (n :I Nat) -> (_ : Bool) -> (_ : Vect n) -> Vect (S n).
+  constructor/3 Cons : (n :I Nat) -> (_ :L Bool) -> (_ :L Vect n) -> Vect (S n).
 }
 
 length : (n : Nat) -> (_ : Vect n) -> Nat {
@@ -128,43 +145,43 @@ main : Nat {
 mutual {
   constructor/0 Bool :0 Type.
   
-  constructor/0 True :13 Bool.
+  constructor/0 True :10 Bool.
   
-  constructor/0 False :7 Bool.
+  constructor/0 False :5 Bool.
 }
 
 mutual {
-  constructor/0 Nat :8 Type.
+  constructor/0 Nat :6 Type.
   
-  constructor/0 Z :16 Nat.
+  constructor/0 Z :12 Nat.
   
-  constructor/1 S :11 (n :12 Nat) -> Nat.
+  constructor/1 S :9 (n :L Nat) -> Nat.
 }
 
 mutual {
-  constructor/1 Vect :14 (_ :15 Nat) -> Type.
+  constructor/1 Vect :11 (_ :L Nat) -> Type.
   
-  constructor/0 Nil :9 Vect Z.
+  constructor/0 Nil :7 Vect Z.
   
-  constructor/3 Cons :1 (n :I Nat) -> (_ :2 Bool) -> (_ :3 Vect n) -> Vect (S n).
+  constructor/3 Cons :1 (n :I Nat) -> (_ :L Bool) -> (_ :L Vect n) -> Vect (S n).
 }
 
-length :17 (n :18 Nat) -> (_ :19 Vect n) -> Nat {
+length :13 (n :14 Nat) -> (_ :15 Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n :26 Nat) (x :25 Bool) (xs :23 Vect n).
+  forall (n :22 Nat) (x :21 Bool) (xs :19 Vect n).
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
-main :36 Nat {
+main :32 Nat {
   main  ~> length (S Z) (Cons Z True Nil)
 }
 inferring  mutual {
     constructor/0 Bool :0 Type.
     
-    constructor/0 True :13 Bool.
+    constructor/0 True :10 Bool.
     
-    constructor/0 False :7 Bool.
+    constructor/0 False :5 Bool.
   }
 
   
@@ -181,116 +198,118 @@ inferring  mutual {
   }
 
 inferring  mutual {
-    constructor/0 Nat :8 Type.
+    constructor/0 Nat :6 Type.
     
-    constructor/0 Z :16 Nat.
+    constructor/0 Z :12 Nat.
     
-    constructor/1 S :11 (n :12 Nat) -> Nat.
+    constructor/1 S :9 (n :L Nat) -> Nat.
   }
 
   
   
   variance of evars:
     covariant: []
-    contravariant: [12]
+    contravariant: []
   mutual {
     constructor/0 Nat :I Type.
     
     constructor/0 Z :I Nat.
     
-    constructor/1 S :I (n :I Nat) -> Nat.
+    constructor/1 S :I (n :L Nat) -> Nat.
   }
 
 inferring  mutual {
-    constructor/1 Vect :14 (_ :15 Nat) -> Type.
+    constructor/1 Vect :11 (_ :L Nat) -> Type.
     
-    constructor/0 Nil :9 Vect Z.
+    constructor/0 Nil :7 Vect Z.
     
-    constructor/3 Cons :1 (n :I Nat) -> (_ :2 Bool) -> (_ :3 Vect n) -> Vect (S n).
+    constructor/3 Cons :1 (n :I Nat) -> (_ :L Bool) -> (_ :L Vect n) -> Vect (S n).
   }
 
   inferred constraints: 
-    15 ~ 10
-    15 ~ 4
-    15 ~ 5
-    I ~ 6
+    L ~ 8
+    L ~ 2
+    L ~ 3
+    L ~ 4
   
   
   variance of evars:
     covariant: []
-    contravariant: [2, 3, 15]
+    contravariant: []
   mutual {
-    constructor/1 Vect :I (_ :I Nat) -> Type.
+    constructor/1 Vect :I (_ :L Nat) -> Type.
     
     constructor/0 Nil :I Vect Z.
     
-    constructor/3 Cons :I (n :I Nat) -> (_ :I Bool) -> (_ :I Vect n) -> Vect (S n).
+    constructor/3 Cons :I (n :I Nat) -> (_ :L Bool) -> (_ :L Vect n) -> Vect (S n).
   }
 
-inferring  length :17 (n :18 Nat) -> (_ :19 Vect n) -> Nat {
+inferring  length :13 (n :14 Nat) -> (_ :15 Vect n) -> Nat {
     length {Z} Nil ~> Z
     
-    forall (n :26 Nat) (x :25 Bool) (xs :23 Vect n).
+    forall (n :22 Nat) (x :21 Bool) (xs :19 Vect n).
     length ({S} n) (Cons [n] x xs) ~> S (length n xs)
   }
 
   inferred constraints: 
-    I ~ 20
-    18 ~ 21
-    product [18] ≥ sum
+    L ~ 16
+    14 ~ 17
+    product [14] ≥ sum
       product [I]
-    19 ~ 22
-    product [19] ≥ sum
+    15 ~ 18
+    product [15] ≥ sum
       product [L]
-    20 ~ I
-    I ~ 24
-    26 ~ product [I, 18]
-    25 ~ product [I, 19]
-    23 ~ product [I, 19]
-    18 ~ 27
-    product [18] ≥ sum
+    16 ~ L
+    L ~ 20
+    22 ~ product [L, 14]
+    21 ~ product [L, 15]
+    19 ~ product [L, 15]
+    14 ~ 23
+    product [14] ≥ sum
       product [I]
-    I ~ 28
-    19 ~ 29
-    product [19] ≥ sum
+    L ~ 24
+    15 ~ 25
+    product [15] ≥ sum
       product [L]
-    I ~ 30
-    I ~ 31
-    I ~ 32
-    I ~ 24
-    20 ~ I
-    26 ≥ sum
-      product [18, I]
-    25 ≥ sum
-    23 ≥ sum
-      product [19, I]
-    I ~ 33
-    18 ~ 35
-    19 ~ 34
-    20 ~ 24
+    I ~ 26
+    L ~ 27
+    L ~ 28
+    L ~ 20
+    16 ~ L
+    24 ~ L
+    22 ≥ sum
+      product [14, L]
+    21 ≥ sum
+    19 ≥ sum
+      product [15, L]
+    L ~ 29
+    14 ~ 31
+    15 ~ 30
+    16 ~ 20
   
   
   variance of evars:
     covariant: []
-    contravariant: [18, 19]
-  length :I (n :I Nat) -> (_ :L Vect n) -> Nat {
+    contravariant: [14, 15]
+  length :I (n :I Nat) -> (_ :R Vect n) -> Nat {
     length {Z} Nil ~> Z
     
-    forall (n :I Nat) (x :I Bool) (xs :I Vect n).
+    forall (n :I Nat) (x :R Bool) (xs :R Vect n).
     length ({S} n) (Cons [n] x xs) ~> S (length n xs)
   }
 
-inferring  main :36 Nat {
+inferring  main :32 Nat {
     main  ~> length (S Z) (Cons Z True Nil)
   }
 
   inferred constraints: 
+    I ~ 34
+    L ~ 35
+    R ~ 33
     I ~ 38
-    I ~ 39
     L ~ 37
-    I ~ 42
-    I ~ 41
-    I ~ 40
+    L ~ 36
+    35 ~ L
   
   
   variance of evars:
@@ -306,48 +325,44 @@ inferring  main :36 Nat {
 ###################
 
   0 -> I
-  1 -> L
-  2 -> I
-  3 -> I
-  4 -> I
+  1 -> R
+  2 -> L
+  3 -> L
+  4 -> L
   5 -> I
   6 -> I
-  7 -> I
-  8 -> I
-  9 -> I
-  10 -> I
-  11 -> L
-  12 -> I
-  13 -> I
+  7 -> R
+  8 -> L
+  9 -> R
+  10 -> R
+  11 -> I
+  12 -> R
+  13 -> R
   14 -> I
-  15 -> I
+  15 -> R
   16 -> L
-  17 -> L
-  18 -> I
-  19 -> L
-  20 -> I
-  21 -> I
-  22 -> L
+  17 -> I
+  18 -> R
+  19 -> R
+  20 -> L
+  21 -> R
+  22 -> I
   23 -> I
-  24 -> I
-  25 -> I
+  24 -> L
+  25 -> R
   26 -> I
-  27 -> I
-  28 -> I
+  27 -> L
+  28 -> L
   29 -> L
-  30 -> I
+  30 -> R
   31 -> I
-  32 -> I
-  33 -> I
-  34 -> L
-  35 -> I
+  32 -> L
+  33 -> R
+  34 -> I
+  35 -> L
   36 -> L
   37 -> L
   38 -> I
-  39 -> I
-  40 -> I
-  41 -> I
-  42 -> I
 
 
 #####################
@@ -357,7 +372,7 @@ inferring  main :36 Nat {
 mutual {
   constructor/0 Bool :I Type.
   
-  constructor/0 True :I Bool.
+  constructor/0 True :R Bool.
   
   constructor/0 False :I Bool.
 }
@@ -365,23 +380,23 @@ mutual {
 mutual {
   constructor/0 Nat :I Type.
   
-  constructor/0 Z :L Nat.
+  constructor/0 Z :R Nat.
   
-  constructor/1 S :L (n :I Nat) -> Nat.
+  constructor/1 S :R (n :L Nat) -> Nat.
 }
 
 mutual {
-  constructor/1 Vect :I (_ :I Nat) -> Type.
+  constructor/1 Vect :I (_ :L Nat) -> Type.
   
-  constructor/0 Nil :I Vect Z.
+  constructor/0 Nil :R Vect Z.
   
-  constructor/3 Cons :L (n :I Nat) -> (_ :I Bool) -> (_ :I Vect n) -> Vect (S n).
+  constructor/3 Cons :R (n :I Nat) -> (_ :L Bool) -> (_ :L Vect n) -> Vect (S n).
 }
 
-length :L (n :I Nat) -> (_ :L Vect n) -> Nat {
+length :R (n :I Nat) -> (_ :R Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n :I Nat) (x :I Bool) (xs :I Vect n).
+  forall (n :I Nat) (x :R Bool) (xs :R Vect n).
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
@@ -393,22 +408,29 @@ main :L Nat {
 # Erased #
 ##########
 
+constructor/0 True.
+
 mutual {
   constructor/0 Z.
   
-  constructor/0 S.
+  constructor/1 S.
 }
 
-constructor/0 Cons.
+mutual {
+  constructor/0 Nil.
+  
+  constructor/2 Cons.
+}
 
 length {
   length Nil ~> Z
   
-  length Cons ~> S
+  forall (x) (xs).
+  length (Cons x xs) ~> S (length xs)
 }
 
 main {
-  main  ~> length Cons
+  main  ~> length (Cons True Nil)
 }
 
 ################
@@ -419,4 +441,4 @@ Unerased, reduced:
 S Z
 
 Erased, reduced:
-S
+S Z
