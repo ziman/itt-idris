@@ -196,7 +196,7 @@ eqsBody fbnd (Foreign code) = pure ()
 eqsBody fbnd (Clauses argn cs) = traverse_ (eqsClause fbnd) cs
 
 eqsDef : Definition (Maybe Q) -> TC Z ()
-eqsDef (MkDef b body) = do
+eqsDef (MkDef b body) = withBt (text "when checking definition " <++> show b.name) $ do
   eqsBnd b
   eqsBody b body
 
