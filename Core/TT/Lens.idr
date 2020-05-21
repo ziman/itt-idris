@@ -38,12 +38,6 @@ mutual
   ttQ g (Meta i) = pure $ Meta i
 
 mutual
-  -- repeated weakening, identity at runtime
-  export
-  tackFinL : Fin s -> Fin (s + n)
-  tackFinL  FZ    = FZ
-  tackFinL (FS i) = FS $ tackFinL i
-
   export
   skipFZ : Applicative t => (Fin n -> t (TT q m)) -> Fin (S n) -> t (TT q (S m))
   skipFZ g  FZ    = pure (V FZ)
@@ -76,6 +70,12 @@ export
 fold : Monoid a => (Fin n -> a) -> TT q n -> a
 fold {n} f = runConst . ttVars {n} (MkConst . f)
 
+-- repeated weakening, identity at runtime
+export
+tackFinL : Fin s -> Fin (s + n)
+tackFinL  FZ    = FZ
+tackFinL (FS i) = FS $ tackFinL i
+
 export
 weakenClosed : TT q Z -> TT q n
 weakenClosed = rename tackFinL
@@ -92,18 +92,26 @@ export
 eraseQ : Traversal a b q () -> a -> b
 eraseQ f = mapQ f (const ())
 
-export
-strengthenVar : Fin (S n) -> Maybe (TT q n)
-strengthenVar  FZ    = Nothing
-strengthenVar (FS i) = Just (V i)
+fromNat : (n : Nat) -> Fin (S k + n)
+fromNat    Z  = FZ
+fromNat (S n) = FS $ replace {p = Fin} (plusSuccRightSucc k n) (fromNat n)
+
+plusFin : Fin n -> (d : Nat) -> Fin (n + d)
+plusFin    FZ  d = fromNat d
+plusFin (FS i) d = FS $ plusFin i d
+
+minusFin : (d : Nat) -> (n : Nat) -> Fin (n + d) -> Maybe (Fin n)
+minusFin    Z  n i = Just $ replace {p = Fin} (plusZeroRightNeutral n) i
+minusFin (S d) n i with (replace {p = Fin} (sym $ plusSuccRightSucc n d) i)
+  minusFin (S d) n i |    FZ = Nothing  -- can't subtract (S d) from FZ
+  minusFin (S d) n i | FS i' = minusFin d n i'
+
+rescopeFin : (m : Nat) -> (n : Nat) -> Fin m -> Maybe (Fin n)
+rescopeFin m n i with (cmp m n)
+  rescopeFin m (m + S d) i | CmpLT d = Just $ i `plusFin` S d
+  rescopeFin n         n i | CmpEQ   = Just i
+  rescopeFin (n + S d) n i | CmpGT d = minusFin (S d) n i
 
 export
-strengthen : TT q (S n) -> Maybe (TT q n)
-strengthen = ttVars strengthenVar
-
-export
-strengthenMax : (n : Nat) -> TT q n -> (n' ** TT q n')
-strengthenMax Z tm = (Z ** tm)
-strengthenMax (S n) tm with (strengthen tm)
-  strengthenMax (S n) tm | Just tm' = strengthenMax n tm'
-  strengthenMax (S n) tm | Nothing  = (S n ** tm)
+rescope : {m : Nat} -> {n : Nat} -> Traversal a b (Fin m) (TT q n) -> a -> Maybe b
+rescope trav = trav (map V . rescopeFin m n)
