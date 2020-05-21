@@ -42,7 +42,7 @@ Show Name where
   show (MN s i) = "{" ++ s ++ show i ++ "}"
 
 public export
-data MetaNum = MNValue Int | MNType MetaNum | MNUnknown
+data MetaNum = MNValue Int | MNType Int | MNUnknown
 
 export
 Eq MetaNum where
