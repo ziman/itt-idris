@@ -41,18 +41,18 @@ data Term : (n : Nat) -> Typ -> Vect n Typ -> Type {
 }
 
 lookup : (n : Nat) -> Vect n Typ -> Fin n -> Typ {
-  forall (a : Typ) (n : Nat) (ctx : Vect n Typ)
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ).
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a,
 
-  forall (a : Typ) (n : Nat) (ctx : Vect n Typ) (i : Fin n)
+  forall (a : Typ) (n : Nat) (ctx : Vect n Typ) (i : Fin n).
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
 }
 
 count : (n : Nat) -> (ctx : Vect n Typ) -> (i : Fin n) -> Elem Typ n (lookup n ctx i) ctx {
-  forall (n : Nat) (ctx : Vect n Typ) (a : Typ)
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ).
   count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx,
 
-  forall (n : Nat) (ctx : Vect n Typ) (a : Typ) (i : Fin n)
+  forall (n : Nat) (ctx : Vect n Typ) (a : Typ) (i : Fin n).
   count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
 }
 

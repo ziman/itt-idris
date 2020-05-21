@@ -15,22 +15,22 @@ data T : Type {
 }
 
 fI : (x :I T) -> Bool {
-  forall (x :I Bool)
+  forall (x :I Bool).
   fI ({C} x) ~> True
 }
 
 fE : (x :E T) -> Bool {
-  forall (x :E Bool)
+  forall (x :E Bool).
   fE ({C} x) ~> True
 }
 
 fL : (x :L T) -> Bool {
-  forall (x :L Bool)
+  forall (x :L Bool).
   fL (C x) ~> x
 }
 
 fR : (x :R T) -> Bool {
-  forall (x :R Bool)
+  forall (x :R Bool).
   fR (C x) ~> and x x
 }
 

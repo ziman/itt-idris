@@ -362,8 +362,7 @@ dataDecl = do
 context : {k : Nat} -> Vect k String -> Context (Maybe Q) k
     -> Grammar (TokenData Token) False (n ** Context (Maybe Q) n)
 context {k} ns ctx = 
-  token Dot *> pure (k ** ctx)
-  <|> do
+  do
     b <- parens $ binding ns
     context (b.name :: ns) (b :: ctx)
   <|> do
@@ -378,7 +377,7 @@ names (b :: bs) = b.name :: names bs
 rawClause : String -> Rule (RawClause (Maybe Q))
 rawClause fn = do
   pnpvs <- option (Z ** []) $
-    kwd "forall" *> context [] []
+    kwd "forall" *> context [] [] <* token Dot
   cont pnpvs
  where
   cont : (pn ** Context (Maybe Q) pn) -> Rule (RawClause (Maybe Q))
