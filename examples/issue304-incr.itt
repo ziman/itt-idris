@@ -7,21 +7,22 @@ data Nat : Type {
 }
 
 data Fin : Nat -> Type {
-  FZ : (n :I Nat) -> Fin (S n),
-  FS : (n :I Nat) -> Fin n -> Fin (S n)
+  FZ : forall n. Fin (S n),
+  FS : forall n. Fin n -> Fin (S n)
 }
 
 data Vect : Nat -> Type -> Type {
-  Nil : (a :I Type) -> Vect Z a,
-  Cons : (a :I Type) -> (n :I Nat) -> a -> Vect n a -> Vect (S n) a
+  Nil : forall a. Vect Z a,
+  Cons : forall a n. a -> Vect n a -> Vect (S n) a
 }
 
-data Elem : (a : Type) -> (n : Nat) -> a -> Vect n a -> Type {
-  Here : (a :I Type) -> (n :I Nat) -> (x : a) -> (xs : Vect n a)
-    -> Elem a (S n) x (Cons a n x xs),
-  There : (a :I Type) -> (n :I Nat) -> (x : a) -> (y : a) -> (xs : Vect n a)
-    -> (t : Elem a n x xs)
-    -> Elem a (S n) x (Cons a n y xs)
+-- we need to give explicit types here
+-- until the handling of soft unification constraints is fixed
+data Elem : forall a n. a -> Vect n a -> Type {
+  Here : forall (a : Type) (n : Nat) (x : a) (xs : Vect n a).
+    Elem a (S n) x (Cons a n x xs),
+  There : forall (a : Type) (n : Nat) (x : a) (y : a) (xs : Vect n a).
+    Elem a n x xs -> Elem a (S n) x (Cons a n y xs)
 }
 
 data Typ : Type {
@@ -29,31 +30,31 @@ data Typ : Type {
   TNat : Typ
 }
 
-data Term : (n : Nat) -> Typ -> Vect n Typ -> Type {
-  Var : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ)
-    -> Elem Typ n a ctx
+data Term : forall n. Typ -> Vect n Typ -> Type {
+  Var : forall a n ctx.
+    Elem Typ n a ctx
     -> Term n a ctx,
-  Lam : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ) -> (b : Typ)
-    -> Term (S n) b (Cons Typ n a ctx)
+  Lam : forall a n ctx b.
+    Term (S n) b (Cons Typ n a ctx)
     -> Term n (TLam a b) ctx,
-  Fix : (a : Typ) -> (n : Nat) -> (ctx : Vect n Typ)
-    -> Term (S n) a (Cons Typ n a ctx)
+  Fix : forall a n ctx.
+    Term (S n) a (Cons Typ n a ctx)
     -> Term n a ctx
 }
 
-lookup : (n : Nat) -> Vect n Typ -> Fin n -> Typ {
-  forall (a : Typ) (n : Nat) (ctx : Vect n Typ).
+lookup : forall n. Vect n Typ -> Fin n -> Typ {
+  forall a n ctx.
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> a,
 
-  forall (a : Typ) (n : Nat) (ctx : Vect n Typ) (i : Fin n).
+  forall a n ctx i.
   lookup ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> lookup n ctx i
 }
 
-count : (n : Nat) -> (ctx : Vect n Typ) -> (i : Fin n) -> Elem Typ n (lookup n ctx i) ctx {
-  forall (n : Nat) (ctx : Vect n Typ) (a : Typ).
+count : forall n ctx i. Elem Typ n (lookup n ctx i) ctx {
+  forall n ctx a.
   count ({S} n) ({Cons} [Typ] [n] a ctx) (FZ [n]) ~> Here Typ n a ctx,
 
-  forall (n : Nat) (ctx : Vect n Typ) (a : Typ) (i : Fin n).
+  forall n ctx a i.
   count ({S} n) ({Cons} [Typ] [n] a ctx) (FS [n] i) ~> There Typ n (lookup n ctx i) a ctx (count n ctx i)
 }
 

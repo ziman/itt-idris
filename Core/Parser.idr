@@ -281,6 +281,10 @@ mutual
     (token Dot *> term ns)
     <|> (token Arrow *> term ns)  -- accept agda-style, too
     <|> do
+      b <- parens $ binding ns
+      commit
+      Pi b <$> piForall (b.name :: ns)
+    <|> do
       n <- ident
       commit
       Pi (B n Nothing hole) <$> piForall (n :: ns)
