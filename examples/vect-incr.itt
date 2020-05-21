@@ -1,4 +1,4 @@
-%options "--incremental"
+%options "--incremental" "--default-constructor-quantities"
 
 data Bool : Type {
   True : Bool,
@@ -12,17 +12,17 @@ data Nat : Type {
 
 data Vect : Nat -> Type {
   Nil : Vect Z,
-  Cons : (n :I Nat) -> Bool -> Vect n -> Vect (S n)
+  Cons : forall n -> Bool -> Vect n -> Vect (S n)
 }
 
 -- we needed only one explicit annotation
 -- since constructor fields are linear by default,
 -- the index of Cons needs explicit erasing
 
-length : (n : Nat) -> Vect n -> Nat {
+length : forall n. Vect n -> Nat {
   length {Z} Nil ~> Z,
 
-  forall (n : Nat) (x : Bool) (xs : Vect n).
+  forall n x xs.
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 

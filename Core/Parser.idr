@@ -191,6 +191,9 @@ Ty = TT (Maybe Q)
 Rule : Type -> Type
 Rule = Grammar (TokenData Token) True
 
+hole : Term n
+hole = Meta MNUnknown
+
 token : Token -> Rule ()
 token t = terminal ("expecting " ++ show t) $ \t' =>
   if t == tok t'
@@ -273,12 +276,23 @@ mutual
     token Dot
     Lam b <$> term (b.name :: ns)
 
+  piForall : Vect n String -> Rule (Term n)
+  piForall ns =
+    (token Dot *> term ns)
+    <|> (token Arrow *> term ns)  -- accept agda-style, too
+    <|> do
+      n <- ident
+      commit
+      Pi (B n Nothing hole) <$> piForall (n :: ns)
+
   pi : Vect n String -> Rule (Term n)
-  pi ns = do
-    b <- (parens $ binding ns) <|> (B "_" Nothing <$> app ns)
-    token Arrow
-    commit
-    Pi b <$> term (b.name :: ns)
+  pi ns =
+    (kwd "forall" *> piForall ns)
+    <|> do
+      b <- (parens $ binding ns) <|> (B "_" Nothing <$> app ns)
+      token Arrow
+      commit
+      Pi b <$> term (b.name :: ns)
 
   pterm : Vect n String -> Rule (Term n)
   pterm ns = parens (term ns)
@@ -307,7 +321,7 @@ mutual
     <|> app ns
 
   meta : Rule (Term n)
-  meta = token Underscore *> pure (Meta MNUnknown)
+  meta = token Underscore *> pure hole
 
 patVar : Vect n String -> Rule (Pat (Maybe Q) n)
 patVar ns = PV <$> varName ns
@@ -367,7 +381,7 @@ context {k} ns ctx =
     context (b.name :: ns) (b :: ctx)
   <|> do
     n <- ident
-    context (n :: ns) (B n Nothing (Meta MNUnknown) :: ctx)
+    context (n :: ns) (B n Nothing hole :: ctx)
   <|> pure (k ** ctx)
 
 names : Context q n -> Vect n String
