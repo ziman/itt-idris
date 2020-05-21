@@ -14,72 +14,72 @@ mutual {
 mutual {
   constructor/1 Fin : (_ : Nat) -> Type.
   
-  constructor/1 FZ : (n :I Nat) -> Fin (S n).
+  constructor/1 FZ : (n : _) -> Fin (S n).
   
-  constructor/2 FS : (n :I Nat) -> (_ : Fin n) -> Fin (S n).
+  constructor/2 FS : (n : _) -> (_ : Fin n) -> Fin (S n).
 }
 
 mutual {
   constructor/2 Vect : (_ : Nat) -> (_ : Type) -> Type.
   
-  constructor/1 VN : (a :I Type) -> Vect Z a.
+  constructor/1 VN : (a : _) -> Vect Z a.
   
-  constructor/4 VC : (n :I Nat) -> (a :I Type) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
+  constructor/4 VC : (n : _) -> (a : _) -> (_ : a) -> (_ : Vect n a) -> Vect (S n) a.
 }
 
 mutual {
   constructor/1 TT : (_ : Nat) -> Type.
   
-  constructor/2 V : (n :I Nat) -> (_ : Fin n) -> TT n.
+  constructor/2 V : (n : _) -> (_ : Fin n) -> TT n.
   
-  constructor/2 Lam : (n :I Nat) -> (_ : TT (S n)) -> TT n.
+  constructor/2 Lam : (n : _) -> (_ : TT (S n)) -> TT n.
   
-  constructor/3 App : (n :I Nat) -> (_ : TT n) -> (_ : TT n) -> TT n.
+  constructor/3 App : (n : _) -> (_ : TT n) -> (_ : TT n) -> TT n.
 }
 
-env : (m : Nat) -> (n : Nat) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
-  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)).
+env : (m : _) -> (n : _) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
+  forall (m : _) (n : _) (x : _) (xs : _).
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
-  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m).
+  forall (m : _) (n : _) (x : _) (xs : _) (i : _).
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
-extendMap : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : Fin (S m)) -> Fin (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n).
+extendMap : (m : _) -> (n : _) -> (_ : (_ : Fin m) -> Fin n) -> (_ : Fin (S m)) -> Fin (S n) {
+  forall (m : _) (n : _) (f : (_ : _) -> _).
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m).
+  forall (m : _) (n : _) (f : (_ : _) -> _) (i : _).
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
-mapVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m).
+mapVars : (m : _) -> (n : _) -> (_ : (_ : Fin m) -> Fin n) -> (_ : TT m) -> TT n {
+  forall (m : _) (n : _) (f : (_ : _) -> _) (i : _).
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m)).
+  forall (m : _) (n : _) (f : (_ : _) -> _) (x : _).
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m).
+  forall (m : _) (n : _) (f : (_ : _) -> _) (g : _) (x : _).
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
-extendSubst : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : Fin (S m)) -> TT (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n).
+extendSubst : (m : _) -> (n : _) -> (_ : (_ : Fin m) -> TT n) -> (_ : Fin (S m)) -> TT (S n) {
+  forall (m : _) (n : _) (f : (_ : _) -> _).
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m).
+  forall (m : _) (n : _) (f : (_ : _) -> _) (i : _).
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
-substVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m).
+substVars : (m : _) -> (n : _) -> (_ : (_ : Fin m) -> TT n) -> (_ : TT m) -> TT n {
+  forall (m : _) (n : _) (f : (_ : _) -> _) (i : _).
   substVars m n f (V [m] i) ~> f i
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m)).
+  forall (m : _) (n : _) (f : (_ : _) -> _) (x : _).
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m).
+  forall (m : _) (n : _) (f : (_ : _) -> _) (g : _) (x : _).
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -91,31 +91,31 @@ example1 : TT Z {
   example1  ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
 }
 
-substTop : (n : Nat) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
-  forall (n : Nat) (tm : TT n).
+substTop : (n : _) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
+  forall (n : _) (tm : _).
   substTop n tm (FZ [n]) ~> tm
   
-  forall (n : Nat) (tm : TT n) (i : Fin n).
+  forall (n : _) (tm : _) (i : _).
   substTop n tm (FS [n] i) ~> V n i
 }
 
 mutual {
-  redex : (m : Nat) -> (_ : TT m) -> (_ : TT m) -> TT m {
-    forall (m : Nat) (y : TT (S m)) (x : TT m).
+  redex : (m : _) -> (_ : TT m) -> (_ : TT m) -> TT m {
+    forall (m : _) (y : _) (x : _).
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
     
-    forall (m : Nat) (f' : TT m) (x : TT m).
+    forall (m : _) (f' : _) (x : _).
     redex m f' x ~> App m f' (nf m x)
   }
   
-  nf : (m : Nat) -> (_ : TT m) -> TT m {
-    forall (m : Nat) (i : Fin m).
+  nf : (m : _) -> (_ : TT m) -> TT m {
+    forall (m : _) (i : _).
     nf m (V [m] i) ~> V m i
     
-    forall (m : Nat) (x : TT (S m)).
+    forall (m : _) (x : _).
     nf m (Lam [m] x) ~> Lam m (nf (S m) x)
     
-    forall (m : Nat) (f : TT m) (x : TT m).
+    forall (m : _) (f : _) (x : _).
     nf m (App [m] f x) ~> redex m f x
   }
 }
@@ -127,7 +127,7 @@ example2 : TT (S Z) {
 mutual {
   constructor/0 Result : Type.
   
-  constructor/2 R : (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  constructor/2 R : (_ : TT Z) -> (_ : TT (S Z)) -> Result.
 }
 
 main : Result {
@@ -149,72 +149,72 @@ mutual {
 mutual {
   constructor/1 Fin : (_ :L Nat) -> Type.
   
-  constructor/1 FZ : (n :I Nat) -> Fin (S n).
+  constructor/1 FZ : (n :I _0) -> Fin (S n).
   
-  constructor/2 FS : (n :I Nat) -> (_ :L Fin n) -> Fin (S n).
+  constructor/2 FS : (n :I _1) -> (_ :L Fin n) -> Fin (S n).
 }
 
 mutual {
   constructor/2 Vect : (_ :L Nat) -> (_ :L Type) -> Type.
   
-  constructor/1 VN : (a :I Type) -> Vect Z a.
+  constructor/1 VN : (a :I _2) -> Vect Z a.
   
-  constructor/4 VC : (n :I Nat) -> (a :I Type) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
+  constructor/4 VC : (n :I _3) -> (a :I _4) -> (_ :L a) -> (_ :L Vect n a) -> Vect (S n) a.
 }
 
 mutual {
   constructor/1 TT : (_ :L Nat) -> Type.
   
-  constructor/2 V : (n :I Nat) -> (_ :L Fin n) -> TT n.
+  constructor/2 V : (n :I _5) -> (_ :L Fin n) -> TT n.
   
-  constructor/2 Lam : (n :I Nat) -> (_ :L TT (S n)) -> TT n.
+  constructor/2 Lam : (n :I _6) -> (_ :L TT (S n)) -> TT n.
   
-  constructor/3 App : (n :I Nat) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
+  constructor/3 App : (n :I _7) -> (_ :L TT n) -> (_ :L TT n) -> TT n.
 }
 
-env : (m : Nat) -> (n : Nat) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
-  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)).
+env : (m : _8) -> (n : _9) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
+  forall (m : _13) (n : _12) (x : _11) (xs : _10).
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
-  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m).
+  forall (m : _18) (n : _17) (x : _16) (xs : _15) (i : _14).
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
-extendMap : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : Fin (S m)) -> Fin (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n).
+extendMap : (m : _19) -> (n : _20) -> (_ : (_ : Fin m) -> Fin n) -> (_ : Fin (S m)) -> Fin (S n) {
+  forall (m : _24) (n : _23) (f : (_ : _21) -> _22).
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m).
+  forall (m : _29) (n : _28) (f : (_ : _26) -> _27) (i : _25).
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
-mapVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m).
+mapVars : (m : _30) -> (n : _31) -> (_ : (_ : Fin m) -> Fin n) -> (_ : TT m) -> TT n {
+  forall (m : _36) (n : _35) (f : (_ : _33) -> _34) (i : _32).
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m)).
+  forall (m : _41) (n : _40) (f : (_ : _38) -> _39) (x : _37).
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m).
+  forall (m : _47) (n : _46) (f : (_ : _44) -> _45) (g : _43) (x : _42).
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
-extendSubst : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : Fin (S m)) -> TT (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n).
+extendSubst : (m : _48) -> (n : _49) -> (_ : (_ : Fin m) -> TT n) -> (_ : Fin (S m)) -> TT (S n) {
+  forall (m : _53) (n : _52) (f : (_ : _50) -> _51).
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m).
+  forall (m : _58) (n : _57) (f : (_ : _55) -> _56) (i : _54).
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
-substVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m).
+substVars : (m : _59) -> (n : _60) -> (_ : (_ : Fin m) -> TT n) -> (_ : TT m) -> TT n {
+  forall (m : _65) (n : _64) (f : (_ : _62) -> _63) (i : _61).
   substVars m n f (V [m] i) ~> f i
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m)).
+  forall (m : _70) (n : _69) (f : (_ : _67) -> _68) (x : _66).
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m).
+  forall (m : _76) (n : _75) (f : (_ : _73) -> _74) (g : _72) (x : _71).
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -226,31 +226,31 @@ example1 : TT Z {
   example1  ~> substVars (S Z) Z (env (S Z) Z (VC Z (TT Z) (Lam Z (V (S Z) (FZ Z))) (VN (TT Z)))) testTm
 }
 
-substTop : (n : Nat) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
-  forall (n : Nat) (tm : TT n).
+substTop : (n : _77) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
+  forall (n : _79) (tm : _78).
   substTop n tm (FZ [n]) ~> tm
   
-  forall (n : Nat) (tm : TT n) (i : Fin n).
+  forall (n : _82) (tm : _81) (i : _80).
   substTop n tm (FS [n] i) ~> V n i
 }
 
 mutual {
-  redex : (m : Nat) -> (_ : TT m) -> (_ : TT m) -> TT m {
-    forall (m : Nat) (y : TT (S m)) (x : TT m).
+  redex : (m : _83) -> (_ : TT m) -> (_ : TT m) -> TT m {
+    forall (m : _86) (y : _85) (x : _84).
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
     
-    forall (m : Nat) (f' : TT m) (x : TT m).
+    forall (m : _89) (f' : _88) (x : _87).
     redex m f' x ~> App m f' (nf m x)
   }
   
-  nf : (m : Nat) -> (_ : TT m) -> TT m {
-    forall (m : Nat) (i : Fin m).
+  nf : (m : _90) -> (_ : TT m) -> TT m {
+    forall (m : _92) (i : _91).
     nf m (V [m] i) ~> V m i
     
-    forall (m : Nat) (x : TT (S m)).
+    forall (m : _94) (x : _93).
     nf m (Lam [m] x) ~> Lam m (nf (S m) x)
     
-    forall (m : Nat) (f : TT m) (x : TT m).
+    forall (m : _97) (f : _96) (x : _95).
     nf m (App [m] f x) ~> redex m f x
   }
 }
@@ -262,7 +262,7 @@ example2 : TT (S Z) {
 mutual {
   constructor/0 Result : Type.
   
-  constructor/2 R : (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  constructor/2 R : (_ :L TT Z) -> (_ :L TT (S Z)) -> Result.
 }
 
 main : Result {
@@ -270,9 +270,368 @@ main : Result {
 }
 
 Equalities:
+  _ty0 = Type
+  _0 = Nat
+  _ty1 = Type
+  _1 = Nat
+  _1 = Nat
+  _ty2 = Type
+  _2 = Type
+  _ty3 = Type
+  _ty4 = Type
+  _4 = Type
+  _3 = Nat
+  _4 = Type
+  _3 = Nat
+  _4 = Type
+  _ty5 = Type
+  _5 = Nat
+  _5 = Nat
+  _ty6 = Type
+  _6 = Nat
+  _6 = Nat
+  _ty7 = Type
+  _7 = Nat
+  _7 = Nat
+  _7 = Nat
+  _ty8 = Type
+  _ty9 = Type
+  _8 = Nat
+  _9 = Nat
+  _8 = Nat
+  _9 = Nat
+  _ty13 = Type
+  _ty12 = Type
+  _ty11 = Type
+  _ty10 = Type
+  _13 = Nat
+  _8 = Nat
+  _9 = _12
+  _3 = _13
+  _12 = Nat
+  _4 = Type
+  _11 = TT n
+  _10 = Vect m (TT n)
+  _0 = _13
+  _11 = TT n
+  _ty18 = Type
+  _ty17 = Type
+  _ty16 = Type
+  _ty15 = Type
+  _ty14 = Type
+  _18 = Nat
+  _8 = Nat
+  _9 = _17
+  _3 = _18
+  _17 = Nat
+  _4 = Type
+  _16 = TT n
+  _15 = Vect m (TT n)
+  _1 = _18
+  _14 = Fin m
+  _8 = _18
+  _9 = _17
+  _15 = Vect m (TT n)
+  _14 = Fin m
+  _ty19 = Type
+  _ty20 = Type
+  _19 = Nat
+  _20 = Nat
+  _19 = Nat
+  _20 = Nat
+  _ty24 = Type
+  _ty23 = Type
+  _ty21 = Type
+  _ty22 = Type
+  _19 = _24
+  _20 = _23
+  _21 = Fin m
+  _22 = Fin n
+  _0 = _24
+  _0 = _23
+  _ty29 = Type
+  _ty28 = Type
+  _ty26 = Type
+  _ty27 = Type
+  _ty25 = Type
+  _19 = _29
+  _20 = _28
+  _26 = Fin m
+  _27 = Fin n
+  _1 = _29
+  _25 = Fin m
+  _1 = _28
+  _26 = _25
+  _27 = Fin n
+  _ty30 = Type
+  _ty31 = Type
+  _30 = Nat
+  _31 = Nat
+  _30 = Nat
+  _31 = Nat
+  _ty36 = Type
+  _ty35 = Type
+  _ty33 = Type
+  _ty34 = Type
+  _ty32 = Type
+  _30 = _36
+  _31 = _35
+  _33 = Fin m
+  _34 = Fin n
+  _5 = _36
+  _32 = Fin m
+  _5 = _35
+  _33 = _32
+  _34 = Fin n
+  _ty41 = Type
+  _ty40 = Type
+  _ty38 = Type
+  _ty39 = Type
+  _ty37 = Type
+  _30 = _41
+  _31 = _40
+  _38 = Fin m
+  _39 = Fin n
+  _6 = _41
+  _37 = TT (S m)
+  _6 = _40
+  _41 = Nat
+  _30 = Nat
+  _40 = Nat
+  _31 = Nat
+  _19 = _41
+  _20 = _40
+  _38 = Fin m
+  _39 = Fin n
+  _37 = TT (S m)
+  _ty47 = Type
+  _ty46 = Type
+  _ty44 = Type
+  _ty45 = Type
+  _ty43 = Type
+  _ty42 = Type
+  _30 = _47
+  _31 = _46
+  _44 = Fin m
+  _45 = Fin n
+  _7 = _47
+  _43 = TT m
+  _42 = TT m
+  _7 = _46
+  _30 = _47
+  _31 = _46
+  _44 = Fin m
+  _45 = Fin n
+  _43 = TT m
+  _30 = _47
+  _31 = _46
+  _44 = Fin m
+  _45 = Fin n
+  _42 = TT m
+  _ty48 = Type
+  _ty49 = Type
+  _48 = Nat
+  _49 = Nat
+  _48 = Nat
+  _49 = Nat
+  _ty53 = Type
+  _ty52 = Type
+  _ty50 = Type
+  _ty51 = Type
+  _48 = _53
+  _49 = _52
+  _50 = Fin m
+  _51 = TT n
+  _0 = _53
+  _52 = Nat
+  _5 = Nat
+  _0 = _52
+  _ty58 = Type
+  _ty57 = Type
+  _ty55 = Type
+  _ty56 = Type
+  _ty54 = Type
+  _48 = _58
+  _49 = _57
+  _55 = Fin m
+  _56 = TT n
+  _1 = _58
+  _54 = Fin m
+  _30 = _57
+  _57 = Nat
+  _31 = Nat
+  _1 = _57
+  _55 = _54
+  _56 = TT n
+  _ty59 = Type
+  _ty60 = Type
+  _59 = Nat
+  _60 = Nat
+  _59 = Nat
+  _60 = Nat
+  _ty65 = Type
+  _ty64 = Type
+  _ty62 = Type
+  _ty63 = Type
+  _ty61 = Type
+  _59 = _65
+  _60 = _64
+  _62 = Fin m
+  _63 = TT n
+  _5 = _65
+  _61 = Fin m
+  _62 = _61
+  _63 = TT n
+  _ty70 = Type
+  _ty69 = Type
+  _ty67 = Type
+  _ty68 = Type
+  _ty66 = Type
+  _59 = _70
+  _60 = _69
+  _67 = Fin m
+  _68 = TT n
+  _6 = _70
+  _66 = TT (S m)
+  _6 = _69
+  _70 = Nat
+  _59 = Nat
+  _69 = Nat
+  _60 = Nat
+  _48 = _70
+  _49 = _69
+  _67 = Fin m
+  _68 = TT n
+  _66 = TT (S m)
+  _ty76 = Type
+  _ty75 = Type
+  _ty73 = Type
+  _ty74 = Type
+  _ty72 = Type
+  _ty71 = Type
+  _59 = _76
+  _60 = _75
+  _73 = Fin m
+  _74 = TT n
+  _7 = _76
+  _72 = TT m
+  _71 = TT m
+  _7 = _75
+  _59 = _76
+  _60 = _75
+  _73 = Fin m
+  _74 = TT n
+  _72 = TT m
+  _59 = _76
+  _60 = _75
+  _73 = Fin m
+  _74 = TT n
+  _71 = TT m
+  _7 = Nat
+  _6 = Nat
+  _7 = Nat
+  _5 = Nat
+  _0 = Nat
+  _5 = Nat
+  _1 = Nat
+  _0 = Nat
+  _6 = Nat
+  _7 = Nat
+  _5 = Nat
+  _1 = Nat
+  _0 = Nat
+  _5 = Nat
+  _0 = Nat
+  _59 = Nat
+  _60 = Nat
+  _8 = Nat
+  _9 = Nat
+  _3 = Nat
+  _4 = Type
+  _6 = Nat
+  _5 = Nat
+  _0 = Nat
+  _2 = Type
+  _ty77 = Type
+  _77 = Nat
+  _77 = Nat
+  _77 = Nat
+  _ty79 = Type
+  _ty78 = Type
+  _77 = _79
+  _78 = TT n
+  _0 = _79
+  _78 = TT n
+  _ty82 = Type
+  _ty81 = Type
+  _ty80 = Type
+  _77 = _82
+  _81 = TT n
+  _1 = _82
+  _80 = Fin n
+  _5 = _82
+  _80 = Fin n
+  _ty83 = Type
+  _83 = Nat
+  _83 = Nat
+  _83 = Nat
+  _ty86 = Type
+  _ty85 = Type
+  _ty84 = Type
+  _83 = _86
+  _6 = _86
+  _85 = TT (S m)
+  _84 = TT m
+  _90 = _86
+  _86 = Nat
+  _59 = Nat
+  _60 = _86
+  _77 = _86
+  _90 = _86
+  _84 = TT m
+  _85 = TT (S m)
+  _ty89 = Type
+  _ty88 = Type
+  _ty87 = Type
+  _83 = _89
+  _88 = TT m
+  _87 = TT m
+  _7 = _89
+  _88 = TT m
+  _90 = _89
+  _87 = TT m
+  _ty90 = Type
+  _90 = Nat
+  _90 = Nat
+  _ty92 = Type
+  _ty91 = Type
+  _90 = _92
+  _5 = _92
+  _91 = Fin m
+  _5 = _92
+  _91 = Fin m
+  _ty94 = Type
+  _ty93 = Type
+  _90 = _94
+  _6 = _94
+  _93 = TT (S m)
+  _6 = _94
+  _94 = Nat
+  _90 = Nat
+  _93 = TT (S m)
+  _ty97 = Type
+  _ty96 = Type
+  _ty95 = Type
+  _90 = _97
+  _7 = _97
+  _96 = TT m
+  _95 = TT m
+  _83 = _97
+  _96 = TT m
+  _95 = TT m
+  _90 = Nat
 
-
-Solved metas: []
+Solved metas: [_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _70, _71, _72, _73, _74, _75, _76, _77, _78, _79, _80, _81, _82, _83, _84, _85, _86, _87, _88, _89, _90, _91, _92, _93, _94, _95, _96, _97, _ty0, _ty1, _ty2, _ty3, _ty4, _ty5, _ty6, _ty7, _ty8, _ty9, _ty10, _ty11, _ty12, _ty13, _ty14, _ty15, _ty16, _ty17, _ty18, _ty19, _ty20, _ty21, _ty22, _ty23, _ty24, _ty25, _ty26, _ty27, _ty28, _ty29, _ty30, _ty31, _ty32, _ty33, _ty34, _ty35, _ty36, _ty37, _ty38, _ty39, _ty40, _ty41, _ty42, _ty43, _ty44, _ty45, _ty46, _ty47, _ty48, _ty49, _ty50, _ty51, _ty52, _ty53, _ty54, _ty55, _ty56, _ty57, _ty58, _ty59, _ty60, _ty61, _ty62, _ty63, _ty64, _ty65, _ty66, _ty67, _ty68, _ty69, _ty70, _ty71, _ty72, _ty73, _ty74, _ty75, _ty76, _ty77, _ty78, _ty79, _ty80, _ty81, _ty82, _ty83, _ty84, _ty85, _ty86, _ty87, _ty88, _ty89, _ty90, _ty91, _ty92, _ty93, _ty94, _ty95, _ty96, _ty97]
 
 ##############
 # Elaborated #
@@ -402,7 +761,7 @@ example2 : TT (S Z) {
 mutual {
   constructor/0 Result : Type.
   
-  constructor/2 R : (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  constructor/2 R : (_ :L TT Z) -> (_ :L TT (S Z)) -> Result.
 }
 
 main : Result {
@@ -537,7 +896,7 @@ example2 :117 TT (S Z) {
 mutual {
   constructor/0 Result :21 Type.
   
-  constructor/2 R :17 (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  constructor/2 R :17 (_ :L TT Z) -> (_ :L TT (S Z)) -> Result.
 }
 
 main :212 Result {
@@ -1797,7 +2156,7 @@ inferring  example2 :117 TT (S Z) {
 inferring  mutual {
     constructor/0 Result :21 Type.
     
-    constructor/2 R :17 (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+    constructor/2 R :17 (_ :L TT Z) -> (_ :L TT (S Z)) -> Result.
   }
 
   inferred constraints: 
@@ -1812,7 +2171,7 @@ inferring  mutual {
   mutual {
     constructor/0 Result :I Type.
     
-    constructor/2 R :I (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+    constructor/2 R :I (_ :L TT Z) -> (_ :L TT (S Z)) -> Result.
   }
 
 inferring  main :212 Result {
@@ -2501,7 +2860,7 @@ example2 :L TT (S Z) {
 mutual {
   constructor/0 Result :I Type.
   
-  constructor/2 R :L (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  constructor/2 R :L (_ :L TT Z) -> (_ :L TT (S Z)) -> Result.
 }
 
 main :L Result {
@@ -2637,7 +2996,7 @@ example2 :L TT (S Z) {
 mutual {
   constructor/0 Result :I Type.
   
-  constructor/2 R :L (x :L TT Z) -> (y :L TT (S Z)) -> Result.
+  constructor/2 R :L (_ :L TT Z) -> (_ :L TT (S Z)) -> Result.
 }
 
 main :L Result {

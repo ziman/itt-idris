@@ -33,7 +33,7 @@ Show Error where
   show NotImplementedYet = "not implemented yet"
   show (OtherError msg) = "error: " ++ msg
   show (TCError e) = show e
-  show (NotPi ty) = "not a pi type:" ++ show ty
+  show (NotPi ty) = "not a pi type: " ++ show ty
   show CantInferWildcard = "can't infer _"
   show (CantInfer tm) = "can't infer: " ++ show tm
   show (CantConvert lhs rhs) = "can't convert " ++ show lhs ++ " with " ++ show rhs
