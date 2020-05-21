@@ -16,7 +16,7 @@ data Vect : Nat -> Type {
 length : (n : Nat) -> Vect n -> Nat {
   length {Z} Nil ~> Z,
 
-  forall (n : _) (x : Bool) (xs : Vect n)
+  forall (n : _) (x : _) (xs : _)
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
