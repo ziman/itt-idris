@@ -54,41 +54,41 @@ id : (a : Type) -> (_ : a) -> a {
 }
 
 subst : (a : Type) -> (P : (_ : a) -> Type) -> (x : a) -> (y : a) -> (eq : Id a x y) -> (w : P x) -> P y {
-  forall (a : Type) (P : (x :L a) -> Type) (x : a)
+  forall (a : Type) (P : (x :L a) -> Type) (x : a).
   subst a P x [x] ({Refl} [a] [x]) ~> \w : P x.
       w
 }
 
 cong : (a : Type) -> (b : Type) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (eq : Id a x y) -> Id b (f x) (f y) {
-  forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a)
+  forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
 one : (x : B) -> List {
-  forall (x : B)
+  forall (x : B).
   one x ~> Cons x Nil
 }
 
 app : (_ : List) -> (_ : List) -> List {
-  forall (ys : List)
+  forall (ys : List).
   app Nil ys ~> ys
   
-  forall (x : B) (xs : List) (ys : List)
+  forall (x : B) (xs : List) (ys : List).
   app (Cons x xs) ys ~> Cons x (app xs ys)
 }
 
 appRightNeutral : (ys : List) -> Id List ys (app ys Nil) {
   appRightNeutral Nil ~> Refl List Nil
   
-  forall (x : B) (xs : List)
+  forall (x : B) (xs : List).
   appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
 }
 
 appAssoc : (xs : List) -> (ys : List) -> (zs : List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-  forall (ys : List) (zs : List)
+  forall (ys : List) (zs : List).
   appAssoc Nil ys zs ~> Refl List (app ys zs)
   
-  forall (x : B) (xs : List) (ys : List) (zs : List)
+  forall (x : B) (xs : List) (ys : List) (zs : List).
   appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
 }
 
@@ -101,27 +101,27 @@ mutual {
 }
 
 rev' : (xs : List) -> (rxs : Rev xs) -> (ys : List) -> Rev (app xs ys) {
-  forall (xs : List) (rxs : Rev xs)
+  forall (xs : List) (rxs : Rev xs).
   rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
   
-  forall (xs : List) (rxs : Rev xs) (y : B) (ys : List)
+  forall (xs : List) (rxs : Rev xs) (y : B) (ys : List).
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
 rev : (xs : List) -> Rev xs {
-  forall (xs : List)
+  forall (xs : List).
   rev xs ~> rev' Nil RNil xs
 }
 
 reverse' : (xs : List) -> (rxs : Rev xs) -> List {
   reverse' [Nil] RNil ~> Nil
   
-  forall (xs : List) (x : B) (rxs : Rev xs)
+  forall (xs : List) (x : B) (rxs : Rev xs).
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
 reverse : (_ : List) -> List {
-  forall (xs : List)
+  forall (xs : List).
   reverse xs ~> reverse' xs (rev xs)
 }
 
@@ -138,42 +138,42 @@ mutual {
 length : (_ : List) -> N {
   length Nil ~> Z
   
-  forall (x : B) (xs : List)
+  forall (x : B) (xs : List).
   length (Cons x xs) ~> S (length xs)
 }
 
 index : (_ : N) -> (_ : List) -> (_ : List) -> List {
-  forall (xs : List) (ys : List)
+  forall (xs : List) (ys : List).
   index Z xs ys ~> Nil
   
-  forall (x : B) (xs : List) (y : B) (ys : List)
+  forall (x : B) (xs : List) (y : B) (ys : List).
   index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
   
-  forall (n : N) (x : B) (xs : List) (y : B) (ys : List)
+  forall (n : N) (x : B) (xs : List) (y : B) (ys : List).
   index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
   
-  forall (n : N)
+  forall (n : N).
   index (S n) Nil Nil ~> Nil
 }
 
 build : (n : N) -> (xs : List) -> (ys : List) -> V (index n xs ys) {
-  forall (xs : List) (ys : List)
+  forall (xs : List) (ys : List).
   build Z xs ys ~> VNil
   
-  forall (x : B) (xs : List) (y : B) (ys : List)
+  forall (x : B) (xs : List) (y : B) (ys : List).
   build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
   
-  forall (n : N) (x : B) (xs : List) (y : B) (ys : List)
+  forall (n : N) (x : B) (xs : List) (y : B) (ys : List).
   build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
   
-  forall (n : N)
+  forall (n : N).
   build (S n) Nil Nil ~> VNil
 }
 
 postulate eq : (xs : List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
 toV : (xs : List) -> V xs {
-  forall (xs : List)
+  forall (xs : List).
   toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
 }
 
@@ -198,41 +198,41 @@ decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
 }
 
 isPalinV' : (x : B) -> (y : B) -> (xs : List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-  forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs)
+  forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs).
   isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
   
-  forall (x : B) (y : B) (xs : List) (v : V xs) (pfB : Maybe (Id B x y)) (pfV : Maybe (IsPalindrome xs))
+  forall (x : B) (y : B) (xs : List) (v : V xs) (pfB : Maybe (Id B x y)) (pfV : Maybe (IsPalindrome xs)).
   isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
 }
 
 isPalinV : (xs : List) -> (v : V xs) -> Maybe (IsPalindrome xs) {
   isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
   
-  forall (x : B)
+  forall (x : B).
   isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
   
-  forall (x : B) (xs : List) (y : B) (v : V xs)
+  forall (x : B) (xs : List) (y : B) (v : V xs).
   isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
 }
 
 isPalindrome : (xs : List) -> Maybe (IsPalindrome xs) {
-  forall (xs : List)
+  forall (xs : List).
   isPalindrome xs ~> isPalinV xs (toV xs)
 }
 
 genList : (_ : B) -> (_ : N) -> List {
-  forall (b : B)
+  forall (b : B).
   genList b Z ~> Nil
   
-  forall (b : B) (n : N)
+  forall (b : B) (n : N).
   genList b (S n) ~> Cons b (genList (not b) n)
 }
 
 isJust : (a : Type) -> (x : Maybe a) -> B {
-  forall (a : Type) (x : a)
+  forall (a : Type) (x : a).
   isJust a (Just [a] x) ~> T
   
-  forall (a : Type)
+  forall (a : Type).
   isJust a (Nothing [a]) ~> F
 }
 
@@ -299,41 +299,41 @@ id : (a : Type) -> (_ : a) -> a {
 }
 
 subst : (a : Type) -> (P : (_ : a) -> Type) -> (x : a) -> (y : a) -> (eq : Id a x y) -> (w : P x) -> P y {
-  forall (a : Type) (P : (x :L a) -> Type) (x : a)
+  forall (a : Type) (P : (x :L a) -> Type) (x : a).
   subst a P x [x] ({Refl} [a] [x]) ~> \w : P x.
       w
 }
 
 cong : (a : Type) -> (b : Type) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (eq : Id a x y) -> Id b (f x) (f y) {
-  forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a)
+  forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
 one : (x : B) -> List {
-  forall (x : B)
+  forall (x : B).
   one x ~> Cons x Nil
 }
 
 app : (_ : List) -> (_ : List) -> List {
-  forall (ys : List)
+  forall (ys : List).
   app Nil ys ~> ys
   
-  forall (x : B) (xs : List) (ys : List)
+  forall (x : B) (xs : List) (ys : List).
   app (Cons x xs) ys ~> Cons x (app xs ys)
 }
 
 appRightNeutral : (ys : List) -> Id List ys (app ys Nil) {
   appRightNeutral Nil ~> Refl List Nil
   
-  forall (x : B) (xs : List)
+  forall (x : B) (xs : List).
   appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
 }
 
 appAssoc : (xs : List) -> (ys : List) -> (zs : List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-  forall (ys : List) (zs : List)
+  forall (ys : List) (zs : List).
   appAssoc Nil ys zs ~> Refl List (app ys zs)
   
-  forall (x : B) (xs : List) (ys : List) (zs : List)
+  forall (x : B) (xs : List) (ys : List) (zs : List).
   appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
 }
 
@@ -346,27 +346,27 @@ mutual {
 }
 
 rev' : (xs : List) -> (rxs : Rev xs) -> (ys : List) -> Rev (app xs ys) {
-  forall (xs : List) (rxs : Rev xs)
+  forall (xs : List) (rxs : Rev xs).
   rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
   
-  forall (xs : List) (rxs : Rev xs) (y : B) (ys : List)
+  forall (xs : List) (rxs : Rev xs) (y : B) (ys : List).
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
 rev : (xs : List) -> Rev xs {
-  forall (xs : List)
+  forall (xs : List).
   rev xs ~> rev' Nil RNil xs
 }
 
 reverse' : (xs : List) -> (rxs : Rev xs) -> List {
   reverse' [Nil] RNil ~> Nil
   
-  forall (xs : List) (x : B) (rxs : Rev xs)
+  forall (xs : List) (x : B) (rxs : Rev xs).
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
 reverse : (_ : List) -> List {
-  forall (xs : List)
+  forall (xs : List).
   reverse xs ~> reverse' xs (rev xs)
 }
 
@@ -383,42 +383,42 @@ mutual {
 length : (_ : List) -> N {
   length Nil ~> Z
   
-  forall (x : B) (xs : List)
+  forall (x : B) (xs : List).
   length (Cons x xs) ~> S (length xs)
 }
 
 index : (_ : N) -> (_ : List) -> (_ : List) -> List {
-  forall (xs : List) (ys : List)
+  forall (xs : List) (ys : List).
   index Z xs ys ~> Nil
   
-  forall (x : B) (xs : List) (y : B) (ys : List)
+  forall (x : B) (xs : List) (y : B) (ys : List).
   index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
   
-  forall (n : N) (x : B) (xs : List) (y : B) (ys : List)
+  forall (n : N) (x : B) (xs : List) (y : B) (ys : List).
   index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
   
-  forall (n : N)
+  forall (n : N).
   index (S n) Nil Nil ~> Nil
 }
 
 build : (n : N) -> (xs : List) -> (ys : List) -> V (index n xs ys) {
-  forall (xs : List) (ys : List)
+  forall (xs : List) (ys : List).
   build Z xs ys ~> VNil
   
-  forall (x : B) (xs : List) (y : B) (ys : List)
+  forall (x : B) (xs : List) (y : B) (ys : List).
   build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
   
-  forall (n : N) (x : B) (xs : List) (y : B) (ys : List)
+  forall (n : N) (x : B) (xs : List) (y : B) (ys : List).
   build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
   
-  forall (n : N)
+  forall (n : N).
   build (S n) Nil Nil ~> VNil
 }
 
 postulate eq : (xs : List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
 toV : (xs : List) -> V xs {
-  forall (xs : List)
+  forall (xs : List).
   toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
 }
 
@@ -443,41 +443,41 @@ decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
 }
 
 isPalinV' : (x : B) -> (y : B) -> (xs : List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-  forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs)
+  forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs).
   isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
   
-  forall (x : B) (y : B) (xs : List) (v : V xs) (pfB : Maybe (Id B x y)) (pfV : Maybe (IsPalindrome xs))
+  forall (x : B) (y : B) (xs : List) (v : V xs) (pfB : Maybe (Id B x y)) (pfV : Maybe (IsPalindrome xs)).
   isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
 }
 
 isPalinV : (xs : List) -> (v : V xs) -> Maybe (IsPalindrome xs) {
   isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
   
-  forall (x : B)
+  forall (x : B).
   isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
   
-  forall (x : B) (xs : List) (y : B) (v : V xs)
+  forall (x : B) (xs : List) (y : B) (v : V xs).
   isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
 }
 
 isPalindrome : (xs : List) -> Maybe (IsPalindrome xs) {
-  forall (xs : List)
+  forall (xs : List).
   isPalindrome xs ~> isPalinV xs (toV xs)
 }
 
 genList : (_ : B) -> (_ : N) -> List {
-  forall (b : B)
+  forall (b : B).
   genList b Z ~> Nil
   
-  forall (b : B) (n : N)
+  forall (b : B) (n : N).
   genList b (S n) ~> Cons b (genList (not b) n)
 }
 
 isJust : (a : Type) -> (x : Maybe a) -> B {
-  forall (a : Type) (x : a)
+  forall (a : Type) (x : a).
   isJust a (Just [a] x) ~> T
   
-  forall (a : Type)
+  forall (a : Type).
   isJust a (Nothing [a]) ~> F
 }
 
@@ -549,41 +549,41 @@ id : (a : Type) -> (_ : a) -> a {
 }
 
 subst : (a : Type) -> (P : (_ : a) -> Type) -> (x : a) -> (y : a) -> (eq : Id a x y) -> (w : P x) -> P y {
-  forall (a : Type) (P : (x :L a) -> Type) (x : a)
+  forall (a : Type) (P : (x :L a) -> Type) (x : a).
   subst a P x [x] ({Refl} [a] [x]) ~> \w : P x.
       w
 }
 
 cong : (a : Type) -> (b : Type) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (eq : Id a x y) -> Id b (f x) (f y) {
-  forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a)
+  forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
 one : (x : B) -> List {
-  forall (x : B)
+  forall (x : B).
   one x ~> Cons x Nil
 }
 
 app : (_ : List) -> (_ : List) -> List {
-  forall (ys : List)
+  forall (ys : List).
   app Nil ys ~> ys
   
-  forall (x : B) (xs : List) (ys : List)
+  forall (x : B) (xs : List) (ys : List).
   app (Cons x xs) ys ~> Cons x (app xs ys)
 }
 
 appRightNeutral : (ys : List) -> Id List ys (app ys Nil) {
   appRightNeutral Nil ~> Refl List Nil
   
-  forall (x : B) (xs : List)
+  forall (x : B) (xs : List).
   appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
 }
 
 appAssoc : (xs : List) -> (ys : List) -> (zs : List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-  forall (ys : List) (zs : List)
+  forall (ys : List) (zs : List).
   appAssoc Nil ys zs ~> Refl List (app ys zs)
   
-  forall (x : B) (xs : List) (ys : List) (zs : List)
+  forall (x : B) (xs : List) (ys : List) (zs : List).
   appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
 }
 
@@ -596,27 +596,27 @@ mutual {
 }
 
 rev' : (xs : List) -> (rxs : Rev xs) -> (ys : List) -> Rev (app xs ys) {
-  forall (xs : List) (rxs : Rev xs)
+  forall (xs : List) (rxs : Rev xs).
   rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
   
-  forall (xs : List) (rxs : Rev xs) (y : B) (ys : List)
+  forall (xs : List) (rxs : Rev xs) (y : B) (ys : List).
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
 rev : (xs : List) -> Rev xs {
-  forall (xs : List)
+  forall (xs : List).
   rev xs ~> rev' Nil RNil xs
 }
 
 reverse' : (xs : List) -> (rxs : Rev xs) -> List {
   reverse' [Nil] RNil ~> Nil
   
-  forall (xs : List) (x : B) (rxs : Rev xs)
+  forall (xs : List) (x : B) (rxs : Rev xs).
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
 reverse : (_ : List) -> List {
-  forall (xs : List)
+  forall (xs : List).
   reverse xs ~> reverse' xs (rev xs)
 }
 
@@ -633,42 +633,42 @@ mutual {
 length : (_ : List) -> N {
   length Nil ~> Z
   
-  forall (x : B) (xs : List)
+  forall (x : B) (xs : List).
   length (Cons x xs) ~> S (length xs)
 }
 
 index : (_ : N) -> (_ : List) -> (_ : List) -> List {
-  forall (xs : List) (ys : List)
+  forall (xs : List) (ys : List).
   index Z xs ys ~> Nil
   
-  forall (x : B) (xs : List) (y : B) (ys : List)
+  forall (x : B) (xs : List) (y : B) (ys : List).
   index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
   
-  forall (n : N) (x : B) (xs : List) (y : B) (ys : List)
+  forall (n : N) (x : B) (xs : List) (y : B) (ys : List).
   index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
   
-  forall (n : N)
+  forall (n : N).
   index (S n) Nil Nil ~> Nil
 }
 
 build : (n : N) -> (xs : List) -> (ys : List) -> V (index n xs ys) {
-  forall (xs : List) (ys : List)
+  forall (xs : List) (ys : List).
   build Z xs ys ~> VNil
   
-  forall (x : B) (xs : List) (y : B) (ys : List)
+  forall (x : B) (xs : List) (y : B) (ys : List).
   build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
   
-  forall (n : N) (x : B) (xs : List) (y : B) (ys : List)
+  forall (n : N) (x : B) (xs : List) (y : B) (ys : List).
   build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
   
-  forall (n : N)
+  forall (n : N).
   build (S n) Nil Nil ~> VNil
 }
 
 postulate eq : (xs : List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
 toV : (xs : List) -> V xs {
-  forall (xs : List)
+  forall (xs : List).
   toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
 }
 
@@ -693,41 +693,41 @@ decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
 }
 
 isPalinV' : (x : B) -> (y : B) -> (xs : List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-  forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs)
+  forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs).
   isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
   
-  forall (x : B) (y : B) (xs : List) (v : V xs) (pfB : Maybe (Id B x y)) (pfV : Maybe (IsPalindrome xs))
+  forall (x : B) (y : B) (xs : List) (v : V xs) (pfB : Maybe (Id B x y)) (pfV : Maybe (IsPalindrome xs)).
   isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
 }
 
 isPalinV : (xs : List) -> (v : V xs) -> Maybe (IsPalindrome xs) {
   isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
   
-  forall (x : B)
+  forall (x : B).
   isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
   
-  forall (x : B) (xs : List) (y : B) (v : V xs)
+  forall (x : B) (xs : List) (y : B) (v : V xs).
   isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
 }
 
 isPalindrome : (xs : List) -> Maybe (IsPalindrome xs) {
-  forall (xs : List)
+  forall (xs : List).
   isPalindrome xs ~> isPalinV xs (toV xs)
 }
 
 genList : (_ : B) -> (_ : N) -> List {
-  forall (b : B)
+  forall (b : B).
   genList b Z ~> Nil
   
-  forall (b : B) (n : N)
+  forall (b : B) (n : N).
   genList b (S n) ~> Cons b (genList (not b) n)
 }
 
 isJust : (a : Type) -> (x : Maybe a) -> B {
-  forall (a : Type) (x : a)
+  forall (a : Type) (x : a).
   isJust a (Just [a] x) ~> T
   
-  forall (a : Type)
+  forall (a : Type).
   isJust a (Nothing [a]) ~> F
 }
 
@@ -794,41 +794,41 @@ id :300 (a :301 Type) -> (_ :302 a) -> a {
 }
 
 subst :629 (a :630 Type) -> (P :631 (_ :632 a) -> Type) -> (x :633 a) -> (y :634 a) -> (eq :635 Id a x y) -> (w :639 P x) -> P y {
-  forall (a :644 Type) (P :643 (x :L a) -> Type) (x :642 a)
+  forall (a :644 Type) (P :643 (x :L a) -> Type) (x :642 a).
   subst a P x [x] ({Refl} [a] [x]) ~> \w :652 P x.
       w
 }
 
 cong :206 (a :207 Type) -> (b :208 Type) -> (f :209 (x :L a) -> b) -> (x :210 a) -> (y :211 a) -> (eq :212 Id a x y) -> Id b (f x) (f y) {
-  forall (a :225 Type) (b :224 Type) (f :222 (_ :223 a) -> b) (x :221 a)
+  forall (a :225 Type) (b :224 Type) (f :222 (_ :223 a) -> b) (x :221 a).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
 one :525 (x :526 B) -> List {
-  forall (x :527 B)
+  forall (x :527 B).
   one x ~> Cons x Nil
 }
 
 app :58 (_ :59 List) -> (_ :60 List) -> List {
-  forall (ys :61 List)
+  forall (ys :61 List).
   app Nil ys ~> ys
   
-  forall (x :66 B) (xs :65 List) (ys :64 List)
+  forall (x :66 B) (xs :65 List) (ys :64 List).
   app (Cons x xs) ys ~> Cons x (app xs ys)
 }
 
 appRightNeutral :126 (ys :127 List) -> Id List ys (app ys Nil) {
   appRightNeutral Nil ~> Refl List Nil
   
-  forall (x :137 B) (xs :136 List)
+  forall (x :137 B) (xs :136 List).
   appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
 }
 
 appAssoc :75 (xs :76 List) -> (ys :77 List) -> (zs :78 List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-  forall (ys :91 List) (zs :90 List)
+  forall (ys :91 List) (zs :90 List).
   appAssoc Nil ys zs ~> Refl List (app ys zs)
   
-  forall (x :102 B) (xs :101 List) (ys :100 List) (zs :99 List)
+  forall (x :102 B) (xs :101 List) (ys :100 List) (zs :99 List).
   appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
 }
 
@@ -841,27 +841,27 @@ mutual {
 }
 
 rev' :539 (xs :540 List) -> (rxs :541 Rev xs) -> (ys :543 List) -> Rev (app xs ys) {
-  forall (xs :549 List) (rxs :547 Rev xs)
+  forall (xs :549 List) (rxs :547 Rev xs).
   rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
   
-  forall (xs :566 List) (rxs :564 Rev xs) (y :563 B) (ys :562 List)
+  forall (xs :566 List) (rxs :564 Rev xs) (y :563 B) (ys :562 List).
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
 rev :531 (xs :532 List) -> Rev xs {
-  forall (xs :534 List)
+  forall (xs :534 List).
   rev xs ~> rev' Nil RNil xs
 }
 
 reverse' :607 (xs :608 List) -> (rxs :609 Rev xs) -> List {
   reverse' [Nil] RNil ~> Nil
   
-  forall (xs :616 List) (x :615 B) (rxs :613 Rev xs)
+  forall (xs :616 List) (x :615 B) (rxs :613 Rev xs).
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
 reverse :600 (_ :601 List) -> List {
-  forall (xs :602 List)
+  forall (xs :602 List).
   reverse xs ~> reverse' xs (rev xs)
 }
 
@@ -878,42 +878,42 @@ mutual {
 length :507 (_ :508 List) -> N {
   length Nil ~> Z
   
-  forall (x :511 B) (xs :510 List)
+  forall (x :511 B) (xs :510 List).
   length (Cons x xs) ~> S (length xs)
 }
 
 index :305 (_ :306 N) -> (_ :307 List) -> (_ :308 List) -> List {
-  forall (xs :310 List) (ys :309 List)
+  forall (xs :310 List) (ys :309 List).
   index Z xs ys ~> Nil
   
-  forall (x :317 B) (xs :316 List) (y :315 B) (ys :314 List)
+  forall (x :317 B) (xs :316 List) (y :315 B) (ys :314 List).
   index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
   
-  forall (n :332 N) (x :331 B) (xs :330 List) (y :329 B) (ys :328 List)
+  forall (n :332 N) (x :331 B) (xs :330 List) (y :329 B) (ys :328 List).
   index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
   
-  forall (n :350 N)
+  forall (n :350 N).
   index (S n) Nil Nil ~> Nil
 }
 
 build :151 (n :152 N) -> (xs :153 List) -> (ys :154 List) -> V (index n xs ys) {
-  forall (xs :160 List) (ys :159 List)
+  forall (xs :160 List) (ys :159 List).
   build Z xs ys ~> VNil
   
-  forall (x :167 B) (xs :166 List) (y :165 B) (ys :164 List)
+  forall (x :167 B) (xs :166 List) (y :165 B) (ys :164 List).
   build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
   
-  forall (n :181 N) (x :180 B) (xs :179 List) (y :178 B) (ys :177 List)
+  forall (n :181 N) (x :180 B) (xs :179 List) (y :178 B) (ys :177 List).
   build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
   
-  forall (n :201 N)
+  forall (n :201 N).
   build (S n) Nil Nil ~> VNil
 }
 
 postulate eq :274 (xs :275 List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
 toV :669 (xs :670 List) -> V xs {
-  forall (xs :672 List)
+  forall (xs :672 List).
   toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
 }
 
@@ -938,41 +938,41 @@ decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
 }
 
 isPalinV' :418 (x :419 B) -> (y :420 B) -> (xs :421 List) -> (v :422 V xs) -> (pfB :424 Maybe (Id B x y)) -> (pfV :429 Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-  forall (x :444 B) (xs :443 List) (v :441 V xs) (pfV :439 IsPalindrome xs)
+  forall (x :444 B) (xs :443 List) (v :441 V xs) (pfV :439 IsPalindrome xs).
   isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
   
-  forall (x :484 B) (y :483 B) (xs :482 List) (v :480 V xs) (pfB :475 Maybe (Id B x y)) (pfV :472 Maybe (IsPalindrome xs))
+  forall (x :484 B) (y :483 B) (xs :482 List) (v :480 V xs) (pfB :475 Maybe (Id B x y)) (pfV :472 Maybe (IsPalindrome xs)).
   isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
 }
 
 isPalinV :369 (xs :370 List) -> (v :371 V xs) -> Maybe (IsPalindrome xs) {
   isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
   
-  forall (x :380 B)
+  forall (x :380 B).
   isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
   
-  forall (x :396 B) (xs :395 List) (y :394 B) (v :392 V xs)
+  forall (x :396 B) (xs :395 List) (y :394 B) (v :392 V xs).
   isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
 }
 
 isPalindrome :498 (xs :499 List) -> Maybe (IsPalindrome xs) {
-  forall (xs :502 List)
+  forall (xs :502 List).
   isPalindrome xs ~> isPalinV xs (toV xs)
 }
 
 genList :284 (_ :285 B) -> (_ :286 N) -> List {
-  forall (b :287 B)
+  forall (b :287 B).
   genList b Z ~> Nil
   
-  forall (b :291 B) (n :290 N)
+  forall (b :291 B) (n :290 N).
   genList b (S n) ~> Cons b (genList (not b) n)
 }
 
 isJust :355 (a :356 Type) -> (x :357 Maybe a) -> B {
-  forall (a :360 Type) (x :359 a)
+  forall (a :360 Type) (x :359 a).
   isJust a (Just [a] x) ~> T
   
-  forall (a :365 Type)
+  forall (a :365 Type).
   isJust a (Nothing [a]) ~> F
 }
 
@@ -1139,7 +1139,7 @@ inferring  id :300 (a :301 Type) -> (_ :302 a) -> a {
   }
 
 inferring  subst :629 (a :630 Type) -> (P :631 (_ :632 a) -> Type) -> (x :633 a) -> (y :634 a) -> (eq :635 Id a x y) -> (w :639 P x) -> P y {
-    forall (a :644 Type) (P :643 (x :L a) -> Type) (x :642 a)
+    forall (a :644 Type) (P :643 (x :L a) -> Type) (x :642 a).
     subst a P x [x] ({Refl} [a] [x]) ~> \w :652 P x.
         w
   }
@@ -1181,13 +1181,13 @@ inferring  subst :629 (a :630 Type) -> (P :631 (_ :632 a) -> Type) -> (x :633 a)
     covariant: [632]
     contravariant: [630, 631, 633, 634, 635, 639]
   subst :I (a :I Type) -> (P :I (_ :L a) -> Type) -> (x :I a) -> (y :I a) -> (eq :I Id a x y) -> (w :L P x) -> P y {
-    forall (a :I Type) (P :I (x :L a) -> Type) (x :I a)
+    forall (a :I Type) (P :I (x :L a) -> Type) (x :I a).
     subst a P x [x] ({Refl} [a] [x]) ~> \w :L P x.
         w
   }
 
 inferring  cong :206 (a :207 Type) -> (b :208 Type) -> (f :209 (x :L a) -> b) -> (x :210 a) -> (y :211 a) -> (eq :212 Id a x y) -> Id b (f x) (f y) {
-    forall (a :225 Type) (b :224 Type) (f :222 (_ :223 a) -> b) (x :221 a)
+    forall (a :225 Type) (b :224 Type) (f :222 (_ :223 a) -> b) (x :221 a).
     cong a b f x [x] [Refl a x] ~> Refl b (f x)
   }
 
@@ -1242,12 +1242,12 @@ inferring  cong :206 (a :207 Type) -> (b :208 Type) -> (f :209 (x :L a) -> b) ->
     f x ~ f x
 
   cong :I (a :I Type) -> (b :I Type) -> (f :I (x :L a) -> b) -> (x :R a) -> (y :I a) -> (eq :I Id a x y) -> Id b (f x) (f y) {
-    forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :R a)
+    forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :R a).
     cong a b f x [x] [Refl a x] ~> Refl b (f x)
   }
 
 inferring  one :525 (x :526 B) -> List {
-    forall (x :527 B)
+    forall (x :527 B).
     one x ~> Cons x Nil
   }
 
@@ -1264,15 +1264,15 @@ inferring  one :525 (x :526 B) -> List {
     covariant: []
     contravariant: [526]
   one :I (x :L B) -> List {
-    forall (x :L B)
+    forall (x :L B).
     one x ~> Cons x Nil
   }
 
 inferring  app :58 (_ :59 List) -> (_ :60 List) -> List {
-    forall (ys :61 List)
+    forall (ys :61 List).
     app Nil ys ~> ys
     
-    forall (x :66 B) (xs :65 List) (ys :64 List)
+    forall (x :66 B) (xs :65 List) (ys :64 List).
     app (Cons x xs) ys ~> Cons x (app xs ys)
   }
 
@@ -1309,17 +1309,17 @@ inferring  app :58 (_ :59 List) -> (_ :60 List) -> List {
     covariant: []
     contravariant: [59, 60]
   app :I (_ :L List) -> (_ :L List) -> List {
-    forall (ys :L List)
+    forall (ys :L List).
     app Nil ys ~> ys
     
-    forall (x :L B) (xs :L List) (ys :L List)
+    forall (x :L B) (xs :L List) (ys :L List).
     app (Cons x xs) ys ~> Cons x (app xs ys)
   }
 
 inferring  appRightNeutral :126 (ys :127 List) -> Id List ys (app ys Nil) {
     appRightNeutral Nil ~> Refl List Nil
     
-    forall (x :137 B) (xs :136 List)
+    forall (x :137 B) (xs :136 List).
     appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
   }
 
@@ -1385,15 +1385,15 @@ inferring  appRightNeutral :126 (ys :127 List) -> Id List ys (app ys Nil) {
   appRightNeutral :I (ys :R List) -> Id List ys (app ys Nil) {
     appRightNeutral Nil ~> Refl List Nil
     
-    forall (x :R B) (xs :R List)
+    forall (x :R B) (xs :R List).
     appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
   }
 
 inferring  appAssoc :75 (xs :76 List) -> (ys :77 List) -> (zs :78 List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-    forall (ys :91 List) (zs :90 List)
+    forall (ys :91 List) (zs :90 List).
     appAssoc Nil ys zs ~> Refl List (app ys zs)
     
-    forall (x :102 B) (xs :101 List) (ys :100 List) (zs :99 List)
+    forall (x :102 B) (xs :101 List) (ys :100 List) (zs :99 List).
     appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
   }
 
@@ -1502,10 +1502,10 @@ inferring  appAssoc :75 (xs :76 List) -> (ys :77 List) -> (zs :78 List) -> Id Li
     app ys zs ~ app ys zs
 
   appAssoc :I (xs :R List) -> (ys :R List) -> (zs :R List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-    forall (ys :R List) (zs :R List)
+    forall (ys :R List) (zs :R List).
     appAssoc Nil ys zs ~> Refl List (app ys zs)
     
-    forall (x :R B) (xs :R List) (ys :R List) (zs :R List)
+    forall (x :R B) (xs :R List) (ys :R List) (zs :R List).
     appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
   }
 
@@ -1538,10 +1538,10 @@ inferring  mutual {
   }
 
 inferring  rev' :539 (xs :540 List) -> (rxs :541 Rev xs) -> (ys :543 List) -> Rev (app xs ys) {
-    forall (xs :549 List) (rxs :547 Rev xs)
+    forall (xs :549 List) (rxs :547 Rev xs).
     rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
     
-    forall (xs :566 List) (rxs :564 Rev xs) (y :563 B) (ys :562 List)
+    forall (xs :566 List) (rxs :564 Rev xs) (y :563 B) (ys :562 List).
     rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
   }
 
@@ -1674,15 +1674,15 @@ inferring  rev' :539 (xs :540 List) -> (rxs :541 Rev xs) -> (ys :543 List) -> Re
     one y ~ one y
 
   rev' :I (xs :I List) -> (rxs :L Rev xs) -> (ys :L List) -> Rev (app xs ys) {
-    forall (xs :I List) (rxs :L Rev xs)
+    forall (xs :I List) (rxs :L Rev xs).
     rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
     
-    forall (xs :I List) (rxs :L Rev xs) (y :L B) (ys :L List)
+    forall (xs :I List) (rxs :L Rev xs) (y :L B) (ys :L List).
     rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
   }
 
 inferring  rev :531 (xs :532 List) -> Rev xs {
-    forall (xs :534 List)
+    forall (xs :534 List).
     rev xs ~> rev' Nil RNil xs
   }
 
@@ -1707,14 +1707,14 @@ inferring  rev :531 (xs :532 List) -> Rev xs {
     xs ~ app Nil xs
 
   rev :I (xs :R List) -> Rev xs {
-    forall (xs :R List)
+    forall (xs :R List).
     rev xs ~> rev' Nil RNil xs
   }
 
 inferring  reverse' :607 (xs :608 List) -> (rxs :609 Rev xs) -> List {
     reverse' [Nil] RNil ~> Nil
     
-    forall (xs :616 List) (x :615 B) (rxs :613 Rev xs)
+    forall (xs :616 List) (x :615 B) (rxs :613 Rev xs).
     reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
   }
 
@@ -1762,12 +1762,12 @@ inferring  reverse' :607 (xs :608 List) -> (rxs :609 Rev xs) -> List {
   reverse' :I (xs :I List) -> (rxs :L Rev xs) -> List {
     reverse' [Nil] RNil ~> Nil
     
-    forall (xs :I List) (x :L B) (rxs :L Rev xs)
+    forall (xs :I List) (x :L B) (rxs :L Rev xs).
     reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
   }
 
 inferring  reverse :600 (_ :601 List) -> List {
-    forall (xs :602 List)
+    forall (xs :602 List).
     reverse xs ~> reverse' xs (rev xs)
   }
 
@@ -1786,7 +1786,7 @@ inferring  reverse :600 (_ :601 List) -> List {
     covariant: []
     contravariant: [601]
   reverse :I (_ :R List) -> List {
-    forall (xs :R List)
+    forall (xs :R List).
     reverse xs ~> reverse' xs (rev xs)
   }
 
@@ -1830,7 +1830,7 @@ inferring  mutual {
 inferring  length :507 (_ :508 List) -> N {
     length Nil ~> Z
     
-    forall (x :511 B) (xs :510 List)
+    forall (x :511 B) (xs :510 List).
     length (Cons x xs) ~> S (length xs)
   }
 
@@ -1858,21 +1858,21 @@ inferring  length :507 (_ :508 List) -> N {
   length :I (_ :R List) -> N {
     length Nil ~> Z
     
-    forall (x :R B) (xs :R List)
+    forall (x :R B) (xs :R List).
     length (Cons x xs) ~> S (length xs)
   }
 
 inferring  index :305 (_ :306 N) -> (_ :307 List) -> (_ :308 List) -> List {
-    forall (xs :310 List) (ys :309 List)
+    forall (xs :310 List) (ys :309 List).
     index Z xs ys ~> Nil
     
-    forall (x :317 B) (xs :316 List) (y :315 B) (ys :314 List)
+    forall (x :317 B) (xs :316 List) (y :315 B) (ys :314 List).
     index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
     
-    forall (n :332 N) (x :331 B) (xs :330 List) (y :329 B) (ys :328 List)
+    forall (n :332 N) (x :331 B) (xs :330 List) (y :329 B) (ys :328 List).
     index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
     
-    forall (n :350 N)
+    forall (n :350 N).
     index (S n) Nil Nil ~> Nil
   }
 
@@ -1971,30 +1971,30 @@ inferring  index :305 (_ :306 N) -> (_ :307 List) -> (_ :308 List) -> List {
     covariant: []
     contravariant: [306, 307, 308]
   index :I (_ :R N) -> (_ :R List) -> (_ :R List) -> List {
-    forall (xs :R List) (ys :R List)
+    forall (xs :R List) (ys :R List).
     index Z xs ys ~> Nil
     
-    forall (x :R B) (xs :R List) (y :R B) (ys :R List)
+    forall (x :R B) (xs :R List) (y :R B) (ys :R List).
     index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
     
-    forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List)
+    forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List).
     index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
     
-    forall (n :R N)
+    forall (n :R N).
     index (S n) Nil Nil ~> Nil
   }
 
 inferring  build :151 (n :152 N) -> (xs :153 List) -> (ys :154 List) -> V (index n xs ys) {
-    forall (xs :160 List) (ys :159 List)
+    forall (xs :160 List) (ys :159 List).
     build Z xs ys ~> VNil
     
-    forall (x :167 B) (xs :166 List) (y :165 B) (ys :164 List)
+    forall (x :167 B) (xs :166 List) (y :165 B) (ys :164 List).
     build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
     
-    forall (n :181 N) (x :180 B) (xs :179 List) (y :178 B) (ys :177 List)
+    forall (n :181 N) (x :180 B) (xs :179 List) (y :178 B) (ys :177 List).
     build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
     
-    forall (n :201 N)
+    forall (n :201 N).
     build (S n) Nil Nil ~> VNil
   }
 
@@ -2119,16 +2119,16 @@ inferring  build :151 (n :152 N) -> (xs :153 List) -> (ys :154 List) -> V (index
     index (S n) Nil Nil ~ Nil
 
   build :I (n :R N) -> (xs :R List) -> (ys :R List) -> V (index n xs ys) {
-    forall (xs :R List) (ys :R List)
+    forall (xs :R List) (ys :R List).
     build Z xs ys ~> VNil
     
-    forall (x :R B) (xs :R List) (y :R B) (ys :R List)
+    forall (x :R B) (xs :R List) (y :R B) (ys :R List).
     build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
     
-    forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List)
+    forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List).
     build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
     
-    forall (n :R N)
+    forall (n :R N).
     build (S n) Nil Nil ~> VNil
   }
 
@@ -2151,7 +2151,7 @@ inferring  postulate eq :274 (xs :275 List) -> Id List (index (length xs) xs (re
   postulate eq :I (xs :I List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
 inferring  toV :669 (xs :670 List) -> V xs {
-    forall (xs :672 List)
+    forall (xs :672 List).
     toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
   }
 
@@ -2200,7 +2200,7 @@ inferring  toV :669 (xs :670 List) -> V xs {
     covariant: []
     contravariant: [670]
   toV :I (xs :R List) -> V xs {
-    forall (xs :R List)
+    forall (xs :R List).
     toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
   }
 
@@ -2339,10 +2339,10 @@ inferring  decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
   }
 
 inferring  isPalinV' :418 (x :419 B) -> (y :420 B) -> (xs :421 List) -> (v :422 V xs) -> (pfB :424 Maybe (Id B x y)) -> (pfV :429 Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-    forall (x :444 B) (xs :443 List) (v :441 V xs) (pfV :439 IsPalindrome xs)
+    forall (x :444 B) (xs :443 List) (v :441 V xs) (pfV :439 IsPalindrome xs).
     isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
     
-    forall (x :484 B) (y :483 B) (xs :482 List) (v :480 V xs) (pfB :475 Maybe (Id B x y)) (pfV :472 Maybe (IsPalindrome xs))
+    forall (x :484 B) (y :483 B) (xs :482 List) (v :480 V xs) (pfB :475 Maybe (Id B x y)) (pfV :472 Maybe (IsPalindrome xs)).
     isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
   }
 
@@ -2494,20 +2494,20 @@ inferring  isPalinV' :418 (x :419 B) -> (y :420 B) -> (xs :421 List) -> (v :422 
     one y ~ one y
 
   isPalinV' :I (x :R B) -> (y :I B) -> (xs :I List) -> (v :I V xs) -> (pfB :R Maybe (Id B x y)) -> (pfV :R Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-    forall (x :R B) (xs :I List) (v :I V xs) (pfV :R IsPalindrome xs)
+    forall (x :R B) (xs :I List) (v :I V xs) (pfV :R IsPalindrome xs).
     isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
     
-    forall (x :R B) (y :I B) (xs :I List) (v :I V xs) (pfB :R Maybe (Id B x y)) (pfV :R Maybe (IsPalindrome xs))
+    forall (x :R B) (y :I B) (xs :I List) (v :I V xs) (pfB :R Maybe (Id B x y)) (pfV :R Maybe (IsPalindrome xs)).
     isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
   }
 
 inferring  isPalinV :369 (xs :370 List) -> (v :371 V xs) -> Maybe (IsPalindrome xs) {
     isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
     
-    forall (x :380 B)
+    forall (x :380 B).
     isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
     
-    forall (x :396 B) (xs :395 List) (y :394 B) (v :392 V xs)
+    forall (x :396 B) (xs :395 List) (y :394 B) (v :392 V xs).
     isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
   }
 
@@ -2628,15 +2628,15 @@ inferring  isPalinV :369 (xs :370 List) -> (v :371 V xs) -> Maybe (IsPalindrome 
   isPalinV :I (xs :I List) -> (v :R V xs) -> Maybe (IsPalindrome xs) {
     isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
     
-    forall (x :R B)
+    forall (x :R B).
     isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
     
-    forall (x :R B) (xs :I List) (y :R B) (v :R V xs)
+    forall (x :R B) (xs :I List) (y :R B) (v :R V xs).
     isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
   }
 
 inferring  isPalindrome :498 (xs :499 List) -> Maybe (IsPalindrome xs) {
-    forall (xs :502 List)
+    forall (xs :502 List).
     isPalindrome xs ~> isPalinV xs (toV xs)
   }
 
@@ -2663,15 +2663,15 @@ inferring  isPalindrome :498 (xs :499 List) -> Maybe (IsPalindrome xs) {
     IsPalindrome xs ~ IsPalindrome xs
 
   isPalindrome :I (xs :R List) -> Maybe (IsPalindrome xs) {
-    forall (xs :R List)
+    forall (xs :R List).
     isPalindrome xs ~> isPalinV xs (toV xs)
   }
 
 inferring  genList :284 (_ :285 B) -> (_ :286 N) -> List {
-    forall (b :287 B)
+    forall (b :287 B).
     genList b Z ~> Nil
     
-    forall (b :291 B) (n :290 N)
+    forall (b :291 B) (n :290 N).
     genList b (S n) ~> Cons b (genList (not b) n)
   }
 
@@ -2705,18 +2705,18 @@ inferring  genList :284 (_ :285 B) -> (_ :286 N) -> List {
     covariant: []
     contravariant: [285, 286]
   genList :I (_ :R B) -> (_ :L N) -> List {
-    forall (b :R B)
+    forall (b :R B).
     genList b Z ~> Nil
     
-    forall (b :R B) (n :L N)
+    forall (b :R B) (n :L N).
     genList b (S n) ~> Cons b (genList (not b) n)
   }
 
 inferring  isJust :355 (a :356 Type) -> (x :357 Maybe a) -> B {
-    forall (a :360 Type) (x :359 a)
+    forall (a :360 Type) (x :359 a).
     isJust a (Just [a] x) ~> T
     
-    forall (a :365 Type)
+    forall (a :365 Type).
     isJust a (Nothing [a]) ~> F
   }
 
@@ -2747,10 +2747,10 @@ inferring  isJust :355 (a :356 Type) -> (x :357 Maybe a) -> B {
     covariant: []
     contravariant: [356, 357]
   isJust :I (a :I Type) -> (x :R Maybe a) -> B {
-    forall (a :I Type) (x :R a)
+    forall (a :I Type) (x :R a).
     isJust a (Just [a] x) ~> T
     
-    forall (a :I Type)
+    forall (a :I Type).
     isJust a (Nothing [a]) ~> F
   }
 
@@ -3558,41 +3558,41 @@ id :I (a :I Type) -> (_ :R a) -> a {
 }
 
 subst :R (a :I Type) -> (P :I (_ :L a) -> Type) -> (x :I a) -> (y :I a) -> (eq :I Id a x y) -> (w :L P x) -> P y {
-  forall (a :I Type) (P :I (x :L a) -> Type) (x :I a)
+  forall (a :I Type) (P :I (x :L a) -> Type) (x :I a).
   subst a P x [x] ({Refl} [a] [x]) ~> \w :L P x.
       w
 }
 
 cong :I (a :I Type) -> (b :I Type) -> (f :I (x :L a) -> b) -> (x :R a) -> (y :I a) -> (eq :I Id a x y) -> Id b (f x) (f y) {
-  forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :R a)
+  forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :R a).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
 one :I (x :L B) -> List {
-  forall (x :L B)
+  forall (x :L B).
   one x ~> Cons x Nil
 }
 
 app :I (_ :L List) -> (_ :L List) -> List {
-  forall (ys :L List)
+  forall (ys :L List).
   app Nil ys ~> ys
   
-  forall (x :L B) (xs :L List) (ys :L List)
+  forall (x :L B) (xs :L List) (ys :L List).
   app (Cons x xs) ys ~> Cons x (app xs ys)
 }
 
 appRightNeutral :I (ys :R List) -> Id List ys (app ys Nil) {
   appRightNeutral Nil ~> Refl List Nil
   
-  forall (x :R B) (xs :R List)
+  forall (x :R B) (xs :R List).
   appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
 }
 
 appAssoc :I (xs :R List) -> (ys :R List) -> (zs :R List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-  forall (ys :R List) (zs :R List)
+  forall (ys :R List) (zs :R List).
   appAssoc Nil ys zs ~> Refl List (app ys zs)
   
-  forall (x :R B) (xs :R List) (ys :R List) (zs :R List)
+  forall (x :R B) (xs :R List) (ys :R List) (zs :R List).
   appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
 }
 
@@ -3605,27 +3605,27 @@ mutual {
 }
 
 rev' :R (xs :I List) -> (rxs :L Rev xs) -> (ys :L List) -> Rev (app xs ys) {
-  forall (xs :I List) (rxs :L Rev xs)
+  forall (xs :I List) (rxs :L Rev xs).
   rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
   
-  forall (xs :I List) (rxs :L Rev xs) (y :L B) (ys :L List)
+  forall (xs :I List) (rxs :L Rev xs) (y :L B) (ys :L List).
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
 rev :R (xs :R List) -> Rev xs {
-  forall (xs :R List)
+  forall (xs :R List).
   rev xs ~> rev' Nil RNil xs
 }
 
 reverse' :R (xs :I List) -> (rxs :L Rev xs) -> List {
   reverse' [Nil] RNil ~> Nil
   
-  forall (xs :I List) (x :L B) (rxs :L Rev xs)
+  forall (xs :I List) (x :L B) (rxs :L Rev xs).
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
 reverse :R (_ :R List) -> List {
-  forall (xs :R List)
+  forall (xs :R List).
   reverse xs ~> reverse' xs (rev xs)
 }
 
@@ -3642,42 +3642,42 @@ mutual {
 length :R (_ :R List) -> N {
   length Nil ~> Z
   
-  forall (x :R B) (xs :R List)
+  forall (x :R B) (xs :R List).
   length (Cons x xs) ~> S (length xs)
 }
 
 index :I (_ :R N) -> (_ :R List) -> (_ :R List) -> List {
-  forall (xs :R List) (ys :R List)
+  forall (xs :R List) (ys :R List).
   index Z xs ys ~> Nil
   
-  forall (x :R B) (xs :R List) (y :R B) (ys :R List)
+  forall (x :R B) (xs :R List) (y :R B) (ys :R List).
   index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
   
-  forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List)
+  forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List).
   index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
   
-  forall (n :R N)
+  forall (n :R N).
   index (S n) Nil Nil ~> Nil
 }
 
 build :R (n :R N) -> (xs :R List) -> (ys :R List) -> V (index n xs ys) {
-  forall (xs :R List) (ys :R List)
+  forall (xs :R List) (ys :R List).
   build Z xs ys ~> VNil
   
-  forall (x :R B) (xs :R List) (y :R B) (ys :R List)
+  forall (x :R B) (xs :R List) (y :R B) (ys :R List).
   build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
   
-  forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List)
+  forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List).
   build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
   
-  forall (n :R N)
+  forall (n :R N).
   build (S n) Nil Nil ~> VNil
 }
 
 postulate eq :I (xs :I List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
 toV :R (xs :R List) -> V xs {
-  forall (xs :R List)
+  forall (xs :R List).
   toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
 }
 
@@ -3702,41 +3702,41 @@ decEq :R (x :L B) -> (y :L B) -> Maybe (Id B x y) {
 }
 
 isPalinV' :R (x :R B) -> (y :I B) -> (xs :I List) -> (v :I V xs) -> (pfB :R Maybe (Id B x y)) -> (pfV :R Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-  forall (x :R B) (xs :I List) (v :I V xs) (pfV :R IsPalindrome xs)
+  forall (x :R B) (xs :I List) (v :I V xs) (pfV :R IsPalindrome xs).
   isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
   
-  forall (x :R B) (y :I B) (xs :I List) (v :I V xs) (pfB :R Maybe (Id B x y)) (pfV :R Maybe (IsPalindrome xs))
+  forall (x :R B) (y :I B) (xs :I List) (v :I V xs) (pfB :R Maybe (Id B x y)) (pfV :R Maybe (IsPalindrome xs)).
   isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
 }
 
 isPalinV :R (xs :I List) -> (v :R V xs) -> Maybe (IsPalindrome xs) {
   isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
   
-  forall (x :R B)
+  forall (x :R B).
   isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
   
-  forall (x :R B) (xs :I List) (y :R B) (v :R V xs)
+  forall (x :R B) (xs :I List) (y :R B) (v :R V xs).
   isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
 }
 
 isPalindrome :L (xs :R List) -> Maybe (IsPalindrome xs) {
-  forall (xs :R List)
+  forall (xs :R List).
   isPalindrome xs ~> isPalinV xs (toV xs)
 }
 
 genList :I (_ :R B) -> (_ :L N) -> List {
-  forall (b :R B)
+  forall (b :R B).
   genList b Z ~> Nil
   
-  forall (b :R B) (n :L N)
+  forall (b :R B) (n :L N).
   genList b (S n) ~> Cons b (genList (not b) n)
 }
 
 isJust :I (a :I Type) -> (x :R Maybe a) -> B {
-  forall (a :I Type) (x :R a)
+  forall (a :I Type) (x :R a).
   isJust a (Just [a] x) ~> T
   
-  forall (a :I Type)
+  forall (a :I Type).
   isJust a (Nothing [a]) ~> F
 }
 
@@ -3804,41 +3804,41 @@ id :I (a :I Type) -> (_ :R a) -> a {
 }
 
 subst :R (a :I Type) -> (P :I (_ :L a) -> Type) -> (x :I a) -> (y :I a) -> (eq :I Id a x y) -> (w :L P x) -> P y {
-  forall (a :I Type) (P :I (x :L a) -> Type) (x :I a)
+  forall (a :I Type) (P :I (x :L a) -> Type) (x :I a).
   subst a P x [x] ({Refl} [a] [x]) ~> \w :L P x.
       w
 }
 
 cong :I (a :I Type) -> (b :I Type) -> (f :I (x :L a) -> b) -> (x :R a) -> (y :I a) -> (eq :I Id a x y) -> Id b (f x) (f y) {
-  forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :R a)
+  forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :R a).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
 one :I (x :L B) -> List {
-  forall (x :L B)
+  forall (x :L B).
   one x ~> Cons x Nil
 }
 
 app :I (_ :L List) -> (_ :L List) -> List {
-  forall (ys :L List)
+  forall (ys :L List).
   app Nil ys ~> ys
   
-  forall (x :L B) (xs :L List) (ys :L List)
+  forall (x :L B) (xs :L List) (ys :L List).
   app (Cons x xs) ys ~> Cons x (app xs ys)
 }
 
 appRightNeutral :I (ys :R List) -> Id List ys (app ys Nil) {
   appRightNeutral Nil ~> Refl List Nil
   
-  forall (x :R B) (xs :R List)
+  forall (x :R B) (xs :R List).
   appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
 }
 
 appAssoc :I (xs :R List) -> (ys :R List) -> (zs :R List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-  forall (ys :R List) (zs :R List)
+  forall (ys :R List) (zs :R List).
   appAssoc Nil ys zs ~> Refl List (app ys zs)
   
-  forall (x :R B) (xs :R List) (ys :R List) (zs :R List)
+  forall (x :R B) (xs :R List) (ys :R List) (zs :R List).
   appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
 }
 
@@ -3851,27 +3851,27 @@ mutual {
 }
 
 rev' :R (xs :I List) -> (rxs :L Rev xs) -> (ys :L List) -> Rev (app xs ys) {
-  forall (xs :I List) (rxs :L Rev xs)
+  forall (xs :I List) (rxs :L Rev xs).
   rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
   
-  forall (xs :I List) (rxs :L Rev xs) (y :L B) (ys :L List)
+  forall (xs :I List) (rxs :L Rev xs) (y :L B) (ys :L List).
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
 rev :R (xs :R List) -> Rev xs {
-  forall (xs :R List)
+  forall (xs :R List).
   rev xs ~> rev' Nil RNil xs
 }
 
 reverse' :R (xs :I List) -> (rxs :L Rev xs) -> List {
   reverse' [Nil] RNil ~> Nil
   
-  forall (xs :I List) (x :L B) (rxs :L Rev xs)
+  forall (xs :I List) (x :L B) (rxs :L Rev xs).
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
 reverse :R (_ :R List) -> List {
-  forall (xs :R List)
+  forall (xs :R List).
   reverse xs ~> reverse' xs (rev xs)
 }
 
@@ -3888,42 +3888,42 @@ mutual {
 length :R (_ :R List) -> N {
   length Nil ~> Z
   
-  forall (x :R B) (xs :R List)
+  forall (x :R B) (xs :R List).
   length (Cons x xs) ~> S (length xs)
 }
 
 index :I (_ :R N) -> (_ :R List) -> (_ :R List) -> List {
-  forall (xs :R List) (ys :R List)
+  forall (xs :R List) (ys :R List).
   index Z xs ys ~> Nil
   
-  forall (x :R B) (xs :R List) (y :R B) (ys :R List)
+  forall (x :R B) (xs :R List) (y :R B) (ys :R List).
   index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
   
-  forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List)
+  forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List).
   index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
   
-  forall (n :R N)
+  forall (n :R N).
   index (S n) Nil Nil ~> Nil
 }
 
 build :R (n :R N) -> (xs :R List) -> (ys :R List) -> V (index n xs ys) {
-  forall (xs :R List) (ys :R List)
+  forall (xs :R List) (ys :R List).
   build Z xs ys ~> VNil
   
-  forall (x :R B) (xs :R List) (y :R B) (ys :R List)
+  forall (x :R B) (xs :R List) (y :R B) (ys :R List).
   build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
   
-  forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List)
+  forall (n :R N) (x :R B) (xs :R List) (y :R B) (ys :R List).
   build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
   
-  forall (n :R N)
+  forall (n :R N).
   build (S n) Nil Nil ~> VNil
 }
 
 postulate eq :I (xs :I List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
 toV :R (xs :R List) -> V xs {
-  forall (xs :R List)
+  forall (xs :R List).
   toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
 }
 
@@ -3948,41 +3948,41 @@ decEq :R (x :L B) -> (y :L B) -> Maybe (Id B x y) {
 }
 
 isPalinV' :R (x :R B) -> (y :I B) -> (xs :I List) -> (v :I V xs) -> (pfB :R Maybe (Id B x y)) -> (pfV :R Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-  forall (x :R B) (xs :I List) (v :I V xs) (pfV :R IsPalindrome xs)
+  forall (x :R B) (xs :I List) (v :I V xs) (pfV :R IsPalindrome xs).
   isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
   
-  forall (x :R B) (y :I B) (xs :I List) (v :I V xs) (pfB :R Maybe (Id B x y)) (pfV :R Maybe (IsPalindrome xs))
+  forall (x :R B) (y :I B) (xs :I List) (v :I V xs) (pfB :R Maybe (Id B x y)) (pfV :R Maybe (IsPalindrome xs)).
   isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
 }
 
 isPalinV :R (xs :I List) -> (v :R V xs) -> Maybe (IsPalindrome xs) {
   isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
   
-  forall (x :R B)
+  forall (x :R B).
   isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
   
-  forall (x :R B) (xs :I List) (y :R B) (v :R V xs)
+  forall (x :R B) (xs :I List) (y :R B) (v :R V xs).
   isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
 }
 
 isPalindrome :L (xs :R List) -> Maybe (IsPalindrome xs) {
-  forall (xs :R List)
+  forall (xs :R List).
   isPalindrome xs ~> isPalinV xs (toV xs)
 }
 
 genList :I (_ :R B) -> (_ :L N) -> List {
-  forall (b :R B)
+  forall (b :R B).
   genList b Z ~> Nil
   
-  forall (b :R B) (n :L N)
+  forall (b :R B) (n :L N).
   genList b (S n) ~> Cons b (genList (not b) n)
 }
 
 isJust :I (a :I Type) -> (x :R Maybe a) -> B {
-  forall (a :I Type) (x :R a)
+  forall (a :I Type) (x :R a).
   isJust a (Just [a] x) ~> T
   
-  forall (a :I Type)
+  forall (a :I Type).
   isJust a (Nothing [a]) ~> F
 }
 
@@ -4036,27 +4036,27 @@ mutual {
 }
 
 rev' {
-  forall (rxs)
+  forall (rxs).
   rev' rxs Nil ~> subst rxs
   
-  forall (rxs) (y) (ys)
+  forall (rxs) (y) (ys).
   rev' rxs (Cons y ys) ~> subst (rev' (RSnoc y rxs) ys)
 }
 
 rev {
-  forall (xs)
+  forall (xs).
   rev xs ~> rev' RNil xs
 }
 
 reverse' {
   reverse' RNil ~> Nil
   
-  forall (x) (rxs)
+  forall (x) (rxs).
   reverse' (RSnoc x rxs) ~> Cons x (reverse' rxs)
 }
 
 reverse {
-  forall (xs)
+  forall (xs).
   reverse xs ~> reverse' (rev xs)
 }
 
@@ -4071,26 +4071,26 @@ mutual {
 length {
   length Nil ~> Z
   
-  forall (x) (xs)
+  forall (x) (xs).
   length (Cons x xs) ~> S (length xs)
 }
 
 build {
-  forall (xs) (ys)
+  forall (xs) (ys).
   build Z xs ys ~> VNil
   
-  forall (x) (xs) (y) (ys)
+  forall (x) (xs) (y) (ys).
   build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
   
-  forall (n) (x) (xs) (y) (ys)
+  forall (n) (x) (xs) (y) (ys).
   build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (build n xs ys) y
   
-  forall (n)
+  forall (n).
   build (S n) Nil Nil ~> VNil
 }
 
 toV {
-  forall (xs)
+  forall (xs).
   toV xs ~> subst (build (length xs) xs (reverse xs))
 }
 
@@ -4113,25 +4113,25 @@ decEq {
 }
 
 isPalinV' {
-  forall (x) (pfV)
+  forall (x) (pfV).
   isPalinV' x (Just [Refl]) (Just pfV) ~> Just (PTwo x pfV)
   
-  forall (x) (pfB) (pfV)
+  forall (x) (pfB) (pfV).
   isPalinV' x pfB pfV ~> Nothing
 }
 
 isPalinV {
   isPalinV VNil ~> Just PNil
   
-  forall (x)
+  forall (x).
   isPalinV (VOne x) ~> Just (POne x)
   
-  forall (x) (y) (v)
+  forall (x) (y) (v).
   isPalinV (VTwo x v y) ~> isPalinV' x (decEq x y) (isPalinV v)
 }
 
 isPalindrome {
-  forall (xs)
+  forall (xs).
   isPalindrome xs ~> isPalinV (toV xs)
 }
 

@@ -38,48 +38,48 @@ mutual {
 }
 
 env : (m : Nat) -> (n : Nat) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
-  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n))
+  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)).
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
-  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m)
+  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m).
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
 extendMap : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : Fin (S m)) -> Fin (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n).
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m).
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
 mapVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m).
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m))
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m)).
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m).
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
 extendSubst : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : Fin (S m)) -> TT (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n).
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m).
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
 substVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m).
   substVars m n f (V [m] i) ~> f i
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m))
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m)).
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m).
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -92,30 +92,30 @@ example1 : TT Z {
 }
 
 substTop : (n : Nat) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
-  forall (n : Nat) (tm : TT n)
+  forall (n : Nat) (tm : TT n).
   substTop n tm (FZ [n]) ~> tm
   
-  forall (n : Nat) (tm : TT n) (i : Fin n)
+  forall (n : Nat) (tm : TT n) (i : Fin n).
   substTop n tm (FS [n] i) ~> V n i
 }
 
 mutual {
   redex : (m : Nat) -> (_ : TT m) -> (_ : TT m) -> TT m {
-    forall (m : Nat) (y : TT (S m)) (x : TT m)
+    forall (m : Nat) (y : TT (S m)) (x : TT m).
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
     
-    forall (m : Nat) (f' : TT m) (x : TT m)
+    forall (m : Nat) (f' : TT m) (x : TT m).
     redex m f' x ~> App m f' (nf m x)
   }
   
   nf : (m : Nat) -> (_ : TT m) -> TT m {
-    forall (m : Nat) (i : Fin m)
+    forall (m : Nat) (i : Fin m).
     nf m (V [m] i) ~> V m i
     
-    forall (m : Nat) (x : TT (S m))
+    forall (m : Nat) (x : TT (S m)).
     nf m (Lam [m] x) ~> Lam m (nf (S m) x)
     
-    forall (m : Nat) (f : TT m) (x : TT m)
+    forall (m : Nat) (f : TT m) (x : TT m).
     nf m (App [m] f x) ~> redex m f x
   }
 }
@@ -173,48 +173,48 @@ mutual {
 }
 
 env : (m : Nat) -> (n : Nat) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
-  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n))
+  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)).
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
-  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m)
+  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m).
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
 extendMap : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : Fin (S m)) -> Fin (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n).
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m).
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
 mapVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m).
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m))
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m)).
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m).
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
 extendSubst : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : Fin (S m)) -> TT (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n).
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m).
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
 substVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m).
   substVars m n f (V [m] i) ~> f i
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m))
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m)).
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m).
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -227,30 +227,30 @@ example1 : TT Z {
 }
 
 substTop : (n : Nat) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
-  forall (n : Nat) (tm : TT n)
+  forall (n : Nat) (tm : TT n).
   substTop n tm (FZ [n]) ~> tm
   
-  forall (n : Nat) (tm : TT n) (i : Fin n)
+  forall (n : Nat) (tm : TT n) (i : Fin n).
   substTop n tm (FS [n] i) ~> V n i
 }
 
 mutual {
   redex : (m : Nat) -> (_ : TT m) -> (_ : TT m) -> TT m {
-    forall (m : Nat) (y : TT (S m)) (x : TT m)
+    forall (m : Nat) (y : TT (S m)) (x : TT m).
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
     
-    forall (m : Nat) (f' : TT m) (x : TT m)
+    forall (m : Nat) (f' : TT m) (x : TT m).
     redex m f' x ~> App m f' (nf m x)
   }
   
   nf : (m : Nat) -> (_ : TT m) -> TT m {
-    forall (m : Nat) (i : Fin m)
+    forall (m : Nat) (i : Fin m).
     nf m (V [m] i) ~> V m i
     
-    forall (m : Nat) (x : TT (S m))
+    forall (m : Nat) (x : TT (S m)).
     nf m (Lam [m] x) ~> Lam m (nf (S m) x)
     
-    forall (m : Nat) (f : TT m) (x : TT m)
+    forall (m : Nat) (f : TT m) (x : TT m).
     nf m (App [m] f x) ~> redex m f x
   }
 }
@@ -313,48 +313,48 @@ mutual {
 }
 
 env : (m : Nat) -> (n : Nat) -> (_ : Vect m (TT n)) -> (_ : Fin m) -> TT n {
-  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n))
+  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)).
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
-  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m)
+  forall (m : Nat) (n : Nat) (x : TT n) (xs : Vect m (TT n)) (i : Fin m).
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
 extendMap : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : Fin (S m)) -> Fin (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n).
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m).
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
 mapVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> Fin n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (i : Fin m).
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m))
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (x : TT (S m)).
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> Fin n) (g : TT m) (x : TT m).
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
 extendSubst : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : Fin (S m)) -> TT (S n) {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n).
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m).
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
 substVars : (m : Nat) -> (n : Nat) -> (_ : (_ : Fin m) -> TT n) -> (_ : TT m) -> TT n {
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (i : Fin m).
   substVars m n f (V [m] i) ~> f i
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m))
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (x : TT (S m)).
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m)
+  forall (m : Nat) (n : Nat) (f : (_ : Fin m) -> TT n) (g : TT m) (x : TT m).
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -367,30 +367,30 @@ example1 : TT Z {
 }
 
 substTop : (n : Nat) -> (_ : TT n) -> (_ : Fin (S n)) -> TT n {
-  forall (n : Nat) (tm : TT n)
+  forall (n : Nat) (tm : TT n).
   substTop n tm (FZ [n]) ~> tm
   
-  forall (n : Nat) (tm : TT n) (i : Fin n)
+  forall (n : Nat) (tm : TT n) (i : Fin n).
   substTop n tm (FS [n] i) ~> V n i
 }
 
 mutual {
   redex : (m : Nat) -> (_ : TT m) -> (_ : TT m) -> TT m {
-    forall (m : Nat) (y : TT (S m)) (x : TT m)
+    forall (m : Nat) (y : TT (S m)) (x : TT m).
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
     
-    forall (m : Nat) (f' : TT m) (x : TT m)
+    forall (m : Nat) (f' : TT m) (x : TT m).
     redex m f' x ~> App m f' (nf m x)
   }
   
   nf : (m : Nat) -> (_ : TT m) -> TT m {
-    forall (m : Nat) (i : Fin m)
+    forall (m : Nat) (i : Fin m).
     nf m (V [m] i) ~> V m i
     
-    forall (m : Nat) (x : TT (S m))
+    forall (m : Nat) (x : TT (S m)).
     nf m (Lam [m] x) ~> Lam m (nf (S m) x)
     
-    forall (m : Nat) (f : TT m) (x : TT m)
+    forall (m : Nat) (f : TT m) (x : TT m).
     nf m (App [m] f x) ~> redex m f x
   }
 }
@@ -448,48 +448,48 @@ mutual {
 }
 
 env :38 (m :39 Nat) -> (n :40 Nat) -> (_ :41 Vect m (TT n)) -> (_ :45 Fin m) -> TT n {
-  forall (m :55 Nat) (n :54 Nat) (x :52 TT n) (xs :48 Vect m (TT n))
+  forall (m :55 Nat) (n :54 Nat) (x :52 TT n) (xs :48 Vect m (TT n)).
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
-  forall (m :76 Nat) (n :75 Nat) (x :73 TT n) (xs :69 Vect m (TT n)) (i :67 Fin m)
+  forall (m :76 Nat) (n :75 Nat) (x :73 TT n) (xs :69 Vect m (TT n)) (i :67 Fin m).
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
 extendMap :123 (m :124 Nat) -> (n :125 Nat) -> (_ :126 (_ :127 Fin m) -> Fin n) -> (_ :130 Fin (S m)) -> Fin (S n) {
-  forall (m :140 Nat) (n :139 Nat) (f :135 (_ :136 Fin m) -> Fin n)
+  forall (m :140 Nat) (n :139 Nat) (f :135 (_ :136 Fin m) -> Fin n).
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m :154 Nat) (n :153 Nat) (f :149 (_ :150 Fin m) -> Fin n) (i :147 Fin m)
+  forall (m :154 Nat) (n :153 Nat) (f :149 (_ :150 Fin m) -> Fin n) (i :147 Fin m).
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
 mapVars :215 (m :216 Nat) -> (n :217 Nat) -> (_ :218 (_ :219 Fin m) -> Fin n) -> (_ :222 TT m) -> TT n {
-  forall (m :232 Nat) (n :231 Nat) (f :227 (_ :228 Fin m) -> Fin n) (i :225 Fin m)
+  forall (m :232 Nat) (n :231 Nat) (f :227 (_ :228 Fin m) -> Fin n) (i :225 Fin m).
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m :250 Nat) (n :249 Nat) (f :245 (_ :246 Fin m) -> Fin n) (x :242 TT (S m))
+  forall (m :250 Nat) (n :249 Nat) (f :245 (_ :246 Fin m) -> Fin n) (x :242 TT (S m)).
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m :277 Nat) (n :276 Nat) (f :272 (_ :273 Fin m) -> Fin n) (g :270 TT m) (x :268 TT m)
+  forall (m :277 Nat) (n :276 Nat) (f :272 (_ :273 Fin m) -> Fin n) (g :270 TT m) (x :268 TT m).
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
 extendSubst :164 (m :165 Nat) -> (n :166 Nat) -> (_ :167 (_ :168 Fin m) -> TT n) -> (_ :171 Fin (S m)) -> TT (S n) {
-  forall (m :181 Nat) (n :180 Nat) (f :176 (_ :177 Fin m) -> TT n)
+  forall (m :181 Nat) (n :180 Nat) (f :176 (_ :177 Fin m) -> TT n).
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m :198 Nat) (n :197 Nat) (f :193 (_ :194 Fin m) -> TT n) (i :191 Fin m)
+  forall (m :198 Nat) (n :197 Nat) (f :193 (_ :194 Fin m) -> TT n) (i :191 Fin m).
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
 substVars :405 (m :406 Nat) -> (n :407 Nat) -> (_ :408 (_ :409 Fin m) -> TT n) -> (_ :412 TT m) -> TT n {
-  forall (m :422 Nat) (n :421 Nat) (f :417 (_ :418 Fin m) -> TT n) (i :415 Fin m)
+  forall (m :422 Nat) (n :421 Nat) (f :417 (_ :418 Fin m) -> TT n) (i :415 Fin m).
   substVars m n f (V [m] i) ~> f i
   
-  forall (m :438 Nat) (n :437 Nat) (f :433 (_ :434 Fin m) -> TT n) (x :430 TT (S m))
+  forall (m :438 Nat) (n :437 Nat) (f :433 (_ :434 Fin m) -> TT n) (x :430 TT (S m)).
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m :465 Nat) (n :464 Nat) (f :460 (_ :461 Fin m) -> TT n) (g :458 TT m) (x :456 TT m)
+  forall (m :465 Nat) (n :464 Nat) (f :460 (_ :461 Fin m) -> TT n) (g :458 TT m) (x :456 TT m).
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -502,30 +502,30 @@ example1 :93 TT Z {
 }
 
 substTop :378 (n :379 Nat) -> (_ :380 TT n) -> (_ :382 Fin (S n)) -> TT n {
-  forall (n :388 Nat) (tm :386 TT n)
+  forall (n :388 Nat) (tm :386 TT n).
   substTop n tm (FZ [n]) ~> tm
   
-  forall (n :397 Nat) (tm :395 TT n) (i :393 Fin n)
+  forall (n :397 Nat) (tm :395 TT n) (i :393 Fin n).
   substTop n tm (FS [n] i) ~> V n i
 }
 
 mutual {
   redex :336 (m :337 Nat) -> (_ :338 TT m) -> (_ :340 TT m) -> TT m {
-    forall (m :348 Nat) (y :345 TT (S m)) (x :343 TT m)
+    forall (m :348 Nat) (y :345 TT (S m)) (x :343 TT m).
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
     
-    forall (m :369 Nat) (f' :367 TT m) (x :365 TT m)
+    forall (m :369 Nat) (f' :367 TT m) (x :365 TT m).
     redex m f' x ~> App m f' (nf m x)
   }
   
   nf :296 (m :297 Nat) -> (_ :298 TT m) -> TT m {
-    forall (m :303 Nat) (i :301 Fin m)
+    forall (m :303 Nat) (i :301 Fin m).
     nf m (V [m] i) ~> V m i
     
-    forall (m :313 Nat) (x :310 TT (S m))
+    forall (m :313 Nat) (x :310 TT (S m)).
     nf m (Lam [m] x) ~> Lam m (nf (S m) x)
     
-    forall (m :327 Nat) (f :325 TT m) (x :323 TT m)
+    forall (m :327 Nat) (f :325 TT m) (x :323 TT m).
     nf m (App [m] f x) ~> redex m f x
   }
 }
@@ -655,10 +655,10 @@ inferring  mutual {
   }
 
 inferring  env :38 (m :39 Nat) -> (n :40 Nat) -> (_ :41 Vect m (TT n)) -> (_ :45 Fin m) -> TT n {
-    forall (m :55 Nat) (n :54 Nat) (x :52 TT n) (xs :48 Vect m (TT n))
+    forall (m :55 Nat) (n :54 Nat) (x :52 TT n) (xs :48 Vect m (TT n)).
     env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
     
-    forall (m :76 Nat) (n :75 Nat) (x :73 TT n) (xs :69 Vect m (TT n)) (i :67 Fin m)
+    forall (m :76 Nat) (n :75 Nat) (x :73 TT n) (xs :69 Vect m (TT n)) (i :67 Fin m).
     env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
   }
 
@@ -774,18 +774,18 @@ inferring  env :38 (m :39 Nat) -> (n :40 Nat) -> (_ :41 Vect m (TT n)) -> (_ :45
     TT n ~ TT n
 
   env :I (m :I Nat) -> (n :I Nat) -> (_ :R Vect m (TT n)) -> (_ :L Fin m) -> TT n {
-    forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n))
+    forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)).
     env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
     
-    forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)) (i :L Fin m)
+    forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)) (i :L Fin m).
     env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
   }
 
 inferring  extendMap :123 (m :124 Nat) -> (n :125 Nat) -> (_ :126 (_ :127 Fin m) -> Fin n) -> (_ :130 Fin (S m)) -> Fin (S n) {
-    forall (m :140 Nat) (n :139 Nat) (f :135 (_ :136 Fin m) -> Fin n)
+    forall (m :140 Nat) (n :139 Nat) (f :135 (_ :136 Fin m) -> Fin n).
     extendMap m n f (FZ [m]) ~> FZ n
     
-    forall (m :154 Nat) (n :153 Nat) (f :149 (_ :150 Fin m) -> Fin n) (i :147 Fin m)
+    forall (m :154 Nat) (n :153 Nat) (f :149 (_ :150 Fin m) -> Fin n) (i :147 Fin m).
     extendMap m n f (FS [m] i) ~> FS n (f i)
   }
 
@@ -866,21 +866,21 @@ inferring  extendMap :123 (m :124 Nat) -> (n :125 Nat) -> (_ :126 (_ :127 Fin m)
     S n ~ S n
 
   extendMap :I (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L Fin (S m)) -> Fin (S n) {
-    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n)
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n).
     extendMap m n f (FZ [m]) ~> FZ n
     
-    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m).
     extendMap m n f (FS [m] i) ~> FS n (f i)
   }
 
 inferring  mapVars :215 (m :216 Nat) -> (n :217 Nat) -> (_ :218 (_ :219 Fin m) -> Fin n) -> (_ :222 TT m) -> TT n {
-    forall (m :232 Nat) (n :231 Nat) (f :227 (_ :228 Fin m) -> Fin n) (i :225 Fin m)
+    forall (m :232 Nat) (n :231 Nat) (f :227 (_ :228 Fin m) -> Fin n) (i :225 Fin m).
     mapVars m n f (V [m] i) ~> V n (f i)
     
-    forall (m :250 Nat) (n :249 Nat) (f :245 (_ :246 Fin m) -> Fin n) (x :242 TT (S m))
+    forall (m :250 Nat) (n :249 Nat) (f :245 (_ :246 Fin m) -> Fin n) (x :242 TT (S m)).
     mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
     
-    forall (m :277 Nat) (n :276 Nat) (f :272 (_ :273 Fin m) -> Fin n) (g :270 TT m) (x :268 TT m)
+    forall (m :277 Nat) (n :276 Nat) (f :272 (_ :273 Fin m) -> Fin n) (g :270 TT m) (x :268 TT m).
     mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
   }
 
@@ -1051,21 +1051,21 @@ inferring  mapVars :215 (m :216 Nat) -> (n :217 Nat) -> (_ :218 (_ :219 Fin m) -
     S n ~ S n
 
   mapVars :I (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L TT m) -> TT n {
-    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m).
     mapVars m n f (V [m] i) ~> V n (f i)
     
-    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (x :L TT (S m))
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (x :L TT (S m)).
     mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
     
-    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :L TT m)
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :L TT m).
     mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
   }
 
 inferring  extendSubst :164 (m :165 Nat) -> (n :166 Nat) -> (_ :167 (_ :168 Fin m) -> TT n) -> (_ :171 Fin (S m)) -> TT (S n) {
-    forall (m :181 Nat) (n :180 Nat) (f :176 (_ :177 Fin m) -> TT n)
+    forall (m :181 Nat) (n :180 Nat) (f :176 (_ :177 Fin m) -> TT n).
     extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
     
-    forall (m :198 Nat) (n :197 Nat) (f :193 (_ :194 Fin m) -> TT n) (i :191 Fin m)
+    forall (m :198 Nat) (n :197 Nat) (f :193 (_ :194 Fin m) -> TT n) (i :191 Fin m).
     extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
   }
 
@@ -1158,21 +1158,21 @@ inferring  extendSubst :164 (m :165 Nat) -> (n :166 Nat) -> (_ :167 (_ :168 Fin 
     S n ~ S n
 
   extendSubst :I (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L Fin (S m)) -> TT (S n) {
-    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n)
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n).
     extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
     
-    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m).
     extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
   }
 
 inferring  substVars :405 (m :406 Nat) -> (n :407 Nat) -> (_ :408 (_ :409 Fin m) -> TT n) -> (_ :412 TT m) -> TT n {
-    forall (m :422 Nat) (n :421 Nat) (f :417 (_ :418 Fin m) -> TT n) (i :415 Fin m)
+    forall (m :422 Nat) (n :421 Nat) (f :417 (_ :418 Fin m) -> TT n) (i :415 Fin m).
     substVars m n f (V [m] i) ~> f i
     
-    forall (m :438 Nat) (n :437 Nat) (f :433 (_ :434 Fin m) -> TT n) (x :430 TT (S m))
+    forall (m :438 Nat) (n :437 Nat) (f :433 (_ :434 Fin m) -> TT n) (x :430 TT (S m)).
     substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
     
-    forall (m :465 Nat) (n :464 Nat) (f :460 (_ :461 Fin m) -> TT n) (g :458 TT m) (x :456 TT m)
+    forall (m :465 Nat) (n :464 Nat) (f :460 (_ :461 Fin m) -> TT n) (g :458 TT m) (x :456 TT m).
     substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
   }
 
@@ -1339,13 +1339,13 @@ inferring  substVars :405 (m :406 Nat) -> (n :407 Nat) -> (_ :408 (_ :409 Fin m)
     S n ~ S n
 
   substVars :I (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L TT m) -> TT n {
-    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m).
     substVars m n f (V [m] i) ~> f i
     
-    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (x :L TT (S m))
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (x :L TT (S m)).
     substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
     
-    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :L TT m)
+    forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :L TT m).
     substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
   }
 
@@ -1496,10 +1496,10 @@ inferring  example1 :93 TT Z {
   }
 
 inferring  substTop :378 (n :379 Nat) -> (_ :380 TT n) -> (_ :382 Fin (S n)) -> TT n {
-    forall (n :388 Nat) (tm :386 TT n)
+    forall (n :388 Nat) (tm :386 TT n).
     substTop n tm (FZ [n]) ~> tm
     
-    forall (n :397 Nat) (tm :395 TT n) (i :393 Fin n)
+    forall (n :397 Nat) (tm :395 TT n) (i :393 Fin n).
     substTop n tm (FS [n] i) ~> V n i
   }
 
@@ -1555,30 +1555,30 @@ inferring  substTop :378 (n :379 Nat) -> (_ :380 TT n) -> (_ :382 Fin (S n)) -> 
     covariant: []
     contravariant: [379, 380, 382]
   substTop :I (n :I Nat) -> (_ :R TT n) -> (_ :L Fin (S n)) -> TT n {
-    forall (n :I Nat) (tm :R TT n)
+    forall (n :I Nat) (tm :R TT n).
     substTop n tm (FZ [n]) ~> tm
     
-    forall (n :I Nat) (tm :R TT n) (i :L Fin n)
+    forall (n :I Nat) (tm :R TT n) (i :L Fin n).
     substTop n tm (FS [n] i) ~> V n i
   }
 
 inferring  mutual {
     redex :336 (m :337 Nat) -> (_ :338 TT m) -> (_ :340 TT m) -> TT m {
-      forall (m :348 Nat) (y :345 TT (S m)) (x :343 TT m)
+      forall (m :348 Nat) (y :345 TT (S m)) (x :343 TT m).
       redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
       
-      forall (m :369 Nat) (f' :367 TT m) (x :365 TT m)
+      forall (m :369 Nat) (f' :367 TT m) (x :365 TT m).
       redex m f' x ~> App m f' (nf m x)
     }
     
     nf :296 (m :297 Nat) -> (_ :298 TT m) -> TT m {
-      forall (m :303 Nat) (i :301 Fin m)
+      forall (m :303 Nat) (i :301 Fin m).
       nf m (V [m] i) ~> V m i
       
-      forall (m :313 Nat) (x :310 TT (S m))
+      forall (m :313 Nat) (x :310 TT (S m)).
       nf m (Lam [m] x) ~> Lam m (nf (S m) x)
       
-      forall (m :327 Nat) (f :325 TT m) (x :323 TT m)
+      forall (m :327 Nat) (f :325 TT m) (x :323 TT m).
       nf m (App [m] f x) ~> redex m f x
     }
   }
@@ -1749,21 +1749,21 @@ inferring  mutual {
 
   mutual {
     redex :I (m :I Nat) -> (_ :R TT m) -> (_ :R TT m) -> TT m {
-      forall (m :I Nat) (y :R TT (S m)) (x :R TT m)
+      forall (m :I Nat) (y :R TT (S m)) (x :R TT m).
       redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
       
-      forall (m :I Nat) (f' :R TT m) (x :R TT m)
+      forall (m :I Nat) (f' :R TT m) (x :R TT m).
       redex m f' x ~> App m f' (nf m x)
     }
     
     nf :I (m :I Nat) -> (_ :R TT m) -> TT m {
-      forall (m :I Nat) (i :R Fin m)
+      forall (m :I Nat) (i :R Fin m).
       nf m (V [m] i) ~> V m i
       
-      forall (m :I Nat) (x :R TT (S m))
+      forall (m :I Nat) (x :R TT (S m)).
       nf m (Lam [m] x) ~> Lam m (nf (S m) x)
       
-      forall (m :I Nat) (f :R TT m) (x :R TT m)
+      forall (m :I Nat) (f :R TT m) (x :R TT m).
       nf m (App [m] f x) ~> redex m f x
     }
   }
@@ -2412,48 +2412,48 @@ mutual {
 }
 
 env :R (m :I Nat) -> (n :I Nat) -> (_ :R Vect m (TT n)) -> (_ :L Fin m) -> TT n {
-  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n))
+  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)).
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
-  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)) (i :L Fin m)
+  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)) (i :L Fin m).
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
 extendMap :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L Fin (S m)) -> Fin (S n) {
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n).
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m).
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
 mapVars :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L TT m) -> TT n {
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m).
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (x :L TT (S m))
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (x :L TT (S m)).
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :L TT m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :L TT m).
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
 extendSubst :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L Fin (S m)) -> TT (S n) {
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n).
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m).
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
 substVars :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L TT m) -> TT n {
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m).
   substVars m n f (V [m] i) ~> f i
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (x :L TT (S m))
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (x :L TT (S m)).
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :L TT m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :L TT m).
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -2466,30 +2466,30 @@ example1 :L TT Z {
 }
 
 substTop :R (n :I Nat) -> (_ :R TT n) -> (_ :L Fin (S n)) -> TT n {
-  forall (n :I Nat) (tm :R TT n)
+  forall (n :I Nat) (tm :R TT n).
   substTop n tm (FZ [n]) ~> tm
   
-  forall (n :I Nat) (tm :R TT n) (i :L Fin n)
+  forall (n :I Nat) (tm :R TT n) (i :L Fin n).
   substTop n tm (FS [n] i) ~> V n i
 }
 
 mutual {
   redex :R (m :I Nat) -> (_ :R TT m) -> (_ :R TT m) -> TT m {
-    forall (m :I Nat) (y :R TT (S m)) (x :R TT m)
+    forall (m :I Nat) (y :R TT (S m)) (x :R TT m).
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
     
-    forall (m :I Nat) (f' :R TT m) (x :R TT m)
+    forall (m :I Nat) (f' :R TT m) (x :R TT m).
     redex m f' x ~> App m f' (nf m x)
   }
   
   nf :R (m :I Nat) -> (_ :R TT m) -> TT m {
-    forall (m :I Nat) (i :R Fin m)
+    forall (m :I Nat) (i :R Fin m).
     nf m (V [m] i) ~> V m i
     
-    forall (m :I Nat) (x :R TT (S m))
+    forall (m :I Nat) (x :R TT (S m)).
     nf m (Lam [m] x) ~> Lam m (nf (S m) x)
     
-    forall (m :I Nat) (f :R TT m) (x :R TT m)
+    forall (m :I Nat) (f :R TT m) (x :R TT m).
     nf m (App [m] f x) ~> redex m f x
   }
 }
@@ -2548,48 +2548,48 @@ mutual {
 }
 
 env :R (m :I Nat) -> (n :I Nat) -> (_ :R Vect m (TT n)) -> (_ :L Fin m) -> TT n {
-  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n))
+  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)).
   env [S m] n (VC [m] [TT n] x xs) (FZ m) ~> x
   
-  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)) (i :L Fin m)
+  forall (m :I Nat) (n :I Nat) (x :R TT n) (xs :R Vect m (TT n)) (i :L Fin m).
   env [S m] n (VC [m] [TT n] x xs) (FS m i) ~> env m n xs i
 }
 
 extendMap :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L Fin (S m)) -> Fin (S n) {
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n).
   extendMap m n f (FZ [m]) ~> FZ n
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m).
   extendMap m n f (FS [m] i) ~> FS n (f i)
 }
 
 mapVars :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> Fin n) -> (_ :L TT m) -> TT n {
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (i :L Fin m).
   mapVars m n f (V [m] i) ~> V n (f i)
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (x :L TT (S m))
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (x :L TT (S m)).
   mapVars m n f (Lam [m] x) ~> Lam n (mapVars (S m) (S n) (extendMap m n f) x)
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :L TT m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> Fin n) (g :L TT m) (x :L TT m).
   mapVars m n f (App [m] g x) ~> App n (mapVars m n f g) (mapVars m n f x)
 }
 
 extendSubst :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L Fin (S m)) -> TT (S n) {
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n).
   extendSubst m n f (FZ [m]) ~> V (S n) (FZ n)
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m).
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
 substVars :R (m :I Nat) -> (n :I Nat) -> (_ :R (_ :L Fin m) -> TT n) -> (_ :L TT m) -> TT n {
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (i :L Fin m).
   substVars m n f (V [m] i) ~> f i
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (x :L TT (S m))
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (x :L TT (S m)).
   substVars m n f (Lam [m] x) ~> Lam n (substVars (S m) (S n) (extendSubst m n f) x)
   
-  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :L TT m)
+  forall (m :I Nat) (n :I Nat) (f :R (_ :L Fin m) -> TT n) (g :L TT m) (x :L TT m).
   substVars m n f (App [m] g x) ~> App n (substVars m n f g) (substVars m n f x)
 }
 
@@ -2602,30 +2602,30 @@ example1 :L TT Z {
 }
 
 substTop :R (n :I Nat) -> (_ :R TT n) -> (_ :L Fin (S n)) -> TT n {
-  forall (n :I Nat) (tm :R TT n)
+  forall (n :I Nat) (tm :R TT n).
   substTop n tm (FZ [n]) ~> tm
   
-  forall (n :I Nat) (tm :R TT n) (i :L Fin n)
+  forall (n :I Nat) (tm :R TT n) (i :L Fin n).
   substTop n tm (FS [n] i) ~> V n i
 }
 
 mutual {
   redex :R (m :I Nat) -> (_ :R TT m) -> (_ :R TT m) -> TT m {
-    forall (m :I Nat) (y :R TT (S m)) (x :R TT m)
+    forall (m :I Nat) (y :R TT (S m)) (x :R TT m).
     redex m (Lam [m] y) x ~> nf m (substVars (S m) m (substTop m (nf m x)) y)
     
-    forall (m :I Nat) (f' :R TT m) (x :R TT m)
+    forall (m :I Nat) (f' :R TT m) (x :R TT m).
     redex m f' x ~> App m f' (nf m x)
   }
   
   nf :R (m :I Nat) -> (_ :R TT m) -> TT m {
-    forall (m :I Nat) (i :R Fin m)
+    forall (m :I Nat) (i :R Fin m).
     nf m (V [m] i) ~> V m i
     
-    forall (m :I Nat) (x :R TT (S m))
+    forall (m :I Nat) (x :R TT (S m)).
     nf m (Lam [m] x) ~> Lam m (nf (S m) x)
     
-    forall (m :I Nat) (f :R TT m) (x :R TT m)
+    forall (m :I Nat) (f :R TT m) (x :R TT m).
     nf m (App [m] f x) ~> redex m f x
   }
 }
@@ -2669,48 +2669,48 @@ mutual {
 }
 
 env {
-  forall (x) (xs)
+  forall (x) (xs).
   env (VC x xs) FZ ~> x
   
-  forall (x) (xs) (i)
+  forall (x) (xs) (i).
   env (VC x xs) (FS i) ~> env xs i
 }
 
 extendMap {
-  forall (f)
+  forall (f).
   extendMap f FZ ~> FZ
   
-  forall (f) (i)
+  forall (f) (i).
   extendMap f (FS i) ~> FS (f i)
 }
 
 mapVars {
-  forall (f) (i)
+  forall (f) (i).
   mapVars f (V i) ~> V (f i)
   
-  forall (f) (x)
+  forall (f) (x).
   mapVars f (Lam x) ~> Lam (mapVars (extendMap f) x)
   
-  forall (f) (g) (x)
+  forall (f) (g) (x).
   mapVars f (App g x) ~> App (mapVars f g) (mapVars f x)
 }
 
 extendSubst {
-  forall (f)
+  forall (f).
   extendSubst f FZ ~> V FZ
   
-  forall (f) (i)
+  forall (f) (i).
   extendSubst f (FS i) ~> mapVars FS (f i)
 }
 
 substVars {
-  forall (f) (i)
+  forall (f) (i).
   substVars f (V i) ~> f i
   
-  forall (f) (x)
+  forall (f) (x).
   substVars f (Lam x) ~> Lam (substVars (extendSubst f) x)
   
-  forall (f) (g) (x)
+  forall (f) (g) (x).
   substVars f (App g x) ~> App (substVars f g) (substVars f x)
 }
 
@@ -2723,30 +2723,30 @@ example1 {
 }
 
 substTop {
-  forall (tm)
+  forall (tm).
   substTop tm FZ ~> tm
   
-  forall (tm) (i)
+  forall (tm) (i).
   substTop tm (FS i) ~> V i
 }
 
 mutual {
   redex {
-    forall (y) (x)
+    forall (y) (x).
     redex (Lam y) x ~> nf (substVars (substTop (nf x)) y)
     
-    forall (f') (x)
+    forall (f') (x).
     redex f' x ~> App f' (nf x)
   }
   
   nf {
-    forall (i)
+    forall (i).
     nf (V i) ~> V i
     
-    forall (x)
+    forall (x).
     nf (Lam x) ~> Lam (nf x)
     
-    forall (f) (x)
+    forall (f) (x).
     nf (App f x) ~> redex f x
   }
 }

@@ -30,7 +30,7 @@ mutual {
 length : (n : Nat) -> (_ : Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n : Nat) (x : Bool) (xs : Vect n)
+  forall (n : Nat) (x : Bool) (xs : Vect n).
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
@@ -69,7 +69,7 @@ mutual {
 length : (n : Nat) -> (_ : Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n : Nat) (x : Bool) (xs : Vect n)
+  forall (n : Nat) (x : Bool) (xs : Vect n).
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
@@ -113,7 +113,7 @@ mutual {
 length : (n : Nat) -> (_ : Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n : Nat) (x : Bool) (xs : Vect n)
+  forall (n : Nat) (x : Bool) (xs : Vect n).
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
@@ -152,7 +152,7 @@ mutual {
 length :17 (n :18 Nat) -> (_ :19 Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n :26 Nat) (x :25 Bool) (xs :23 Vect n)
+  forall (n :26 Nat) (x :25 Bool) (xs :23 Vect n).
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
@@ -230,7 +230,7 @@ inferring  mutual {
 inferring  length :17 (n :18 Nat) -> (_ :19 Vect n) -> Nat {
     length {Z} Nil ~> Z
     
-    forall (n :26 Nat) (x :25 Bool) (xs :23 Vect n)
+    forall (n :26 Nat) (x :25 Bool) (xs :23 Vect n).
     length ({S} n) (Cons [n] x xs) ~> S (length n xs)
   }
 
@@ -276,7 +276,7 @@ inferring  length :17 (n :18 Nat) -> (_ :19 Vect n) -> Nat {
   length :I (n :I Nat) -> (_ :L Vect n) -> Nat {
     length {Z} Nil ~> Z
     
-    forall (n :I Nat) (x :I Bool) (xs :I Vect n)
+    forall (n :I Nat) (x :I Bool) (xs :I Vect n).
     length ({S} n) (Cons [n] x xs) ~> S (length n xs)
   }
 
@@ -381,7 +381,7 @@ mutual {
 length :L (n :I Nat) -> (_ :L Vect n) -> Nat {
   length {Z} Nil ~> Z
   
-  forall (n :I Nat) (x :I Bool) (xs :I Vect n)
+  forall (n :I Nat) (x :I Bool) (xs :I Vect n).
   length ({S} n) (Cons [n] x xs) ~> S (length n xs)
 }
 
