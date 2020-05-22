@@ -272,7 +272,7 @@ mutual
   lam ns = do
     token Lam
     commit
-    b <- binding ns
+    b <- binding ns <|> (B <$> ident <*> pure Nothing <*> pure hole)
     token Dot
     Lam b <$> term (b.name :: ns)
 
