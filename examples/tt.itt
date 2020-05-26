@@ -61,7 +61,6 @@ extendSubst : forall (m :I Nat) n. (Fin m -> TT n) -> Fin (S m) -> TT (S n) {
   extendSubst m n f (FS [m] i) ~> mapVars n (S n) (FS n) (f i)
 }
 
-{-
 substVars : forall m n. (Fin m -> TT n) -> TT m -> TT n {
   forall m n (f : _ -> _) i.
   substVars m n f (V [m] i) ~> f i,
@@ -126,5 +125,3 @@ data Result : Type {
 }
 
 main : Result ~> R example1 example2.
--}
-main : Type ~> Type.
