@@ -13,4 +13,6 @@ x : (a :I Type) -> Maybe a
 -- but not on the RHS of a function
 F : Type ~> (a :I Type) -> Maybe a.
 
+-- because Maybe takes a relevant argument
+
 main : Type ~> Type.
