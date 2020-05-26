@@ -1,0 +1,26 @@
+%options
+  "--default-constructor-quantities"
+  "--incremental"
+
+data Bool : Type {
+  True : Bool,
+  False : Bool
+}
+
+T : Bool -> Type {
+  T True  ~> Bool -> Bool,
+  T False ~> Bool
+}
+
+-- Andreas's monster
+f :  (F : (b :I Bool) -> (T b -> T b) -> Type)
+  -> (g : F False (\z : Bool. z) -> Bool)
+  -> (x : F True (\h : Bool -> Bool. \y : Bool. h y))
+  -> Bool
+~>
+  \F : (b :I Bool) -> (T b -> T b) -> Type.
+  \g : F False (\z : Bool. z) -> Bool.
+  \x : F True (\h : Bool -> Bool. h).
+  g x.
+
+main : Type ~> Type.
