@@ -357,7 +357,7 @@ mutual
 
   conv l@(Lam b@(B n q ty) rhs) r@(Lam b'@(B n' q' ty') rhs') = do
     q ~~ q'
-    ty ~= ty'
+    -- ty ~= ty'  -- these types are irrelevant
     withBndC (B n q ty) $
         rhs ~= rhs'
 

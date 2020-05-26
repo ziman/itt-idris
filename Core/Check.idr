@@ -253,7 +253,7 @@ mutual
     if q /= q'
       then throw $ CantConvert ltm rtm
       else do
-        ty ~= ty'
+        -- ty ~= ty'  -- these types are irrelevant
         withBnd b $ rhs ~= rhs'
 
   conv ltm@(Pi b@(B n q ty) rhs) rtm@(Pi b'@(B n' q' ty') rhs') =

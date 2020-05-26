@@ -90,7 +90,7 @@ mutual
       else cantConvert c (P n) (P n')
   conv c (Lam b@(B n q ty) rhs) (Lam (B n' q' ty') rhs') = do
     q ~~ q'
-    (ty ~= ty') c
+    -- (ty ~= ty') c  -- these types are irrelevant
     withBnd b $
       (rhs ~= rhs') c
   conv c (Pi b@(B n q ty) rhs) (Pi (B n' q' ty') rhs') = do
