@@ -49,7 +49,10 @@ mutual
     pretty ctx (B n dq Erased)
       = text n
     pretty ctx (B n dq ty)
-      = text n <++> text (showCol dq) <++> pretty (PTT False NoParens, ctx) ty
+      = text n <++> text (showCol dq) <++>
+          assert_total (pretty (PTT False NoParens, ctx) ty)
+          -- the termination checker can't handle mutually recursive implementations
+          -- with interface constraints well yet
 
   export
   ShowQ q => Pretty (PrettyTT, Context q n) (TT q n) where

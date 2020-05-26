@@ -14,7 +14,7 @@ import Data.List
 import Data.Vect
 import Data.Strings
 
-%default total
+%default covering
 
 data Token
   = Ident String

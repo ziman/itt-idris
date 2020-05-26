@@ -20,7 +20,9 @@ mutual
   prunePat gs PWildcard = False
 
   prunePatArgs : Globals Q -> List (Q, Pat Q n) -> Bool
-  prunePatArgs gs args = or $ map (\arg => Delay (prunePat gs $ snd arg)) args
+  prunePatArgs gs [] = False
+  prunePatArgs gs ((q, arg) :: args) =
+    prunePat gs arg || prunePatArgs gs args
 
 pruneClause : Globals Q -> Clause Q argn -> List (Clause Q argn)
 pruneClause gs c@(MkClause pi lhs rhs) =

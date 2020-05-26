@@ -14,7 +14,7 @@ import Utils.Pretty
 import Data.List
 import Control.Monad.State
 
-%default total
+%default covering
 %undotted_record_projections off
 
 public export
@@ -37,6 +37,7 @@ Show Error where
   show CantInferWildcard = "can't infer _"
   show (CantInfer tm) = "can't infer: " ++ show tm
   show (CantConvert lhs rhs) = "can't convert " ++ show lhs ++ " with " ++ show rhs
+  show (QuantityMismatch p q) = "quantity mismatch: " ++ show (p, q)
 
 TC.Error Error where
   tcError = TCError

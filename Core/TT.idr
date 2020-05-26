@@ -121,7 +121,10 @@ mutual
 mutual
   export
   Eq q => Eq (Binding q n) where
-    B n q ty == B n' q' ty' = (n == n') && (q == q') && (ty == ty')
+    B n q ty == B n' q' ty' =
+      assert_total $ (n == n') && (q == q') && (ty == ty')
+      -- idris can't see the totality of mutually recursive instances
+      -- with extra interface constraints
 
   export
   Eq q => Eq (TT q n) where

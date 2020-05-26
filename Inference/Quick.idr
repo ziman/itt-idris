@@ -115,12 +115,13 @@ step vals cs idx todo = do
           upds' <- updateVals upds (eval vals gs) (SortedSet.toList us)
           findUpdates upds' is
 
+covering
 solveQuick : Constrs -> Either Error (SortedMap ENum Q)
 solveQuick cs =
   let (qcs, idx) = collect $ concatMap splitConstr cs.constrs
     in step empty qcs idx (keys qcs)
 
-export
+covering export
 solve : Constrs -> ITT (SortedMap ENum Q)
 solve cs =
   case solveQuick (mapQ constrsQ toQuick cs) of

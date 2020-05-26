@@ -90,7 +90,7 @@ model cs = do
   foldMap op neutr f [x] = f x
   foldMap op neutr f (x :: xs) = f x `op` foldMap op neutr f xs
 
-export
+covering export
 solve : List Constr -> IO (Either Error (SortedMap ENum Q))
 solve cs = do
   sol <- Smt.solve $ model cs

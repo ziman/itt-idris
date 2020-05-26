@@ -472,8 +472,9 @@ decodeUnsatCore als (Left (StrangeSmtOutput xs)) = Left $ StrangeSmtOutput xs
 decodeUnsatCore als (Left (NotVariable x)) = Left $ NotVariable x
 decodeUnsatCore als (Left (NotInModel x)) = Left $ NotInModel x
 decodeUnsatCore als (Left (CouldNotParse x)) = Left $ CouldNotParse x
+decodeUnsatCore als (Left (Impossible x)) = Left $ Impossible x
 
-export
+covering export
 solve : AllSmtValue as => SmtM al (FList Smt as) -> IO (Either (SmtError al) (FList Prelude.id as))
 solve @{asv} {as} model =
     case runSmtM model' of
