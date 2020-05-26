@@ -1,0 +1,343 @@
+
+#############
+# Desugared #
+#############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+T : (_ : Bool) -> Type {
+  T True ~> (_ : Bool) -> Bool
+  
+  T False ~> Bool
+}
+
+f : (F : (b :I Bool) -> (r :L (_ : T b) -> T b) -> Type) -> (g : (_ : F False (\z : Bool. z)) -> Bool) -> (x : F True (\h : (_ : Bool) -> Bool. h)) -> Bool {
+  f  ~> \F : (b :I Bool) -> (_ : (_ : T b) -> T b) -> Type.
+      \g : (_ : F False (\z : Bool. z)) -> Bool.
+        \x : F True (\h : (_ : Bool) -> Bool. h).
+          g x
+}
+
+main : Type {
+  main  ~> Type
+}
+
+###############
+# Elaboration #
+###############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+T : (_ : Bool) -> Type {
+  T True ~> (_ : Bool) -> Bool
+  
+  T False ~> Bool
+}
+
+f : (F : (b :I Bool) -> (r :L (_ : T b) -> T b) -> Type) -> (g : (_ : F False (\z : Bool. z)) -> Bool) -> (x : F True (\h : (_ : Bool) -> Bool. h)) -> Bool {
+  f  ~> \F : (b :I Bool) -> (_ : (_ : T b) -> T b) -> Type.
+      \g : (_ : F False (\z : Bool. z)) -> Bool.
+        \x : F True (\h : (_ : Bool) -> Bool. h).
+          g x
+}
+
+main : Type {
+  main  ~> Type
+}
+
+Equalities:
+
+
+Solved metas: []
+
+##############
+# Elaborated #
+##############
+
+mutual {
+  constructor/0 Bool : Type.
+  
+  constructor/0 True : Bool.
+  
+  constructor/0 False : Bool.
+}
+
+T : (_ : Bool) -> Type {
+  T True ~> (_ : Bool) -> Bool
+  
+  T False ~> Bool
+}
+
+f : (F : (b :I Bool) -> (r :L (_ : T b) -> T b) -> Type) -> (g : (_ : F False (\z : Bool. z)) -> Bool) -> (x : F True (\h : (_ : Bool) -> Bool. h)) -> Bool {
+  f  ~> \F : (b :I Bool) -> (_ : (_ : T b) -> T b) -> Type.
+      \g : (_ : F False (\z : Bool. z)) -> Bool.
+        \x : F True (\h : (_ : Bool) -> Bool. h).
+          g x
+}
+
+main : Type {
+  main  ~> Type
+}
+
+#############
+# Evarified #
+#############
+
+mutual {
+  constructor/0 Bool :0 Type.
+  
+  constructor/0 True :7 Bool.
+  
+  constructor/0 False :1 Bool.
+}
+
+T :2 (_ :3 Bool) -> Type {
+  T True ~> (_ :5 Bool) -> Bool
+  
+  T False ~> Bool
+}
+
+f :8 (F :9 (b :I Bool) -> (r :L (_ :10 T b) -> T b) -> Type) -> (g :13 (_ :14 F False (\z :17 Bool. z)) -> Bool) -> (x :18 F True (\h :21 (_ :22 Bool) -> Bool. h)) -> Bool {
+  f  ~> \F :23 (b :I Bool) -> (_ :24 (_ :25 T b) -> T b) -> Type.
+      \g :28 (_ :29 F False (\z :32 Bool. z)) -> Bool.
+        \x :33 F True (\h :36 (_ :37 Bool) -> Bool. h).
+          g x
+}
+
+main :39 Type {
+  main  ~> Type
+}
+inferring  mutual {
+    constructor/0 Bool :0 Type.
+    
+    constructor/0 True :7 Bool.
+    
+    constructor/0 False :1 Bool.
+  }
+
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor/0 Bool :I Type.
+    
+    constructor/0 True :I Bool.
+    
+    constructor/0 False :I Bool.
+  }
+
+inferring  T :2 (_ :3 Bool) -> Type {
+    T True ~> (_ :5 Bool) -> Bool
+    
+    T False ~> Bool
+  }
+
+  inferred constraints: 
+    3 ~ 4
+    product [3] ≥ sum
+      product [L]
+    5 ≥ sum
+    3 ~ 6
+    product [3] ≥ sum
+      product [L]
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: [3]
+  T :I (_ :L Bool) -> Type {
+    T True ~> (_ :I Bool) -> Bool
+    
+    T False ~> Bool
+  }
+
+inferring  f :8 (F :9 (b :I Bool) -> (r :L (_ :10 T b) -> T b) -> Type) -> (g :13 (_ :14 F False (\z :17 Bool. z)) -> Bool) -> (x :18 F True (\h :21 (_ :22 Bool) -> Bool. h)) -> Bool {
+    f  ~> \F :23 (b :I Bool) -> (_ :24 (_ :25 T b) -> T b) -> Type.
+        \g :28 (_ :29 F False (\z :32 Bool. z)) -> Bool.
+          \x :33 F True (\h :36 (_ :37 Bool) -> Bool. h).
+            g x
+  }
+
+  inferred constraints: 
+    L ~ 11
+    L ~ 12
+    I ~ 16
+    L ~ 15
+    10 ~ 17
+    I ~ 20
+    L ~ 19
+    10 ~ 21
+    I ~ 22
+    I ~ 22
+    L ~ 26
+    L ~ 27
+    23 ≥ sum
+    I ~ 31
+    24 ~ 30
+    25 ~ 32
+    28 ≥ sum
+      product []
+    I ~ 35
+    24 ~ 34
+    25 ~ 36
+    I ~ 37
+    I ~ 37
+    33 ≥ sum
+      product [29]
+    29 ~ 38
+    30 ~ 34
+    31 ~ 35
+    23 ~ 9
+    24 ~ L
+    25 ~ 10
+    26 ~ 11
+    27 ~ 12
+    28 ~ 13
+    29 ~ 14
+    30 ~ 15
+    31 ~ 16
+    33 ~ 18
+    34 ~ 19
+    35 ~ 20
+  
+  deferred equalities: 
+    35 -> True ~ False
+    34 -> (\h :36 (_ :37 Bool) -> Bool. h) ~ (\z :32 Bool. z)
+    15 -> (\z :17 Bool. z) ~ (\z :32 Bool. z)
+    19 -> (\h :21 (_ :22 Bool) -> Bool. h) ~ (\h :36 (_ :37 Bool) -> Bool. h)
+  
+  variance of evars:
+    covariant: [14]
+    contravariant: [9, 10, 13, 18]
+  -> iteration 1
+    (\h :36 (_ :37 Bool) -> Bool. h) ~ (\z :32 Bool. z)
+    (\z :17 Bool. z) ~ (\z :32 Bool. z)
+    (\h :21 (_ :22 Bool) -> Bool. h) ~ (\h :36 (_ :37 Bool) -> Bool. h)
+
+  f :I (F :I (b :I Bool) -> (r :L (_ :I T b) -> T b) -> Type) -> (g :L (_ :I F False (\z :I Bool. z)) -> Bool) -> (x :I F True (\h :I (_ :I Bool) -> Bool. h)) -> Bool {
+    f  ~> \F :I (b :I Bool) -> (_ :L (_ :I T b) -> T b) -> Type.
+        \g :L (_ :I F False (\z :I Bool. z)) -> Bool.
+          \x :I F True (\h :I (_ :I Bool) -> Bool. h).
+            g x
+  }
+
+inferring  main :39 Type {
+    main  ~> Type
+  }
+
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  main :I Type {
+    main  ~> Type
+  }
+
+
+###################
+# Final valuation #
+###################
+
+  0 -> I
+  1 -> I
+  2 -> I
+  3 -> L
+  4 -> L
+  5 -> I
+  6 -> L
+  7 -> I
+  8 -> I
+  9 -> I
+  10 -> I
+  11 -> L
+  12 -> L
+  13 -> L
+  14 -> I
+  15 -> L
+  16 -> I
+  17 -> I
+  18 -> I
+  19 -> L
+  20 -> I
+  21 -> I
+  22 -> I
+  23 -> I
+  24 -> L
+  25 -> I
+  26 -> L
+  27 -> L
+  28 -> L
+  29 -> I
+  30 -> L
+  31 -> I
+  32 -> I
+  33 -> I
+  34 -> L
+  35 -> I
+  36 -> I
+  37 -> I
+  38 -> I
+  39 -> L
+
+
+#####################
+# Annotated program #
+#####################
+
+mutual {
+  constructor/0 Bool :I Type.
+  
+  constructor/0 True :I Bool.
+  
+  constructor/0 False :I Bool.
+}
+
+T :I (_ :L Bool) -> Type {
+  T True ~> (_ :I Bool) -> Bool
+  
+  T False ~> Bool
+}
+
+f :I (F :I (b :I Bool) -> (r :L (_ :I T b) -> T b) -> Type) -> (g :L (_ :I F False (\z :I Bool. z)) -> Bool) -> (x :I F True (\h :I (_ :I Bool) -> Bool. h)) -> Bool {
+  f  ~> \F :I (b :I Bool) -> (_ :L (_ :I T b) -> T b) -> Type.
+      \g :L (_ :I F False (\z :I Bool. z)) -> Bool.
+        \x :I F True (\h :I (_ :I Bool) -> Bool. h).
+          g x
+}
+
+main :L Type {
+  main  ~> Type
+}
+
+##########
+# Erased #
+##########
+
+main {
+  main  ~> Type
+}
+
+################
+# NF of `main` #
+################
+
+Unerased, reduced:
+Type
+
+Erased, reduced:
+Type

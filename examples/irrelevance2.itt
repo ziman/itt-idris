@@ -13,9 +13,9 @@ T : Bool -> Type {
 }
 
 -- Andreas's monster
-f :  (F : (b :I Bool) -> (T b -> T b) -> Type)
+f :  (F : (b :I Bool) -> (r :L T b -> T b) -> Type)
   -> (g : F False (\z : Bool. z) -> Bool)
-  -> (x : F True (\h : Bool -> Bool. \y : Bool. h y))
+  -> (x : F True (\h : Bool -> Bool. h))
   -> Bool
 ~>
   \F : (b :I Bool) -> (T b -> T b) -> Type.
