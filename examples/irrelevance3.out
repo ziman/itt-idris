@@ -1,0 +1,153 @@
+
+#############
+# Desugared #
+#############
+
+mutual {
+  constructor/1 Maybe : (_ : Type) -> Type.
+  
+  constructor/1 Nothing : (a : _) -> Maybe a.
+}
+
+x : (a :I Type) -> Maybe a {
+  x  ~> Nothing
+}
+
+F : Type {
+  F  ~> (a :I Type) -> Maybe a
+}
+
+main : Type {
+  main  ~> Type
+}
+
+###############
+# Elaboration #
+###############
+
+mutual {
+  constructor/1 Maybe : (_ :L Type) -> Type.
+  
+  constructor/1 Nothing : (a :I _0) -> Maybe a.
+}
+
+x : (a :I Type) -> Maybe a {
+  x  ~> Nothing
+}
+
+F : Type {
+  F  ~> (a :I Type) -> Maybe a
+}
+
+main : Type {
+  main  ~> Type
+}
+
+Equalities:
+  _ty0 = Type
+  _0 = Type
+  _0 = Type
+
+Solved metas: [_0, _ty0]
+
+##############
+# Elaborated #
+##############
+
+mutual {
+  constructor/1 Maybe : (_ :L Type) -> Type.
+  
+  constructor/1 Nothing : (a :I Type) -> Maybe a.
+}
+
+x : (a :I Type) -> Maybe a {
+  x  ~> Nothing
+}
+
+F : Type {
+  F  ~> (a :I Type) -> Maybe a
+}
+
+main : Type {
+  main  ~> Type
+}
+
+#############
+# Evarified #
+#############
+
+mutual {
+  constructor/1 Maybe :2 (_ :L Type) -> Type.
+  
+  constructor/1 Nothing :3 (a :I Type) -> Maybe a.
+}
+
+x :6 (a :I Type) -> Maybe a {
+  x  ~> Nothing
+}
+
+F :0 Type {
+  F  ~> (a :I Type) -> Maybe a
+}
+
+main :5 Type {
+  main  ~> Type
+}
+inferring  mutual {
+    constructor/1 Maybe :2 (_ :L Type) -> Type.
+    
+    constructor/1 Nothing :3 (a :I Type) -> Maybe a.
+  }
+
+  inferred constraints: 
+    L ~ 4
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  mutual {
+    constructor/1 Maybe :I (_ :L Type) -> Type.
+    
+    constructor/1 Nothing :I (a :I Type) -> Maybe a.
+  }
+
+inferring  x :6 (a :I Type) -> Maybe a {
+    x  ~> Nothing
+  }
+
+  inferred constraints: 
+    L ~ 7
+    L ~ 7
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+  x :I (a :I Type) -> Maybe a {
+    x  ~> Nothing
+  }
+
+inferring  F :0 Type {
+    F  ~> (a :I Type) -> Maybe a
+  }
+
+  inferred constraints: 
+    I ≥ sum
+      product [L]
+    L ~ 1
+  
+  
+  variance of evars:
+    covariant: []
+    contravariant: []
+
+
+######################
+# Unsatisfiable core #
+######################
+
+I ≥ sum
+  product [L]
+
+error: inconsistent constraints

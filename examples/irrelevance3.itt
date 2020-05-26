@@ -1,0 +1,16 @@
+%options
+  "--default-constructor-quantities"
+  "--incremental"
+
+data Maybe : Type -> Type {
+  Nothing : forall a. Maybe a
+}
+
+-- the type checks in a signature
+x : (a :I Type) -> Maybe a
+  ~> Nothing.
+
+-- but not on the RHS of a function
+F : Type ~> (a :I Type) -> Maybe a.
+
+main : Type ~> Type.
