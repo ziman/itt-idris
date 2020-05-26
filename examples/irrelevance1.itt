@@ -1,0 +1,51 @@
+%options
+  "--default-constructor-quantities"
+  "--incremental"
+
+data Id : forall a. a -> a -> Type {
+  Refl : forall a (x :I a). Id a x x
+}
+
+data Bool : Type {
+  True : Bool,
+  False : Bool
+}
+
+data Fool : Type {
+  Frue : Bool,
+  Talse : Bool
+}
+
+Fn : (a : Type) -> (b : Type) -> Type {
+  forall a b.
+  Fn a b ~> (a -> b)
+}
+
+lemma1 : Id Type (Bool -> Fool) (Fn Bool Fool)
+  ~> Refl Type (Fn Bool Fool).
+
+lemma2 :
+  (F : (a :I Type) -> (b :I Type) -> Type)
+  -> Id Type (F Bool Fool) (F Fool Bool)
+{
+  forall (F : _ -> _ -> _).
+  lemma2 F ~> Refl Type (F Bool Fool)
+}
+
+lemma3 : Id Type (Fn Fool Bool) (Fool -> Bool)
+  ~> Refl Type (Fn Fool Bool).
+
+trans : forall a b c. Id Type a b -> Id Type b c -> Id Type a c {
+  forall a.
+  trans a [a] [a] ({Refl} [Type] [a]) ({Refl} [Type] [a]) ~> Refl Type a
+}
+
+-- oops!
+boom : Id Type (Bool -> Fool) (Fool -> Bool)
+  ~>
+    trans (Bool -> Fool) (Fn Fool Bool) (Fool -> Bool)
+      (trans (Bool -> Fool) (Fn Bool Fool) (Fn Fool Bool)
+        lemma1 (lemma2 Fn))
+      lemma3.
+
+main : Type ~> Type.
