@@ -301,7 +301,10 @@ contravariant: [6, 7]
 # Final valuation #
 ###################
 
+  0 -> I
+  1 -> I
   2 -> I
+  3 -> I
   4 -> I
   5 -> I
   6 -> L
@@ -320,6 +323,7 @@ contravariant: [6, 7]
   19 -> I
   20 -> I
   21 -> L
+  22 -> I
   23 -> L
   24 -> L
   25 -> I

@@ -12,6 +12,7 @@ import public Data.SortedMap
 
 import Data.Strings
 import Inference.Solve
+import Data.SortedSet
 
 export
 infer : Config -> Globals Evar -> ITT (SortedMap ENum Q)
@@ -34,4 +35,9 @@ infer cfg evarified = do
   let var = concatMap (concatMap $ variance . .binding.type) $ toBlocks evarified
   prd $ pretty () var
 
-  Solve.solve cfg var.contravariant var.covariant cs
+  -- globals are not really bound contravariantly
+  -- and this would be wrong in separate compilation
+  -- but we want to maximise their erasure so let's mark them like contravariant
+  let qGlobals = concatMap (concatMap $ getENum . .binding.qv) $ toBlocks evarified
+
+  Solve.solve cfg (var.contravariant <+> qGlobals) var.covariant cs

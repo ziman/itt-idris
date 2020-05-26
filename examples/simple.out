@@ -233,22 +233,28 @@ contravariant: [14, 15, 26]
 # Final valuation #
 ###################
 
+  0 -> I
+  1 -> I
   2 -> I
+  3 -> I
   4 -> I
-  7 -> R
+  5 -> I
+  6 -> I
+  7 -> L
   8 -> E
   9 -> I
   10 -> L
   11 -> E
   12 -> I
-  14 -> I
+  13 -> I
+  14 -> R
   15 -> L
   16 -> L
-  17 -> I
-  18 -> I
+  17 -> R
+  18 -> R
   19 -> L
-  20 -> R
-  21 -> R
+  20 -> L
+  21 -> L
   22 -> E
   23 -> I
   24 -> L
@@ -282,7 +288,7 @@ postulate g :L (x :L U (C True)) -> Bool.
 
 postulate b :I Bool.
 
-postulate d :R U (C b).
+postulate d :L U (C b).
 
 not :I (x :L Bool) -> Bool {
   not True ~> False
@@ -290,13 +296,13 @@ not :I (x :L Bool) -> Bool {
   not False ~> True
 }
 
-id :I (a :I Type) -> (x :L a) -> a {
-  forall (a :I Type) (x :L a).
+id :I (a :R Type) -> (x :L a) -> a {
+  forall (a :R Type) (x :L a).
   id a x ~> x
 }
 
 main :L Bool {
-  main  ~> (\x :R U (C False). g x) d
+  main  ~> (\x :L U (C False). g x) d
 }
 
 ##########

@@ -34,7 +34,7 @@ not : B -> B {
 -- The reverse view
 
 data Id : forall a. a -> a -> Type {
-  Refl : forall a (x : a). Id a x x
+  Refl : forall a (x :I a). Id a x x
 }
 
 id : forall a. a -> a {

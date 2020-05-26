@@ -30,9 +30,9 @@ mutual {
 mutual {
   constructor/1 Maybe : (_ : Type) -> Type.
   
-  constructor/1 Nothing : (a :I Type) -> Maybe a.
+  constructor/1 Nothing : (a : _) -> Maybe a.
   
-  constructor/2 Just : (a :I Type) -> (x : a) -> Maybe a.
+  constructor/2 Just : (a : _) -> (_ : a) -> Maybe a.
 }
 
 not : (_ : B) -> B {
@@ -42,53 +42,53 @@ not : (_ : B) -> B {
 }
 
 mutual {
-  constructor/3 Id : (a : Type) -> (x : a) -> (y : a) -> Type.
+  constructor/3 Id : (a : _) -> (_ : a) -> (_ : a) -> Type.
   
-  constructor/2 Refl : (a :I Type) -> (x :I a) -> Id a x x.
+  constructor/2 Refl : (a : _) -> (x :I a) -> Id a x x.
 }
 
-id : (a : Type) -> (_ : a) -> a {
-  id  ~> \a : Type.
-      \x : a.
+id : (a : _) -> (_ : a) -> a {
+  id  ~> \a : _.
+      \x : _.
         x
 }
 
-subst : (a : Type) -> (P : (_ : a) -> Type) -> (x : a) -> (y : a) -> (eq : Id a x y) -> (w : P x) -> P y {
-  forall (a : Type) (P : (x :L a) -> Type) (x : a).
-  subst a P x [x] ({Refl} [a] [x]) ~> \w : P x.
+subst : (a : _) -> (P : (x :L a) -> Type) -> (x : a) -> (y : a) -> (_ : Id a x y) -> (_ : P x) -> P y {
+  forall (a : _) (P : (_ : _) -> _) (x : _).
+  subst a P x [x] ({Refl} [a] [x]) ~> \w : _.
       w
 }
 
-cong : (a : Type) -> (b : Type) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (eq : Id a x y) -> Id b (f x) (f y) {
-  forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a).
+cong : (a : _) -> (b : _) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (_ : Id a x y) -> Id b (f x) (f y) {
+  forall (a : _) (b : _) (f : (_ : _) -> _) (x : _).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
 one : (x : B) -> List {
-  forall (x : B).
+  forall (x : _).
   one x ~> Cons x Nil
 }
 
 app : (_ : List) -> (_ : List) -> List {
-  forall (ys : List).
+  forall (ys : _).
   app Nil ys ~> ys
   
-  forall (x : B) (xs : List) (ys : List).
+  forall (x : _) (xs : _) (ys : _).
   app (Cons x xs) ys ~> Cons x (app xs ys)
 }
 
-appRightNeutral : (ys : List) -> Id List ys (app ys Nil) {
+appRightNeutral : (ys : _) -> Id List ys (app ys Nil) {
   appRightNeutral Nil ~> Refl List Nil
   
-  forall (x : B) (xs : List).
+  forall (x : _) (xs : _).
   appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
 }
 
-appAssoc : (xs : List) -> (ys : List) -> (zs : List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-  forall (ys : List) (zs : List).
+appAssoc : (xs : _) -> (ys : _) -> (zs : _) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
+  forall (ys : _) (zs : _).
   appAssoc Nil ys zs ~> Refl List (app ys zs)
   
-  forall (x : B) (xs : List) (ys : List) (zs : List).
+  forall (x : _) (xs : _) (ys : _) (zs : _).
   appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
 }
 
@@ -97,26 +97,26 @@ mutual {
   
   constructor/0 RNil : Rev Nil.
   
-  constructor/3 RSnoc : (xs :I List) -> (x : B) -> (rxs : Rev xs) -> Rev (app xs (one x)).
+  constructor/3 RSnoc : (xs : _) -> (x : B) -> (rxs : Rev xs) -> Rev (app xs (one x)).
 }
 
-rev' : (xs : List) -> (rxs : Rev xs) -> (ys : List) -> Rev (app xs ys) {
-  forall (xs : List) (rxs : Rev xs).
+rev' : (xs : _) -> (rxs : Rev xs) -> (ys : List) -> Rev (app xs ys) {
+  forall (xs : _) (rxs : _).
   rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
   
-  forall (xs : List) (rxs : Rev xs) (y : B) (ys : List).
+  forall (xs : _) (rxs : _) (y : _) (ys : _).
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
 rev : (xs : List) -> Rev xs {
-  forall (xs : List).
+  forall (xs : _).
   rev xs ~> rev' Nil RNil xs
 }
 
-reverse' : (xs : List) -> (rxs : Rev xs) -> List {
+reverse' : (xs : _) -> (rxs : Rev xs) -> List {
   reverse' [Nil] RNil ~> Nil
   
-  forall (xs : List) (x : B) (rxs : Rev xs).
+  forall (xs : _) (x : _) (rxs : _).
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
@@ -132,48 +132,48 @@ mutual {
   
   constructor/1 VOne : (x : B) -> V (Cons x Nil).
   
-  constructor/4 VTwo : (x : B) -> (xs :I List) -> (u : V xs) -> (y : B) -> V (Cons x (app xs (one y))).
+  constructor/4 VTwo : (x : B) -> (xs : _) -> (u : V xs) -> (y : B) -> V (Cons x (app xs (one y))).
 }
 
 length : (_ : List) -> N {
   length Nil ~> Z
   
-  forall (x : B) (xs : List).
+  forall (x : _) (xs : _).
   length (Cons x xs) ~> S (length xs)
 }
 
 index : (_ : N) -> (_ : List) -> (_ : List) -> List {
-  forall (xs : List) (ys : List).
+  forall (xs : _) (ys : _).
   index Z xs ys ~> Nil
   
-  forall (x : B) (xs : List) (y : B) (ys : List).
+  forall (x : _) (xs : _) (y : _) (ys : _).
   index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
   
-  forall (n : N) (x : B) (xs : List) (y : B) (ys : List).
+  forall (n : _) (x : _) (xs : _) (y : _) (ys : _).
   index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
   
-  forall (n : N).
+  forall (n : _).
   index (S n) Nil Nil ~> Nil
 }
 
 build : (n : N) -> (xs : List) -> (ys : List) -> V (index n xs ys) {
-  forall (xs : List) (ys : List).
+  forall (xs : _) (ys : _).
   build Z xs ys ~> VNil
   
-  forall (x : B) (xs : List) (y : B) (ys : List).
+  forall (x : _) (xs : _) (y : _) (ys : _).
   build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
   
-  forall (n : N) (x : B) (xs : List) (y : B) (ys : List).
+  forall (n : _) (x : _) (xs : _) (y : _) (ys : _).
   build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
   
-  forall (n : N).
+  forall (n : _).
   build (S n) Nil Nil ~> VNil
 }
 
 postulate eq : (xs : List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
 toV : (xs : List) -> V xs {
-  forall (xs : List).
+  forall (xs : _).
   toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
 }
 
@@ -184,7 +184,7 @@ mutual {
   
   constructor/1 POne : (b : B) -> IsPalindrome (Cons b Nil).
   
-  constructor/3 PTwo : (b : B) -> (xs :I List) -> (pf : IsPalindrome xs) -> IsPalindrome (Cons b (app xs (one b))).
+  constructor/3 PTwo : (b : B) -> (xs : _) -> (pf : IsPalindrome xs) -> IsPalindrome (Cons b (app xs (one b))).
 }
 
 decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
@@ -197,42 +197,42 @@ decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
   decEq F T ~> Nothing (Id B F T)
 }
 
-isPalinV' : (x : B) -> (y : B) -> (xs : List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-  forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs).
+isPalinV' : (x : B) -> (y : B) -> (xs :I List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
+  forall (x : _) (xs : _) (v : _) (pfV : _).
   isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
   
-  forall (x : B) (y : B) (xs : List) (v : V xs) (pfB : Maybe (Id B x y)) (pfV : Maybe (IsPalindrome xs)).
+  forall (x : _) (y : _) (xs : _) (v : _) (pfB : _) (pfV : _).
   isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
 }
 
 isPalinV : (xs : List) -> (v : V xs) -> Maybe (IsPalindrome xs) {
   isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
   
-  forall (x : B).
+  forall (x : _).
   isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
   
-  forall (x : B) (xs : List) (y : B) (v : V xs).
+  forall (x : _) (xs : _) (y : _) (v : _).
   isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
 }
 
 isPalindrome : (xs : List) -> Maybe (IsPalindrome xs) {
-  forall (xs : List).
+  forall (xs : _).
   isPalindrome xs ~> isPalinV xs (toV xs)
 }
 
 genList : (_ : B) -> (_ : N) -> List {
-  forall (b : B).
+  forall (b : _).
   genList b Z ~> Nil
   
-  forall (b : B) (n : N).
+  forall (b : _) (n : _).
   genList b (S n) ~> Cons b (genList (not b) n)
 }
 
-isJust : (a : Type) -> (x : Maybe a) -> B {
-  forall (a : Type) (x : a).
+isJust : (a : _) -> (x : Maybe a) -> B {
+  forall (a : _) (x : _).
   isJust a (Just [a] x) ~> T
   
-  forall (a : Type).
+  forall (a : _).
   isJust a (Nothing [a]) ~> F
 }
 
@@ -275,9 +275,9 @@ mutual {
 mutual {
   constructor/1 Maybe : (_ :L Type) -> Type.
   
-  constructor/1 Nothing : (a :I Type) -> Maybe a.
+  constructor/1 Nothing : (a :I _0) -> Maybe a.
   
-  constructor/2 Just : (a :I Type) -> (x :L a) -> Maybe a.
+  constructor/2 Just : (a :I _1) -> (_ :L a) -> Maybe a.
 }
 
 not : (_ : B) -> B {
@@ -287,53 +287,53 @@ not : (_ : B) -> B {
 }
 
 mutual {
-  constructor/3 Id : (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+  constructor/3 Id : (a :I _2) -> (_ :L a) -> (_ :L a) -> Type.
   
-  constructor/2 Refl : (a :I Type) -> (x :I a) -> Id a x x.
+  constructor/2 Refl : (a :I _3) -> (x :I a) -> Id a x x.
 }
 
-id : (a : Type) -> (_ : a) -> a {
-  id  ~> \a : Type.
-      \x : a.
+id : (a : _4) -> (_ : a) -> a {
+  id  ~> \a : _5.
+      \x : _6.
         x
 }
 
-subst : (a : Type) -> (P : (_ : a) -> Type) -> (x : a) -> (y : a) -> (eq : Id a x y) -> (w : P x) -> P y {
-  forall (a : Type) (P : (x :L a) -> Type) (x : a).
-  subst a P x [x] ({Refl} [a] [x]) ~> \w : P x.
+subst : (a : _7) -> (P : (x :L a) -> Type) -> (x : a) -> (y : a) -> (_ : Id a x y) -> (_ : P x) -> P y {
+  forall (a : _11) (P : (_ : _9) -> _10) (x : _8).
+  subst a P x [x] ({Refl} [a] [x]) ~> \w : _12.
       w
 }
 
-cong : (a : Type) -> (b : Type) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (eq : Id a x y) -> Id b (f x) (f y) {
-  forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a).
+cong : (a : _13) -> (b : _14) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (_ : Id a x y) -> Id b (f x) (f y) {
+  forall (a : _19) (b : _18) (f : (_ : _16) -> _17) (x : _15).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
 one : (x : B) -> List {
-  forall (x : B).
+  forall (x : _20).
   one x ~> Cons x Nil
 }
 
 app : (_ : List) -> (_ : List) -> List {
-  forall (ys : List).
+  forall (ys : _21).
   app Nil ys ~> ys
   
-  forall (x : B) (xs : List) (ys : List).
+  forall (x : _24) (xs : _23) (ys : _22).
   app (Cons x xs) ys ~> Cons x (app xs ys)
 }
 
-appRightNeutral : (ys : List) -> Id List ys (app ys Nil) {
+appRightNeutral : (ys : _25) -> Id List ys (app ys Nil) {
   appRightNeutral Nil ~> Refl List Nil
   
-  forall (x : B) (xs : List).
+  forall (x : _27) (xs : _26).
   appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
 }
 
-appAssoc : (xs : List) -> (ys : List) -> (zs : List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-  forall (ys : List) (zs : List).
+appAssoc : (xs : _28) -> (ys : _29) -> (zs : _30) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
+  forall (ys : _32) (zs : _31).
   appAssoc Nil ys zs ~> Refl List (app ys zs)
   
-  forall (x : B) (xs : List) (ys : List) (zs : List).
+  forall (x : _36) (xs : _35) (ys : _34) (zs : _33).
   appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
 }
 
@@ -342,26 +342,26 @@ mutual {
   
   constructor/0 RNil : Rev Nil.
   
-  constructor/3 RSnoc : (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
+  constructor/3 RSnoc : (xs :I _37) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
 }
 
-rev' : (xs : List) -> (rxs : Rev xs) -> (ys : List) -> Rev (app xs ys) {
-  forall (xs : List) (rxs : Rev xs).
+rev' : (xs : _38) -> (rxs : Rev xs) -> (ys : List) -> Rev (app xs ys) {
+  forall (xs : _40) (rxs : _39).
   rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
   
-  forall (xs : List) (rxs : Rev xs) (y : B) (ys : List).
+  forall (xs : _44) (rxs : _43) (y : _42) (ys : _41).
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
 rev : (xs : List) -> Rev xs {
-  forall (xs : List).
+  forall (xs : _45).
   rev xs ~> rev' Nil RNil xs
 }
 
-reverse' : (xs : List) -> (rxs : Rev xs) -> List {
+reverse' : (xs : _46) -> (rxs : Rev xs) -> List {
   reverse' [Nil] RNil ~> Nil
   
-  forall (xs : List) (x : B) (rxs : Rev xs).
+  forall (xs : _49) (x : _48) (rxs : _47).
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
@@ -377,48 +377,48 @@ mutual {
   
   constructor/1 VOne : (x :L B) -> V (Cons x Nil).
   
-  constructor/4 VTwo : (x :L B) -> (xs :I List) -> (u :L V xs) -> (y :L B) -> V (Cons x (app xs (one y))).
+  constructor/4 VTwo : (x :L B) -> (xs :I _50) -> (u :L V xs) -> (y :L B) -> V (Cons x (app xs (one y))).
 }
 
 length : (_ : List) -> N {
   length Nil ~> Z
   
-  forall (x : B) (xs : List).
+  forall (x : _52) (xs : _51).
   length (Cons x xs) ~> S (length xs)
 }
 
 index : (_ : N) -> (_ : List) -> (_ : List) -> List {
-  forall (xs : List) (ys : List).
+  forall (xs : _54) (ys : _53).
   index Z xs ys ~> Nil
   
-  forall (x : B) (xs : List) (y : B) (ys : List).
+  forall (x : _58) (xs : _57) (y : _56) (ys : _55).
   index (S Z) (Cons x xs) (Cons y ys) ~> Cons x Nil
   
-  forall (n : N) (x : B) (xs : List) (y : B) (ys : List).
+  forall (n : _63) (x : _62) (xs : _61) (y : _60) (ys : _59).
   index (S (S n)) (Cons x xs) (Cons y ys) ~> Cons x (app (index n xs ys) (one y))
   
-  forall (n : N).
+  forall (n : _64).
   index (S n) Nil Nil ~> Nil
 }
 
 build : (n : N) -> (xs : List) -> (ys : List) -> V (index n xs ys) {
-  forall (xs : List) (ys : List).
+  forall (xs : _66) (ys : _65).
   build Z xs ys ~> VNil
   
-  forall (x : B) (xs : List) (y : B) (ys : List).
+  forall (x : _70) (xs : _69) (y : _68) (ys : _67).
   build (S Z) (Cons x xs) (Cons y ys) ~> VOne x
   
-  forall (n : N) (x : B) (xs : List) (y : B) (ys : List).
+  forall (n : _75) (x : _74) (xs : _73) (y : _72) (ys : _71).
   build (S (S n)) (Cons x xs) (Cons y ys) ~> VTwo x (index n xs ys) (build n xs ys) y
   
-  forall (n : N).
+  forall (n : _76).
   build (S n) Nil Nil ~> VNil
 }
 
 postulate eq : (xs : List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
 toV : (xs : List) -> V xs {
-  forall (xs : List).
+  forall (xs : _77).
   toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
 }
 
@@ -429,7 +429,7 @@ mutual {
   
   constructor/1 POne : (b :L B) -> IsPalindrome (Cons b Nil).
   
-  constructor/3 PTwo : (b :L B) -> (xs :I List) -> (pf :L IsPalindrome xs) -> IsPalindrome (Cons b (app xs (one b))).
+  constructor/3 PTwo : (b :L B) -> (xs :I _78) -> (pf :L IsPalindrome xs) -> IsPalindrome (Cons b (app xs (one b))).
 }
 
 decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
@@ -442,42 +442,42 @@ decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
   decEq F T ~> Nothing (Id B F T)
 }
 
-isPalinV' : (x : B) -> (y : B) -> (xs : List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-  forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs).
+isPalinV' : (x : B) -> (y : B) -> (xs :I List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
+  forall (x : _82) (xs : _81) (v : _80) (pfV : _79).
   isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
   
-  forall (x : B) (y : B) (xs : List) (v : V xs) (pfB : Maybe (Id B x y)) (pfV : Maybe (IsPalindrome xs)).
+  forall (x : _88) (y : _87) (xs : _86) (v : _85) (pfB : _84) (pfV : _83).
   isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
 }
 
 isPalinV : (xs : List) -> (v : V xs) -> Maybe (IsPalindrome xs) {
   isPalinV [Nil] VNil ~> Just (IsPalindrome Nil) PNil
   
-  forall (x : B).
+  forall (x : _89).
   isPalinV [Cons x Nil] (VOne x) ~> Just (IsPalindrome (Cons x Nil)) (POne x)
   
-  forall (x : B) (xs : List) (y : B) (v : V xs).
+  forall (x : _93) (xs : _92) (y : _91) (v : _90).
   isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
 }
 
 isPalindrome : (xs : List) -> Maybe (IsPalindrome xs) {
-  forall (xs : List).
+  forall (xs : _94).
   isPalindrome xs ~> isPalinV xs (toV xs)
 }
 
 genList : (_ : B) -> (_ : N) -> List {
-  forall (b : B).
+  forall (b : _95).
   genList b Z ~> Nil
   
-  forall (b : B) (n : N).
+  forall (b : _97) (n : _96).
   genList b (S n) ~> Cons b (genList (not b) n)
 }
 
-isJust : (a : Type) -> (x : Maybe a) -> B {
-  forall (a : Type) (x : a).
+isJust : (a : _98) -> (x : Maybe a) -> B {
+  forall (a : _100) (x : _99).
   isJust a (Just [a] x) ~> T
   
-  forall (a : Type).
+  forall (a : _101).
   isJust a (Nothing [a]) ~> F
 }
 
@@ -490,9 +490,390 @@ main : Maybe (IsPalindrome testList) {
 }
 
 Equalities:
+  _ty0 = Type
+  _0 = Type
+  _ty1 = Type
+  _1 = Type
+  _1 = Type
+  _ty2 = Type
+  _2 = Type
+  _2 = Type
+  _ty3 = Type
+  _3 = Type
+  _2 = _3
+  _ty4 = Type
+  _4 = Type
+  _4 = Type
+  _ty5 = Type
+  _ty6 = Type
+  _4 = _5
+  _6 = a
+  _6 = a
+  _ty7 = Type
+  _7 = Type
+  _7 = Type
+  _7 = Type
+  _2 = _7
+  _ty11 = Type
+  _ty9 = Type
+  _ty10 = Type
+  _ty8 = Type
+  _7 = _11
+  _9 = a
+  _10 = Type
+  _8 = a
+  _8 = a
+  _3 = _11
+  _8 = a
+  _ty12 = Type
+  _12 = P x
+  _12 = P x
+  _ty13 = Type
+  _ty14 = Type
+  _13 = Type
+  _14 = Type
+  _13 = Type
+  _13 = Type
+  _2 = _13
+  _2 = _14
+  _ty19 = Type
+  _ty18 = Type
+  _ty16 = Type
+  _ty17 = Type
+  _ty15 = Type
+  _13 = _19
+  _14 = _18
+  _16 = a
+  _17 = b
+  _15 = a
+  _15 = a
+  _3 = _19
+  _15 = a
+  _3 = _18
+  _16 = _15
+  _17 = b
+  _ty20 = Type
+  _20 = B
+  _20 = B
+  _ty21 = Type
+  _21 = List
+  _21 = List
+  _ty24 = Type
+  _ty23 = Type
+  _ty22 = Type
+  _24 = B
+  _23 = List
+  _22 = List
+  _24 = B
+  _23 = List
+  _22 = List
+  _ty25 = Type
+  _2 = Type
+  _25 = List
+  _25 = List
+  _25 = List
+  _3 = Type
+  _ty27 = Type
+  _ty26 = Type
+  _27 = B
+  _26 = List
+  _25 = List
+  _13 = Type
+  _14 = Type
+  _27 = B
+  _26 = List
+  _26 = List
+  _25 = _26
+  _ty28 = Type
+  _ty29 = Type
+  _ty30 = Type
+  _2 = Type
+  _28 = List
+  _29 = List
+  _30 = List
+  _28 = List
+  _29 = List
+  _30 = List
+  _ty32 = Type
+  _ty31 = Type
+  _28 = List
+  _29 = _32
+  _30 = _31
+  _3 = Type
+  _32 = List
+  _31 = List
+  _ty36 = Type
+  _ty35 = Type
+  _ty34 = Type
+  _ty33 = Type
+  _36 = B
+  _35 = List
+  _28 = List
+  _29 = _34
+  _30 = _33
+  _13 = Type
+  _14 = Type
+  _36 = B
+  _35 = List
+  _34 = List
+  _33 = List
+  _35 = List
+  _34 = List
+  _33 = List
+  _28 = _35
+  _29 = _34
+  _30 = _33
+  _ty37 = Type
+  _37 = List
+  _37 = List
+  _ty38 = Type
+  _38 = List
+  _38 = List
+  _ty40 = Type
+  _ty39 = Type
+  _38 = _40
+  _39 = Rev xs
+  _7 = Type
+  _40 = List
+  _40 = List
+  _25 = _40
+  _39 = Rev xs
+  _ty44 = Type
+  _ty43 = Type
+  _ty42 = Type
+  _ty41 = Type
+  _38 = _44
+  _43 = Rev xs
+  _42 = B
+  _41 = List
+  _7 = Type
+  _44 = List
+  _42 = B
+  _41 = List
+  _44 = List
+  _42 = B
+  _41 = List
+  _28 = _44
+  _42 = B
+  _29 = List
+  _30 = _41
+  _44 = List
+  _42 = B
+  _38 = List
+  _37 = _44
+  _42 = B
+  _43 = Rev xs
+  _41 = List
+  _ty45 = Type
+  _45 = List
+  _38 = List
+  _45 = List
+  _ty46 = Type
+  _46 = List
+  _46 = List
+  _ty49 = Type
+  _ty48 = Type
+  _ty47 = Type
+  _49 = List
+  _48 = B
+  _46 = List
+  _37 = _49
+  _48 = B
+  _47 = Rev xs
+  _48 = B
+  _46 = _49
+  _47 = Rev xs
+  _46 = List
+  _ty50 = Type
+  _50 = List
+  _50 = List
+  _ty52 = Type
+  _ty51 = Type
+  _52 = B
+  _51 = List
+  _51 = List
+  _ty54 = Type
+  _ty53 = Type
+  _54 = List
+  _53 = List
+  _ty58 = Type
+  _ty57 = Type
+  _ty56 = Type
+  _ty55 = Type
+  _58 = B
+  _57 = List
+  _56 = B
+  _55 = List
+  _58 = B
+  _ty63 = Type
+  _ty62 = Type
+  _ty61 = Type
+  _ty60 = Type
+  _ty59 = Type
+  _63 = N
+  _62 = B
+  _61 = List
+  _60 = B
+  _59 = List
+  _62 = B
+  _63 = N
+  _61 = List
+  _59 = List
+  _60 = B
+  _ty64 = Type
+  _64 = N
+  _ty66 = Type
+  _ty65 = Type
+  _66 = List
+  _65 = List
+  _ty70 = Type
+  _ty69 = Type
+  _ty68 = Type
+  _ty67 = Type
+  _70 = B
+  _69 = List
+  _68 = B
+  _67 = List
+  _70 = B
+  _ty75 = Type
+  _ty74 = Type
+  _ty73 = Type
+  _ty72 = Type
+  _ty71 = Type
+  _75 = N
+  _74 = B
+  _73 = List
+  _72 = B
+  _71 = List
+  _74 = B
+  _75 = N
+  _73 = List
+  _71 = List
+  _50 = List
+  _75 = N
+  _73 = List
+  _71 = List
+  _72 = B
+  _ty76 = Type
+  _76 = N
+  _2 = Type
+  _ty77 = Type
+  _77 = List
+  _7 = Type
+  _77 = List
+  _77 = List
+  _77 = List
+  _77 = List
+  _77 = List
+  _77 = List
+  _77 = List
+  _77 = List
+  _ty78 = Type
+  _78 = List
+  _78 = List
+  _2 = Type
+  _2 = Type
+  _1 = Type
+  _3 = Type
+  _2 = Type
+  _1 = Type
+  _3 = Type
+  _2 = Type
+  _0 = Type
+  _2 = Type
+  _0 = Type
+  _2 = Type
+  _ty82 = Type
+  _ty81 = Type
+  _ty80 = Type
+  _ty79 = Type
+  _82 = B
+  _82 = B
+  _81 = List
+  _80 = V xs
+  _2 = Type
+  _82 = B
+  _82 = B
+  _1 = Type
+  _3 = Type
+  _82 = B
+  _81 = List
+  _1 = Type
+  _79 = IsPalindrome xs
+  _82 = B
+  _81 = List
+  _82 = B
+  _1 = Type
+  _82 = B
+  _78 = _81
+  _79 = IsPalindrome xs
+  _ty88 = Type
+  _ty87 = Type
+  _ty86 = Type
+  _ty85 = Type
+  _ty84 = Type
+  _ty83 = Type
+  _88 = B
+  _87 = B
+  _86 = List
+  _85 = V xs
+  _84 = Maybe (Id B x y)
+  _83 = Maybe (IsPalindrome xs)
+  _88 = B
+  _86 = List
+  _87 = B
+  _0 = Type
+  _1 = Type
+  _ty89 = Type
+  _89 = B
+  _89 = B
+  _89 = B
+  _1 = Type
+  _89 = B
+  _ty93 = Type
+  _ty92 = Type
+  _ty91 = Type
+  _ty90 = Type
+  _93 = B
+  _92 = List
+  _91 = B
+  _93 = B
+  _50 = _92
+  _90 = V xs
+  _91 = B
+  _93 = B
+  _91 = B
+  _92 = List
+  _90 = V xs
+  _93 = B
+  _91 = B
+  _92 = List
+  _90 = V xs
+  _ty94 = Type
+  _94 = List
+  _94 = List
+  _94 = List
+  _ty95 = Type
+  _95 = B
+  _ty97 = Type
+  _ty96 = Type
+  _97 = B
+  _96 = N
+  _97 = B
+  _97 = B
+  _96 = N
+  _ty98 = Type
+  _98 = Type
+  _ty100 = Type
+  _ty99 = Type
+  _98 = _100
+  _1 = _100
+  _99 = a
+  _ty101 = Type
+  _98 = _101
+  _0 = _101
 
-
-Solved metas: []
+Solved metas: [_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _70, _71, _72, _73, _74, _75, _76, _77, _78, _79, _80, _81, _82, _83, _84, _85, _86, _87, _88, _89, _90, _91, _92, _93, _94, _95, _96, _97, _98, _99, _100, _101, _ty0, _ty1, _ty2, _ty3, _ty4, _ty5, _ty6, _ty7, _ty8, _ty9, _ty10, _ty11, _ty12, _ty13, _ty14, _ty15, _ty16, _ty17, _ty18, _ty19, _ty20, _ty21, _ty22, _ty23, _ty24, _ty25, _ty26, _ty27, _ty28, _ty29, _ty30, _ty31, _ty32, _ty33, _ty34, _ty35, _ty36, _ty37, _ty38, _ty39, _ty40, _ty41, _ty42, _ty43, _ty44, _ty45, _ty46, _ty47, _ty48, _ty49, _ty50, _ty51, _ty52, _ty53, _ty54, _ty55, _ty56, _ty57, _ty58, _ty59, _ty60, _ty61, _ty62, _ty63, _ty64, _ty65, _ty66, _ty67, _ty68, _ty69, _ty70, _ty71, _ty72, _ty73, _ty74, _ty75, _ty76, _ty77, _ty78, _ty79, _ty80, _ty81, _ty82, _ty83, _ty84, _ty85, _ty86, _ty87, _ty88, _ty89, _ty90, _ty91, _ty92, _ty93, _ty94, _ty95, _ty96, _ty97, _ty98, _ty99, _ty100, _ty101]
 
 ##############
 # Elaborated #
@@ -527,7 +908,7 @@ mutual {
   
   constructor/1 Nothing : (a :I Type) -> Maybe a.
   
-  constructor/2 Just : (a :I Type) -> (x :L a) -> Maybe a.
+  constructor/2 Just : (a :I Type) -> (_ :L a) -> Maybe a.
 }
 
 not : (_ : B) -> B {
@@ -537,7 +918,7 @@ not : (_ : B) -> B {
 }
 
 mutual {
-  constructor/3 Id : (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+  constructor/3 Id : (a :I Type) -> (_ :L a) -> (_ :L a) -> Type.
   
   constructor/2 Refl : (a :I Type) -> (x :I a) -> Id a x x.
 }
@@ -548,13 +929,13 @@ id : (a : Type) -> (_ : a) -> a {
         x
 }
 
-subst : (a : Type) -> (P : (_ : a) -> Type) -> (x : a) -> (y : a) -> (eq : Id a x y) -> (w : P x) -> P y {
-  forall (a : Type) (P : (x :L a) -> Type) (x : a).
+subst : (a : Type) -> (P : (x :L a) -> Type) -> (x : a) -> (y : a) -> (_ : Id a x y) -> (_ : P x) -> P y {
+  forall (a : Type) (P : (_ : a) -> Type) (x : a).
   subst a P x [x] ({Refl} [a] [x]) ~> \w : P x.
       w
 }
 
-cong : (a : Type) -> (b : Type) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (eq : Id a x y) -> Id b (f x) (f y) {
+cong : (a : Type) -> (b : Type) -> (f : (x :L a) -> b) -> (x : a) -> (y : a) -> (_ : Id a x y) -> Id b (f x) (f y) {
   forall (a : Type) (b : Type) (f : (_ : a) -> b) (x : a).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
@@ -692,7 +1073,7 @@ decEq : (x : B) -> (y : B) -> Maybe (Id B x y) {
   decEq F T ~> Nothing (Id B F T)
 }
 
-isPalinV' : (x : B) -> (y : B) -> (xs : List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
+isPalinV' : (x : B) -> (y : B) -> (xs :I List) -> (v : V xs) -> (pfB : Maybe (Id B x y)) -> (pfV : Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
   forall (x : B) (xs : List) (v : V xs) (pfV : IsPalindrome xs).
   isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
   
@@ -772,17 +1153,17 @@ mutual {
   
   constructor/1 Nothing :11 (a :I Type) -> Maybe a.
   
-  constructor/2 Just :5 (a :I Type) -> (x :L a) -> Maybe a.
+  constructor/2 Just :5 (a :I Type) -> (_ :L a) -> Maybe a.
 }
 
-not :521 (_ :522 B) -> B {
+not :520 (_ :521 B) -> B {
   not T ~> F
   
   not F ~> T
 }
 
 mutual {
-  constructor/3 Id :3 (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+  constructor/3 Id :3 (a :I Type) -> (_ :L a) -> (_ :L a) -> Type.
   
   constructor/2 Refl :35 (a :I Type) -> (x :I a) -> Id a x x.
 }
@@ -793,19 +1174,19 @@ id :300 (a :301 Type) -> (_ :302 a) -> a {
         x
 }
 
-subst :629 (a :630 Type) -> (P :631 (_ :632 a) -> Type) -> (x :633 a) -> (y :634 a) -> (eq :635 Id a x y) -> (w :639 P x) -> P y {
-  forall (a :644 Type) (P :643 (x :L a) -> Type) (x :642 a).
-  subst a P x [x] ({Refl} [a] [x]) ~> \w :652 P x.
+subst :628 (a :629 Type) -> (P :630 (x :L a) -> Type) -> (x :631 a) -> (y :632 a) -> (_ :633 Id a x y) -> (_ :637 P x) -> P y {
+  forall (a :643 Type) (P :641 (_ :642 a) -> Type) (x :640 a).
+  subst a P x [x] ({Refl} [a] [x]) ~> \w :651 P x.
       w
 }
 
-cong :206 (a :207 Type) -> (b :208 Type) -> (f :209 (x :L a) -> b) -> (x :210 a) -> (y :211 a) -> (eq :212 Id a x y) -> Id b (f x) (f y) {
+cong :206 (a :207 Type) -> (b :208 Type) -> (f :209 (x :L a) -> b) -> (x :210 a) -> (y :211 a) -> (_ :212 Id a x y) -> Id b (f x) (f y) {
   forall (a :225 Type) (b :224 Type) (f :222 (_ :223 a) -> b) (x :221 a).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
-one :525 (x :526 B) -> List {
-  forall (x :527 B).
+one :524 (x :525 B) -> List {
+  forall (x :526 B).
   one x ~> Cons x Nil
 }
 
@@ -840,28 +1221,28 @@ mutual {
   constructor/3 RSnoc :29 (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
 }
 
-rev' :539 (xs :540 List) -> (rxs :541 Rev xs) -> (ys :543 List) -> Rev (app xs ys) {
-  forall (xs :549 List) (rxs :547 Rev xs).
+rev' :538 (xs :539 List) -> (rxs :540 Rev xs) -> (ys :542 List) -> Rev (app xs ys) {
+  forall (xs :548 List) (rxs :546 Rev xs).
   rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
   
-  forall (xs :566 List) (rxs :564 Rev xs) (y :563 B) (ys :562 List).
+  forall (xs :565 List) (rxs :563 Rev xs) (y :562 B) (ys :561 List).
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
-rev :531 (xs :532 List) -> Rev xs {
-  forall (xs :534 List).
+rev :530 (xs :531 List) -> Rev xs {
+  forall (xs :533 List).
   rev xs ~> rev' Nil RNil xs
 }
 
-reverse' :607 (xs :608 List) -> (rxs :609 Rev xs) -> List {
+reverse' :606 (xs :607 List) -> (rxs :608 Rev xs) -> List {
   reverse' [Nil] RNil ~> Nil
   
-  forall (xs :616 List) (x :615 B) (rxs :613 Rev xs).
+  forall (xs :615 List) (x :614 B) (rxs :612 Rev xs).
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
-reverse :600 (_ :601 List) -> List {
-  forall (xs :602 List).
+reverse :599 (_ :600 List) -> List {
+  forall (xs :601 List).
   reverse xs ~> reverse' xs (rev xs)
 }
 
@@ -875,10 +1256,10 @@ mutual {
   constructor/4 VTwo :49 (x :L B) -> (xs :I List) -> (u :L V xs) -> (y :L B) -> V (Cons x (app xs (one y))).
 }
 
-length :507 (_ :508 List) -> N {
+length :506 (_ :507 List) -> N {
   length Nil ~> Z
   
-  forall (x :511 B) (xs :510 List).
+  forall (x :510 B) (xs :509 List).
   length (Cons x xs) ~> S (length xs)
 }
 
@@ -912,8 +1293,8 @@ build :151 (n :152 N) -> (xs :153 List) -> (ys :154 List) -> V (index n xs ys) {
 
 postulate eq :274 (xs :275 List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
-toV :669 (xs :670 List) -> V xs {
-  forall (xs :672 List).
+toV :668 (xs :669 List) -> V xs {
+  forall (xs :671 List).
   toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
 }
 
@@ -937,11 +1318,11 @@ decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
   decEq F T ~> Nothing (Id B F T)
 }
 
-isPalinV' :418 (x :419 B) -> (y :420 B) -> (xs :421 List) -> (v :422 V xs) -> (pfB :424 Maybe (Id B x y)) -> (pfV :429 Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-  forall (x :444 B) (xs :443 List) (v :441 V xs) (pfV :439 IsPalindrome xs).
+isPalinV' :418 (x :419 B) -> (y :420 B) -> (xs :I List) -> (v :421 V xs) -> (pfB :423 Maybe (Id B x y)) -> (pfV :428 Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
+  forall (x :443 B) (xs :442 List) (v :440 V xs) (pfV :438 IsPalindrome xs).
   isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
   
-  forall (x :484 B) (y :483 B) (xs :482 List) (v :480 V xs) (pfB :475 Maybe (Id B x y)) (pfV :472 Maybe (IsPalindrome xs)).
+  forall (x :483 B) (y :482 B) (xs :481 List) (v :479 V xs) (pfB :474 Maybe (Id B x y)) (pfV :471 Maybe (IsPalindrome xs)).
   isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
 }
 
@@ -955,8 +1336,8 @@ isPalinV :369 (xs :370 List) -> (v :371 V xs) -> Maybe (IsPalindrome xs) {
   isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
 }
 
-isPalindrome :498 (xs :499 List) -> Maybe (IsPalindrome xs) {
-  forall (xs :502 List).
+isPalindrome :497 (xs :498 List) -> Maybe (IsPalindrome xs) {
+  forall (xs :501 List).
   isPalindrome xs ~> isPalinV xs (toV xs)
 }
 
@@ -976,11 +1357,11 @@ isJust :355 (a :356 Type) -> (x :357 Maybe a) -> B {
   isJust a (Nothing [a]) ~> F
 }
 
-testList :654 List {
+testList :653 List {
   testList  ~> Cons T (Cons F (Cons F (Cons T (Cons F (Cons F (Cons T Nil))))))
 }
 
-main :517 Maybe (IsPalindrome testList) {
+main :516 Maybe (IsPalindrome testList) {
   main  ~> isPalindrome testList
 }
 inferring  mutual {
@@ -1051,7 +1432,7 @@ inferring  mutual {
     
     constructor/1 Nothing :11 (a :I Type) -> Maybe a.
     
-    constructor/2 Just :5 (a :I Type) -> (x :L a) -> Maybe a.
+    constructor/2 Just :5 (a :I Type) -> (_ :L a) -> Maybe a.
   }
 
   inferred constraints: 
@@ -1067,27 +1448,27 @@ inferring  mutual {
     
     constructor/1 Nothing :I (a :I Type) -> Maybe a.
     
-    constructor/2 Just :I (a :I Type) -> (x :L a) -> Maybe a.
+    constructor/2 Just :I (a :I Type) -> (_ :L a) -> Maybe a.
   }
 
-inferring  not :521 (_ :522 B) -> B {
+inferring  not :520 (_ :521 B) -> B {
     not T ~> F
     
     not F ~> T
   }
 
   inferred constraints: 
-    522 ~ 523
-    product [522] ≥ sum
+    521 ~ 522
+    product [521] ≥ sum
       product [L]
-    522 ~ 524
-    product [522] ≥ sum
+    521 ~ 523
+    product [521] ≥ sum
       product [L]
   
   
   variance of evars:
     covariant: []
-    contravariant: [522]
+    contravariant: [521]
   not :I (_ :L B) -> B {
     not T ~> F
     
@@ -1095,13 +1476,13 @@ inferring  not :521 (_ :522 B) -> B {
   }
 
 inferring  mutual {
-    constructor/3 Id :3 (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+    constructor/3 Id :3 (a :I Type) -> (_ :L a) -> (_ :L a) -> Type.
     
     constructor/2 Refl :35 (a :I Type) -> (x :I a) -> Id a x x.
   }
 
   inferred constraints: 
-    L ~ 38
+    I ~ 38
     L ~ 37
     L ~ 36
   
@@ -1110,7 +1491,7 @@ inferring  mutual {
     covariant: []
     contravariant: []
   mutual {
-    constructor/3 Id :I (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+    constructor/3 Id :I (a :I Type) -> (_ :L a) -> (_ :L a) -> Type.
     
     constructor/2 Refl :I (a :I Type) -> (x :I a) -> Id a x x.
   }
@@ -1138,64 +1519,64 @@ inferring  id :300 (a :301 Type) -> (_ :302 a) -> a {
           x
   }
 
-inferring  subst :629 (a :630 Type) -> (P :631 (_ :632 a) -> Type) -> (x :633 a) -> (y :634 a) -> (eq :635 Id a x y) -> (w :639 P x) -> P y {
-    forall (a :644 Type) (P :643 (x :L a) -> Type) (x :642 a).
-    subst a P x [x] ({Refl} [a] [x]) ~> \w :652 P x.
+inferring  subst :628 (a :629 Type) -> (P :630 (x :L a) -> Type) -> (x :631 a) -> (y :632 a) -> (_ :633 Id a x y) -> (_ :637 P x) -> P y {
+    forall (a :643 Type) (P :641 (_ :642 a) -> Type) (x :640 a).
+    subst a P x [x] ({Refl} [a] [x]) ~> \w :651 P x.
         w
   }
 
   inferred constraints: 
+    I ~ 636
+    L ~ 635
+    L ~ 634
     L ~ 638
-    L ~ 637
-    L ~ 636
-    632 ~ 640
-    632 ~ 641
-    644 ~ product [630]
-    643 ~ product [631]
-    642 ~ product [633]
+    L ~ 639
+    643 ~ product [629]
+    641 ~ product [630]
+    640 ~ product [631]
+    629 ~ 644
     630 ~ 645
+    L ~ 642
     631 ~ 646
-    632 ~ L
-    633 ~ 647
-    634 ~ 648
-    635 ~ 649
-    product [635] ≥ sum
+    632 ~ 647
+    633 ~ 648
+    product [633] ≥ sum
       product [I]
+    I ~ 649
     I ~ 650
-    I ~ 651
-    636 ~ L
-    637 ~ L
-    638 ~ L
-    644 ≥ sum
+    634 ~ L
+    635 ~ L
+    636 ~ I
     643 ≥ sum
-    642 ≥ sum
-    L ~ 653
-    652 ≥ sum
+    641 ≥ sum
+    640 ≥ sum
+    642 ~ 652
+    651 ≥ sum
       product []
+    651 ~ 637
+    652 ~ 638
     652 ~ 639
-    653 ~ 640
-    653 ~ 641
   
   
   variance of evars:
-    covariant: [632]
-    contravariant: [630, 631, 633, 634, 635, 639]
-  subst :I (a :I Type) -> (P :I (_ :L a) -> Type) -> (x :I a) -> (y :I a) -> (eq :I Id a x y) -> (w :L P x) -> P y {
-    forall (a :I Type) (P :I (x :L a) -> Type) (x :I a).
+    covariant: []
+    contravariant: [629, 630, 631, 632, 633, 637]
+  subst :I (a :I Type) -> (P :I (x :L a) -> Type) -> (x :I a) -> (y :I a) -> (_ :I Id a x y) -> (_ :L P x) -> P y {
+    forall (a :I Type) (P :I (_ :L a) -> Type) (x :I a).
     subst a P x [x] ({Refl} [a] [x]) ~> \w :L P x.
         w
   }
 
-inferring  cong :206 (a :207 Type) -> (b :208 Type) -> (f :209 (x :L a) -> b) -> (x :210 a) -> (y :211 a) -> (eq :212 Id a x y) -> Id b (f x) (f y) {
+inferring  cong :206 (a :207 Type) -> (b :208 Type) -> (f :209 (x :L a) -> b) -> (x :210 a) -> (y :211 a) -> (_ :212 Id a x y) -> Id b (f x) (f y) {
     forall (a :225 Type) (b :224 Type) (f :222 (_ :223 a) -> b) (x :221 a).
     cong a b f x [x] [Refl a x] ~> Refl b (f x)
   }
 
   inferred constraints: 
-    L ~ 215
+    I ~ 215
     L ~ 214
     L ~ 213
-    L ~ 218
+    I ~ 218
     L ~ 217
     L ~ 219
     L ~ 216
@@ -1215,7 +1596,7 @@ inferring  cong :206 (a :207 Type) -> (b :208 Type) -> (f :209 (x :L a) -> b) ->
     I ~ 232
     213 ~ L
     214 ~ L
-    215 ~ L
+    215 ~ I
     225 ≥ sum
     224 ≥ sum
       product [I]
@@ -1228,7 +1609,7 @@ inferring  cong :206 (a :207 Type) -> (b :208 Type) -> (f :209 (x :L a) -> b) ->
     223 ~ 236
     L ~ 216
     L ~ 217
-    L ~ 218
+    I ~ 218
   
   deferred equalities: 
     217 -> f x ~ f x
@@ -1241,28 +1622,28 @@ inferring  cong :206 (a :207 Type) -> (b :208 Type) -> (f :209 (x :L a) -> b) ->
     f x ~ f x
     f x ~ f x
 
-  cong :I (a :I Type) -> (b :I Type) -> (f :I (x :L a) -> b) -> (x :R a) -> (y :I a) -> (eq :I Id a x y) -> Id b (f x) (f y) {
-    forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :R a).
+  cong :I (a :I Type) -> (b :I Type) -> (f :I (x :L a) -> b) -> (x :I a) -> (y :I a) -> (_ :I Id a x y) -> Id b (f x) (f y) {
+    forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :I a).
     cong a b f x [x] [Refl a x] ~> Refl b (f x)
   }
 
-inferring  one :525 (x :526 B) -> List {
-    forall (x :527 B).
+inferring  one :524 (x :525 B) -> List {
+    forall (x :526 B).
     one x ~> Cons x Nil
   }
 
   inferred constraints: 
-    527 ~ product [526]
-    526 ~ 528
-    527 ≥ sum
+    526 ~ product [525]
+    525 ~ 527
+    526 ≥ sum
       product [L]
-    L ~ 530
     L ~ 529
+    L ~ 528
   
   
   variance of evars:
     covariant: []
-    contravariant: [526]
+    contravariant: [525]
   one :I (x :L B) -> List {
     forall (x :L B).
     one x ~> Cons x Nil
@@ -1324,7 +1705,7 @@ inferring  appRightNeutral :126 (ys :127 List) -> Id List ys (app ys Nil) {
   }
 
   inferred constraints: 
-    L ~ 130
+    I ~ 130
     L ~ 129
     L ~ 128
     L ~ 132
@@ -1336,7 +1717,7 @@ inferring  appRightNeutral :126 (ys :127 List) -> Id List ys (app ys Nil) {
     I ~ 134
     L ~ 128
     L ~ 129
-    L ~ 130
+    I ~ 130
     137 ~ product [L, 127]
     136 ~ product [L, 127]
     127 ~ 138
@@ -1347,14 +1728,14 @@ inferring  appRightNeutral :126 (ys :127 List) -> Id List ys (app ys Nil) {
     137 ≥ sum
       product [L, I]
     136 ≥ sum
-      product [R]
+      product [I]
       product [L, I]
       product [127, I]
     I ~ 146
     I ~ 145
     I ~ 144
     L ~ 147
-    R ~ 143
+    I ~ 143
     I ~ 142
     L ~ 149
     L ~ 148
@@ -1362,10 +1743,10 @@ inferring  appRightNeutral :126 (ys :127 List) -> Id List ys (app ys Nil) {
     127 ~ 150
     L ~ 128
     L ~ 129
-    L ~ 130
+    I ~ 130
     L ~ 128
     L ~ 129
-    L ~ 130
+    I ~ 130
   
   deferred equalities: 
     128 -> app Nil Nil ~ Nil
@@ -1398,7 +1779,7 @@ inferring  appAssoc :75 (xs :76 List) -> (ys :77 List) -> (zs :78 List) -> Id Li
   }
 
   inferred constraints: 
-    L ~ 81
+    I ~ 81
     L ~ 80
     L ~ 83
     L ~ 85
@@ -1426,7 +1807,7 @@ inferring  appAssoc :75 (xs :76 List) -> (ys :77 List) -> (zs :78 List) -> Id Li
     L ~ 97
     L ~ 79
     L ~ 80
-    L ~ 81
+    I ~ 81
     102 ~ product [L, 76]
     101 ~ product [L, 76]
     100 ~ product [77]
@@ -1441,22 +1822,22 @@ inferring  appAssoc :75 (xs :76 List) -> (ys :77 List) -> (zs :78 List) -> Id Li
     102 ≥ sum
       product [L, I]
     101 ≥ sum
-      product [L, L, R]
+      product [L, L, I]
       product [L, I]
       product [76, I]
     100 ≥ sum
-      product [L, L, R]
+      product [L, L, I]
       product [L, L, I]
       product [77, I]
     99 ≥ sum
-      product [L, R]
+      product [L, I]
       product [L, L, I]
       product [78, I]
     I ~ 113
     I ~ 112
     I ~ 111
     L ~ 114
-    R ~ 110
+    I ~ 110
     L ~ 116
     L ~ 118
     L ~ 117
@@ -1472,10 +1853,10 @@ inferring  appAssoc :75 (xs :76 List) -> (ys :77 List) -> (zs :78 List) -> Id Li
     78 ~ 123
     L ~ 79
     L ~ 80
-    L ~ 81
+    I ~ 81
     L ~ 79
     L ~ 80
-    L ~ 81
+    I ~ 81
   
   deferred equalities: 
     80 -> app (app Nil ys) zs ~ app ys zs
@@ -1501,11 +1882,11 @@ inferring  appAssoc :75 (xs :76 List) -> (ys :77 List) -> (zs :78 List) -> Id Li
     app xs ys ~ app xs ys
     app ys zs ~ app ys zs
 
-  appAssoc :I (xs :R List) -> (ys :R List) -> (zs :R List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-    forall (ys :R List) (zs :R List).
+  appAssoc :I (xs :R List) -> (ys :I List) -> (zs :I List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
+    forall (ys :I List) (zs :I List).
     appAssoc Nil ys zs ~> Refl List (app ys zs)
     
-    forall (x :R B) (xs :R List) (ys :R List) (zs :R List).
+    forall (x :R B) (xs :R List) (ys :I List) (zs :I List).
     appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
   }
 
@@ -1537,130 +1918,130 @@ inferring  mutual {
     constructor/3 RSnoc :I (xs :I List) -> (x :L B) -> (rxs :L Rev xs) -> Rev (app xs (one x)).
   }
 
-inferring  rev' :539 (xs :540 List) -> (rxs :541 Rev xs) -> (ys :543 List) -> Rev (app xs ys) {
-    forall (xs :549 List) (rxs :547 Rev xs).
+inferring  rev' :538 (xs :539 List) -> (rxs :540 Rev xs) -> (ys :542 List) -> Rev (app xs ys) {
+    forall (xs :548 List) (rxs :546 Rev xs).
     rev' xs rxs Nil ~> subst List Rev xs (app xs Nil) (appRightNeutral xs) rxs
     
-    forall (xs :566 List) (rxs :564 Rev xs) (y :563 B) (ys :562 List).
+    forall (xs :565 List) (rxs :563 Rev xs) (y :562 B) (ys :561 List).
     rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
   }
 
   inferred constraints: 
-    L ~ 542
-    L ~ 544
-    L ~ 546
+    L ~ 541
+    L ~ 543
     L ~ 545
-    L ~ 548
-    549 ~ product [540]
-    547 ~ product [541]
+    L ~ 544
+    L ~ 547
+    548 ~ product [539]
+    546 ~ product [540]
+    539 ~ 549
     540 ~ 550
-    541 ~ 551
-    542 ~ 548
-    543 ~ 552
-    product [543] ≥ sum
+    541 ~ 547
+    542 ~ 551
+    product [542] ≥ sum
       product [L]
-    549 ≥ sum
+    548 ≥ sum
       product [I]
       product [L, I]
       product [R, I]
-    547 ≥ sum
+    546 ≥ sum
       product [L]
-    I ~ 558
     I ~ 557
     I ~ 556
     I ~ 555
-    L ~ 560
-    L ~ 559
     I ~ 554
-    R ~ 561
+    L ~ 559
+    L ~ 558
+    I ~ 553
+    R ~ 560
+    558 ~ L
     559 ~ L
-    560 ~ L
-    L ~ 553
-    L ~ 548
-    L ~ 544
-    L ~ 565
-    566 ~ product [540]
-    564 ~ product [541]
-    563 ~ product [L, 543]
-    562 ~ product [L, 543]
+    L ~ 552
+    L ~ 547
+    L ~ 543
+    L ~ 564
+    565 ~ product [539]
+    563 ~ product [540]
+    562 ~ product [L, 542]
+    561 ~ product [L, 542]
+    539 ~ 566
     540 ~ 567
-    541 ~ 568
-    542 ~ 565
-    543 ~ 569
-    product [543] ≥ sum
+    541 ~ 564
+    542 ~ 568
+    product [542] ≥ sum
       product [L]
+    L ~ 569
     L ~ 570
-    L ~ 571
-    566 ≥ sum
+    565 ≥ sum
       product [L, L, I]
       product [L, I]
       product [R, I]
-      product [L, 540, L]
-      product [I, 541, L]
-    564 ≥ sum
-      product [L, 541, L]
+      product [L, 539, L]
+      product [I, 540, L]
     563 ≥ sum
+      product [L, 540, L]
+    562 ≥ sum
       product [L, L, L, I]
       product [L, L, I]
-      product [L, R, I]
-      product [L, L, 540, L]
-      product [L, 541, L]
-    562 ≥ sum
+      product [L, I, I]
+      product [L, L, 539, L]
+      product [L, 540, L]
+    561 ≥ sum
       product [L, I]
       product [L, L, I]
-      product [R, I]
-      product [543, L]
-    I ~ 577
+      product [I, I]
+      product [542, L]
     I ~ 576
     I ~ 575
+    I ~ 574
+    L ~ 578
+    L ~ 580
     L ~ 579
     L ~ 581
-    L ~ 580
-    L ~ 582
-    L ~ 578
-    I ~ 574
-    L ~ 584
-    L ~ 583
-    L ~ 586
-    L ~ 585
+    L ~ 577
     I ~ 573
-    R ~ 589
+    L ~ 583
+    L ~ 582
+    L ~ 585
+    L ~ 584
+    I ~ 572
     R ~ 588
-    L ~ 590
-    R ~ 587
+    I ~ 587
+    L ~ 589
+    I ~ 586
+    577 ~ L
     578 ~ L
     579 ~ L
     580 ~ L
-    581 ~ L
+    582 ~ L
     583 ~ L
     584 ~ L
     585 ~ L
-    586 ~ L
-    L ~ 572
-    540 ~ 593
-    L ~ 595
+    L ~ 571
+    539 ~ 592
     L ~ 594
-    L ~ 596
-    541 ~ 592
-    I ~ 599
-    L ~ 598
+    L ~ 593
+    L ~ 595
+    540 ~ 591
+    I ~ 598
     L ~ 597
-    L ~ 565
-    542 ~ L
+    L ~ 596
+    L ~ 564
+    541 ~ L
+    593 ~ L
     594 ~ L
-    595 ~ L
-    543 ~ 591
-    L ~ 544
-    L ~ 544
+    542 ~ 590
+    L ~ 543
+    L ~ 543
   
   deferred equalities: 
-    544 -> app xs Nil ~ app xs Nil
-    544 -> app (app xs (one y)) ys ~ app (app xs (one y)) ys
-    544 -> app xs (Cons y ys) ~ app xs (Cons y ys)
+    543 -> app xs Nil ~ app xs Nil
+    543 -> app (app xs (one y)) ys ~ app (app xs (one y)) ys
+    543 -> app xs (Cons y ys) ~ app xs (Cons y ys)
   
   variance of evars:
     covariant: []
-    contravariant: [540, 541, 543]
+    contravariant: [539, 540, 542]
   -> iteration 1
     app xs Nil ~ app xs Nil
     app (app xs (one y)) ys ~ app (app xs (one y)) ys
@@ -1681,28 +2062,28 @@ inferring  rev' :539 (xs :540 List) -> (rxs :541 Rev xs) -> (ys :543 List) -> Re
     rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
   }
 
-inferring  rev :531 (xs :532 List) -> Rev xs {
-    forall (xs :534 List).
+inferring  rev :530 (xs :531 List) -> Rev xs {
+    forall (xs :533 List).
     rev xs ~> rev' Nil RNil xs
   }
 
   inferred constraints: 
-    L ~ 533
-    534 ~ product [532]
-    532 ~ 535
-    534 ≥ sum
+    L ~ 532
+    533 ~ product [531]
+    531 ~ 534
+    533 ≥ sum
       product [L]
-    I ~ 538
-    L ~ 537
+    I ~ 537
     L ~ 536
-    L ~ 533
+    L ~ 535
+    L ~ 532
   
   deferred equalities: 
-    533 -> xs ~ app Nil xs
+    532 -> xs ~ app Nil xs
   
   variance of evars:
     covariant: []
-    contravariant: [532]
+    contravariant: [531]
   -> iteration 1
     xs ~ app Nil xs
 
@@ -1711,54 +2092,54 @@ inferring  rev :531 (xs :532 List) -> Rev xs {
     rev xs ~> rev' Nil RNil xs
   }
 
-inferring  reverse' :607 (xs :608 List) -> (rxs :609 Rev xs) -> List {
+inferring  reverse' :606 (xs :607 List) -> (rxs :608 Rev xs) -> List {
     reverse' [Nil] RNil ~> Nil
     
-    forall (xs :616 List) (x :615 B) (rxs :613 Rev xs).
+    forall (xs :615 List) (x :614 B) (rxs :612 Rev xs).
     reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
   }
 
   inferred constraints: 
-    L ~ 610
+    L ~ 609
+    607 ~ 610
     608 ~ 611
-    609 ~ 612
-    product [609] ≥ sum
+    product [608] ≥ sum
       product [L]
-    610 ~ L
-    L ~ 614
-    616 ~ product [I, 609]
-    615 ~ product [L, 609]
-    613 ~ product [L, 609]
-    608 ~ 617
-    L ~ 619
+    609 ~ L
+    L ~ 613
+    615 ~ product [I, 608]
+    614 ~ product [L, 608]
+    612 ~ product [L, 608]
+    607 ~ 616
     L ~ 618
-    L ~ 620
-    609 ~ 621
-    product [609] ≥ sum
+    L ~ 617
+    L ~ 619
+    608 ~ 620
+    product [608] ≥ sum
       product [L]
-    I ~ 622
+    I ~ 621
+    L ~ 622
     L ~ 623
-    L ~ 624
-    L ~ 614
-    610 ~ L
+    L ~ 613
+    609 ~ L
+    617 ~ L
     618 ~ L
-    619 ~ L
-    616 ≥ sum
-      product [608, L]
     615 ≥ sum
+      product [607, L]
+    614 ≥ sum
       product [L]
-    613 ≥ sum
-      product [609, L]
-    L ~ 626
+    612 ≥ sum
+      product [608, L]
     L ~ 625
-    608 ~ 628
-    609 ~ 627
-    610 ~ 614
+    L ~ 624
+    607 ~ 627
+    608 ~ 626
+    609 ~ 613
   
   
   variance of evars:
     covariant: []
-    contravariant: [608, 609]
+    contravariant: [607, 608]
   reverse' :I (xs :I List) -> (rxs :L Rev xs) -> List {
     reverse' [Nil] RNil ~> Nil
     
@@ -1766,25 +2147,25 @@ inferring  reverse' :607 (xs :608 List) -> (rxs :609 Rev xs) -> List {
     reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
   }
 
-inferring  reverse :600 (_ :601 List) -> List {
-    forall (xs :602 List).
+inferring  reverse :599 (_ :600 List) -> List {
+    forall (xs :601 List).
     reverse xs ~> reverse' xs (rev xs)
   }
 
   inferred constraints: 
-    602 ~ product [601]
-    601 ~ 603
-    602 ≥ sum
+    601 ~ product [600]
+    600 ~ 602
+    601 ≥ sum
       product [I]
       product [R, L]
-    I ~ 605
-    L ~ 604
-    R ~ 606
+    I ~ 604
+    L ~ 603
+    R ~ 605
   
   
   variance of evars:
     covariant: []
-    contravariant: [601]
+    contravariant: [600]
   reverse :I (_ :R List) -> List {
     forall (xs :R List).
     reverse xs ~> reverse' xs (rev xs)
@@ -1827,34 +2208,34 @@ inferring  mutual {
     constructor/4 VTwo :I (x :L B) -> (xs :I List) -> (u :L V xs) -> (y :L B) -> V (Cons x (app xs (one y))).
   }
 
-inferring  length :507 (_ :508 List) -> N {
+inferring  length :506 (_ :507 List) -> N {
     length Nil ~> Z
     
-    forall (x :511 B) (xs :510 List).
+    forall (x :510 B) (xs :509 List).
     length (Cons x xs) ~> S (length xs)
   }
 
   inferred constraints: 
-    508 ~ 509
-    product [508] ≥ sum
+    507 ~ 508
+    product [507] ≥ sum
       product [L]
-    511 ~ product [L, 508]
-    510 ~ product [L, 508]
-    508 ~ 512
-    product [508] ≥ sum
+    510 ~ product [L, 507]
+    509 ~ product [L, 507]
+    507 ~ 511
+    product [507] ≥ sum
       product [L]
+    L ~ 512
     L ~ 513
-    L ~ 514
-    511 ≥ sum
     510 ≥ sum
-      product [508, L]
-    L ~ 515
-    508 ~ 516
+    509 ≥ sum
+      product [507, L]
+    L ~ 514
+    507 ~ 515
   
   
   variance of evars:
     covariant: []
-    contravariant: [508]
+    contravariant: [507]
   length :I (_ :R List) -> N {
     length Nil ~> Z
     
@@ -2135,7 +2516,7 @@ inferring  build :151 (n :152 N) -> (xs :153 List) -> (ys :154 List) -> V (index
 inferring  postulate eq :274 (xs :275 List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
   inferred constraints: 
-    L ~ 278
+    I ~ 278
     L ~ 277
     R ~ 281
     R ~ 282
@@ -2150,16 +2531,16 @@ inferring  postulate eq :274 (xs :275 List) -> Id List (index (length xs) xs (re
     contravariant: [275]
   postulate eq :I (xs :I List) -> Id List (index (length xs) xs (reverse xs)) xs.
 
-inferring  toV :669 (xs :670 List) -> V xs {
-    forall (xs :672 List).
+inferring  toV :668 (xs :669 List) -> V xs {
+    forall (xs :671 List).
     toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
   }
 
   inferred constraints: 
-    L ~ 671
-    672 ~ product [670]
-    670 ~ 673
-    672 ≥ sum
+    L ~ 670
+    671 ~ product [669]
+    669 ~ 672
+    671 ≥ sum
       product [R, R, I]
       product [R, I]
       product [R, R, I]
@@ -2168,37 +2549,37 @@ inferring  toV :669 (xs :670 List) -> V xs {
       product [R, R, L]
       product [R, L]
       product [R, R, L]
-    I ~ 679
     I ~ 678
     I ~ 677
-    R ~ 682
-    R ~ 683
-    R ~ 681
-    R ~ 680
-    R ~ 684
     I ~ 676
+    R ~ 681
+    R ~ 682
+    R ~ 680
+    R ~ 679
+    R ~ 683
     I ~ 675
-    I ~ 685
+    I ~ 674
+    I ~ 684
+    679 ~ R
     680 ~ R
     681 ~ R
     682 ~ R
-    683 ~ R
-    L ~ 674
-    R ~ 688
-    R ~ 689
+    L ~ 673
     R ~ 687
+    R ~ 688
     R ~ 686
-    R ~ 690
+    R ~ 685
+    R ~ 689
+    679 ~ R
     680 ~ R
     681 ~ R
-    682 ~ R
-    683 ~ 689
-    L ~ 671
+    682 ~ 688
+    L ~ 670
   
   
   variance of evars:
     covariant: []
-    contravariant: [670]
+    contravariant: [669]
   toV :I (xs :R List) -> V xs {
     forall (xs :R List).
     toV xs ~> subst List V (index (length xs) xs (reverse xs)) xs (eq xs) (build (length xs) xs (reverse xs))
@@ -2253,7 +2634,7 @@ inferring  decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
 
   inferred constraints: 
     L ~ 240
-    L ~ 243
+    I ~ 243
     L ~ 242
     L ~ 241
     238 ~ 244
@@ -2263,7 +2644,7 @@ inferring  decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
     product [239] ≥ sum
       product [L]
     I ~ 247
-    L ~ 250
+    I ~ 250
     L ~ 249
     L ~ 248
     L ~ 246
@@ -2271,7 +2652,7 @@ inferring  decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
     I ~ 251
     248 ~ L
     249 ~ L
-    250 ~ L
+    250 ~ I
     L ~ 240
     238 ~ 253
     product [238] ≥ sum
@@ -2280,7 +2661,7 @@ inferring  decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
     product [239] ≥ sum
       product [L]
     I ~ 256
-    L ~ 259
+    I ~ 259
     L ~ 258
     L ~ 257
     L ~ 255
@@ -2288,7 +2669,7 @@ inferring  decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
     I ~ 260
     257 ~ L
     258 ~ L
-    259 ~ L
+    259 ~ I
     L ~ 240
     238 ~ 262
     product [238] ≥ sum
@@ -2297,7 +2678,7 @@ inferring  decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
     product [239] ≥ sum
       product [L]
     I ~ 264
-    L ~ 267
+    I ~ 267
     L ~ 266
     L ~ 265
     L ~ 240
@@ -2308,7 +2689,7 @@ inferring  decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
     product [239] ≥ sum
       product [L]
     I ~ 270
-    L ~ 273
+    I ~ 273
     L ~ 272
     L ~ 271
     L ~ 240
@@ -2338,143 +2719,143 @@ inferring  decEq :237 (x :238 B) -> (y :239 B) -> Maybe (Id B x y) {
     decEq F T ~> Nothing (Id B F T)
   }
 
-inferring  isPalinV' :418 (x :419 B) -> (y :420 B) -> (xs :421 List) -> (v :422 V xs) -> (pfB :424 Maybe (Id B x y)) -> (pfV :429 Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
-    forall (x :444 B) (xs :443 List) (v :441 V xs) (pfV :439 IsPalindrome xs).
+inferring  isPalinV' :418 (x :419 B) -> (y :420 B) -> (xs :I List) -> (v :421 V xs) -> (pfB :423 Maybe (Id B x y)) -> (pfV :428 Maybe (IsPalindrome xs)) -> Maybe (IsPalindrome (Cons x (app xs (one y)))) {
+    forall (x :443 B) (xs :442 List) (v :440 V xs) (pfV :438 IsPalindrome xs).
     isPalinV' x [x] xs v (Just [Id B x x] [Refl B x]) (Just [IsPalindrome xs] pfV) ~> Just (IsPalindrome (Cons x (app xs (one x)))) (PTwo x xs pfV)
     
-    forall (x :484 B) (y :483 B) (xs :482 List) (v :480 V xs) (pfB :475 Maybe (Id B x y)) (pfV :472 Maybe (IsPalindrome xs)).
+    forall (x :483 B) (y :482 B) (xs :481 List) (v :479 V xs) (pfB :474 Maybe (Id B x y)) (pfV :471 Maybe (IsPalindrome xs)).
     isPalinV' x y xs v pfB pfV ~> Nothing (IsPalindrome (Cons x (app xs (one y))))
   }
 
   inferred constraints: 
-    L ~ 423
-    L ~ 425
-    L ~ 428
-    L ~ 427
+    L ~ 422
+    L ~ 424
+    I ~ 427
     L ~ 426
+    L ~ 425
+    L ~ 429
     L ~ 430
     L ~ 431
     L ~ 432
-    L ~ 433
-    L ~ 435
     L ~ 434
-    L ~ 437
+    L ~ 433
     L ~ 436
-    L ~ 438
-    L ~ 442
-    L ~ 440
-    444 ~ product [419]
-    443 ~ product [421]
-    441 ~ product [422]
-    439 ~ product [L, 429]
-    419 ~ 445
-    420 ~ 446
+    L ~ 435
+    L ~ 437
+    L ~ 441
+    L ~ 439
+    443 ~ product [419]
+    442 ~ product [I]
+    440 ~ product [421]
+    438 ~ product [L, 428]
+    419 ~ 444
+    420 ~ 445
+    I ~ 446
     421 ~ 447
-    422 ~ 448
-    423 ~ 442
-    424 ~ 449
-    product [424] ≥ sum
+    422 ~ 441
+    423 ~ 448
+    product [423] ≥ sum
       product [L]
-    I ~ 450
-    L ~ 453
-    L ~ 452
+    I ~ 449
+    I ~ 452
     L ~ 451
-    L ~ 454
-    I ~ 456
+    L ~ 450
+    L ~ 453
     I ~ 455
+    I ~ 454
+    450 ~ L
     451 ~ L
-    452 ~ L
-    453 ~ L
-    425 ~ L
+    452 ~ I
+    424 ~ L
+    425 ~ 450
     426 ~ 451
     427 ~ 452
-    428 ~ 453
-    429 ~ 457
-    product [429] ≥ sum
+    428 ~ 456
+    product [428] ≥ sum
       product [L]
-    I ~ 458
+    I ~ 457
+    L ~ 458
     L ~ 459
-    L ~ 460
-    459 ~ 440
-    430 ~ L
-    431 ~ 459
-    444 ≥ sum
+    458 ~ 439
+    429 ~ L
+    430 ~ 458
+    443 ≥ sum
       product [L, L, I]
       product [L, L, L, L, I]
       product [L, L]
-    443 ≥ sum
+    442 ≥ sum
       product [L, L, L, I]
       product [I, L]
-    441 ≥ sum
-    439 ≥ sum
+    440 ≥ sum
+    438 ≥ sum
       product [L, L]
-    I ~ 462
-    L ~ 463
-    L ~ 465
+    I ~ 461
+    L ~ 462
     L ~ 464
-    L ~ 467
+    L ~ 463
     L ~ 466
+    L ~ 465
+    L ~ 467
+    L ~ 460
+    L ~ 470
+    I ~ 469
     L ~ 468
-    L ~ 461
-    L ~ 471
-    I ~ 470
-    L ~ 469
-    L ~ 440
+    L ~ 439
+    462 ~ L
     463 ~ L
     464 ~ L
     465 ~ L
     466 ~ L
-    467 ~ L
-    L ~ 432
-    L ~ 481
-    L ~ 476
-    L ~ 479
-    L ~ 478
+    L ~ 431
+    L ~ 480
+    L ~ 475
+    I ~ 478
     L ~ 477
+    L ~ 476
+    L ~ 472
     L ~ 473
-    L ~ 474
-    484 ~ product [419]
-    483 ~ product [420]
-    482 ~ product [421]
-    480 ~ product [422]
-    475 ~ product [424]
-    472 ~ product [429]
-    419 ~ 485
-    420 ~ 486
+    483 ~ product [419]
+    482 ~ product [420]
+    481 ~ product [I]
+    479 ~ product [421]
+    474 ~ product [423]
+    471 ~ product [428]
+    419 ~ 484
+    420 ~ 485
+    I ~ 486
     421 ~ 487
-    422 ~ 488
-    423 ~ 481
-    424 ~ 489
-    425 ~ 476
-    429 ~ 490
-    430 ~ 473
-    484 ≥ sum
-      product [L, L, I]
+    422 ~ 480
+    423 ~ 488
+    424 ~ 475
+    428 ~ 489
+    429 ~ 472
     483 ≥ sum
-      product [L, L, L, L, I]
+      product [L, L, I]
     482 ≥ sum
+      product [L, L, L, L, I]
+    481 ≥ sum
       product [L, L, L, I]
-    480 ≥ sum
-    475 ≥ sum
-    472 ≥ sum
-    I ~ 491
-    L ~ 492
-    L ~ 494
+    479 ≥ sum
+    474 ≥ sum
+    471 ≥ sum
+    I ~ 490
+    L ~ 491
     L ~ 493
-    L ~ 496
+    L ~ 492
     L ~ 495
-    L ~ 497
-    L ~ 432
+    L ~ 494
+    L ~ 496
+    L ~ 431
   
   deferred equalities: 
-    432 -> IsPalindrome (Cons x (app xs (one x))) ~ IsPalindrome (Cons x (app xs (one x)))
-    476 -> Id B x y ~ Id B x y
-    473 -> IsPalindrome xs ~ IsPalindrome xs
-    432 -> IsPalindrome (Cons x (app xs (one y))) ~ IsPalindrome (Cons x (app xs (one y)))
+    431 -> IsPalindrome (Cons x (app xs (one x))) ~ IsPalindrome (Cons x (app xs (one x)))
+    475 -> Id B x y ~ Id B x y
+    472 -> IsPalindrome xs ~ IsPalindrome xs
+    431 -> IsPalindrome (Cons x (app xs (one y))) ~ IsPalindrome (Cons x (app xs (one y)))
   
   variance of evars:
     covariant: []
-    contravariant: [419, 420, 421, 422, 424, 429]
+    contravariant: [419, 420, 421, 423, 428]
   -> iteration 1
     IsPalindrome (Cons x (app xs (one x))) ~ IsPalindrome (Cons x (app xs (one x)))
     Id B x y ~ Id B x y
@@ -2635,30 +3016,30 @@ inferring  isPalinV :369 (xs :370 List) -> (v :371 V xs) -> Maybe (IsPalindrome 
     isPalinV [Cons x (app xs (one y))] (VTwo x xs v y) ~> isPalinV' x y xs v (decEq x y) (isPalinV xs v)
   }
 
-inferring  isPalindrome :498 (xs :499 List) -> Maybe (IsPalindrome xs) {
-    forall (xs :502 List).
+inferring  isPalindrome :497 (xs :498 List) -> Maybe (IsPalindrome xs) {
+    forall (xs :501 List).
     isPalindrome xs ~> isPalinV xs (toV xs)
   }
 
   inferred constraints: 
+    L ~ 499
     L ~ 500
-    L ~ 501
-    502 ~ product [499]
-    499 ~ 503
-    502 ≥ sum
+    501 ~ product [498]
+    498 ~ 502
+    501 ≥ sum
       product [I]
       product [R, R]
-    I ~ 505
-    R ~ 504
-    R ~ 506
-    L ~ 500
+    I ~ 504
+    R ~ 503
+    R ~ 505
+    L ~ 499
   
   deferred equalities: 
-    500 -> IsPalindrome xs ~ IsPalindrome xs
+    499 -> IsPalindrome xs ~ IsPalindrome xs
   
   variance of evars:
     covariant: []
-    contravariant: [499]
+    contravariant: [498]
   -> iteration 1
     IsPalindrome xs ~ IsPalindrome xs
 
@@ -2754,25 +3135,25 @@ inferring  isJust :355 (a :356 Type) -> (x :357 Maybe a) -> B {
     isJust a (Nothing [a]) ~> F
   }
 
-inferring  testList :654 List {
+inferring  testList :653 List {
     testList  ~> Cons T (Cons F (Cons F (Cons T (Cons F (Cons F (Cons T Nil))))))
   }
 
   inferred constraints: 
-    L ~ 656
     L ~ 655
-    L ~ 658
+    L ~ 654
     L ~ 657
-    L ~ 660
+    L ~ 656
     L ~ 659
-    L ~ 662
+    L ~ 658
     L ~ 661
-    L ~ 664
+    L ~ 660
     L ~ 663
-    L ~ 666
+    L ~ 662
     L ~ 665
-    L ~ 668
+    L ~ 664
     L ~ 667
+    L ~ 666
   
   
   variance of evars:
@@ -2782,18 +3163,18 @@ inferring  testList :654 List {
     testList  ~> Cons T (Cons F (Cons F (Cons T (Cons F (Cons F (Cons T Nil))))))
   }
 
-inferring  main :517 Maybe (IsPalindrome testList) {
+inferring  main :516 Maybe (IsPalindrome testList) {
     main  ~> isPalindrome testList
   }
 
   inferred constraints: 
+    L ~ 517
     L ~ 518
-    L ~ 519
-    R ~ 520
-    L ~ 518
+    R ~ 519
+    L ~ 517
   
   deferred equalities: 
-    518 -> IsPalindrome testList ~ IsPalindrome testList
+    517 -> IsPalindrome testList ~ IsPalindrome testList
   
   variance of evars:
     covariant: []
@@ -2848,7 +3229,7 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   35 -> R
   36 -> L
   37 -> L
-  38 -> L
+  38 -> I
   39 -> I
   40 -> R
   41 -> R
@@ -2887,11 +3268,11 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   74 -> L
   75 -> I
   76 -> R
-  77 -> R
-  78 -> R
+  77 -> I
+  78 -> I
   79 -> L
   80 -> L
-  81 -> L
+  81 -> I
   82 -> L
   83 -> L
   84 -> L
@@ -2900,27 +3281,27 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   87 -> L
   88 -> L
   89 -> L
-  90 -> R
-  91 -> R
+  90 -> I
+  91 -> I
   92 -> R
-  93 -> R
-  94 -> R
+  93 -> I
+  94 -> I
   95 -> I
   96 -> I
   97 -> L
   98 -> L
-  99 -> R
-  100 -> R
+  99 -> I
+  100 -> I
   101 -> R
   102 -> R
   103 -> R
   104 -> L
   105 -> L
-  106 -> R
-  107 -> R
+  106 -> I
+  107 -> I
   108 -> I
   109 -> I
-  110 -> R
+  110 -> I
   111 -> I
   112 -> I
   113 -> I
@@ -2933,14 +3314,14 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   120 -> L
   121 -> L
   122 -> L
-  123 -> R
-  124 -> R
+  123 -> I
+  124 -> I
   125 -> R
   126 -> I
   127 -> R
   128 -> L
   129 -> L
-  130 -> L
+  130 -> I
   131 -> L
   132 -> L
   133 -> R
@@ -2953,7 +3334,7 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   140 -> L
   141 -> I
   142 -> I
-  143 -> R
+  143 -> I
   144 -> I
   145 -> I
   146 -> I
@@ -3020,18 +3401,18 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   207 -> I
   208 -> I
   209 -> I
-  210 -> R
+  210 -> I
   211 -> I
   212 -> I
   213 -> L
   214 -> L
-  215 -> L
+  215 -> I
   216 -> L
   217 -> L
-  218 -> L
+  218 -> I
   219 -> L
   220 -> L
-  221 -> R
+  221 -> I
   222 -> I
   223 -> L
   224 -> I
@@ -3039,7 +3420,7 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   226 -> I
   227 -> I
   228 -> I
-  229 -> R
+  229 -> I
   230 -> I
   231 -> I
   232 -> I
@@ -3053,14 +3434,14 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   240 -> L
   241 -> L
   242 -> L
-  243 -> L
+  243 -> I
   244 -> L
   245 -> L
   246 -> L
   247 -> I
   248 -> L
   249 -> L
-  250 -> L
+  250 -> I
   251 -> I
   252 -> I
   253 -> L
@@ -3069,7 +3450,7 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   256 -> I
   257 -> L
   258 -> L
-  259 -> L
+  259 -> I
   260 -> I
   261 -> I
   262 -> L
@@ -3077,18 +3458,18 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   264 -> I
   265 -> L
   266 -> L
-  267 -> L
+  267 -> I
   268 -> L
   269 -> L
   270 -> I
   271 -> L
   272 -> L
-  273 -> L
+  273 -> I
   274 -> I
   275 -> I
   276 -> L
   277 -> L
-  278 -> L
+  278 -> I
   279 -> R
   280 -> R
   281 -> R
@@ -3232,14 +3613,14 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   419 -> R
   420 -> I
   421 -> I
-  422 -> I
-  423 -> L
-  424 -> R
+  422 -> L
+  423 -> R
+  424 -> L
   425 -> L
   426 -> L
-  427 -> L
-  428 -> L
-  429 -> R
+  427 -> I
+  428 -> R
+  429 -> L
   430 -> L
   431 -> L
   432 -> L
@@ -3248,109 +3629,109 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   435 -> L
   436 -> L
   437 -> L
-  438 -> L
-  439 -> R
-  440 -> L
-  441 -> I
-  442 -> L
-  443 -> I
+  438 -> R
+  439 -> L
+  440 -> I
+  441 -> L
+  442 -> I
+  443 -> R
   444 -> R
-  445 -> R
+  445 -> I
   446 -> I
   447 -> I
-  448 -> I
-  449 -> R
-  450 -> I
+  448 -> R
+  449 -> I
+  450 -> L
   451 -> L
-  452 -> L
+  452 -> I
   453 -> L
-  454 -> L
+  454 -> I
   455 -> I
-  456 -> I
-  457 -> R
-  458 -> I
+  456 -> R
+  457 -> I
+  458 -> L
   459 -> L
   460 -> L
-  461 -> L
-  462 -> I
+  461 -> I
+  462 -> L
   463 -> L
   464 -> L
   465 -> L
   466 -> L
   467 -> L
   468 -> L
-  469 -> L
-  470 -> I
-  471 -> L
-  472 -> R
+  469 -> I
+  470 -> L
+  471 -> R
+  472 -> L
   473 -> L
-  474 -> L
-  475 -> R
+  474 -> R
+  475 -> L
   476 -> L
   477 -> L
-  478 -> L
-  479 -> L
-  480 -> I
-  481 -> L
+  478 -> I
+  479 -> I
+  480 -> L
+  481 -> I
   482 -> I
-  483 -> I
+  483 -> R
   484 -> R
-  485 -> R
+  485 -> I
   486 -> I
   487 -> I
-  488 -> I
+  488 -> R
   489 -> R
-  490 -> R
-  491 -> I
+  490 -> I
+  491 -> L
   492 -> L
   493 -> L
   494 -> L
   495 -> L
   496 -> L
   497 -> L
-  498 -> L
-  499 -> R
+  498 -> R
+  499 -> L
   500 -> L
-  501 -> L
+  501 -> R
   502 -> R
   503 -> R
-  504 -> R
-  505 -> I
+  504 -> I
+  505 -> R
   506 -> R
   507 -> R
   508 -> R
   509 -> R
   510 -> R
   511 -> R
-  512 -> R
+  512 -> L
   513 -> L
   514 -> L
-  515 -> L
-  516 -> R
+  515 -> R
+  516 -> L
   517 -> L
   518 -> L
-  519 -> L
-  520 -> R
-  521 -> I
+  519 -> R
+  520 -> I
+  521 -> L
   522 -> L
   523 -> L
-  524 -> L
-  525 -> I
+  524 -> I
+  525 -> L
   526 -> L
   527 -> L
   528 -> L
   529 -> L
-  530 -> L
+  530 -> R
   531 -> R
-  532 -> R
-  533 -> L
+  532 -> L
+  533 -> R
   534 -> R
-  535 -> R
+  535 -> L
   536 -> L
-  537 -> L
-  538 -> I
-  539 -> R
-  540 -> I
+  537 -> I
+  538 -> R
+  539 -> I
+  540 -> L
   541 -> L
   542 -> L
   543 -> L
@@ -3358,36 +3739,36 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   545 -> L
   546 -> L
   547 -> L
-  548 -> L
+  548 -> I
   549 -> I
-  550 -> I
+  550 -> L
   551 -> L
   552 -> L
-  553 -> L
+  553 -> I
   554 -> I
   555 -> I
   556 -> I
   557 -> I
-  558 -> I
+  558 -> L
   559 -> L
-  560 -> L
-  561 -> R
+  560 -> R
+  561 -> L
   562 -> L
   563 -> L
   564 -> L
-  565 -> L
+  565 -> I
   566 -> I
-  567 -> I
+  567 -> L
   568 -> L
   569 -> L
   570 -> L
   571 -> L
-  572 -> L
+  572 -> I
   573 -> I
   574 -> I
   575 -> I
   576 -> I
-  577 -> I
+  577 -> L
   578 -> L
   579 -> L
   580 -> L
@@ -3396,63 +3777,63 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   583 -> L
   584 -> L
   585 -> L
-  586 -> L
-  587 -> R
+  586 -> I
+  587 -> I
   588 -> R
-  589 -> R
+  589 -> L
   590 -> L
   591 -> L
-  592 -> L
-  593 -> I
+  592 -> I
+  593 -> L
   594 -> L
   595 -> L
   596 -> L
   597 -> L
-  598 -> L
-  599 -> I
+  598 -> I
+  599 -> R
   600 -> R
   601 -> R
   602 -> R
-  603 -> R
-  604 -> L
-  605 -> I
+  603 -> L
+  604 -> I
+  605 -> R
   606 -> R
-  607 -> R
-  608 -> I
+  607 -> I
+  608 -> L
   609 -> L
-  610 -> L
-  611 -> I
+  610 -> I
+  611 -> L
   612 -> L
   613 -> L
   614 -> L
-  615 -> L
+  615 -> I
   616 -> I
-  617 -> I
+  617 -> L
   618 -> L
   619 -> L
   620 -> L
-  621 -> L
-  622 -> I
+  621 -> I
+  622 -> L
   623 -> L
   624 -> L
   625 -> L
   626 -> L
-  627 -> L
-  628 -> I
-  629 -> R
+  627 -> I
+  628 -> R
+  629 -> I
   630 -> I
   631 -> I
-  632 -> L
+  632 -> I
   633 -> I
-  634 -> I
-  635 -> I
-  636 -> L
+  634 -> L
+  635 -> L
+  636 -> I
   637 -> L
   638 -> L
   639 -> L
-  640 -> L
-  641 -> L
-  642 -> I
+  640 -> I
+  641 -> I
+  642 -> L
   643 -> I
   644 -> I
   645 -> I
@@ -3461,10 +3842,10 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   648 -> I
   649 -> I
   650 -> I
-  651 -> I
+  651 -> L
   652 -> L
-  653 -> L
-  654 -> R
+  653 -> R
+  654 -> L
   655 -> L
   656 -> L
   657 -> L
@@ -3478,29 +3859,28 @@ inferring  main :517 Maybe (IsPalindrome testList) {
   665 -> L
   666 -> L
   667 -> L
-  668 -> L
+  668 -> R
   669 -> R
-  670 -> R
-  671 -> L
+  670 -> L
+  671 -> R
   672 -> R
-  673 -> R
-  674 -> L
+  673 -> L
+  674 -> I
   675 -> I
   676 -> I
   677 -> I
   678 -> I
-  679 -> I
+  679 -> R
   680 -> R
   681 -> R
   682 -> R
   683 -> R
-  684 -> R
-  685 -> I
+  684 -> I
+  685 -> R
   686 -> R
   687 -> R
   688 -> R
   689 -> R
-  690 -> R
 
 
 #####################
@@ -3536,7 +3916,7 @@ mutual {
   
   constructor/1 Nothing :R (a :I Type) -> Maybe a.
   
-  constructor/2 Just :R (a :I Type) -> (x :L a) -> Maybe a.
+  constructor/2 Just :R (a :I Type) -> (_ :L a) -> Maybe a.
 }
 
 not :I (_ :L B) -> B {
@@ -3546,7 +3926,7 @@ not :I (_ :L B) -> B {
 }
 
 mutual {
-  constructor/3 Id :I (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+  constructor/3 Id :I (a :I Type) -> (_ :L a) -> (_ :L a) -> Type.
   
   constructor/2 Refl :R (a :I Type) -> (x :I a) -> Id a x x.
 }
@@ -3557,14 +3937,14 @@ id :I (a :I Type) -> (_ :R a) -> a {
         x
 }
 
-subst :R (a :I Type) -> (P :I (_ :L a) -> Type) -> (x :I a) -> (y :I a) -> (eq :I Id a x y) -> (w :L P x) -> P y {
-  forall (a :I Type) (P :I (x :L a) -> Type) (x :I a).
+subst :R (a :I Type) -> (P :I (x :L a) -> Type) -> (x :I a) -> (y :I a) -> (_ :I Id a x y) -> (_ :L P x) -> P y {
+  forall (a :I Type) (P :I (_ :L a) -> Type) (x :I a).
   subst a P x [x] ({Refl} [a] [x]) ~> \w :L P x.
       w
 }
 
-cong :I (a :I Type) -> (b :I Type) -> (f :I (x :L a) -> b) -> (x :R a) -> (y :I a) -> (eq :I Id a x y) -> Id b (f x) (f y) {
-  forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :R a).
+cong :I (a :I Type) -> (b :I Type) -> (f :I (x :L a) -> b) -> (x :I a) -> (y :I a) -> (_ :I Id a x y) -> Id b (f x) (f y) {
+  forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :I a).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
@@ -3588,11 +3968,11 @@ appRightNeutral :I (ys :R List) -> Id List ys (app ys Nil) {
   appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
 }
 
-appAssoc :I (xs :R List) -> (ys :R List) -> (zs :R List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-  forall (ys :R List) (zs :R List).
+appAssoc :I (xs :R List) -> (ys :I List) -> (zs :I List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
+  forall (ys :I List) (zs :I List).
   appAssoc Nil ys zs ~> Refl List (app ys zs)
   
-  forall (x :R B) (xs :R List) (ys :R List) (zs :R List).
+  forall (x :R B) (xs :R List) (ys :I List) (zs :I List).
   appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
 }
 
@@ -3782,7 +4162,7 @@ mutual {
   
   constructor/1 Nothing :R (a :I Type) -> Maybe a.
   
-  constructor/2 Just :R (a :I Type) -> (x :L a) -> Maybe a.
+  constructor/2 Just :R (a :I Type) -> (_ :L a) -> Maybe a.
 }
 
 not :I (_ :L B) -> B {
@@ -3792,7 +4172,7 @@ not :I (_ :L B) -> B {
 }
 
 mutual {
-  constructor/3 Id :I (a :L Type) -> (x :L a) -> (y :L a) -> Type.
+  constructor/3 Id :I (a :I Type) -> (_ :L a) -> (_ :L a) -> Type.
   
   constructor/2 Refl :R (a :I Type) -> (x :I a) -> Id a x x.
 }
@@ -3803,14 +4183,14 @@ id :I (a :I Type) -> (_ :R a) -> a {
         x
 }
 
-subst :R (a :I Type) -> (P :I (_ :L a) -> Type) -> (x :I a) -> (y :I a) -> (eq :I Id a x y) -> (w :L P x) -> P y {
-  forall (a :I Type) (P :I (x :L a) -> Type) (x :I a).
+subst :R (a :I Type) -> (P :I (x :L a) -> Type) -> (x :I a) -> (y :I a) -> (_ :I Id a x y) -> (_ :L P x) -> P y {
+  forall (a :I Type) (P :I (_ :L a) -> Type) (x :I a).
   subst a P x [x] ({Refl} [a] [x]) ~> \w :L P x.
       w
 }
 
-cong :I (a :I Type) -> (b :I Type) -> (f :I (x :L a) -> b) -> (x :R a) -> (y :I a) -> (eq :I Id a x y) -> Id b (f x) (f y) {
-  forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :R a).
+cong :I (a :I Type) -> (b :I Type) -> (f :I (x :L a) -> b) -> (x :I a) -> (y :I a) -> (_ :I Id a x y) -> Id b (f x) (f y) {
+  forall (a :I Type) (b :I Type) (f :I (_ :L a) -> b) (x :I a).
   cong a b f x [x] [Refl a x] ~> Refl b (f x)
 }
 
@@ -3834,11 +4214,11 @@ appRightNeutral :I (ys :R List) -> Id List ys (app ys Nil) {
   appRightNeutral (Cons x xs) ~> cong List List (Cons x) xs (app xs Nil) (appRightNeutral xs)
 }
 
-appAssoc :I (xs :R List) -> (ys :R List) -> (zs :R List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
-  forall (ys :R List) (zs :R List).
+appAssoc :I (xs :R List) -> (ys :I List) -> (zs :I List) -> Id List (app (app xs ys) zs) (app xs (app ys zs)) {
+  forall (ys :I List) (zs :I List).
   appAssoc Nil ys zs ~> Refl List (app ys zs)
   
-  forall (x :R B) (xs :R List) (ys :R List) (zs :R List).
+  forall (x :R B) (xs :R List) (ys :I List) (zs :I List).
   appAssoc (Cons x xs) ys zs ~> cong List List (Cons x) (app (app xs ys) zs) (app xs (app ys zs)) (appAssoc xs ys zs)
 }
 

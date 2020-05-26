@@ -257,17 +257,21 @@ contravariant: [2, 3, 4, 15, 18, 19]
 # Final valuation #
 ###################
 
-  1 -> R
+  0 -> I
+  1 -> L
   2 -> I
   3 -> I
   4 -> L
   5 -> I
   6 -> I
   7 -> L
-  10 -> R
+  8 -> I
+  9 -> I
+  10 -> L
   11 -> I
   12 -> R
   13 -> I
+  14 -> I
   15 -> I
   16 -> R
   17 -> R
@@ -321,9 +325,9 @@ mutual {
 mutual {
   constructor/1 Vect :I (_ :I Nat) -> Type.
   
-  constructor/0 Nil :R Vect Z.
+  constructor/0 Nil :L Vect Z.
   
-  constructor/3 Cons :R (n :I Nat) -> (_ :I Bool) -> (_ :L Vect n) -> Vect (S n).
+  constructor/3 Cons :L (n :I Nat) -> (_ :I Bool) -> (_ :L Vect n) -> Vect (S n).
 }
 
 length :R (n :I Nat) -> (_ :L Vect n) -> Nat {

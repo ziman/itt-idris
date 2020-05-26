@@ -254,8 +254,10 @@ contravariant: [6, 8, 16, 28, 32]
 # Final valuation #
 ###################
 
+  0 -> I
   1 -> R
   2 -> L
+  3 -> I
   4 -> R
   5 -> R
   6 -> L
@@ -279,7 +281,7 @@ contravariant: [6, 8, 16, 28, 32]
   24 -> R
   25 -> L
   26 -> I
-  27 -> R
+  27 -> L
   28 -> R
   29 -> R
   30 -> R
@@ -307,7 +309,7 @@ mutual {
   constructor/2 P :L (x :L Bool) -> (y :L Bool) -> Pair.
 }
 
-not :R (x :R Bool) -> Bool {
+not :L (x :R Bool) -> Bool {
   not True ~> False
   
   not False ~> True
