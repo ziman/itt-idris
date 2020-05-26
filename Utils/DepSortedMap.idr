@@ -8,7 +8,7 @@ namespace DecOrd
   public export
   data DecOrdOutcome : (x, y : a) -> Type where
     LT : DecOrdOutcome x y
-    EQ : x = y -> DecOrdOutcome x y
+    EQ : (0 eq : x = y) -> DecOrdOutcome x y
     GT : DecOrdOutcome x y
 
   public export
