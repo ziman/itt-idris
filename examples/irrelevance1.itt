@@ -41,6 +41,7 @@ trans : forall a b c. Id Type a b -> Id Type b c -> Id Type a c {
 }
 
 -- oops!
+-- that's what you get if your Pi has irrelevant arguments
 boom : Id Type (Bool -> Fool) (Fool -> Bool)
   ~>
     trans (Bool -> Fool) (Fn Fool Bool) (Fool -> Bool)
