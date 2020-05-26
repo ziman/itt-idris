@@ -404,11 +404,11 @@ inferTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
   Pi b <$> withBndR b (inferTm rhs)
 
 inferTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
-  tyTy <- irrelevant $ inferTm ty
+  tyTy <- inferTm ty
   tyTy ~= Type_
 
   withBndR b $ do
-    rhsTy <- irrelevant $ inferTm rhs
+    rhsTy <- inferTm rhs
     rhsTy ~= Type_
 
   pure Type_

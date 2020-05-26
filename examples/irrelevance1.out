@@ -360,15 +360,17 @@ inferring  Fn :2 (a :3 Type) -> (b :4 Type) -> Type {
     3 ~ 7
     4 ~ 8
     6 ≥ sum
+      product []
     5 ≥ sum
+      product []
     9 ≥ sum
   
   
   variance of evars:
     covariant: []
     contravariant: [3, 4]
-  Fn :I (a :I Type) -> (b :I Type) -> Type {
-    forall (a :I Type) (b :I Type).
+  Fn :I (a :L Type) -> (b :R Type) -> Type {
+    forall (a :L Type) (b :R Type).
     Fn a b ~> (_ :I a) -> b
   }
 
@@ -380,12 +382,12 @@ inferring  lemma1 :45 Id Type ((_ :49 Bool) -> Fool) (Fn Bool Fool) {
     I ~ 48
     L ~ 47
     L ~ 46
-    I ~ 51
-    I ~ 50
+    L ~ 51
+    R ~ 50
     I ~ 53
     I ~ 52
-    I ~ 55
-    I ~ 54
+    L ~ 55
+    R ~ 54
     L ~ 46
     L ~ 47
     I ~ 48
@@ -455,13 +457,13 @@ inferring  lemma3 :73 Id Type (Fn Fool Bool) ((_ :79 Fool) -> Bool) {
   inferred constraints: 
     I ~ 76
     L ~ 75
-    I ~ 78
-    I ~ 77
+    L ~ 78
+    R ~ 77
     L ~ 74
     I ~ 81
     I ~ 80
-    I ~ 83
-    I ~ 82
+    L ~ 83
+    R ~ 82
     L ~ 74
     L ~ 75
     I ~ 76
@@ -537,255 +539,16 @@ inferring  boom :19 Id Type ((_ :23 Bool) -> Fool) ((_ :24 Fool) -> Bool) {
     boom  ~> trans ((_ :30 Bool) -> Fool) (Fn Fool Bool) ((_ :33 Fool) -> Bool) (trans ((_ :39 Bool) -> Fool) (Fn Bool Fool) (Fn Fool Bool) lemma1 (lemma2 Fn)) lemma3
   }
 
-  inferred constraints: 
-    I ~ 22
-    L ~ 21
-    L ~ 20
-    I ~ 29
-    30 ≥ sum
-    I ~ 28
-    I ~ 32
-    I ~ 31
-    I ~ 27
-    33 ≥ sum
-    I ~ 26
-    I ~ 38
-    39 ≥ sum
-    I ~ 37
-    I ~ 41
-    I ~ 40
-    I ~ 36
-    I ~ 43
-    I ~ 42
-    I ~ 35
-    39 ~ I
-    I ~ 34
-    I ~ 44
-    30 ~ 39
-    I ~ 25
-    33 ~ I
-    L ~ 20
-    L ~ 21
-    I ~ 22
-  
-  deferred equalities: 
-    21 -> ((_ :23 Bool) -> Fool) ~ ((_ :30 Bool) -> Fool)
-    20 -> ((_ :24 Fool) -> Bool) ~ ((_ :33 Fool) -> Bool)
-  
-  variance of evars:
-    covariant: []
-    contravariant: []
-  -> iteration 1
-    ((_ :23 Bool) -> Fool) ~ ((_ :30 Bool) -> Fool)
-    ((_ :24 Fool) -> Bool) ~ ((_ :33 Fool) -> Bool)
-
-  boom :I Id Type ((_ :I Bool) -> Fool) ((_ :I Fool) -> Bool) {
-    boom  ~> trans ((_ :I Bool) -> Fool) (Fn Fool Bool) ((_ :I Fool) -> Bool) (trans ((_ :I Bool) -> Fool) (Fn Bool Fool) (Fn Fool Bool) lemma1 (lemma2 Fn)) lemma3
+error: With backtrace:
+  "DEF":  boom :19 Id Type ((_ :23 Bool) -> Fool) ((_ :24 Fool) -> Bool) {
+    boom  ~> trans ((_ :30 Bool) -> Fool) (Fn Fool Bool) ((_ :33 Fool) -> Bool) (trans ((_ :39 Bool) -> Fool) (Fn Bool Fool) (Fn Fool Bool) lemma1 (lemma2 Fn)) lemma3
   }
-
-inferring  main :84 Type {
-    main  ~> Type
-  }
-
-  
-  
-  variance of evars:
-    covariant: []
-    contravariant: []
-  main :I Type {
-    main  ~> Type
-  }
-
-
-###################
-# Final valuation #
-###################
-
-  0 -> I
-  1 -> I
-  2 -> I
-  3 -> I
-  4 -> I
-  5 -> I
-  6 -> I
-  7 -> I
-  8 -> I
-  9 -> I
-  10 -> I
-  11 -> I
-  12 -> I
-  13 -> I
-  14 -> L
-  15 -> L
-  16 -> I
-  17 -> I
-  18 -> I
-  19 -> I
-  20 -> L
-  21 -> L
-  22 -> I
-  23 -> I
-  24 -> I
-  25 -> I
-  26 -> I
-  27 -> I
-  28 -> I
-  29 -> I
-  30 -> I
-  31 -> I
-  32 -> I
-  33 -> I
-  34 -> I
-  35 -> I
-  36 -> I
-  37 -> I
-  38 -> I
-  39 -> I
-  40 -> I
-  41 -> I
-  42 -> I
-  43 -> I
-  44 -> I
-  45 -> I
-  46 -> L
-  47 -> L
-  48 -> I
-  49 -> I
-  50 -> I
-  51 -> I
-  52 -> I
-  53 -> I
-  54 -> I
-  55 -> I
-  56 -> I
-  57 -> I
-  58 -> L
-  59 -> L
-  60 -> I
-  61 -> I
-  62 -> I
-  63 -> I
-  64 -> I
-  65 -> I
-  66 -> I
-  67 -> I
-  68 -> I
-  69 -> I
-  70 -> I
-  71 -> I
-  72 -> I
-  73 -> I
-  74 -> L
-  75 -> L
-  76 -> I
-  77 -> I
-  78 -> I
-  79 -> I
-  80 -> I
-  81 -> I
-  82 -> I
-  83 -> I
-  84 -> L
-  85 -> I
-  86 -> I
-  87 -> I
-  88 -> I
-  89 -> I
-  90 -> L
-  91 -> L
-  92 -> I
-  93 -> I
-  94 -> L
-  95 -> L
-  96 -> I
-  97 -> L
-  98 -> L
-  99 -> I
-  100 -> I
-  101 -> I
-  102 -> I
-  103 -> I
-  104 -> I
-  105 -> I
-  106 -> I
-  107 -> I
-  108 -> I
-  109 -> I
-  110 -> I
-  111 -> I
-
-
-#####################
-# Annotated program #
-#####################
-
-mutual {
-  constructor/3 Id :I (a :I Type) -> (_ :L a) -> (_ :L a) -> Type.
-  
-  constructor/2 Refl :I (a :I Type) -> (x :I a) -> Id a x x.
-}
-
-mutual {
-  constructor/0 Bool :I Type.
-  
-  constructor/0 True :I Bool.
-  
-  constructor/0 False :I Bool.
-}
-
-mutual {
-  constructor/0 Fool :I Type.
-  
-  constructor/0 Frue :I Bool.
-  
-  constructor/0 Talse :I Bool.
-}
-
-Fn :I (a :I Type) -> (b :I Type) -> Type {
-  forall (a :I Type) (b :I Type).
-  Fn a b ~> (_ :I a) -> b
-}
-
-lemma1 :I Id Type ((_ :I Bool) -> Fool) (Fn Bool Fool) {
-  lemma1  ~> Refl Type (Fn Bool Fool)
-}
-
-lemma2 :I (F :I (a :I Type) -> (b :I Type) -> Type) -> Id Type (F Bool Fool) (F Fool Bool) {
-  forall (F :I (_ :I Type) -> (_ :I Type) -> Type).
-  lemma2 F ~> Refl Type (F Bool Fool)
-}
-
-lemma3 :I Id Type (Fn Fool Bool) ((_ :I Fool) -> Bool) {
-  lemma3  ~> Refl Type (Fn Fool Bool)
-}
-
-trans :I (a :I Type) -> (b :I Type) -> (c :I Type) -> (_ :I Id Type a b) -> (_ :I Id Type b c) -> Id Type a c {
-  forall (a :I Type).
-  trans a [a] [a] ({Refl} [Type] [a]) ({Refl} [Type] [a]) ~> Refl Type a
-}
-
-boom :I Id Type ((_ :I Bool) -> Fool) ((_ :I Fool) -> Bool) {
-  boom  ~> trans ((_ :I Bool) -> Fool) (Fn Fool Bool) ((_ :I Fool) -> Bool) (trans ((_ :I Bool) -> Fool) (Fn Bool Fool) (Fn Fool Bool) lemma1 (lemma2 Fn)) lemma3
-}
-
-main :L Type {
-  main  ~> Type
-}
-
-##########
-# Erased #
-##########
-
-main {
-  main  ~> Type
-}
-
-################
-# NF of `main` #
-################
-
-Unerased, reduced:
-Type
-
-Erased, reduced:
-Type
+  "CLAUSE":  boom  ~> trans ((_ :30 Bool) -> Fool) (Fn Fool Bool) ((_ :33 Fool) -> Bool) (trans ((_ :39 Bool) -> Fool) (Fn Bool Fool) (Fn Fool Bool) lemma1 (lemma2 Fn)) lemma3
+  "CLAUSE-RHS": trans ((_ :30 Bool) -> Fool) (Fn Fool Bool) ((_ :33 Fool) -> Bool) (trans ((_ :39 Bool) -> Fool) (Fn Bool Fool) (Fn Fool Bool) lemma1 (lemma2 Fn)) lemma3
+  "APP": trans ((_ :30 Bool) -> Fool) (Fn Fool Bool) ((_ :33 Fool) -> Bool) (trans ((_ :39 Bool) -> Fool) (Fn Bool Fool) (Fn Fool Bool) lemma1 (lemma2 Fn)) lemma3
+  "APP": trans ((_ :30 Bool) -> Fool) (Fn Fool Bool) ((_ :33 Fool) -> Bool) (trans ((_ :39 Bool) -> Fool) (Fn Bool Fool) (Fn Fool Bool) lemma1 (lemma2 Fn))
+  "APP": trans ((_ :39 Bool) -> Fool) (Fn Bool Fool) (Fn Fool Bool) lemma1 (lemma2 Fn)
+  "APP": lemma2 Fn
+  "fTy": ((F :I (a :I Type) -> (b :I Type) -> Type) -> Id Type (F Bool Fool) (F Fool Bool))
+  "xTy": ((a :L Type) -> (b :R Type) -> Type)
+quantity mismatch: L /= I

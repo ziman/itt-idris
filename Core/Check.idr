@@ -297,16 +297,22 @@ mutual
     pure b.type
 
   checkTm tm@(Lam b@(B n q ty) rhs) = traceTm tm "LAM" $ do
-    tyTy <- withQ I $ checkTm ty
+    -- we do compare these types for equality
+    -- but they are erased
+    tyTy <- withQ E $ checkTm ty
     tyTy ~= Type_
 
     Pi b <$> (withBnd b $ checkTm rhs)
 
   checkTm tm@(Pi b@(B n q ty) rhs) = traceTm tm "PI" $ do
-    tyTy <- withQ I $ checkTm ty
+    -- the checkTm below used to be (withQ I $ checkTm ty)
+    -- but since both sides of Pi must be linear (see journal from 26th May / examples/irrelevant1.itt)
+    -- this must be (withQ L $ checkTm ty), which is equivalent to (checkTm ty)
+    tyTy <- checkTm ty
     tyTy ~= Type_
 
-    withQ I $ withBnd (B n I ty) $ do
+    -- the same here, this must not be (withQ I)
+    withBnd (B n I ty) $ do
       rhsTy <- checkTm rhs
       rhsTy ~= Type_
 
@@ -357,6 +363,7 @@ mutual
     pure (cq .\/. argsQ, argsTy)
 
   checkPat fq pat@(PForced tm) = traceCtx pat "PFORCED" $ do
+    -- the term is forced so it's irrelevant
     tmTy <- withQ I $ checkTm tm
     pure (I, tmTy)  -- no usage here
 
@@ -384,6 +391,8 @@ mutual
 
       _ => throw $ NotPi fTy
 
+-- we never eq-compare things where these bindings appear
+-- so the types can be made irrelevant
 covering
 checkBinding : Binding Q n -> TC n ()
 checkBinding (B n q ty) = do
