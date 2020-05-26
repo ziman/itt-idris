@@ -1,0 +1,22 @@
+data T : Type {
+  A : T,
+  B : T
+}
+
+f : T -> T -> T {
+  f A A ~> A,
+
+  forall t.
+  f t B ~> B
+}
+
+data Id : T -> T -> Type {
+  Refl : forall t. Id t t
+}
+
+lemma : forall t. Id (f t B) B {
+  forall t.
+  lemma t ~> Refl B
+}
+
+main : Type ~> Type.

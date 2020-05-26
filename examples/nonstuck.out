@@ -1,0 +1,288 @@
+
+#############
+# Desugared #
+#############
+
+mutual {
+  constructor/0 T : Type.
+  
+  constructor/0 A : T.
+  
+  constructor/0 B : T.
+}
+
+f : (_ : T) -> (_ : T) -> T {
+  f A A ~> A
+  
+  forall (t : _).
+  f t B ~> B
+}
+
+mutual {
+  constructor/2 Id : (_ : T) -> (_ : T) -> Type.
+  
+  constructor/1 Refl : (t : _) -> Id t t.
+}
+
+lemma : (t : _) -> Id (f t B) B {
+  forall (t : _).
+  lemma t ~> Refl B
+}
+
+main : Type {
+  main  ~> Type
+}
+
+###############
+# Elaboration #
+###############
+
+mutual {
+  constructor/0 T : Type.
+  
+  constructor/0 A : T.
+  
+  constructor/0 B : T.
+}
+
+f : (_ : T) -> (_ : T) -> T {
+  f A A ~> A
+  
+  forall (t : _0).
+  f t B ~> B
+}
+
+mutual {
+  constructor/2 Id : (_ : T) -> (_ : T) -> Type.
+  
+  constructor/1 Refl : (t : _1) -> Id t t.
+}
+
+lemma : (t : _2) -> Id (f t B) B {
+  forall (t : _3).
+  lemma t ~> Refl B
+}
+
+main : Type {
+  main  ~> Type
+}
+
+Equalities:
+  _ty0 = Type
+  _0 = T
+  _ty1 = Type
+  _1 = T
+  _1 = T
+  _ty2 = Type
+  _2 = T
+  _ty3 = Type
+  _2 = _3
+  _1 = T
+
+Solved metas: [_0, _1, _2, _3, _ty0, _ty1, _ty2, _ty3]
+
+##############
+# Elaborated #
+##############
+
+mutual {
+  constructor/0 T : Type.
+  
+  constructor/0 A : T.
+  
+  constructor/0 B : T.
+}
+
+f : (_ : T) -> (_ : T) -> T {
+  f A A ~> A
+  
+  forall (t : T).
+  f t B ~> B
+}
+
+mutual {
+  constructor/2 Id : (_ : T) -> (_ : T) -> Type.
+  
+  constructor/1 Refl : (t : T) -> Id t t.
+}
+
+lemma : (t : T) -> Id (f t B) B {
+  forall (t : T).
+  lemma t ~> Refl B
+}
+
+main : Type {
+  main  ~> Type
+}
+
+#############
+# Evarified #
+#############
+
+mutual {
+  constructor/0 T :9 Type.
+  
+  constructor/0 A :0 T.
+  
+  constructor/0 B :1 T.
+}
+
+f :10 (_ :11 T) -> (_ :12 T) -> T {
+  f A A ~> A
+  
+  forall (t :15 T).
+  f t B ~> B
+}
+
+mutual {
+  constructor/2 Id :2 (_ :3 T) -> (_ :4 T) -> Type.
+  
+  constructor/1 Refl :5 (t :6 T) -> Id t t.
+}
+
+lemma :18 (t :19 T) -> Id (f t B) B {
+  forall (t :24 T).
+  lemma t ~> Refl B
+}
+
+main :27 Type {
+  main  ~> Type
+}
+Running erasure inference...
+
+
+########################
+# Inferred constraints #
+########################
+
+0 ≥ sum
+  product [10]
+1 ≥ sum
+  product [10]
+  product [18, 6]
+5 ≥ sum
+  product [18]
+27 ≥ sum
+  product []
+11 ~ 13
+product [11] ≥ sum
+  product [L]
+12 ~ 14
+product [12] ≥ sum
+  product [L]
+15 ~ product [11]
+11 ~ 16
+12 ~ 17
+product [12] ≥ sum
+  product [L]
+15 ≥ sum
+3 ~ 8
+4 ~ 7
+3 ~ 21
+11 ~ 23
+12 ~ 22
+4 ~ 20
+24 ~ product [19]
+19 ~ 25
+24 ≥ sum
+6 ~ 26
+7 ~ 20
+8 ~ 21
+
+#######################
+# Deferred equalities #
+#######################
+
+21 -> f t B ~ B
+
+
+#####################
+# Variance of evars #
+#####################
+
+covariant: []
+contravariant: [3, 4, 6, 11, 12, 19]
+
+###################
+# Final valuation #
+###################
+
+  0 -> I
+  1 -> I
+  3 -> I
+  4 -> I
+  5 -> I
+  6 -> I
+  7 -> I
+  8 -> I
+  10 -> I
+  11 -> R
+  12 -> L
+  13 -> R
+  14 -> L
+  15 -> R
+  16 -> R
+  17 -> L
+  18 -> I
+  19 -> I
+  20 -> I
+  21 -> I
+  22 -> L
+  23 -> R
+  24 -> I
+  25 -> I
+  26 -> I
+  27 -> L
+
+
+#####################
+# Annotated program #
+#####################
+
+mutual {
+  constructor/0 T :I Type.
+  
+  constructor/0 A :I T.
+  
+  constructor/0 B :I T.
+}
+
+f :I (_ :R T) -> (_ :L T) -> T {
+  f A A ~> A
+  
+  forall (t :R T).
+  f t B ~> B
+}
+
+mutual {
+  constructor/2 Id :I (_ :I T) -> (_ :I T) -> Type.
+  
+  constructor/1 Refl :I (t :I T) -> Id t t.
+}
+
+lemma :I (t :I T) -> Id (f t B) B {
+  forall (t :I T).
+  lemma t ~> Refl B
+}
+
+main :L Type {
+  main  ~> Type
+}
+
+##########
+# Erased #
+##########
+
+main {
+  main  ~> Type
+}
+
+################
+# NF of `main` #
+################
+
+Unerased, reduced:
+Type
+
+Erased, reduced:
+Type
