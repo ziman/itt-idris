@@ -3,6 +3,7 @@ module Core.Parser
 import public Core.Globals
 
 import Core.TT
+import Core.TT.Utils
 import Core.Clause
 import Core.Pragma
 

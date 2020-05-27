@@ -4,6 +4,7 @@ import public Core.TT
 import public Core.Context
 import public Core.Pattern
 import public Core.Globals
+import Core.TT.Utils
 import Data.List
 
 %default total

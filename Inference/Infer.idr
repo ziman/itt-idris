@@ -2,6 +2,7 @@ module Inference.Infer
 
 import Utils.Misc
 import Core.TT.Lens
+import Core.TT.Utils
 import public Core.TT
 import public Core.TT.Pretty
 import public Core.Context

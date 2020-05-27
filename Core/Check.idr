@@ -2,6 +2,7 @@ module Core.Check
 
 import public Core.TT
 import Core.Normalise
+import Core.TT.Utils
 import Core.TT.Pretty
 import Utils.Pretty
 import Utils.Misc
