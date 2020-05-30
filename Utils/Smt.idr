@@ -141,7 +141,6 @@ record SmtM (al : Type) (a : Type) where
   constructor MkSmtM
   runSmtM' : SmtState al -> Either (SmtError al) (SmtState al, List SExp, a)
 
-export
 runSmtM : SmtM al a -> Either (SmtError al) (String, SortedMap AssertionNr al, a)
 runSmtM (MkSmtM f) = case f (MkSmtState 0 empty) of
   Left err => Left err

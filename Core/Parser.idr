@@ -17,6 +17,7 @@ import Data.Strings
 
 %default covering
 
+export
 data Token
   = Ident String
   | ParL

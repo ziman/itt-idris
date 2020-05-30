@@ -57,6 +57,7 @@ Monoid w => Applicative (TCResult w) where
   pure x = MkR neutral x
   MkR w f <*> MkR w' x = MkR (w <+> w') (f x)
 
+export
 record Env (q : Type) (n : Nat) where
   constructor MkE
   backtrace : List Doc
