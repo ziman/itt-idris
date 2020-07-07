@@ -5,7 +5,6 @@ import public Core.TT
 import Control.Monad.Identity
 
 %default total
-%undotted_record_projections off
 
 public export
 Traversal : Type -> Type -> Type -> Type -> Type

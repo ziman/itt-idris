@@ -28,7 +28,6 @@ import Data.SortedSet
 import Data.SortedMap
 
 %default total
-%undotted_record_projections off
 
 covering export
 processModule : Config -> Globals (Maybe Q) -> ITT ()

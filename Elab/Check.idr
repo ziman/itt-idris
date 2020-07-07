@@ -15,7 +15,6 @@ import Data.List
 import Control.Monad.State
 
 %default covering
-%undotted_record_projections off
 
 public export
 data Error
@@ -124,8 +123,8 @@ mutual
 
   eqsTm : {n : Nat} -> Term n -> TC n (Ty n)
   eqsTm tm = withBtCtx "when checking term" tm $ case tm of
-    P n => lookupGlobal n <&> .type
-    V i => lookup i <&> .type
+    P n => type <$> lookupGlobal n
+    V i => type <$> lookup i
 
     Lam b rhs => do
       eqsBnd b
@@ -155,12 +154,12 @@ mutual
 
 mutual
   eqsPat : {n : Nat} -> Pat (Maybe Q) n -> TC n (Ty n)
-  eqsPat (PV i) = lookup i <&> .type
+  eqsPat (PV i) = type <$> lookup i
   eqsPat (PCtorApp (Forced cn) args) = do
-    cTy <- lookupGlobal cn <&> .type
+    cTy <- type <$> lookupGlobal cn
     eqsPatApp cTy args
   eqsPat (PCtorApp (Checked cn) args) = do
-    cTy <- lookupGlobal cn <&> .type
+    cTy <- type <$> lookupGlobal cn
     eqsPatApp cTy args
   eqsPat (PForced tm) = eqsTm tm
   eqsPat PWildcard = throw CantInferWildcard
@@ -208,4 +207,4 @@ eqsGlobals = do
 
 export
 gatherEqualities : Globals (Maybe Q) -> Either (Failure Error) (List Equality)
-gatherEqualities gs = run gs [] eqsGlobals <&> .output
+gatherEqualities gs = output <$> run gs [] eqsGlobals

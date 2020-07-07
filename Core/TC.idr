@@ -5,7 +5,6 @@ import public Core.Globals
 import public Core.Normalise
 
 %default total
-%undotted_record_projections off
 
 public export
 data TCError
@@ -133,15 +132,15 @@ namespace Core
     -- but it's a pragmatic solution to the need to print suspended terms
     export
     getCtx : Suspended q n -> Context q n
-    getCtx = .context
+    getCtx = context
 
 export
 getGlobals : Monoid w => TC e w q n (Globals q)
-getGlobals = getEnv (.globals)
+getGlobals = getEnv globals
 
 export
 withBnd : Binding q n -> TC e w q (S n) a -> TC e w q n a
-withBnd b = withEnv record { context $= (b ::) }
+withBnd b = withEnv record { n $= S, context $= (b ::) }
 
 export
 withCtx : Context q n -> TC e w q n a -> TC e w q Z a
@@ -165,18 +164,18 @@ getCtx = getEnv (.context)
 
 export
 lookup : Monoid w => Fin n -> TC e w q n (Binding q n)
-lookup i = lookup i <$> getEnv (.context)
+lookup i = lookup i <$> getEnv context
 
 export
 lookupGlobal : (Monoid w, Error e) => Name -> TC e w q n (Binding q n)
 lookupGlobal n = 
-  (lookup n <$> getEnv (.globals)) >>= \case
+  (lookup n <$> getEnv globals) >>= \case
     Nothing => throwTC $ UnknownGlobal n
     Just d  => pure $ weakenClosedBinding d.binding
 
 export
 prettyCtx : Pretty (Context q n) a => Monoid w => a -> TC e w q n Doc
-prettyCtx x = pretty <$> getEnv (.context) <*> pure x
+prettyCtx x = pretty <$> getEnv context <*> pure x
 
 export
 withBtCtx : Pretty (Context q n) a => Monoid w => String -> a -> TC e w q n b -> TC e w q n b

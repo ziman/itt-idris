@@ -16,7 +16,6 @@ import Data.Strings
 import public Data.SortedMap
 
 %default total
-%undotted_record_projections off
 
 public export
 record TCState where
@@ -149,10 +148,10 @@ getEnv : TC n (Env n)
 getEnv = MkTC $ \env, st => Right (st, usage0 env.context, env)
 
 getCtx : TC n (Context Q n)
-getCtx = .context <$> getEnv
+getCtx = context <$> getEnv
 
 getGlobals : TC n (Globals Q)
-getGlobals = .globals <$> getEnv
+getGlobals = globals <$> getEnv
 
 withMutualBlock : List (Definition Q) -> TC n a -> TC n a
 withMutualBlock ds (MkTC f) = MkTC $ \env, st =>

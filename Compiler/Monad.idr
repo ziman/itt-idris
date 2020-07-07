@@ -4,7 +4,6 @@ import Data.List
 import public Utils.Pretty
 
 %default total
-%undotted_record_projections off
 
 public export
 record ITT (a : Type) where
@@ -35,7 +34,7 @@ liftIO = MkITT . map Right
 
 export
 log : String -> ITT ()
-log = liftIO . putStrLn
+log = Monad.liftIO . putStrLn
 
 export
 prn : Show a => a -> ITT ()

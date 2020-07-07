@@ -11,7 +11,6 @@ import Utils.Pretty
 import Control.Monad.State
 
 %default total
-%undotted_record_projections off
 
 public export
 data Error

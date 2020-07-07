@@ -11,7 +11,6 @@ import Data.Strings
 import Data.SortedMap
 
 %default total
-%undotted_record_projections off
 
 public export
 data SExp : Type where
@@ -192,7 +191,7 @@ modify f = MkSmtM $ \st => Right (f st, neutral, ())
 
 freshAssertionNr : al -> SmtM al AssertionNr
 freshAssertionNr label = do
-  nr <- MkAN . .assertionCounter <$> get
+  nr <- MkAN . assertionCounter <$> get
   modify $ record
     { assertionCounter $= (+1)
     , assertionLabels  $= insert nr label

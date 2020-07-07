@@ -10,7 +10,6 @@ import Data.List
 import Data.Vect
 
 %default total
-%undotted_record_projections off
 
 public export
 record Clause (q : Type) (argn : Nat) where

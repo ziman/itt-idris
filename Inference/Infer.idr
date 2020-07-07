@@ -17,7 +17,6 @@ import Data.Strings
 import Data.SortedSet
 
 %default total
-%undotted_record_projections off
 
 public export
 Set : Type -> Type
@@ -138,7 +137,7 @@ export
 Functor (TC lu n) where
   map f (MkTC g) = MkTC $ \env, st => case g env st of
     Left fail => Left fail
-    Right result => Right $ record { value $= f } result
+    Right result => Right $ record { a = _, value $= f } result
 
 export
 Applicative (TC lu n) where
@@ -180,10 +179,10 @@ getEnv : TC lu n (Env n)
 getEnv = MkTC $ \env, st => Right (MkR st [] [] (noLU env.context) empty env)
 
 getCtx : TC lu n (Context Evar n)
-getCtx = .context <$> getEnv
+getCtx = context <$> getEnv
 
 getGlobals : TC lu n (Globals Evar)
-getGlobals = .globals <$> getEnv
+getGlobals = globals <$> getEnv
 
 withMutualBlock : List (Definition Evar) -> TC lu n a -> TC lu n a
 withMutualBlock ds (MkTC f) = MkTC $ \env, st =>
@@ -208,7 +207,7 @@ withCtxR : Context Evar n -> TCR n a -> TCC Z a
 withCtxR (b :: bs) tc = withCtxR bs $ withBndR b tc
 withCtxR [] (MkTC f) =
   MkTC $ \env, st =>
-    record { localUsage = [] } <$> f env st  -- change the type of Nil
+    record { lu = (), localUsage = [] } <$> f env st  -- change the type of Nil
 
 withBndL : Binding Evar n -> TCL (S n) a -> TCL n a
 withBndL (B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
@@ -222,13 +221,13 @@ withCtxL : Context Evar n -> TCL n a -> TCC Z a
 withCtxL (b :: bs) tc = withCtxL bs $ withBndL b tc
 withCtxL [] (MkTC f) =
   MkTC $ \env, st =>
-    record { localUsage = [] } <$> f env st  -- change the type of Nil
+    record { lu = (), localUsage = [] } <$> f env st  -- change the type of Nil
 
 withBndC : Binding Evar n -> TCC (S n) a -> TCC n a
 withBndC b (MkTC f) = MkTC $ \env, st =>
   -- we can discard usage because we know that it's useless {lu = ()}
-  record { localUsage $= tail} <$>
-    f (record { context $= (b ::) } env) st
+  record { n = _, localUsage $= tail} <$>
+    f (record { n = S n, context $= (b ::) } env) st
 
 withCtxC : Context Evar n -> TCC n a -> TCC Z a
 withCtxC [] tc = tc
@@ -279,7 +278,8 @@ irrelevant : TC lu n a -> TC lu' n a
 irrelevant (MkTC f) = MkTC $ \env, st =>
   f env st <&>
     record
-    { localUsage  = noLU env.context
+    { lu = lu'
+    , localUsage  = noLU env.context
     , globalUsage = empty
     , constrs $= filter isCEq
     }

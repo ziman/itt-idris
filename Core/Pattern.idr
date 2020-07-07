@@ -6,7 +6,6 @@ import public Core.TT.Pretty
 import Core.TT.Utils
 
 %default total
-%undotted_record_projections off
 
 public export
 data PCtor = Forced Name | Checked Name

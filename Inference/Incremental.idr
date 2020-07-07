@@ -58,7 +58,7 @@ inferDefs cfg gsSolved (oldVals, oldGlobalUsage) (ds :: dss) = do
           $$ text ""
     )
 
-  let var = concatMap (variance . .binding.type) ds
+  let var = concatMap (variance . type . binding) ds
   prd . indent $
     text "variance of evars:"
     $$ indent (pretty () var)
@@ -93,7 +93,7 @@ infer cfg evarified = do
     Left n => throw $ "constraint for non-existent global: " ++ show n
     Right gcs => pure gcs
 
-  let allGVs = concat [concatMap (getENum . .binding.qv) ds | ds <- toBlocks evarified]
+  let allGVs = concat [concatMap (getENum . qv . binding) ds | ds <- toBlocks evarified]
   gvals <- Solve.solve cfg allGVs empty (MkConstrs globConstrs [])
 
   -- gvals have priority on conflict

@@ -8,7 +8,6 @@ import Data.List
 import Data.SortedMap
 
 %default total
-%undotted_record_projections off
 
 public export
 data Body : (q : Type) -> Type where
@@ -80,7 +79,7 @@ export
 snocBlock : Globals q -> List (Definition q) -> Globals q
 snocBlock gs [] = gs
 snocBlock (MkGlobals ds ord) dsBlk =
-  let ns = map (UN . .binding.name) dsBlk
+  let ns = map (UN . name . binding) dsBlk
       dsBlkMap = SortedMap.fromList [(UN d.binding.name, d) | d <- dsBlk]
    in MkGlobals (ds `mergeLeft` dsBlkMap) (ns :: ord)
 

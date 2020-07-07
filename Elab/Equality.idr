@@ -8,7 +8,6 @@ import Core.TC
 import Core.TT.Pretty
 
 %default total
-%undotted_record_projections off
 
 public export
 data Certainty = Certain | Uncertain

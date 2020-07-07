@@ -32,12 +32,12 @@ infer cfg evarified = do
   log $ unlines $ map show cs.deferredEqs
 
   banner "# Variance of evars #"
-  let var = concatMap (concatMap $ variance . .binding.type) $ toBlocks evarified
+  let var = concatMap (concatMap $ variance . type . binding) $ toBlocks evarified
   prd $ pretty () var
 
   -- globals are not really bound contravariantly
   -- and this would be wrong in separate compilation
   -- but we want to maximise their erasure so let's mark them like contravariant
-  let qGlobals = concatMap (concatMap $ getENum . .binding.qv) $ toBlocks evarified
+  let qGlobals = concatMap (concatMap $ getENum . qv . binding) $ toBlocks evarified
 
   Solve.solve cfg (var.contravariant <+> qGlobals) var.covariant cs

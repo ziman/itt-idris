@@ -5,7 +5,6 @@ import public Data.SortedSet
 import Data.List
 
 %default total
-%undotted_record_projections off
 
 export
 unApply' : q -> TT q n -> TT q n -> (TT q n, List (q, TT q n))

@@ -14,7 +14,6 @@ import Data.Maybe
 import Data.SortedSet
 
 %default total
-%undotted_record_projections off
 
 public export
 data Error = Mismatch Q Q

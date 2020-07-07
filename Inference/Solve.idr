@@ -16,7 +16,6 @@ import public Data.SortedSet
 import public Data.SortedMap
 
 %default total
-%undotted_record_projections off
 
 isRelevant : SortedMap ENum Q -> Evar -> Maybe Bool
 isRelevant vs (QQ I) = Just False

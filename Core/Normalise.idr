@@ -8,7 +8,6 @@ import Core.TT.Utils
 import Utils.Misc
 
 %default total
-%undotted_record_projections off
 
 public export
 data EvalError
@@ -99,7 +98,7 @@ mutual
   matchPat gs s (PCtorApp ctor ps) tm =
     case unApply tm of
       (P cn, args) =>
-        case .body <$> lookup cn gs of
+        case body <$> lookup cn gs of
           Just (Constructor arity) =>
             if ctorMatches ctor cn
               then case zipMatch (snd <$> ps) (snd <$> args) of
@@ -170,7 +169,7 @@ mutual
   covering export
   red : Form -> Globals q -> TT q n -> Either EvalError (TT q n)
   red rf gs (P n) =
-    case .body <$> lookup n gs of
+    case body <$> lookup n gs of
       -- constant pattern matching functions
       Just (Clauses Z [MkClause [] [] rhs]) =>
         red rf gs $ weakenClosed rhs
@@ -190,7 +189,7 @@ mutual
         xNF <- red operandForm gs x
         red rf gs $ subst (substFZ xNF) rhs
       fWHNF => case unApply' q fWHNF x of
-        (P n, args) => case .body <$> lookup n gs of
+        (P n, args) => case body <$> lookup n gs of
           Nothing => Left $ UnknownGlobal n
           Just (Clauses argn cs) => case maybeTake argn args of
             Just (fargs, rest) => do

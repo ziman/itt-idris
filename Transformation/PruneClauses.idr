@@ -5,13 +5,12 @@ import Data.List
 import public Core.Globals
 
 %default total
-%undotted_record_projections off
 
 mutual
   prunePat : Globals Q -> Pat Q n -> Bool
   prunePat gs (PV _) = False
   prunePat gs (PCtorApp (Checked cn) args) =
-    case .binding.qv <$> lookup cn gs of
+    case qv . binding <$> lookup cn gs of
       Just I => True
       Just E => True
       _ => prunePatArgs gs args

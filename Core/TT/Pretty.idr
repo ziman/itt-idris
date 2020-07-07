@@ -6,7 +6,6 @@ import public Core.Quantity
 import public Utils.Pretty
 
 %default total
-%undotted_record_projections off
 
 public export
 data NestingLevel

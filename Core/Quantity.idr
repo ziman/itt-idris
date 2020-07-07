@@ -4,7 +4,6 @@ import Utils.Misc
 import public Utils.OrdSemiring
 
 %default total
-%undotted_record_projections off
 
 export
 xDEBUG : Bool

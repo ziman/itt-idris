@@ -13,7 +13,6 @@ import Decidable.Equality
 import Control.Monad.Identity
 
 %default total
-%undotted_record_projections off
 
 public export
 data Name
