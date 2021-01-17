@@ -22,7 +22,7 @@ Show Core.Error where
 
 export
 numberMetas : Globals (Maybe Q) -> Globals (Maybe Q)
-numberMetas gs = evalState (mlGlobals numberMeta gs) 0
+numberMetas gs = evalState 0 $ mlGlobals numberMeta gs
   where
     numberMeta : (n : Nat) -> MetaNum -> State Int (TT (Maybe Q) n)
     numberMeta _ _ = do

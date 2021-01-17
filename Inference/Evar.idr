@@ -64,7 +64,7 @@ Ord Evar where
 
 export
 evarify : ((Maybe Q -> State Int Evar) -> a -> State Int b) -> a -> b
-evarify travQ x = evalState (travQ f x) 0
+evarify travQ x = evalState 0 $ travQ f x
   where
     f : Maybe Q -> State Int Evar
     f (Just q) = pure $ QQ q
