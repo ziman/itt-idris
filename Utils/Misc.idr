@@ -5,12 +5,6 @@ import public Data.Vect
 
 %default total
 
-infixl 3 <&>
-%inline
-public export
-(<&>) : Functor f => f a -> (a -> b) -> f b
-(<&>) x f = f <$> x
-
 export
 finEq : Fin n -> Fin n -> Bool
 finEq FZ FZ = True

@@ -12,8 +12,9 @@ import Text.Lexer.Core
 import Text.Parser
 import Text.Parser.Core
 import Data.List
+import Data.List1 as List1
 import Data.Vect
-import Data.Strings
+import Data.String
 
 %default covering
 
@@ -98,21 +99,21 @@ Eq Token where
 public export
 data ParseError : Type where
   LexError : Int -> Int -> String -> ParseError
-  SyntaxError : Int -> Int -> String -> List (TokenData Token) -> ParseError
+  SyntaxError : Int -> Int -> String -> List (WithBounds Token) -> ParseError
 
 export
 Show ParseError where
   show (LexError r c msg) = "lex error at " ++ show (r, c) ++ ": " ++ msg
   show (SyntaxError r c msg ts) = "syntax error at " ++ show (r, c) ++ ": " ++ msg
-    ++ "; next up: " ++ show [TokenData.tok t | t <- take 8 ts]
+    ++ "; next up: " ++ show [WithBounds.val t | t <- take 8 ts]
 
-lex : String -> Either ParseError (List (TokenData Token))
+lex : String -> Either ParseError (List (WithBounds Token))
 lex src = case lex tokens src of
     (ts, (_, _, "")) => Right $ filter notSpace ts
     (_, (r, c, rest)) => Left $ LexError r c rest
   where
-    notSpace : TokenData Token -> Bool
-    notSpace td = case tok td of
+    notSpace : WithBounds Token -> Bool
+    notSpace td = case WithBounds.val td of
       Space   => False
       Comment => False
       _ => True
@@ -191,14 +192,14 @@ Ty : Nat -> Type
 Ty = TT (Maybe Q)
 
 Rule : Type -> Type
-Rule = Grammar (TokenData Token) True
+Rule = Grammar () (WithBounds Token) True
 
 hole : Term n
 hole = Meta MNUnknown
 
 token : Token -> Rule ()
 token t = terminal ("expecting " ++ show t) $ \t' =>
-  if t == tok t'
+  if t == WithBounds.val t'
     then Just ()
     else Nothing
 
@@ -213,12 +214,12 @@ lookupName x (y :: ys) =
     else FS <$> lookupName x ys
 
 ident : Rule String
-ident = terminal "identifier" $ \t => case tok t of
+ident = terminal "identifier" $ \t => case WithBounds.val t of
   Ident n => Just n
   _ => Nothing
 
 pragma : String -> Rule ()
-pragma s = terminal ("%" ++ s) $ \t => case tok t of
+pragma s = terminal ("%" ++ s) $ \t => case WithBounds.val t of
   Pragma pn =>
     if pn == s
       then Just ()
@@ -226,12 +227,12 @@ pragma s = terminal ("%" ++ s) $ \t => case tok t of
   _ => Nothing
 
 stringLit : Rule String
-stringLit = terminal "string literal" $ \t => case tok t of
+stringLit = terminal "string literal" $ \t => case WithBounds.val t of
   StringLit s => Just s
   _ => Nothing
 
 natural : Rule Nat
-natural = terminal "natural number" $ \t => case tok t of
+natural = terminal "natural number" $ \t => case WithBounds.val t of
   Natural n => Just n
   _ => Nothing
 
@@ -240,7 +241,7 @@ varName ns = do
     n <- ident
     aux n ns (lookupName n ns)  -- case block does not typecheck here
   where
-    aux : String -> Vect n String -> Maybe (Fin n) -> Grammar (TokenData Token) False (Fin n)
+    aux : String -> Vect n String -> Maybe (Fin n) -> Grammar () (WithBounds Token) False (Fin n)
     aux n ns (Just i) = pure i
     aux n ns Nothing = fail $ "variable " ++ show n
       ++ " not found in scope " ++ show ns
@@ -251,11 +252,11 @@ var ns = V <$> varName ns
 ref : Vect n String -> Rule (Term n)
 ref ns = P . UN <$> ident
 
-parens : {c : _} -> Inf (Grammar (TokenData Token) c a) -> Rule a
+parens : {c : _} -> Inf (Grammar () (WithBounds Token) c a) -> Rule a
 parens p = token ParL *> p <* token ParR
 
 colon : Rule (Maybe Q)
-colon = terminal "colon" $ \t => case tok t of
+colon = terminal "colon" $ \t => case WithBounds.val t of
   Colon mq => Just mq
   _ => Nothing
 
@@ -318,7 +319,7 @@ mutual
     head <- atom ns
     commit
     args <- many (atom ns)
-    Empty $ foldl (App Nothing) head args
+    pure $ foldl (App Nothing) head args
 
   term : Vect n String -> Rule (Term n)
   term ns
@@ -380,7 +381,7 @@ dataDecl = do
   pure [MkDef b (Constructor (piDepth b.type)) | b <- bnd :: bnds]
 
 context : {k : Nat} -> Vect k String -> Context (Maybe Q) k
-    -> Grammar (TokenData Token) False (n ** Context (Maybe Q) n)
+    -> Grammar () (WithBounds Token) False (n ** Context (Maybe Q) n)
 context {k} ns ctx = 
   do
     b <- parens $ binding ns
@@ -400,7 +401,7 @@ rawClause fn = do
     kwd "forall" *> context [] [] <* token Dot
   cont pnpvs
  where
-  cont : (pn ** Context (Maybe Q) pn) -> Rule (RawClause (Maybe Q))
+  cont : {0 pn : _} -> (pn ** Context (Maybe Q) pn) -> Rule (RawClause (Maybe Q))
   cont (pn ** pvs) = do
     let pns = names pvs
     token (Ident fn)
@@ -413,7 +414,7 @@ someClauses : Binding (Maybe Q) Z -> Rule (List (RawClause (Maybe Q)))
 someClauses bnd =
   token BraceL
     *> commit
-    *> sepBy1 (token Comma) (rawClause bnd.name)
+    *> (List1.forget <$> sepBy1 (token Comma) (rawClause bnd.name))
     <* token BraceR
 
 constClause : Rule (List (RawClause (Maybe Q)))
@@ -431,7 +432,7 @@ clauseFun = do
   cont bnd rcs -- for some reason inference fails here
  where
   cont : Binding (Maybe Q) Z -> List (RawClause (Maybe Q))
-    -> Grammar (TokenData Token) False (List (Definition (Maybe Q)))
+    -> Grammar () (WithBounds Token) False (List (Definition (Maybe Q)))
   cont bnd rcs =
     case fromRaw rcs of
       Nothing => fail "ill-formed clauses"
@@ -459,7 +460,7 @@ pragmaExpr : Rule Pragma
 pragmaExpr =
   (pragma "options" *> commit *> (Options <$> many stringLit))
 
-globals : Grammar (TokenData Token) False (Globals (Maybe Q), List Pragma)
+globals : Grammar () (WithBounds Token) False (Globals (Maybe Q), List Pragma)
 globals = do
   ps <- many pragmaExpr
   bs <- fromBlocks <$> many block

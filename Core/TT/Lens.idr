@@ -7,17 +7,17 @@ import Control.Monad.Identity
 %default total
 
 public export
-Traversal : Type -> Type -> Type -> Type -> Type
+0 Traversal : Type -> Type -> Type -> Type -> Type
 Traversal s t a b = (
     {0 f : Type -> Type} -> Applicative f => (a -> f b) -> s -> f t
   )
 
 public export
-Lens : Type -> Type -> Type
+0 Lens : Type -> Type -> Type
 Lens t a = Traversal t t a a
 
 public export
-ILens : (a -> Type) -> (a -> Type) -> Type
+0 ILens : (a -> Type) -> (a -> Type) -> Type
 ILens {a} f g = {x, y : a} -> Traversal (f x) (f y) (g x) (g y)
 
 mutual
