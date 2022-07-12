@@ -99,13 +99,13 @@ Eq Token where
 public export
 data ParseError : Type where
   LexError : Int -> Int -> String -> ParseError
-  SyntaxError : Int -> Int -> String -> List (WithBounds Token) -> ParseError
+  SyntaxError : Int -> Int -> String -> List Token -> ParseError
 
 export
 Show ParseError where
   show (LexError r c msg) = "lex error at " ++ show (r, c) ++ ": " ++ msg
   show (SyntaxError r c msg ts) = "syntax error at " ++ show (r, c) ++ ": " ++ msg
-    ++ "; next up: " ++ show [WithBounds.val t | t <- take 8 ts]
+    ++ "; next up: " ++ show (take 8 ts)
 
 lex : String -> Either ParseError (List (WithBounds Token))
 lex src = case lex tokens src of
@@ -113,7 +113,7 @@ lex src = case lex tokens src of
     (_, (r, c, rest)) => Left $ LexError r c rest
   where
     notSpace : WithBounds Token -> Bool
-    notSpace td = case WithBounds.val td of
+    notSpace t = case t.val of
       Space   => False
       Comment => False
       _ => True
@@ -192,14 +192,14 @@ Ty : Nat -> Type
 Ty = TT (Maybe Q)
 
 Rule : Type -> Type
-Rule = Grammar () (WithBounds Token) True
+Rule = Grammar () Token True
 
 hole : Term n
 hole = Meta MNUnknown
 
 token : Token -> Rule ()
 token t = terminal ("expecting " ++ show t) $ \t' =>
-  if t == WithBounds.val t'
+  if t == t'
     then Just ()
     else Nothing
 
@@ -214,12 +214,12 @@ lookupName x (y :: ys) =
     else FS <$> lookupName x ys
 
 ident : Rule String
-ident = terminal "identifier" $ \t => case WithBounds.val t of
+ident = terminal "identifier" $ \case
   Ident n => Just n
   _ => Nothing
 
 pragma : String -> Rule ()
-pragma s = terminal ("%" ++ s) $ \t => case WithBounds.val t of
+pragma s = terminal ("%" ++ s) $ \case
   Pragma pn =>
     if pn == s
       then Just ()
@@ -227,12 +227,12 @@ pragma s = terminal ("%" ++ s) $ \t => case WithBounds.val t of
   _ => Nothing
 
 stringLit : Rule String
-stringLit = terminal "string literal" $ \t => case WithBounds.val t of
+stringLit = terminal "string literal" $ \case
   StringLit s => Just s
   _ => Nothing
 
 natural : Rule Nat
-natural = terminal "natural number" $ \t => case WithBounds.val t of
+natural = terminal "natural number" $ \case
   Natural n => Just n
   _ => Nothing
 
@@ -241,7 +241,7 @@ varName ns = do
     n <- ident
     aux n ns (lookupName n ns)  -- case block does not typecheck here
   where
-    aux : String -> Vect n String -> Maybe (Fin n) -> Grammar () (WithBounds Token) False (Fin n)
+    aux : String -> Vect n String -> Maybe (Fin n) -> Grammar () Token False (Fin n)
     aux n ns (Just i) = pure i
     aux n ns Nothing = fail $ "variable " ++ show n
       ++ " not found in scope " ++ show ns
@@ -252,11 +252,11 @@ var ns = V <$> varName ns
 ref : Vect n String -> Rule (Term n)
 ref ns = P . UN <$> ident
 
-parens : {c : _} -> Inf (Grammar () (WithBounds Token) c a) -> Rule a
+parens : {c : _} -> Inf (Grammar () Token c a) -> Rule a
 parens p = token ParL *> p <* token ParR
 
 colon : Rule (Maybe Q)
-colon = terminal "colon" $ \t => case WithBounds.val t of
+colon = terminal "colon" $ \case
   Colon mq => Just mq
   _ => Nothing
 
@@ -381,7 +381,7 @@ dataDecl = do
   pure [MkDef b (Constructor (piDepth b.type)) | b <- bnd :: bnds]
 
 context : {k : Nat} -> Vect k String -> Context (Maybe Q) k
-    -> Grammar () (WithBounds Token) False (n ** Context (Maybe Q) n)
+    -> Grammar () Token False (n ** Context (Maybe Q) n)
 context {k} ns ctx = 
   do
     b <- parens $ binding ns
@@ -401,7 +401,7 @@ rawClause fn = do
     kwd "forall" *> context [] [] <* token Dot
   cont pnpvs
  where
-  cont : {0 pn : _} -> (pn ** Context (Maybe Q) pn) -> Rule (RawClause (Maybe Q))
+  cont : (pn ** Context (Maybe Q) pn) -> Rule (RawClause (Maybe Q))
   cont (pn ** pvs) = do
     let pns = names pvs
     token (Ident fn)
@@ -432,7 +432,7 @@ clauseFun = do
   cont bnd rcs -- for some reason inference fails here
  where
   cont : Binding (Maybe Q) Z -> List (RawClause (Maybe Q))
-    -> Grammar () (WithBounds Token) False (List (Definition (Maybe Q)))
+    -> Grammar () Token False (List (Definition (Maybe Q)))
   cont bnd rcs =
     case fromRaw rcs of
       Nothing => fail "ill-formed clauses"
@@ -460,7 +460,7 @@ pragmaExpr : Rule Pragma
 pragmaExpr =
   (pragma "options" *> commit *> (Options <$> many stringLit))
 
-globals : Grammar () (WithBounds Token) False (Globals (Maybe Q), List Pragma)
+globals : Grammar () Token False (Globals (Maybe Q), List Pragma)
 globals = do
   ps <- many pragmaExpr
   bs <- fromBlocks <$> many block
@@ -471,7 +471,8 @@ parse : String -> Either ParseError (Globals (Maybe Q), List Pragma)
 parse src = case lex src of
   Left err => Left err
   Right ts => case Text.Parser.Core.parse (globals <* eof) ts of
-    Left (Error msg []) => Left $ SyntaxError 0 0 msg []
-    Left (Error msg (tt :: tts)) => Left $ SyntaxError (line tt) (col tt) msg (tt :: tts)
+    Left (Error msg Nothing ::: []) => Left $ SyntaxError 0 0 msg []
+    Left (Error msg (Just bnds) ::: []) => Left $ SyntaxError bnds.startLine bnds.startCol msg []
+    Left errs => Left $ SyntaxError 0 0 "INTERNAL ERROR: fix stringification of errors here" []
     Right (gs, []) => Right gs
-    Right (gs, t::ts) => Left $ SyntaxError (line t) (col t) "eof expected" (t :: ts)
+    Right (gs, t::ts) => Left $ SyntaxError t.bounds.startLine t.bounds.startCol "eof expected" (map (.val) (t::ts))

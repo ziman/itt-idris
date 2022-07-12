@@ -11,7 +11,7 @@ import Inference.Quick
 import Inference.SmtQuick
 import Inference.SmtModel
 
-import Data.Strings
+import Data.String
 import public Data.SortedSet
 import public Data.SortedMap
 

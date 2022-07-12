@@ -74,13 +74,13 @@ model minvs maxvs cs = do
       CProdEq lhs rhs => product lhs .== ev rhs
       CEq lhs rhs => ev lhs .== ev rhs
 
-  let minvs' = ev . EV <$> toList minvs
+  let minvs' = ev . EV <$> SortedSet.toList minvs
   minimise $ numberOf R minvs' + numberOf L minvs'
   minimise $ numberOf R minvs'
   minimise $ numberOf E minvs'
   minimise $ numberOf I minvs'
 
-  let maxvs' = ev . EV <$> toList maxvs
+  let maxvs' = ev . EV <$> SortedSet.toList maxvs
   maximise $ numberOf R maxvs' + numberOf L maxvs'
   maximise $ numberOf R maxvs'
   maximise $ numberOf E maxvs'

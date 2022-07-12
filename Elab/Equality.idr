@@ -8,6 +8,7 @@ import Core.TC
 import Core.TT.Pretty
 
 %default total
+%prefix_record_projections off
 
 public export
 data Certainty = Certain | Uncertain

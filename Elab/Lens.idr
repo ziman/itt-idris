@@ -29,14 +29,17 @@ mutual
   mlTm f (Meta i) = f _ i
 
 mutual
+  total
   mlPat : Applicative t => {n : Nat} -> ((n : Nat) -> MetaNum -> t (TT q n)) -> (Pat q n) -> t (Pat q n)
   mlPat f (PV pv) = pure $ PV pv
   mlPat f (PCtorApp g args) = PCtorApp g <$> traverse (mlQPat f) args
   mlPat f (PForced tm) = PForced <$> mlTm f tm
   mlPat f PWildcard = pure PWildcard
 
+  total
   mlQPat : Applicative t => {n : Nat} -> ((n : Nat) -> MetaNum -> t (TT q n)) -> (q, Pat q n) -> t (q, Pat q n)
-  mlQPat f (q, pat) = (\pat' => (q, pat')) <$> mlPat f pat
+  mlQPat f (q, pat) = assert_total $  -- why is this needed??
+    (\pat' => (q, pat')) <$> mlPat f pat
 
 mlCtx : Applicative t => {n : Nat} -> ((n : Nat) -> MetaNum -> t (TT q n)) -> (Context q n) -> t (Context q n)
 mlCtx f [] = pure []

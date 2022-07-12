@@ -14,7 +14,7 @@ import System.File
 import Data.Fin
 import Data.List
 import Data.Vect
-import Data.Strings
+import Data.String
 import Data.SortedMap as Map
 import Data.SortedSet as Set
 

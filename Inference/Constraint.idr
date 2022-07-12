@@ -10,6 +10,7 @@ import public Data.SortedMap
 import public Utils.Pretty
 
 %default total
+%prefix_record_projections off
 
 public export
 Backtrace : Type

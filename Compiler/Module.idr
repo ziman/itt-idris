@@ -23,7 +23,7 @@ import Transformation.PruneClauses
 import Transformation.DefaultCtorQuantities
 
 import Data.List
-import Data.Strings
+import Data.String
 import Data.SortedSet
 import Data.SortedMap
 

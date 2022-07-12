@@ -113,7 +113,7 @@ namespace Core
 
   export
   withBt : Doc -> TC e w q n a -> TC e w q n a
-  withBt doc = withEnv record{ backtrace $= (doc ::) }
+  withBt doc = withEnv {backtrace $= (doc ::)}
 
   namespace Suspend
     export  -- ssh, don't tell anyone
@@ -140,7 +140,7 @@ getGlobals = getEnv globals
 
 export
 withBnd : Binding q n -> TC e w q (S n) a -> TC e w q n a
-withBnd b = withEnv record { n $= S, context $= (b ::) }
+withBnd b = withEnv {n $= S, context $= (b ::)}
 
 export
 withCtx : Context q n -> TC e w q n a -> TC e w q Z a
@@ -150,7 +150,7 @@ withCtx (b :: bs) tc = withCtx bs $ withBnd b tc
 throwTC : Error e => TCError -> TC e w q n a
 throwTC = throw . tcError
 
-export
+export covering
 redTC : (Error e, Monoid w) => Form -> TT q n -> TC e w q n (TT q n)
 redTC form tm = do
   gs <- getGlobals

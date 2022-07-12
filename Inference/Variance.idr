@@ -31,5 +31,5 @@ variance ty =
 export
 Pretty () Variance where
   pretty () (MkV co contra) =
-    text ("covariant: " ++ show (toList co))
-    $$ text ("contravariant: " ++ show (toList contra))
+    text ("covariant: " ++ show (SortedSet.toList co))
+    $$ text ("contravariant: " ++ show (SortedSet.toList contra))

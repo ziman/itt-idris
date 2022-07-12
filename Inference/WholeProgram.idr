@@ -10,7 +10,7 @@ import public Inference.Variance
 import public Inference.Constraint
 import public Data.SortedMap
 
-import Data.Strings
+import Data.String
 import Inference.Solve
 import Data.SortedSet
 

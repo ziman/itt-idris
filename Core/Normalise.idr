@@ -90,6 +90,7 @@ ctorMatches (Forced _) _ = True
 ctorMatches (Checked cn) cn' = cn == cn'
 
 mutual
+  covering  -- ?? really?
   matchPat : Globals q -> Subst q n pn -> Pat q pn -> TT q n -> Outcome (Subst q n pn)
   matchPat gs s (PV pv) tm = case s pv of
     Nothing => Match $ insert pv (Just tm) s
@@ -119,6 +120,7 @@ mutual
       _ => Mismatch
   matchPat gs s PWildcard _ = Match s
 
+  covering
   matchPats : Globals q -> Subst q n pn -> Vect argn (Pat q pn) -> Vect argn (TT q n) -> Outcome (Subst q n pn)
   matchPats gs s [] [] = Match s
   matchPats gs s (p :: ps) (tm :: tms) =
@@ -136,6 +138,7 @@ mutual
         -- otherwise we're stuck: we can't succeed here!
         _ => Stuck
 
+covering
 matchClause : Globals q -> Clause q argn -> Vect argn (TT q n) -> Outcome (TT q n)
 matchClause gs clause args =
   matchPats gs (\_ => Nothing) (snd <$> clause.lhs) args >>=
@@ -143,6 +146,7 @@ matchClause gs clause args =
       Nothing => Error UnmatchedPatVar
       Just vs => Match $ subst (\i => lookup i vs) clause.rhs
 
+covering
 matchClauses : Globals q -> Vect argn (TT q n) -> List (Clause q argn) -> Outcome (TT q n)
 matchClauses gs args [] = Mismatch
 matchClauses gs args (c :: cs) =

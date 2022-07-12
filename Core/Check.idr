@@ -12,10 +12,11 @@ import Utils.OrdSemiring
 import Data.Fin
 import Data.List
 import Data.Vect
-import Data.Strings
+import Data.String
 import public Data.SortedMap
 
 %default total
+%prefix_record_projections off
 
 public export
 record TCState where
@@ -148,14 +149,14 @@ getEnv : TC n (Env n)
 getEnv = MkTC $ \env, st => Right (st, usage0 env.context, env)
 
 getCtx : TC n (Context Q n)
-getCtx = context <$> getEnv
+getCtx = getEnv <&> .context
 
 getGlobals : TC n (Globals Q)
-getGlobals = globals <$> getEnv
+getGlobals = getEnv <&> .globals
 
 withMutualBlock : List (Definition Q) -> TC n a -> TC n a
 withMutualBlock ds (MkTC f) = MkTC $ \env, st =>
-  f (record {globals $= \g => g `snocBlock` ds} env) st
+  f ({globals $= \g => g `snocBlock` ds} env) st
 
 throw : ErrorMessage n -> TC n a
 throw msg = MkTC $ \env, st
@@ -178,7 +179,7 @@ withCtx [] tc = tc
 withCtx (b :: bs) tc = withCtx bs $ withBnd b tc
 
 withQ : Q -> TC n a -> TC n a
-withQ q (MkTC f) = MkTC $ \env, st => f (record { quantity $= (.*. q) } env) st
+withQ q (MkTC f) = MkTC $ \env, st => f ({ quantity $= (.*. q) } env) st
 
 useEnv : Q -> Fin n -> Context Q n -> Vect n Q
 useEnv q  FZ    (_ :: ctx) = q :: localUsage0 ctx

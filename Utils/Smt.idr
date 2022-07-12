@@ -7,10 +7,11 @@ import Text.Parser
 import Text.Parser.Core
 import Text.Lexer.Core
 import Data.List
-import Data.Strings
+import Data.String
 import Data.SortedMap
 
 %default total
+%prefix_record_projections off
 
 public export
 data SExp : Type where
@@ -69,13 +70,13 @@ Show al => Show (SmtError al) where
 
 data SToken = ParL | ParR | Atom String | Space
 
-lexSExp : String -> Either (SmtError al) (List (TokenData SToken))
+lexSExp : String -> Either (SmtError al) (List (WithBounds SToken))
 lexSExp src = case lex tokens src of
     (ts, (_, _, "")) => Right $ filter notSpace ts
     (_, (row, col, rest)) => Left $ LexError row col rest
   where
-    notSpace : TokenData SToken -> Bool
-    notSpace td = case tok td of
+    notSpace : WithBounds SToken -> Bool
+    notSpace td = case td.val of
         Space => False
         _ => True
 
@@ -94,25 +95,25 @@ parseSExps : String -> Either (SmtError al) (List SExp)
 parseSExps src = case lexSExp src of
     Left err => Left err
     Right ts => case parse (many sexp) ts of
-      Left (Error msg []) => Left $ SmtParseError 0 0 msg
-      Left (Error msg (t :: _)) => Left $ SmtParseError (line t) (col t) msg
+      Left (Error msg Nothing ::: _) => Left $ SmtParseError 0 0 msg
+      Left (Error msg (Just bnd) ::: _) => Left $ SmtParseError bnd.startLine bnd.startCol msg
       Right (sx, _) => Right sx
   where
     Rule : Type -> Type
-    Rule = Grammar (TokenData SToken) True
+    Rule = Grammar () SToken True
 
     atom : Rule SExp
-    atom = terminal "atom" $ \t => case tok t of
+    atom = terminal "atom" $ \t => case t of
       Atom s => Just $ A s
       _ => Nothing
 
     parL : Rule ()
-    parL = terminal "(" $ \t => case tok t of
+    parL = terminal "(" $ \t => case t of
       ParL => Just ()
       _ => Nothing
 
     parR : Rule ()
-    parR = terminal ")" $ \t => case tok t of
+    parR = terminal ")" $ \t => case t of
       ParR => Just ()
       _ => Nothing
 
@@ -122,7 +123,7 @@ parseSExps src = case lexSExp src of
       commit
       xs <- many sexp
       parR
-      Empty $ L xs
+      pure $ L xs
      )
 
 export
@@ -191,8 +192,8 @@ modify f = MkSmtM $ \st => Right (f st, neutral, ())
 
 freshAssertionNr : al -> SmtM al AssertionNr
 freshAssertionNr label = do
-  nr <- MkAN . assertionCounter <$> get
-  modify $ record
+  nr <- MkAN . (.assertionCounter) <$> get
+  modify
     { assertionCounter $= (+1)
     , assertionLabels  $= insert nr label
     }
@@ -247,7 +248,7 @@ binop : String -> Smt a -> Smt b -> Smt c
 binop op (MkSmt x) (MkSmt y) = MkSmt $ L [A op, x, y]
 
 public export
-Pred2 : Type
+0 Pred2 : Type
 Pred2 = {0 a, b : Type} -> Smt a -> Smt b -> Smt Bool
 
 export

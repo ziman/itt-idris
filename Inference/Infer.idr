@@ -13,10 +13,11 @@ import public Utils.OrdSemiring
 
 import Data.Fin
 import Data.List
-import Data.Strings
+import Data.String
 import Data.SortedSet
 
 %default total
+%prefix_record_projections off
 
 public export
 Set : Type -> Type
@@ -137,7 +138,7 @@ export
 Functor (TC lu n) where
   map f (MkTC g) = MkTC $ \env, st => case g env st of
     Left fail => Left fail
-    Right result => Right $ record { a = _, value $= f } result
+    Right result => Right $ { a := _, value $= f } result
 
 export
 Applicative (TC lu n) where
@@ -179,14 +180,14 @@ getEnv : TC lu n (Env n)
 getEnv = MkTC $ \env, st => Right (MkR st [] [] (noLU env.context) empty env)
 
 getCtx : TC lu n (Context Evar n)
-getCtx = context <$> getEnv
+getCtx = getEnv <&> .context
 
 getGlobals : TC lu n (Globals Evar)
-getGlobals = globals <$> getEnv
+getGlobals = getEnv <&> .globals
 
 withMutualBlock : List (Definition Evar) -> TC lu n a -> TC lu n a
 withMutualBlock ds (MkTC f) = MkTC $ \env, st =>
-  f (record {globals $= \g => g `snocBlock` ds} env) st
+  f ({globals $= \g => g `snocBlock` ds} env) st
 
 throw : ErrorMessage n -> TC lu n a
 throw msg = MkTC $ \env, st
@@ -207,7 +208,7 @@ withCtxR : Context Evar n -> TCR n a -> TCC Z a
 withCtxR (b :: bs) tc = withCtxR bs $ withBndR b tc
 withCtxR [] (MkTC f) =
   MkTC $ \env, st =>
-    record { lu = (), localUsage = [] } <$> f env st  -- change the type of Nil
+    { lu := (), localUsage := [] } <$> f env st  -- change the type of Nil
 
 withBndL : Binding Evar n -> TCL (S n) a -> TCL n a
 withBndL (B n q ty) (MkTC f) = MkTC $ \(MkE gs globs ctx bt), st =>
@@ -221,13 +222,13 @@ withCtxL : Context Evar n -> TCL n a -> TCC Z a
 withCtxL (b :: bs) tc = withCtxL bs $ withBndL b tc
 withCtxL [] (MkTC f) =
   MkTC $ \env, st =>
-    record { lu = (), localUsage = [] } <$> f env st  -- change the type of Nil
+    { lu := (), localUsage := [] } <$> f env st  -- change the type of Nil
 
 withBndC : Binding Evar n -> TCC (S n) a -> TCC n a
 withBndC b (MkTC f) = MkTC $ \env, st =>
   -- we can discard usage because we know that it's useless {lu = ()}
-  record { n = _, localUsage $= tail} <$>
-    f (record { n = S n, context $= (b ::) } env) st
+  { n := _, localUsage $= tail} <$>
+    f ({ n := S n, context $= (b ::) } env) st
 
 withCtxC : Context Evar n -> TCC n a -> TCC Z a
 withCtxC [] tc = tc
@@ -277,10 +278,9 @@ useCtorTag q = MkTC $ \env, st =>
 irrelevant : TC lu n a -> TC lu' n a
 irrelevant (MkTC f) = MkTC $ \env, st =>
   f env st <&>
-    record
-    { lu = lu'
-    , localUsage  = noLU env.context
-    , globalUsage = empty
+    { lu := lu'
+    , localUsage  := noLU env.context
+    , globalUsage := empty
     , constrs $= filter isCEq
     }
 
@@ -329,6 +329,7 @@ deferEq g x y =
     else MkTC $ \(MkE gs globs ctx bt), st
       => Right (MkR st [] [DeferEq g bt globs ctx x y] (noLU ctx) empty ())
 
+covering
 whnfTC : Term n -> TC lu n (Term n)
 whnfTC tm = do
   gs <- getGlobals

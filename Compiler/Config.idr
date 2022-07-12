@@ -20,15 +20,15 @@ parse : List String -> Either String (Config -> Config)
 parse = \case
   [] => Right id
   "--disable-L" :: args =>
-    (record { disableL = True } .) <$> parse args
+    ({disableL := True} .) <$> parse args
   "--default-constructor-quantities" :: args =>
-    (record { defaultConstructorQuantities = True } .) <$> parse args
+    ({defaultConstructorQuantities := True} .) <$> parse args
   "--prune-clauses" :: args =>
-    (record { pruneClauses = True } .) <$> parse args
+    ({pruneClauses := True} .) <$> parse args
   "--incremental" :: args =>
-    (record { incrementalInference = True } .) <$> parse args
+    ({incrementalInference := True} .) <$> parse args
   [fname] =>
-    Right (record { fnameInput = Just fname })
+    Right {fnameInput := Just fname}
   arg :: _ =>
     Left $ "unknown argument: " ++ show arg
 
