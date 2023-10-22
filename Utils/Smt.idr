@@ -412,7 +412,7 @@ parseSol ss@[A "unsat", _, L core] =
   case the (Maybe $ List AssertionNr) (traverse smtRead core) of
     Just nrs => Left $ Unsatisfiable nrs
     Nothing => Left $ StrangeSmtOutput ss
-parseSol [A "sat", L (A "model" :: ms), _] = Right varMap
+parseSol [A "sat", L ms, _] = Right varMap
   where
     parseVar : SExp -> SortedMap String SExp
     parseVar (L [A "define-fun", A n, L [], ty, val]) =
