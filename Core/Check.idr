@@ -17,6 +17,8 @@ import public Data.SortedMap
 
 %default total
 %prefix_record_projections off
+%hide Syntax.PreorderReasoning.Generic.infixl.(~=)
+%hide Syntax.PreorderReasoning.infixl.(~=)
 
 public export
 record TCState where

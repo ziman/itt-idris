@@ -18,6 +18,10 @@ import Data.SortedSet
 
 %default total
 %prefix_record_projections off
+%hide Syntax.PreorderReasoning.Generic.infixl.(~=)
+%hide Syntax.PreorderReasoning.infixl.(~=)
+%hide Syntax.PreorderReasoning.Generic.infixl.(~~)
+%hide Syntax.PreorderReasoning.infixl.(~~)
 
 public export
 Set : Type -> Type

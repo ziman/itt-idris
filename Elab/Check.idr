@@ -15,6 +15,10 @@ import Data.List
 import Control.Monad.State
 
 %default covering
+%hide Syntax.PreorderReasoning.Generic.infixl.(~=)
+%hide Syntax.PreorderReasoning.infixl.(~=)
+%hide Syntax.PreorderReasoning.Generic.infixl.(~~)
+%hide Syntax.PreorderReasoning.infixl.(~~)
 
 public export
 data Error

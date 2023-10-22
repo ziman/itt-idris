@@ -11,6 +11,9 @@ import Elab.Check
 
 import Control.Monad.Identity
 
+%hide Syntax.PreorderReasoning.Generic.infixl.(~=)
+%hide Syntax.PreorderReasoning.infixl.(~=)
+
 public export
 data Error
   = Impossible String
