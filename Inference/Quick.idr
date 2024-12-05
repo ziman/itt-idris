@@ -25,7 +25,7 @@ toQuick : Evar -> Evar
 toQuick (QQ L) = QQ R
 toQuick ev = ev
 
-infix 3 ~>
+private infix 3 ~>
 record QConstr where
   constructor (~>)
   lhs : List Evar

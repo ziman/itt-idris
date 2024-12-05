@@ -15,10 +15,8 @@ import Data.List
 import Control.Monad.State
 
 %default covering
-%hide Syntax.PreorderReasoning.Generic.infixl.(~=)
-%hide Syntax.PreorderReasoning.infixl.(~=)
-%hide Syntax.PreorderReasoning.Generic.infixl.(~~)
-%hide Syntax.PreorderReasoning.infixl.(~~)
+%hide Syntax.PreorderReasoning.Ops.infixl.(~=)
+%hide Syntax.PreorderReasoning.Ops.infixl.(~~)
 
 public export
 data Error
@@ -61,7 +59,7 @@ cantConvert Certain lhs rhs = do
   rhsD <- prettyCtx rhs
   throw $ CantConvert lhsD rhsD
 
-infix 3 ~~
+private infix 3 ~~
 (~~) : Maybe Q -> Maybe Q -> TC n ()
 Just q ~~ Just q' =
   if q == q'
@@ -70,7 +68,7 @@ Just q ~~ Just q' =
 _ ~~ _ = pure ()
 
 mutual
-  infix 3 ~=
+  export infix 3 ~=
   export
   -- expand the type synonyms so we don't have to export them
   (~=) : {n : Nat} -> TT (Maybe Q) n -> TT (Maybe Q) n -> Certainty -> TC Error (List Equality) (Maybe Q) n ()

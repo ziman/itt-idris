@@ -17,8 +17,7 @@ import public Data.SortedMap
 
 %default total
 %prefix_record_projections off
-%hide Syntax.PreorderReasoning.Generic.infixl.(~=)
-%hide Syntax.PreorderReasoning.infixl.(~=)
+%hide Syntax.PreorderReasoning.Ops.infixl.(~=)
 
 public export
 record TCState where
@@ -237,7 +236,7 @@ whnfTC tm = do
     Left e => throw $ WHNFError e
     Right tm' => pure tm'
 
-infix 3 ~=
+private infix 3 ~=
 mutual
   covering
   conv : TT Q n -> TT Q n -> TC n ()

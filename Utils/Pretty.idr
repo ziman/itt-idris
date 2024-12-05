@@ -32,7 +32,7 @@ export
 show : Show a => a -> Doc
 show = Text . show
 
-infixr 2 $$
+export infixr 2 $$
 export
 ($$) : Doc -> Doc -> Doc
 ($$) (Vcat xs) (Vcat ys) = Vcat (xs ++ ys)
@@ -56,7 +56,7 @@ export
 hsep : List Doc -> Doc
 hsep = punctuate (text " ")
 
-infixl 6 <++>
+export infixl 6 <++>
 export
 (<++>) : Doc -> Doc -> Doc
 (<++>) x y = x <+> text " " <+> y

@@ -18,10 +18,8 @@ import Data.SortedSet
 
 %default total
 %prefix_record_projections off
-%hide Syntax.PreorderReasoning.Generic.infixl.(~=)
-%hide Syntax.PreorderReasoning.infixl.(~=)
-%hide Syntax.PreorderReasoning.Generic.infixl.(~~)
-%hide Syntax.PreorderReasoning.infixl.(~~)
+%hide Syntax.PreorderReasoning.Ops.infixl.(~=)
+%hide Syntax.PreorderReasoning.Ops.infixl.(~~)
 
 public export
 Set : Type -> Type
@@ -288,7 +286,7 @@ irrelevant (MkTC f) = MkTC $ \env, st =>
     , constrs $= filter isCEq
     }
 
-infix 3 ~~
+private infix 3 ~~
 (~~) : Evar -> Evar -> TC lu n ()
 (~~) (QQ p) (QQ q) =
   if p == q
@@ -342,7 +340,7 @@ whnfTC tm = do
     Right tm' => pure tm'
 
 mutual
-  infix 3 ~=
+  export infix 3 ~=
   covering export
   (~=) : Term n -> Term n -> TC lu n ()
   (~=) p q = irrelevant $ do

@@ -306,26 +306,26 @@ declEnum {a} n = do
   tellL
       [ A "declare-datatypes"
       , L []
-      , L [L $ A n :: map (smtShow . the a) smtEnumValues]
+      , L [L $ A n :: map (\x => smtShow $ the a x) smtEnumValues]
       ]
   pure $ MkSmtType (A n)
 
-infix 2 .==
+export infix 2 .==
 export
 (.==) : Pred2
 (.==) = binop "="
 
-infix 2 .<=
+export infix 2 .<=
 export
 (.<=) : Pred2
 (.<=) = binop "<="
 
-infix 2 .>=
+export infix 2 .>=
 export
 (.>=) : Pred2
 (.>=) = binop ">="
 
-infix 2 .<
+export infix 2 .<
 export
 (.<) : Pred2
 (.<) = binop "<"

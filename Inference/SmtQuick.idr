@@ -9,8 +9,7 @@ import public Data.SortedMap
 import Data.SortedSet
 
 %default total
-%hide Syntax.PreorderReasoning.Generic.infixl.(~=)
-%hide Syntax.PreorderReasoning.infixl.(~=)
+%hide Syntax.PreorderReasoning.Ops.infixl.(~=)
 %hide Utils.DepSortedMap.DecOrd.infix.(.<=)
 
 public export
