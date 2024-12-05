@@ -247,11 +247,11 @@ contravariant: [14, 15, 26]
   11 -> E
   12 -> I
   13 -> I
-  14 -> R
+  14 -> I
   15 -> L
   16 -> L
-  17 -> R
-  18 -> R
+  17 -> I
+  18 -> I
   19 -> L
   20 -> L
   21 -> L
@@ -296,8 +296,8 @@ not :I (x :L Bool) -> Bool {
   not False ~> True
 }
 
-id :I (a :R Type) -> (x :L a) -> a {
-  forall (a :R Type) (x :L a).
+id :I (a :I Type) -> (x :L a) -> a {
+  forall (a :I Type) (x :L a).
   id a x ~> x
 }
 

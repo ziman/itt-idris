@@ -369,8 +369,8 @@ inferring  Fn :2 (a :3 Type) -> (b :4 Type) -> Type {
   variance of evars:
     covariant: []
     contravariant: [3, 4]
-  Fn :I (a :L Type) -> (b :R Type) -> Type {
-    forall (a :L Type) (b :R Type).
+  Fn :I (a :L Type) -> (b :L Type) -> Type {
+    forall (a :L Type) (b :L Type).
     Fn a b ~> (_ :I a) -> b
   }
 
@@ -383,11 +383,11 @@ inferring  lemma1 :45 Id Type ((_ :49 Bool) -> Fool) (Fn Bool Fool) {
     L ~ 47
     L ~ 46
     L ~ 51
-    R ~ 50
+    L ~ 50
     I ~ 53
     I ~ 52
     L ~ 55
-    R ~ 54
+    L ~ 54
     L ~ 46
     L ~ 47
     I ~ 48
@@ -458,12 +458,12 @@ inferring  lemma3 :73 Id Type (Fn Fool Bool) ((_ :79 Fool) -> Bool) {
     I ~ 76
     L ~ 75
     L ~ 78
-    R ~ 77
+    L ~ 77
     L ~ 74
     I ~ 81
     I ~ 80
     L ~ 83
-    R ~ 82
+    L ~ 82
     L ~ 74
     L ~ 75
     I ~ 76
@@ -550,5 +550,5 @@ error: With backtrace:
   "APP": trans ((_ :39 Bool) -> Fool) (Fn Bool Fool) (Fn Fool Bool) lemma1 (lemma2 Fn)
   "APP": lemma2 Fn
   "fTy": ((F :I (a :I Type) -> (b :I Type) -> Type) -> Id Type (F Bool Fool) (F Fool Bool))
-  "xTy": ((a :L Type) -> (b :R Type) -> Type)
+  "xTy": ((a :L Type) -> (b :L Type) -> Type)
 quantity mismatch: L /= I

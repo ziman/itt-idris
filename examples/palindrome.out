@@ -1513,9 +1513,9 @@ inferring  id :300 (a :301 Type) -> (_ :302 a) -> a {
   variance of evars:
     covariant: []
     contravariant: [301, 302]
-  id :I (a :I Type) -> (_ :R a) -> a {
+  id :I (a :I Type) -> (_ :L a) -> a {
     id  ~> \a :I Type.
-        \x :R a.
+        \x :L a.
           x
   }
 
@@ -2087,8 +2087,8 @@ inferring  rev :530 (xs :531 List) -> Rev xs {
   -> iteration 1
     xs ~ app Nil xs
 
-  rev :I (xs :R List) -> Rev xs {
-    forall (xs :R List).
+  rev :I (xs :L List) -> Rev xs {
+    forall (xs :L List).
     rev xs ~> rev' Nil RNil xs
   }
 
@@ -2157,17 +2157,17 @@ inferring  reverse :599 (_ :600 List) -> List {
     600 ~ 602
     601 ≥ sum
       product [I]
-      product [R, L]
+      product [L, L]
     I ~ 604
     L ~ 603
-    R ~ 605
+    L ~ 605
   
   
   variance of evars:
     covariant: []
     contravariant: [600]
-  reverse :I (_ :R List) -> List {
-    forall (xs :R List).
+  reverse :I (_ :L List) -> List {
+    forall (xs :L List).
     reverse xs ~> reverse' xs (rev xs)
   }
 
@@ -2522,7 +2522,7 @@ inferring  postulate eq :274 (xs :275 List) -> Id List (index (length xs) xs (re
     R ~ 282
     R ~ 280
     R ~ 279
-    R ~ 283
+    L ~ 283
     L ~ 276
   
   
@@ -2543,12 +2543,12 @@ inferring  toV :668 (xs :669 List) -> V xs {
     671 ≥ sum
       product [R, R, I]
       product [R, I]
-      product [R, R, I]
+      product [L, R, I]
       product [I]
       product [I, I]
       product [R, R, L]
       product [R, L]
-      product [R, R, L]
+      product [L, R, L]
     I ~ 678
     I ~ 677
     I ~ 676
@@ -2556,7 +2556,7 @@ inferring  toV :668 (xs :669 List) -> V xs {
     R ~ 682
     R ~ 680
     R ~ 679
-    R ~ 683
+    L ~ 683
     I ~ 675
     I ~ 674
     I ~ 684
@@ -2569,7 +2569,7 @@ inferring  toV :668 (xs :669 List) -> V xs {
     R ~ 688
     R ~ 686
     R ~ 685
-    R ~ 689
+    L ~ 689
     679 ~ R
     680 ~ R
     681 ~ R
@@ -3474,7 +3474,7 @@ inferring  main :516 Maybe (IsPalindrome testList) {
   280 -> R
   281 -> R
   282 -> R
-  283 -> R
+  283 -> L
   284 -> I
   285 -> R
   286 -> L
@@ -3493,9 +3493,9 @@ inferring  main :516 Maybe (IsPalindrome testList) {
   299 -> L
   300 -> I
   301 -> I
-  302 -> R
+  302 -> L
   303 -> I
-  304 -> R
+  304 -> L
   305 -> I
   306 -> R
   307 -> R
@@ -3722,10 +3722,10 @@ inferring  main :516 Maybe (IsPalindrome testList) {
   528 -> L
   529 -> L
   530 -> R
-  531 -> R
+  531 -> L
   532 -> L
-  533 -> R
-  534 -> R
+  533 -> L
+  534 -> L
   535 -> L
   536 -> L
   537 -> I
@@ -3791,12 +3791,12 @@ inferring  main :516 Maybe (IsPalindrome testList) {
   597 -> L
   598 -> I
   599 -> R
-  600 -> R
-  601 -> R
-  602 -> R
+  600 -> L
+  601 -> L
+  602 -> L
   603 -> L
   604 -> I
-  605 -> R
+  605 -> L
   606 -> R
   607 -> I
   608 -> L
@@ -3874,13 +3874,13 @@ inferring  main :516 Maybe (IsPalindrome testList) {
   680 -> R
   681 -> R
   682 -> R
-  683 -> R
+  683 -> L
   684 -> I
   685 -> R
   686 -> R
   687 -> R
   688 -> R
-  689 -> R
+  689 -> L
 
 
 #####################
@@ -3931,9 +3931,9 @@ mutual {
   constructor/2 Refl :R (a :I Type) -> (x :I a) -> Id a x x.
 }
 
-id :I (a :I Type) -> (_ :R a) -> a {
+id :I (a :I Type) -> (_ :L a) -> a {
   id  ~> \a :I Type.
-      \x :R a.
+      \x :L a.
         x
 }
 
@@ -3992,8 +3992,8 @@ rev' :R (xs :I List) -> (rxs :L Rev xs) -> (ys :L List) -> Rev (app xs ys) {
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
-rev :R (xs :R List) -> Rev xs {
-  forall (xs :R List).
+rev :R (xs :L List) -> Rev xs {
+  forall (xs :L List).
   rev xs ~> rev' Nil RNil xs
 }
 
@@ -4004,8 +4004,8 @@ reverse' :R (xs :I List) -> (rxs :L Rev xs) -> List {
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
-reverse :R (_ :R List) -> List {
-  forall (xs :R List).
+reverse :R (_ :L List) -> List {
+  forall (xs :L List).
   reverse xs ~> reverse' xs (rev xs)
 }
 
@@ -4177,9 +4177,9 @@ mutual {
   constructor/2 Refl :R (a :I Type) -> (x :I a) -> Id a x x.
 }
 
-id :I (a :I Type) -> (_ :R a) -> a {
+id :I (a :I Type) -> (_ :L a) -> a {
   id  ~> \a :I Type.
-      \x :R a.
+      \x :L a.
         x
 }
 
@@ -4238,8 +4238,8 @@ rev' :R (xs :I List) -> (rxs :L Rev xs) -> (ys :L List) -> Rev (app xs ys) {
   rev' xs rxs (Cons y ys) ~> subst List Rev (app (app xs (one y)) ys) (app xs (Cons y ys)) (appAssoc xs (one y) ys) (rev' (app xs (one y)) (RSnoc xs y rxs) ys)
 }
 
-rev :R (xs :R List) -> Rev xs {
-  forall (xs :R List).
+rev :R (xs :L List) -> Rev xs {
+  forall (xs :L List).
   rev xs ~> rev' Nil RNil xs
 }
 
@@ -4250,8 +4250,8 @@ reverse' :R (xs :I List) -> (rxs :L Rev xs) -> List {
   reverse' [app xs (one x)] (RSnoc xs x rxs) ~> Cons x (reverse' xs rxs)
 }
 
-reverse :R (_ :R List) -> List {
-  forall (xs :R List).
+reverse :R (_ :L List) -> List {
+  forall (xs :L List).
   reverse xs ~> reverse' xs (rev xs)
 }
 
