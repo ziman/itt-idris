@@ -64,7 +64,7 @@ evSmt vs (EV i) = case SortedMap.lookup i vs of
 
 model : List Constr -> SmtM Doc (FList Smt [(ENum, Int)])
 model cs = do
-  ens <- declVars (SortedSet.toList $ eNums cs)
+  ens <- declVars (Prelude.toList $ eNums cs)
   let ev = evSmt ens
   let numberOf = \q : Q => sum
         [ ifte {a=Int} (v .== litQ q) 1 0

@@ -42,7 +42,7 @@ namespace DecOrd
         EQ => EQ (believe_me $ Refl {x})
         GT => GT
 
-  infix 3 .<=
+  export infix 3 .<=
   export
   (.<=) : DecOrd a => a -> a -> Bool
   x .<= y = case decCmp x y of

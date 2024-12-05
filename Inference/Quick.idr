@@ -64,7 +64,7 @@ collect cs = (fromList numbered, foldl insertI empty numbered)
       $ foldl insertC empty cs
 
     insertI : Index -> (Int, (SortedSet Evar, SortedSet Evar)) -> Index
-    insertI idx (i, (gs, us)) with (SortedSet.toList gs)
+    insertI idx (i, (gs, us)) with (Prelude.toList gs)
       insertI idx (i, (gs, us)) | [] = idx
       insertI idx (i, (gs, us)) | EV j :: rest =
         insertI (mergeWith (<+>) idx (insert j (insert i empty) empty)) (i, (gs, us)) | rest
@@ -79,7 +79,7 @@ lToR L = R
 lToR q = q
 
 eval : SortedMap ENum Q -> SortedSet Evar -> Q
-eval vals = lToR . foldl max I . map (est vals) . SortedSet.toList
+eval vals = lToR . foldl max I . map (est vals) . Prelude.toList
 
 covering
 step : SortedMap ENum Q -> QConstrs -> Index -> List Int -> Either Error (SortedMap ENum Q)
@@ -88,7 +88,7 @@ step vals cs idx todo = do
   if null updates
     then pure vals -- done
     else
-      let nextTodo = SortedSet.toList $ concatMap (\i => fromMaybe empty $ lookup i idx) (keys updates)
+      let nextTodo = Prelude.toList $ concatMap (\i => fromMaybe empty $ lookup i idx) (keys updates)
        in step (mergeLeft updates vals) cs idx nextTodo
   where
     updateVals : SortedMap ENum Q -> Q -> List Evar -> Either Error (SortedMap ENum Q)
@@ -111,7 +111,7 @@ step vals cs idx todo = do
       case lookup i cs of
         Nothing => findUpdates upds is  -- should never happen
         Just (gs, us) => do
-          upds' <- updateVals upds (eval vals gs) (SortedSet.toList us)
+          upds' <- updateVals upds (eval vals gs) (Prelude.toList us)
           findUpdates upds' is
 
 covering

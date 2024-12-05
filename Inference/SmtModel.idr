@@ -57,7 +57,7 @@ model : SortedSet ENum -> SortedSet ENum -> List Constr -> SmtM Doc (FList Smt [
 model minvs maxvs cs = do
   smtQ <- the (SmtM Doc (SmtType Q)) $ declEnum "Q"
   let allENums = eNums cs <+> minvs <+> maxvs
-  ens <- declVars smtQ (SortedSet.toList allENums)
+  ens <- declVars smtQ (Prelude.toList allENums)
   let ev = evSmt ens
 
   add <- defineEnumFun2 "add" smtQ smtQ smtQ (.+.)
@@ -74,13 +74,13 @@ model minvs maxvs cs = do
       CProdEq lhs rhs => product lhs .== ev rhs
       CEq lhs rhs => ev lhs .== ev rhs
 
-  let minvs' = ev . EV <$> SortedSet.toList minvs
+  let minvs' = ev . EV <$> Prelude.toList minvs
   minimise $ numberOf R minvs' + numberOf L minvs'
   minimise $ numberOf R minvs'
   minimise $ numberOf E minvs'
   minimise $ numberOf I minvs'
 
-  let maxvs' = ev . EV <$> SortedSet.toList maxvs
+  let maxvs' = ev . EV <$> Prelude.toList maxvs
   maximise $ numberOf R maxvs' + numberOf L maxvs'
   maximise $ numberOf R maxvs'
   maximise $ numberOf E maxvs'
